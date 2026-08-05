@@ -1,0 +1,497 @@
+<!doctype html>
+
+<html dir="rtl" lang="ar">
+  <head>
+    <meta charset="utf-8" />
+    <meta content="width=device-width, initial-scale=1.0" name="viewport" />
+    <title>تبرير الغياب</title>
+    <script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+    <link
+      href="https://fonts.googleapis.com/css2?family=Cairo:wght@400;600;700&amp;family=Tajawal:wght@500&amp;display=swap"
+      rel="stylesheet"
+    />
+    <link
+      href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap"
+      rel="stylesheet"
+    />
+    <link
+      href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap"
+      rel="stylesheet"
+    />
+    <script id="tailwind-config">
+      tailwind.config = {
+        darkMode: "class",
+        theme: {
+          extend: {
+            colors: {
+              "surface-container-low": "#f1f5f1",
+              background: "#f6faf7",
+              "secondary-container": "#a3ecf6",
+              "surface-tint": "#006b57",
+              "on-background": "#181d1b",
+              "inverse-primary": "#7ed7bd",
+              "inverse-on-surface": "#eef2ee",
+              "on-error-container": "#93000a",
+              "on-secondary-fixed": "#001f23",
+              "primary-fixed-dim": "#7ed7bd",
+              primary: "#006b57",
+              "on-surface-variant": "#3e4945",
+              "tertiary-fixed-dim": "#abccd5",
+              tertiary: "#43636b",
+              "on-secondary-fixed-variant": "#004f56",
+              "surface-container-high": "#e5e9e6",
+              "primary-container": "#7fd8be",
+              "on-error": "#ffffff",
+              secondary: "#146871",
+              "error-container": "#ffdad6",
+              "on-primary-container": "#005f4d",
+              "on-primary": "#ffffff",
+              "on-secondary": "#ffffff",
+              "surface-container": "#ebefeb",
+              "on-tertiary-container": "#38585f",
+              "inverse-surface": "#2d312f",
+              "surface-dim": "#d7dbd8",
+              "surface-variant": "#dfe3e0",
+              "on-tertiary": "#ffffff",
+              "on-primary-fixed-variant": "#005141",
+              "surface-bright": "#f6faf7",
+              outline: "#6e7a75",
+              "surface-container-highest": "#dfe3e0",
+              "tertiary-fixed": "#c6e8f1",
+              "secondary-fixed-dim": "#8ad2dc",
+              "on-tertiary-fixed-variant": "#2b4b53",
+              "surface-container-lowest": "#ffffff",
+              "on-surface": "#181d1b",
+              "on-primary-fixed": "#002019",
+              surface: "#f6faf7",
+              "primary-fixed": "#9af4d9",
+              "tertiary-container": "#abcdd6",
+              "on-tertiary-fixed": "#001f25",
+              "outline-variant": "#bdc9c3",
+              "on-secondary-container": "#1b6c75",
+              "secondary-fixed": "#a6eef9",
+              error: "#ba1a1a",
+            },
+            borderRadius: {
+              DEFAULT: "0.25rem",
+              lg: "0.5rem",
+              xl: "0.75rem",
+              full: "9999px",
+              "2xl": "1.5rem",
+            },
+            spacing: {
+              xl: "32px",
+              xs: "4px",
+              sm: "8px",
+              "margin-desktop": "40px",
+              lg: "24px",
+              md: "16px",
+              "2xl": "48px",
+              "margin-mobile": "16px",
+              gutter: "20px",
+            },
+            fontFamily: {
+              "body-lg": ["Cairo"],
+              "headline-lg-mobile": ["Cairo"],
+              "headline-lg": ["Cairo"],
+              "headline-md": ["Cairo"],
+              "headline-sm": ["Cairo"],
+              "body-md": ["Cairo"],
+              "label-md": ["Tajawal"],
+              "label-sm": ["Tajawal"],
+              "display-lg": ["Cairo"],
+            },
+            fontSize: {
+              "body-lg": ["18px", { lineHeight: "28px", fontWeight: "400" }],
+              "headline-lg-mobile": [
+                "28px",
+                { lineHeight: "38px", fontWeight: "700" },
+              ],
+              "headline-lg": [
+                "32px",
+                { lineHeight: "44px", fontWeight: "700" },
+              ],
+              "headline-md": [
+                "24px",
+                { lineHeight: "34px", fontWeight: "600" },
+              ],
+              "headline-sm": [
+                "20px",
+                { lineHeight: "28px", fontWeight: "600" },
+              ],
+              "body-md": ["16px", { lineHeight: "24px", fontWeight: "400" }],
+              "label-md": [
+                "14px",
+                {
+                  lineHeight: "20px",
+                  letterSpacing: "0.02em",
+                  fontWeight: "500",
+                },
+              ],
+              "label-sm": ["12px", { lineHeight: "16px", fontWeight: "500" }],
+              "display-lg": ["40px", { lineHeight: "56px", fontWeight: "700" }],
+            },
+          },
+        },
+      };
+    </script>
+    <style>
+      body {
+        background-color: #f6faf7;
+      }
+    </style>
+    <style>
+      body {
+        min-height: max(884px, 100dvh);
+      }
+    </style>
+  </head>
+  <body
+    class="bg-background text-on-background min-h-screen flex flex-col md:flex-row-reverse"
+  >
+    <!-- NavigationDrawer (Desktop) -->
+    <aside
+      class="hidden md:flex flex-col h-full sticky right-0 top-0 py-xl bg-surface-container-low border-l border-outline-variant docked right-0 h-full w-[280px] shrink-0"
+    >
+      <div
+        class="px-lg pb-lg flex flex-col items-center border-b border-outline-variant mb-lg"
+      >
+        <img
+          class="w-24 h-24 rounded-full object-cover shadow-sm mb-4"
+          data-alt="A highly detailed close-up portrait of a professional Middle Eastern man in his 40s. He is wearing modern business casual attire. The background is a brightly lit, contemporary office space with soft teal and white tones. The lighting is soft and flattering, creating a calm and authoritative mood consistent with a high-end educational platform."
+          src="https://lh3.googleusercontent.com/aida-public/AB6AXuCmuNvBqY1P_840EJnGrP9duZQhoXv6pK3ZhDhx6fbAUuiJ2AOh5Fa096W80bXV_Qfav_T8s2V1U_nAmL0aasv2uUk8s5-VoE4b8X_zzu5-dAqdOv9-8KrTMQMyKC_bkJGAaVRCJCmZZ_xyilwKfkNWhSfSalNtNfgGvBhDxWLn5Nsj1Nepn94RPj8sahWD2YZtLqub75S2dzoby6uiObrQt2pnldsR3hrPf8NP09fNfXYAxavBWfwMc1RXeso_07i3N7r6CIdUUkU"
+        />
+        <h2 class="text-headline-sm font-headline-sm text-primary">
+          أحمد محمد
+        </h2>
+        <p class="text-body-md font-body-md text-on-surface-variant">ادارة</p>
+        <p class="text-label-sm font-label-sm text-outline mt-1">
+          معهد الفرقان
+        </p>
+      </div>
+      <nav class="flex-1 px-4 space-y-2">
+        <a
+          class="flex flex-row-reverse items-center gap-md text-on-surface-variant px-4 py-3 hover:bg-surface-container-highest transition-all rounded-lg"
+          href="#"
+        >
+          <span
+            class="material-symbols-outlined"
+            style="font-variation-settings: &quot;FILL&quot; 0"
+            >dashboard</span
+          >
+          <span class="text-label-md font-label-md">لوحة التحكم</span>
+        </a>
+        <a
+          class="flex flex-row-reverse items-center gap-md bg-secondary-container text-on-secondary-container rounded-lg px-4 py-3 transition-transform translate-x-1"
+          href="#"
+        >
+          <span
+            class="material-symbols-outlined"
+            style="font-variation-settings: &quot;FILL&quot; 1"
+            >menu_book</span
+          >
+          <span class="text-label-md font-label-md font-bold">الطلاب</span>
+        </a>
+        <a
+          class="flex flex-row-reverse items-center gap-md text-on-surface-variant px-4 py-3 hover:bg-surface-container-highest transition-all rounded-lg"
+          href="#"
+        >
+          <span
+            class="material-symbols-outlined"
+            style="font-variation-settings: &quot;FILL&quot; 0"
+            >settings</span
+          >
+          <span class="text-label-md font-label-md">الإعدادات</span>
+        </a>
+      </nav>
+    </aside>
+    <!-- Main Content Area -->
+    <main class="flex-1 flex flex-col min-h-screen">
+      <!-- TopAppBar -->
+      <header
+        class="bg-background shadow-sm docked full-width top-0 sticky z-40 flex flex-row-reverse justify-between items-center w-full px-margin-mobile md:px-margin-desktop py-sm"
+      >
+        <div class="flex items-center gap-4">
+          <img
+            class="w-10 h-10 rounded-full object-cover"
+            data-alt="A small, stylized circular avatar icon representing a user profile. It features a modern, flat design illustration of a person with simple features, set against a soft, bright teal background. The image should feel professional, minimal, and suitable for a SaaS web application interface."
+            src="https://lh3.googleusercontent.com/aida-public/AB6AXuCz_m4k7-JTIERh_TiO7Nh7M1Ty6FFUmMuFD4-EAkfriscEB0wb9tO1HjpcRopZgnvlXxnh4790vroUZskyMiZsrE9SfQ1wfmC4okMLYL6YS1e4f61gymp8CiWuakBrlJoClp-P-6oLOMZI_ZQGCVBwgPJyEeA7IhoEmfxe5EkVb5Q2qBF0wz0neq2sfxQl8vMMvAkce6PvhVfmDgk1RRWxPzcUUudIKzLUIuqH1Zn3dSTIijFGz8xGbvz1rWFAGhsdgefYB0PP3X4"
+          />
+        </div>
+        <h1
+          class="text-headline-md font-headline-md text-primary font-bold tracking-tight"
+        >
+          تقوى
+        </h1>
+        <button
+          class="text-primary hover:bg-surface-container transition-colors p-2 rounded-full"
+        >
+          <span class="material-symbols-outlined text-[24px]">settings</span>
+        </button>
+      </header>
+      <!-- Canvas -->
+      <div
+        class="flex-1 p-margin-mobile md:p-margin-desktop pb-[100px] md:pb-margin-desktop"
+      >
+        <!-- Page Header -->
+        <div
+          class="mb-xl flex flex-col md:flex-row justify-between items-start md:items-end gap-4"
+        >
+          <div>
+            <h2
+              class="text-headline-lg-mobile md:text-headline-lg font-headline-lg-mobile md:font-headline-lg text-on-background mb-2"
+            >
+              تبرير الغياب
+            </h2>
+            <p class="text-body-lg font-body-lg text-on-surface-variant">
+              قائمة الطلاب الغائبين في الحلقات اليوم.
+            </p>
+          </div>
+        </div>
+        <!-- List Container -->
+        <div class="grid grid-cols-1 gap-lg">
+          <!-- Card 1 -->
+          <div
+            class="bg-surface-container-lowest rounded-2xl p-lg shadow-[0px_4px_20px_rgba(18,52,59,0.04)] hover:-translate-y-[2px] hover:shadow-[0px_12px_32px_rgba(18,52,59,0.08)] transition-all duration-300 flex flex-col md:flex-row justify-between items-center gap-md"
+          >
+            <div
+              class="flex flex-col md:flex-row items-center md:items-start gap-lg w-full"
+            >
+              <div
+                class="w-16 h-16 rounded-full bg-surface-container flex items-center justify-center shrink-0"
+              >
+                <span
+                  class="material-symbols-outlined text-[32px] text-tertiary"
+                  >person</span
+                >
+              </div>
+              <div class="flex-1 text-center md:text-right">
+                <h3
+                  class="text-headline-sm font-headline-sm text-on-background mb-1"
+                >
+                  عمر خالد عبد الله
+                </h3>
+                <div
+                  class="flex flex-wrap justify-center md:justify-start gap-x-4 gap-y-2 text-body-md font-body-md text-on-surface-variant"
+                >
+                  <span class="flex items-center gap-1">
+                    <span class="material-symbols-outlined text-[18px]"
+                      >menu_book</span
+                    >
+                    حلقة الإمام الشافعي
+                  </span>
+                  <span class="flex items-center gap-1">
+                    <span class="material-symbols-outlined text-[18px]"
+                      >calendar_today</span
+                    >
+                    15 أكتوبر 2023
+                  </span>
+                </div>
+              </div>
+              <div
+                class="flex flex-col items-center md:items-end gap-2 shrink-0"
+              >
+                <div
+                  class="bg-[#ffdad6]/20 text-error px-3 py-1 rounded-full text-label-md font-label-md flex items-center gap-1"
+                >
+                  <span class="material-symbols-outlined text-[16px]"
+                    >cancel</span
+                  >
+                  غائب (غير مبرر)
+                </div>
+                <button
+                  class="bg-gradient-to-r from-primary to-primary-container text-on-primary h-[48px] px-6 rounded-lg text-label-md font-label-md font-bold shadow-md hover:shadow-lg transition-all flex items-center gap-2"
+                >
+                  <span class="material-symbols-outlined text-[20px]"
+                    >edit_document</span
+                  >
+                  إضافة تبرير
+                </button>
+              </div>
+            </div>
+          </div>
+          <!-- Card 2 -->
+          <div
+            class="bg-surface-container-lowest rounded-2xl p-lg shadow-[0px_4px_20px_rgba(18,52,59,0.04)] hover:-translate-y-[2px] hover:shadow-[0px_12px_32px_rgba(18,52,59,0.08)] transition-all duration-300 flex flex-col md:flex-row justify-between items-center gap-md"
+          >
+            <div
+              class="flex flex-col md:flex-row items-center md:items-start gap-lg w-full"
+            >
+              <div
+                class="w-16 h-16 rounded-full bg-surface-container flex items-center justify-center shrink-0"
+              >
+                <span
+                  class="material-symbols-outlined text-[32px] text-tertiary"
+                  >person</span
+                >
+              </div>
+              <div class="flex-1 text-center md:text-right">
+                <h3
+                  class="text-headline-sm font-headline-sm text-on-background mb-1"
+                >
+                  يوسف أحمد سعيد
+                </h3>
+                <div
+                  class="flex flex-wrap justify-center md:justify-start gap-x-4 gap-y-2 text-body-md font-body-md text-on-surface-variant"
+                >
+                  <span class="flex items-center gap-1">
+                    <span class="material-symbols-outlined text-[18px]"
+                      >menu_book</span
+                    >
+                    حلقة الإمام مالك
+                  </span>
+                  <span class="flex items-center gap-1">
+                    <span class="material-symbols-outlined text-[18px]"
+                      >calendar_today</span
+                    >
+                    15 أكتوبر 2023
+                  </span>
+                </div>
+              </div>
+              <div
+                class="flex flex-col items-center md:items-end gap-2 shrink-0"
+              >
+                <div
+                  class="bg-[#ffdad6]/20 text-error px-3 py-1 rounded-full text-label-md font-label-md flex items-center gap-1"
+                >
+                  <span class="material-symbols-outlined text-[16px]"
+                    >cancel</span
+                  >
+                  غائب (غير مبرر)
+                </div>
+                <button
+                  class="bg-gradient-to-r from-primary to-primary-container text-on-primary h-[48px] px-6 rounded-lg text-label-md font-label-md font-bold shadow-md hover:shadow-lg transition-all flex items-center gap-2"
+                >
+                  <span class="material-symbols-outlined text-[20px]"
+                    >edit_document</span
+                  >
+                  إضافة تبرير
+                </button>
+              </div>
+            </div>
+          </div>
+          <!-- Card 3 -->
+          <div
+            class="bg-surface-container-lowest rounded-2xl p-lg shadow-[0px_4px_20px_rgba(18,52,59,0.04)] hover:-translate-y-[2px] hover:shadow-[0px_12px_32px_rgba(18,52,59,0.08)] transition-all duration-300 flex flex-col md:flex-row justify-between items-center gap-md"
+          >
+            <div
+              class="flex flex-col md:flex-row items-center md:items-start gap-lg w-full"
+            >
+              <div
+                class="w-16 h-16 rounded-full bg-surface-container flex items-center justify-center shrink-0"
+              >
+                <span
+                  class="material-symbols-outlined text-[32px] text-tertiary"
+                  >person</span
+                >
+              </div>
+              <div class="flex-1 text-center md:text-right">
+                <h3
+                  class="text-headline-sm font-headline-sm text-on-background mb-1"
+                >
+                  طارق عبد الرحمن
+                </h3>
+                <div
+                  class="flex flex-wrap justify-center md:justify-start gap-x-4 gap-y-2 text-body-md font-body-md text-on-surface-variant"
+                >
+                  <span class="flex items-center gap-1">
+                    <span class="material-symbols-outlined text-[18px]"
+                      >menu_book</span
+                    >
+                    حلقة الإمام أحمد
+                  </span>
+                  <span class="flex items-center gap-1">
+                    <span class="material-symbols-outlined text-[18px]"
+                      >calendar_today</span
+                    >
+                    15 أكتوبر 2023
+                  </span>
+                </div>
+              </div>
+              <div
+                class="flex flex-col items-center md:items-end gap-2 shrink-0"
+              >
+                <div
+                  class="bg-[#f1f5f1] text-outline px-3 py-1 rounded-full text-label-md font-label-md flex items-center gap-1"
+                >
+                  <span class="material-symbols-outlined text-[16px]"
+                    >check_circle</span
+                  >
+                  مبرر مسبقاً (مرض)
+                </div>
+                <button
+                  class="bg-surface-container-lowest border border-outline-variant text-secondary h-[48px] px-6 rounded-lg text-label-md font-label-md font-bold hover:bg-surface-container-low transition-all flex items-center gap-2"
+                >
+                  <span class="material-symbols-outlined text-[20px]"
+                    >visibility</span
+                  >
+                  عرض التبرير
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </main>
+    <!-- BottomNavBar (Mobile) -->
+    <nav
+      class="md:hidden fixed bottom-0 left-0 w-full z-50 flex flex-row-reverse justify-around items-center px-2 py-3 bg-surface-container-lowest shadow-[0px_-4px_20px_rgba(18,52,59,0.04)] rounded-t-xl"
+    >
+      <a
+        class="flex flex-col items-center justify-center text-on-surface-variant px-4 py-1 hover:bg-surface-container-high rounded-xl"
+        href="#"
+      >
+        <span
+          class="material-symbols-outlined"
+          style="font-variation-settings: &quot;FILL&quot; 0"
+          >home</span
+        >
+        <span class="text-label-sm font-label-sm mt-1">الرئيسية</span>
+      </a>
+      <a
+        class="flex flex-col items-center justify-center bg-primary-container text-on-primary-container rounded-xl px-4 py-1 scale-90 transition-transform"
+        href="#"
+      >
+        <span
+          class="material-symbols-outlined"
+          style="font-variation-settings: &quot;FILL&quot; 1"
+          >group</span
+        >
+        <span class="text-label-sm font-label-sm mt-1 font-bold">الطلاب</span>
+      </a>
+      <a
+        class="flex flex-col items-center justify-center text-on-surface-variant px-4 py-1 hover:bg-surface-container-high rounded-xl"
+        href="#"
+      >
+        <span
+          class="material-symbols-outlined"
+          style="font-variation-settings: &quot;FILL&quot; 0"
+          >menu_book</span
+        >
+        <span class="text-label-sm font-label-sm mt-1">الحلقات</span>
+      </a>
+      <a
+        class="flex flex-col items-center justify-center text-on-surface-variant px-4 py-1 hover:bg-surface-container-high rounded-xl"
+        href="#"
+      >
+        <span
+          class="material-symbols-outlined"
+          style="font-variation-settings: &quot;FILL&quot; 0"
+          >notifications</span
+        >
+        <span class="text-label-sm font-label-sm mt-1">الإشعارات</span>
+      </a>
+      <a
+        class="flex flex-col items-center justify-center text-on-surface-variant px-4 py-1 hover:bg-surface-container-high rounded-xl"
+        href="#"
+      >
+        <span
+          class="material-symbols-outlined"
+          style="font-variation-settings: &quot;FILL&quot; 0"
+          >person</span
+        >
+        <span class="text-label-sm font-label-sm mt-1">الحساب</span>
+      </a>
+    </nav>
+  </body>
+</html>

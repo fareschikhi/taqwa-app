@@ -1,0 +1,312 @@
+// This is your Prisma schema file for Taqwa — Quran Management System
+// Database: MySQL
+// Generator: Prisma Client (TypeScript)
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "mysql"
+  url      = env("DATABASE_URL")
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// Enums
+// ─────────────────────────────────────────────────────────────────────────────
+
+enum Role {
+  ADMIN
+  TEACHER
+  PARENT
+  STUDENT
+  MANAGER
+}
+
+enum Memorization {
+  MEMORIZING
+  SMALLREVISION
+  BIGREVISION
+}
+
+enum AttendanceStatus {
+  PRESENT
+  ABSENT
+  LATE
+}
+
+enum JustificationReasonType {
+  ILLNESS
+  OCCASION
+  OTHER
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// User — core identity, owns auth credentials
+// ─────────────────────────────────────────────────────────────────────────────
+
+model User {
+  id           Int       @id @default(autoincrement())
+  fullName     String    @db.VarChar(100)
+  phone        String?   @unique @db.VarChar(20)
+  email        String?   @unique @db.VarChar(150)
+  passwordHash String?   @db.VarChar(255)
+  role         Role
+  avatar       String?   @db.VarChar(500)
+  isActive     Boolean   @default(true)
+  createdAt    DateTime  @default(now())
+  updatedAt    DateTime  @updatedAt
+
+  teacher       Teacher?
+  parent        Parent?
+  student       Student?
+  manager       Manager?
+  notifications Notification[]
+
+  @@index([role])
+  @@index([isActive])
+  @@map("users")
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// Teacher
+// ─────────────────────────────────────────────────────────────────────────────
+
+model Teacher {
+  id             Int       @id @default(autoincrement())
+  userId         Int       @unique
+  hireDate       DateTime  @default(now())
+
+  user        User          @relation(fields: [userId], references: [id], onDelete: Cascade)
+  halaqas     Halaqa[]
+  evaluations Evaluation[]
+  notes       StudentNote[]
+
+  @@map("teachers")
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// Parent
+// ─────────────────────────────────────────────────────────────────────────────
+
+model Parent {
+  id      Int     @id @default(autoincrement())
+  userId  Int     @unique
+  address String? @db.VarChar(300)
+
+  user     User            @relation(fields: [userId], references: [id], onDelete: Cascade)
+  students    Student[]
+
+  @@map("parents")
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// Student
+// ─────────────────────────────────────────────────────────────────────────────
+
+model Student {
+  id             Int       @id @default(autoincrement())
+  userId         Int       @unique
+  birthDate      DateTime? 
+  address        String
+  halaqaId       Int?
+  enrollmentDate DateTime  @default(now())
+  parentId      Int?
+  finishedMemo   Boolean   @default(false)
+
+  user        User                   @relation(fields: [userId], references: [id], onDelete: Cascade)
+  parent      Parent?                @relation(fields: [parentId], references: [id], onDelete: SetNull)
+  halaqa      Halaqa?                @relation(fields: [halaqaId], references: [id])
+  attendance     Attendance[]
+  memorization   MemorizationProgress[]
+  evaluations    Evaluation[]
+  notes          StudentNote[]
+  justifications AbsenceJustification[]
+
+  @@index([parentId])
+  @@map("students")
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// Halaqa (Quran circle / class)
+// ─────────────────────────────────────────────────────────────────────────────
+
+model Halaqa {
+  id          Int     @id @default(autoincrement())
+  name        String  @db.VarChar(150)
+  description String? @db.Text
+  level       String? @db.VarChar(100)
+  teacherId   Int
+
+  teacher  Teacher         @relation(fields: [teacherId], references: [id], onDelete: Cascade)
+  students Student[]
+  managers ManagerHalaqa[]
+
+  @@index([teacherId])
+  @@map("halaqas")
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// Attendance
+// ─────────────────────────────────────────────────────────────────────────────
+
+model Attendance {
+  id        Int              @id @default(autoincrement())
+  studentId Int
+  date      DateTime         @db.Date
+  status    AttendanceStatus
+  notes     String?          @db.Text
+  createdAt DateTime         @default(now())
+
+  student       Student               @relation(fields: [studentId], references: [id], onDelete: Cascade)
+  justification AbsenceJustification?
+
+  @@unique([studentId, date])
+  @@index([studentId])
+  @@index([date])
+  @@index([status])
+  @@map("attendance")
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// Memorization Progress
+// ─────────────────────────────────────────────────────────────────────────────
+
+model MemorizationProgress {
+  id               Int          @id @default(autoincrement())
+  studentId        Int
+  surahNumber      Int
+  pagesDone         Int
+  memorizationType Memorization @default(MEMORIZING)
+  recordedAt       DateTime     @default(now())
+  date             DateTime     @db.Date 
+  updatedAt        DateTime     @updatedAt
+
+  student Student @relation(fields: [studentId], references: [id], onDelete: Cascade)
+
+  @@index([studentId, recordedAt])
+  @@index([studentId, surahNumber])
+  @@map("memorization_progress")
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// Evaluation
+// ─────────────────────────────────────────────────────────────────────────────
+
+model Evaluation {
+  id               Int      @id @default(autoincrement())
+  studentId        Int
+  teacherId        Int
+  memorizationScore Float?
+  tajweedScore     Float?
+  fluencyScore     Float?
+  disciplineScore  Float?
+  overallScore     Float?
+  notes            String?  @db.Text
+  createdAt        DateTime @default(now())
+
+  student Student @relation(fields: [studentId], references: [id], onDelete: Cascade)
+  teacher Teacher @relation(fields: [teacherId], references: [id], onDelete: Cascade)
+
+  @@index([studentId])
+  @@index([teacherId])
+  @@map("evaluations")
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// Student Note (teacher → student)
+// ─────────────────────────────────────────────────────────────────────────────
+
+model StudentNote {
+  id        Int      @id @default(autoincrement())
+  studentId Int
+  teacherId Int
+  note      String   @db.Text
+  createdAt DateTime @default(now())
+
+  student Student @relation(fields: [studentId], references: [id], onDelete: Cascade)
+  teacher Teacher @relation(fields: [teacherId], references: [id], onDelete: Cascade)
+
+  @@index([studentId])
+  @@index([teacherId])
+  @@map("student_notes")
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// Notification
+// ─────────────────────────────────────────────────────────────────────────────
+
+model Notification {
+  id        Int      @id @default(autoincrement())
+  userId    Int
+  title     String   @db.VarChar(200)
+  body      String   @db.Text
+  isRead    Boolean  @default(false)
+  createdAt DateTime @default(now())
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
+  @@index([isRead])
+  @@map("notifications")
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// Manager
+// ─────────────────────────────────────────────────────────────────────────────
+
+model Manager {
+  id        Int      @id @default(autoincrement())
+  userId    Int      @unique
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  user           User                   @relation(fields: [userId], references: [id], onDelete: Cascade)
+  halaqas        ManagerHalaqa[]
+  justifications AbsenceJustification[]
+
+  @@map("managers")
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// Junction: Manager ↔ Halaqa (many-to-many)
+// ─────────────────────────────────────────────────────────────────────────────
+
+model ManagerHalaqa {
+  managerId Int
+  halaqaId  Int
+  assignedAt DateTime @default(now())
+
+  manager Manager @relation(fields: [managerId], references: [id], onDelete: Cascade)
+  halaqa  Halaqa  @relation(fields: [halaqaId], references: [id], onDelete: Cascade)
+
+  @@id([managerId, halaqaId])
+  @@index([managerId])
+  @@index([halaqaId])
+  @@map("manager_halaqas")
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// Absence Justification
+// ─────────────────────────────────────────────────────────────────────────────
+
+model AbsenceJustification {
+  id           Int                     @id @default(autoincrement())
+  studentId    Int
+  attendanceId Int                     @unique
+  managerId    Int
+  reasonType   JustificationReasonType
+  customReason String?                 @db.VarChar(300)
+  notes        String?                 @db.Text
+  createdAt    DateTime                @default(now())
+  updatedAt    DateTime                @updatedAt
+
+  student    Student    @relation(fields: [studentId], references: [id], onDelete: Cascade)
+  attendance Attendance @relation(fields: [attendanceId], references: [id], onDelete: Cascade)
+  manager    Manager    @relation(fields: [managerId], references: [id], onDelete: Cascade)
+
+  @@index([studentId])
+  @@index([managerId])
+  @@index([attendanceId])
+  @@map("absence_justifications")
+}

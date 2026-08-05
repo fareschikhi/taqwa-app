@@ -1,0 +1,525 @@
+<!doctype html>
+
+<html dir="rtl" lang="ar">
+  <head>
+    <meta charset="utf-8" />
+    <meta content="width=device-width, initial-scale=1.0" name="viewport" />
+    <title>الادارة - تقوى</title>
+    <!-- Material Symbols -->
+    <link
+      href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap"
+      rel="stylesheet"
+    />
+    <!-- Google Fonts -->
+    <link href="https://fonts.googleapis.com" rel="preconnect" />
+    <link crossorigin="" href="https://fonts.gstatic.com" rel="preconnect" />
+    <link
+      href="https://fonts.googleapis.com/css2?family=Cairo:wght@400;600;700&amp;family=Tajawal:wght@400;500;700&amp;display=swap"
+      rel="stylesheet"
+    />
+    <link
+      href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap"
+      rel="stylesheet"
+    />
+    <!-- Tailwind CSS -->
+    <script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+    <!-- Tailwind Config -->
+    <script id="tailwind-config">
+      tailwind.config = {
+        darkMode: "class",
+        theme: {
+          extend: {
+            colors: {
+              "surface-container-low": "#f1f5f1",
+              background: "#f6faf7",
+              "secondary-container": "#a3ecf6",
+              "surface-tint": "#006b57",
+              "on-background": "#181d1b",
+              "inverse-primary": "#7ed7bd",
+              "inverse-on-surface": "#eef2ee",
+              "on-error-container": "#93000a",
+              "on-secondary-fixed": "#001f23",
+              "primary-fixed-dim": "#7ed7bd",
+              primary: "#006b57",
+              "on-surface-variant": "#3e4945",
+              "tertiary-fixed-dim": "#abccd5",
+              tertiary: "#43636b",
+              "on-secondary-fixed-variant": "#004f56",
+              "surface-container-high": "#e5e9e6",
+              "primary-container": "#7fd8be",
+              "on-error": "#ffffff",
+              secondary: "#146871",
+              "error-container": "#ffdad6",
+              "on-primary-container": "#005f4d",
+              "on-primary": "#ffffff",
+              "on-secondary": "#ffffff",
+              "surface-container": "#ebefeb",
+              "on-tertiary-container": "#38585f",
+              "inverse-surface": "#2d312f",
+              "surface-dim": "#d7dbd8",
+              "surface-variant": "#dfe3e0",
+              "on-tertiary": "#ffffff",
+              "on-primary-fixed-variant": "#005141",
+              "surface-bright": "#f6faf7",
+              outline: "#6e7a75",
+              "surface-container-highest": "#dfe3e0",
+              "tertiary-fixed": "#c6e8f1",
+              "secondary-fixed-dim": "#8ad2dc",
+              "on-tertiary-fixed-variant": "#2b4b53",
+              "surface-container-lowest": "#ffffff",
+              "on-surface": "#181d1b",
+              "on-primary-fixed": "#002019",
+              surface: "#f6faf7",
+              "primary-fixed": "#9af4d9",
+              "tertiary-container": "#abcdd6",
+              "on-tertiary-fixed": "#001f25",
+              "outline-variant": "#bdc9c3",
+              "on-secondary-container": "#1b6c75",
+              "secondary-fixed": "#a6eef9",
+              error: "#ba1a1a",
+            },
+            borderRadius: {
+              DEFAULT: "0.25rem",
+              lg: "0.5rem",
+              xl: "0.75rem",
+              full: "9999px",
+              "2xl": "1.5rem",
+            },
+            spacing: {
+              xl: "32px",
+              xs: "4px",
+              sm: "8px",
+              "margin-desktop": "40px",
+              lg: "24px",
+              md: "16px",
+              "2xl": "48px",
+              "margin-mobile": "16px",
+              gutter: "20px",
+            },
+            fontFamily: {
+              "body-lg": ["Cairo"],
+              "headline-lg-mobile": ["Cairo"],
+              "headline-lg": ["Cairo"],
+              "headline-md": ["Cairo"],
+              "headline-sm": ["Cairo"],
+              "body-md": ["Cairo"],
+              "label-md": ["Tajawal"],
+              "label-sm": ["Tajawal"],
+              "display-lg": ["Cairo"],
+            },
+            fontSize: {
+              "body-lg": ["18px", { lineHeight: "28px", fontWeight: "400" }],
+              "headline-lg-mobile": [
+                "28px",
+                { lineHeight: "38px", fontWeight: "700" },
+              ],
+              "headline-lg": [
+                "32px",
+                { lineHeight: "44px", fontWeight: "700" },
+              ],
+              "headline-md": [
+                "24px",
+                { lineHeight: "34px", fontWeight: "600" },
+              ],
+              "headline-sm": [
+                "20px",
+                { lineHeight: "28px", fontWeight: "600" },
+              ],
+              "body-md": ["16px", { lineHeight: "24px", fontWeight: "400" }],
+              "label-md": [
+                "14px",
+                {
+                  lineHeight: "20px",
+                  letterSpacing: "0.02em",
+                  fontWeight: "500",
+                },
+              ],
+              "label-sm": ["12px", { lineHeight: "16px", fontWeight: "500" }],
+              "display-lg": ["40px", { lineHeight: "56px", fontWeight: "700" }],
+            },
+          },
+        },
+      };
+    </script>
+    <style>
+      .material-symbols-outlined {
+        font-variation-settings:
+          "FILL" 0,
+          "wght" 400,
+          "GRAD" 0,
+          "opsz" 24;
+      }
+      .material-symbols-outlined.fill {
+        font-variation-settings: "FILL" 1;
+      }
+
+      /* Smooth scrolling and transitions */
+      html {
+        scroll-behavior: smooth;
+      }
+      .transition-transform {
+        transition-property: transform;
+      }
+      .duration-150 {
+        transition-duration: 150ms;
+      }
+    </style>
+    <style>
+      body {
+        min-height: max(884px, 100dvh);
+      }
+    </style>
+  </head>
+  <body
+    class="bg-surface text-on-surface font-body-lg flex min-h-screen overflow-x-hidden"
+  >
+    <!-- Main Canvas -->
+    <main class="flex-1 flex flex-col min-w-0">
+      <!-- TopAppBar -->
+      <header
+        class="bg-background shadow-sm docked full-width top-0 sticky z-40"
+      >
+        <div
+          class="flex flex-row-reverse justify-between items-center w-full px-margin-mobile md:px-margin-desktop py-sm h-16"
+        >
+          <!-- Leading -->
+          <div class="flex items-center gap-md">
+            <button
+              class="md:hidden text-on-surface hover:bg-surface-container p-2 rounded-full transition-colors"
+            >
+              <span class="material-symbols-outlined">menu</span>
+            </button>
+          </div>
+          <!-- Headline -->
+          <h1
+            class="text-headline-md font-headline-md text-primary tracking-tight"
+          >
+            تقوى
+          </h1>
+          <!-- Trailing -->
+          <button
+            class="text-primary hover:bg-surface-container p-2 rounded-full transition-colors scale-95 transition-transform duration-150"
+          >
+            <span class="material-symbols-outlined">settings</span>
+          </button>
+        </div>
+      </header>
+      <!-- Content Canvas -->
+      <div
+        class="flex-1 p-margin-mobile md:p-margin-desktop w-full max-w-7xl mx-auto space-y-xl"
+      >
+        <!-- Page Header & Actions -->
+        <div
+          class="flex flex-col md:flex-row justify-between items-start md:items-center gap-md"
+        >
+          <div>
+            <h2
+              class="font-headline-lg-mobile md:font-headline-lg text-headline-lg-mobile md:text-headline-lg text-on-surface"
+            >
+              الادارة
+            </h2>
+            <p class="font-body-md text-body-md text-on-surface-variant mt-xs">
+              تنظيم ومتابعة المديرين.
+            </p>
+          </div>
+          <!-- Desktop FAB equivalent (hidden on mobile, FAB handles it there) -->
+          <button
+            class="hidden md:flex bg-gradient-to-r from-primary to-secondary text-on-primary font-label-md text-label-md px-lg py-3 rounded-xl items-center gap-sm shadow-md hover:shadow-lg transition-all hover:-translate-y-0.5"
+          >
+            <span class="material-symbols-outlined">add_circle</span>
+            إضافة إدارة
+          </button>
+        </div>
+        <!-- Search and Filters Section -->
+        <div
+          class="bg-surface-container-lowest rounded-2xl p-md shadow-[0px_4px_20px_rgba(18,52,59,0.04)] flex flex-col md:flex-row gap-md items-center"
+        >
+          <!-- Search Bar -->
+          <div class="relative w-full md:max-w-md">
+            <span
+              class="material-symbols-outlined absolute right-4 top-1/2 -translate-y-1/2 text-outline"
+              >search</span
+            >
+            <input
+              class="w-full bg-background border border-outline-variant rounded-xl py-3 pr-12 pl-4 font-label-md text-label-md text-on-surface focus:outline-none focus:border-primary-container focus:ring-1 focus:ring-primary-container transition-all placeholder:text-outline-variant"
+              placeholder="البحث عن معلم أو مدير..."
+              type="text"
+            />
+          </div>
+          <!-- Filter Chips -->
+          <div class="flex flex-wrap items-center gap-sm w-full md:w-auto">
+            <button
+              class="bg-primary-container text-on-primary-container px-4 py-2 rounded-lg font-label-md text-label-md transition-colors hover:bg-inverse-primary"
+            >
+              الكل
+            </button>
+            <button
+              class="bg-surface bg-opacity-50 border border-outline-variant text-on-surface-variant px-4 py-2 rounded-lg font-label-md text-label-md transition-colors hover:bg-surface-container"
+            >
+              نشط
+            </button>
+            <button
+              class="bg-surface bg-opacity-50 border border-outline-variant text-on-surface-variant px-4 py-2 rounded-lg font-label-md text-label-md transition-colors hover:bg-surface-container"
+            >
+              غير نشط
+            </button>
+          </div>
+        </div>
+        <!-- Managers Grid -->
+        <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-md">
+          <!-- Card 1 -->
+          <div
+            class="bg-surface-container-lowest rounded-2xl p-lg shadow-[0px_4px_20px_rgba(18,52,59,0.04)] hover:-translate-y-1 hover:shadow-[0px_12px_32px_rgba(18,52,59,0.08)] transition-all duration-300 border border-transparent hover:border-surface-variant flex flex-col h-full group"
+          >
+            <div class="flex items-start justify-between mb-md">
+              <div class="flex items-center gap-md">
+                <div
+                  class="w-14 h-14 rounded-xl overflow-hidden bg-surface-container-high border-2 border-surface"
+                >
+                  <img
+                    class="w-full h-full object-cover"
+                    data-alt="A professional portrait of a smiling Middle Eastern male teacher in a bright, modern educational setting. Soft natural light highlights his friendly demeanor. He wears a neat, collared shirt. The background is a clean, slightly blurred bright teal and white wall. High quality, photorealistic, light mode aesthetic."
+                    src="https://lh3.googleusercontent.com/aida-public/AB6AXuAQTRwqhFEzBs2keI1UALbnC0tTjLgG1zLScDCvKhxE09ocLK0-FuO5gmQleLLDc3uNE130Pchu0ZEcfbXfwR6it-2NvWJCnRhmGh3NyveroiHEV_b_k8Ncys0MjLhIUB9qxEWxmAlyHvFPHUD2OQjAdifOvMQ05--aTy5FOGB5ZnVbAJkipYxq4aamLkAVNpzAJMUyekYlHOBG-zAoDQx1xJViuID6GM_pslS82U3nnevwnTaKgjkHPIkmq2YNsmQ9m2862eRh0pQ"
+                  />
+                </div>
+                <div>
+                  <h3 class="font-headline-sm text-headline-sm text-on-surface">
+                    عمر عبد الرحمن
+                  </h3>
+                  <p
+                    class="font-label-sm text-label-sm text-on-surface-variant flex items-center gap-1 mt-1"
+                  >
+                    <span class="material-symbols-outlined text-[14px]"
+                      >call</span
+                    >
+                    0501234567
+                  </p>
+                </div>
+              </div>
+              <span
+                class="bg-primary/10 text-primary px-2 py-1 rounded-md font-label-sm text-label-sm whitespace-nowrap"
+                >نشط</span
+              >
+            </div>
+            <div class="bg-surface-container-low rounded-xl p-md mb-md flex-1">
+              <div class="flex justify-between items-center mb-sm">
+                <span
+                  class="font-label-md text-label-md text-on-surface-variant"
+                  >الحلقة المعينة</span
+                >
+                <span
+                  class="font-label-md text-label-md text-on-surface font-semibold"
+                  >حلقة الإمام الشافعي</span
+                >
+              </div>
+              <div class="flex justify-between items-center">
+                <span
+                  class="font-label-md text-label-md text-on-surface-variant"
+                  >عدد الطلاب</span
+                >
+                <span
+                  class="font-label-md text-label-md text-on-surface font-semibold bg-surface-container-high px-2 py-1 rounded-md"
+                  >24 طالب</span
+                >
+              </div>
+            </div>
+            <div
+              class="flex items-center gap-sm mt-auto pt-sm border-t border-surface-variant opacity-0 group-hover:opacity-100 transition-opacity"
+            >
+              <button
+                class="flex-1 bg-surface border border-outline-variant text-secondary font-label-md text-label-md py-2 rounded-lg hover:bg-surface-container transition-colors flex justify-center items-center gap-1"
+              >
+                <span class="material-symbols-outlined text-[18px]"
+                  >visibility</span
+                >
+                عرض
+              </button>
+              <button
+                class="flex-1 bg-surface border border-outline-variant text-secondary font-label-md text-label-md py-2 rounded-lg hover:bg-surface-container transition-colors flex justify-center items-center gap-1"
+              >
+                <span class="material-symbols-outlined text-[18px]">edit</span>
+                تعديل
+              </button>
+              <button
+                class="w-10 h-10 flex items-center justify-center text-error hover:bg-error-container rounded-lg transition-colors"
+                title="إيقاف"
+              >
+                <span class="material-symbols-outlined text-[20px]">block</span>
+              </button>
+            </div>
+          </div>
+          <!-- Card 2 -->
+          <div
+            class="bg-surface-container-lowest rounded-2xl p-lg shadow-[0px_4px_20px_rgba(18,52,59,0.04)] hover:-translate-y-1 hover:shadow-[0px_12px_32px_rgba(18,52,59,0.08)] transition-all duration-300 border border-transparent hover:border-surface-variant flex flex-col h-full group"
+          >
+            <div class="flex items-start justify-between mb-md">
+              <div class="flex items-center gap-md">
+                <div
+                  class="w-14 h-14 rounded-xl overflow-hidden bg-surface-container-high border-2 border-surface"
+                >
+                  <img
+                    class="w-full h-full object-cover"
+                    data-alt="A professional portrait of a calm Middle Eastern male teacher in a bright, modern educational setting. Soft natural light highlights his serene demeanor. He wears traditional modest attire. The background is a clean, slightly blurred bright teal and white wall. High quality, photorealistic, light mode aesthetic."
+                    src="https://lh3.googleusercontent.com/aida-public/AB6AXuBovrpsOUvvgoTa6kb0h5vHtedxH1_Qq3weRr1YUD1s3V2KAyVdCOePDkN3oZcsqeYzvgqsaf8eC_BMPlr6sQsZcnhP9sLlNh2hf0ExEs40YjBf94jxStzK_dhg7QzSvONupTSvH2iEdta6amZn_l9ObWMyYThym5HFS2kZ48W1nVn7g6SBxIgxEaYqSBFg-Cdd8aB6VCHN76LhFdEDmQT1SSVvEjpcJZocc92xYqelLs-7H68zWtXmY6Qqwfv9S-h4BzJ5RIIWaI8"
+                  />
+                </div>
+                <div>
+                  <h3 class="font-headline-sm text-headline-sm text-on-surface">
+                    خالد إبراهيم
+                  </h3>
+                  <p
+                    class="font-label-sm text-label-sm text-on-surface-variant flex items-center gap-1 mt-1"
+                  >
+                    <span class="material-symbols-outlined text-[14px]"
+                      >call</span
+                    >
+                    0559876543
+                  </p>
+                </div>
+              </div>
+              <span
+                class="bg-primary/10 text-primary px-2 py-1 rounded-md font-label-sm text-label-sm whitespace-nowrap"
+                >نشط</span
+              >
+            </div>
+            <div class="bg-surface-container-low rounded-xl p-md mb-md flex-1">
+              <div class="flex justify-between items-center mb-sm">
+                <span
+                  class="font-label-md text-label-md text-on-surface-variant"
+                  >الحلقة المعينة</span
+                >
+                <span
+                  class="font-label-md text-label-md text-on-surface font-semibold"
+                  >حلقة الإمام النووي</span
+                >
+              </div>
+              <div class="flex justify-between items-center">
+                <span
+                  class="font-label-md text-label-md text-on-surface-variant"
+                  >عدد الطلاب</span
+                >
+                <span
+                  class="font-label-md text-label-md text-on-surface font-semibold bg-surface-container-high px-2 py-1 rounded-md"
+                  >18 طالب</span
+                >
+              </div>
+            </div>
+            <div
+              class="flex items-center gap-sm mt-auto pt-sm border-t border-surface-variant opacity-0 group-hover:opacity-100 transition-opacity"
+            >
+              <button
+                class="flex-1 bg-surface border border-outline-variant text-secondary font-label-md text-label-md py-2 rounded-lg hover:bg-surface-container transition-colors flex justify-center items-center gap-1"
+              >
+                <span class="material-symbols-outlined text-[18px]"
+                  >visibility</span
+                >
+                عرض
+              </button>
+              <button
+                class="flex-1 bg-surface border border-outline-variant text-secondary font-label-md text-label-md py-2 rounded-lg hover:bg-surface-container transition-colors flex justify-center items-center gap-1"
+              >
+                <span class="material-symbols-outlined text-[18px]">edit</span>
+                تعديل
+              </button>
+              <button
+                class="w-10 h-10 flex items-center justify-center text-error hover:bg-error-container rounded-lg transition-colors"
+                title="إيقاف"
+              >
+                <span class="material-symbols-outlined text-[20px]">block</span>
+              </button>
+            </div>
+          </div>
+          <!-- Card 3 (Inactive) -->
+          <div
+            class="bg-surface-container-lowest rounded-2xl p-lg shadow-[0px_4px_20px_rgba(18,52,59,0.04)] hover:-translate-y-1 hover:shadow-[0px_12px_32px_rgba(18,52,59,0.08)] transition-all duration-300 border border-transparent hover:border-surface-variant flex flex-col h-full group opacity-80 hover:opacity-100"
+          >
+            <div class="flex items-start justify-between mb-md">
+              <div class="flex items-center gap-md">
+                <div
+                  class="w-14 h-14 rounded-xl overflow-hidden bg-surface-container-high border-2 border-surface opacity-70 grayscale"
+                >
+                  <img
+                    class="w-full h-full object-cover"
+                    data-alt="A professional portrait of an older Middle Eastern male teacher in a bright, modern educational setting. Soft natural light. He wears traditional modest attire. The background is a clean, slightly blurred bright teal and white wall. High quality, photorealistic, light mode aesthetic, slight grayscale effect."
+                    src="https://lh3.googleusercontent.com/aida-public/AB6AXuDdeljNeSRZ2hkY0aOy3LFUnpi8nAxoxZpZZsZzBXj5tfUfM2bWOu1iV-Dn2QKbUg6Ii_wGZGHgHMpbEsnCZbvqNjdXXnkYIylbLlvNnqrSgrLr0q7aKQlJ0hfJmApyGpbbTB2Hefv4QJMYnWfRCFq5dhN-3afkWFaMo3dddgcZL2Qy-Lu4rxKfQpb5uucET0spnR3L1gn8yttGAWdIm6K_uo8QKQaJywVCUi6VNIMo3FsnZFM0-KrezeF3pfvldoSP177qF_K42t4"
+                  />
+                </div>
+                <div>
+                  <h3 class="font-headline-sm text-headline-sm text-on-surface">
+                    سعيد الغامدي
+                  </h3>
+                  <p
+                    class="font-label-sm text-label-sm text-on-surface-variant flex items-center gap-1 mt-1"
+                  >
+                    <span class="material-symbols-outlined text-[14px]"
+                      >call</span
+                    >
+                    0541122334
+                  </p>
+                </div>
+              </div>
+              <span
+                class="bg-surface-variant text-on-surface-variant px-2 py-1 rounded-md font-label-sm text-label-sm whitespace-nowrap"
+                >غير نشط</span
+              >
+            </div>
+            <div class="bg-surface-container-low rounded-xl p-md mb-md flex-1">
+              <div class="flex justify-between items-center mb-sm">
+                <span
+                  class="font-label-md text-label-md text-on-surface-variant"
+                  >الحلقة المعينة</span
+                >
+                <span
+                  class="font-label-md text-label-md text-on-surface font-semibold text-outline"
+                  >غير معين</span
+                >
+              </div>
+              <div class="flex justify-between items-center">
+                <span
+                  class="font-label-md text-label-md text-on-surface-variant"
+                  >عدد الطلاب</span
+                >
+                <span
+                  class="font-label-md text-label-md text-on-surface font-semibold bg-surface-container-highest px-2 py-1 rounded-md"
+                  >0 طالب</span
+                >
+              </div>
+            </div>
+            <div
+              class="flex items-center gap-sm mt-auto pt-sm border-t border-surface-variant opacity-0 group-hover:opacity-100 transition-opacity"
+            >
+              <button
+                class="flex-1 bg-surface border border-outline-variant text-secondary font-label-md text-label-md py-2 rounded-lg hover:bg-surface-container transition-colors flex justify-center items-center gap-1"
+              >
+                <span class="material-symbols-outlined text-[18px]"
+                  >visibility</span
+                >
+                عرض
+              </button>
+              <button
+                class="flex-1 bg-surface border border-outline-variant text-secondary font-label-md text-label-md py-2 rounded-lg hover:bg-surface-container transition-colors flex justify-center items-center gap-1"
+              >
+                <span class="material-symbols-outlined text-[18px]">edit</span>
+                تعديل
+              </button>
+              <button
+                class="w-10 h-10 flex items-center justify-center text-primary hover:bg-primary-container rounded-lg transition-colors"
+                title="تفعيل"
+              >
+                <span class="material-symbols-outlined text-[20px]"
+                  >check_circle</span
+                >
+              </button>
+            </div>
+          </div>
+        </div>
+      </div>
+    </main>
+    <!-- Floating Action Button (Mobile Only) -->
+    <button
+      class="md:hidden fixed bottom-6 left-6 z-50 bg-gradient-to-r from-primary to-secondary text-on-primary rounded-2xl p-4 shadow-lg flex items-center justify-center hover:scale-105 transition-transform active:scale-95"
+    >
+      <span class="material-symbols-outlined">add</span>
+    </button>
+  </body>
+</html>

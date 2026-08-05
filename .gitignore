@@ -1,0 +1,18 @@
+# Node / NestJS
+backend/node_modules/
+backend/dist/
+backend/.env
+backend/coverage/
+
+# Flutter
+taqwa/.dart_tool/
+taqwa/build/
+taqwa/.idea/
+taqwa/ios/Pods/
+taqwa/**/Generated.xcconfig
+taqwa/**/flutter_export_environment.sh
+
+# Editors / OS
+.vscode/
+.DS_Store
+Thumbs.db

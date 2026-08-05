@@ -1,0 +1,569 @@
+<!doctype html>
+
+<html dir="rtl" lang="ar">
+  <head>
+    <meta charset="utf-8" />
+    <meta content="width=device-width, initial-scale=1.0" name="viewport" />
+    <title>Manager Dashboard - Taqwa</title>
+    <script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+    <link
+      href="https://fonts.googleapis.com/css2?family=Cairo:wght@400;600;700&amp;family=Tajawal:wght@500;700&amp;display=swap"
+      rel="stylesheet"
+    />
+    <link
+      href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap"
+      rel="stylesheet"
+    />
+    <link
+      href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap"
+      rel="stylesheet"
+    />
+    <script id="tailwind-config">
+      tailwind.config = {
+        darkMode: "class",
+        theme: {
+          extend: {
+            colors: {
+              "surface-container-low": "#f1f5f1",
+              background: "#f6faf7",
+              "secondary-container": "#a3ecf6",
+              "surface-tint": "#006b57",
+              "on-background": "#181d1b",
+              "inverse-primary": "#7ed7bd",
+              "inverse-on-surface": "#eef2ee",
+              "on-error-container": "#93000a",
+              "on-secondary-fixed": "#001f23",
+              "primary-fixed-dim": "#7ed7bd",
+              primary: "#006b57",
+              "on-surface-variant": "#3e4945",
+              "tertiary-fixed-dim": "#abccd5",
+              tertiary: "#43636b",
+              "on-secondary-fixed-variant": "#004f56",
+              "surface-container-high": "#e5e9e6",
+              "primary-container": "#7fd8be",
+              "on-error": "#ffffff",
+              secondary: "#146871",
+              "error-container": "#ffdad6",
+              "on-primary-container": "#005f4d",
+              "on-primary": "#ffffff",
+              "on-secondary": "#ffffff",
+              "surface-container": "#ebefeb",
+              "on-tertiary-container": "#38585f",
+              "inverse-surface": "#2d312f",
+              "surface-dim": "#d7dbd8",
+              "surface-variant": "#dfe3e0",
+              "on-tertiary": "#ffffff",
+              "on-primary-fixed-variant": "#005141",
+              "surface-bright": "#f6faf7",
+              outline: "#6e7a75",
+              "surface-container-highest": "#dfe3e0",
+              "tertiary-fixed": "#c6e8f1",
+              "secondary-fixed-dim": "#8ad2dc",
+              "on-tertiary-fixed-variant": "#2b4b53",
+              "surface-container-lowest": "#ffffff",
+              "on-surface": "#181d1b",
+              "on-primary-fixed": "#002019",
+              surface: "#f6faf7",
+              "primary-fixed": "#9af4d9",
+              "tertiary-container": "#abcdd6",
+              "on-tertiary-fixed": "#001f25",
+              "outline-variant": "#bdc9c3",
+              "on-secondary-container": "#1b6c75",
+              "secondary-fixed": "#a6eef9",
+              error: "#ba1a1a",
+            },
+            borderRadius: {
+              DEFAULT: "0.25rem",
+              lg: "0.5rem",
+              xl: "0.75rem",
+              full: "9999px",
+              "2xl": "1.5rem",
+            },
+            spacing: {
+              xl: "32px",
+              xs: "4px",
+              sm: "8px",
+              "margin-desktop": "40px",
+              lg: "24px",
+              md: "16px",
+              "2xl": "48px",
+              "margin-mobile": "16px",
+              gutter: "20px",
+            },
+            fontFamily: {
+              "body-lg": ["Cairo"],
+              "headline-lg-mobile": ["Cairo"],
+              "headline-lg": ["Cairo"],
+              "headline-md": ["Cairo"],
+              "headline-sm": ["Cairo"],
+              "body-md": ["Cairo"],
+              "label-md": ["Tajawal"],
+              "label-sm": ["Tajawal"],
+              "display-lg": ["Cairo"],
+            },
+            fontSize: {
+              "body-lg": ["18px", { lineHeight: "28px", fontWeight: "400" }],
+              "headline-lg-mobile": [
+                "28px",
+                { lineHeight: "38px", fontWeight: "700" },
+              ],
+              "headline-lg": [
+                "32px",
+                { lineHeight: "44px", fontWeight: "700" },
+              ],
+              "headline-md": [
+                "24px",
+                { lineHeight: "34px", fontWeight: "600" },
+              ],
+              "headline-sm": [
+                "20px",
+                { lineHeight: "28px", fontWeight: "600" },
+              ],
+              "body-md": ["16px", { lineHeight: "24px", fontWeight: "400" }],
+              "label-md": [
+                "14px",
+                {
+                  lineHeight: "20px",
+                  letterSpacing: "0.02em",
+                  fontWeight: "500",
+                },
+              ],
+              "label-sm": ["12px", { lineHeight: "16px", fontWeight: "500" }],
+              "display-lg": ["40px", { lineHeight: "56px", fontWeight: "700" }],
+            },
+          },
+        },
+      };
+    </script>
+    <style>
+      .material-symbols-outlined {
+        font-variation-settings:
+          "FILL" 0,
+          "wght" 400,
+          "GRAD" 0,
+          "opsz" 24;
+      }
+      .material-symbols-outlined.filled {
+        font-variation-settings: "FILL" 1;
+      }
+      .whisper-shadow {
+        box-shadow: 0px 4px 20px rgba(18, 52, 59, 0.04);
+      }
+      .hover-lift {
+        transition:
+          transform 0.2s ease,
+          box-shadow 0.2s ease;
+      }
+      .hover-lift:hover {
+        transform: translateY(-2px);
+        box-shadow: 0px 12px 32px rgba(18, 52, 59, 0.08);
+      }
+    </style>
+    <style>
+      body {
+        min-height: max(884px, 100dvh);
+      }
+    </style>
+  </head>
+  <body
+    class="bg-background text-on-background font-body-md antialiased min-h-screen flex flex-col md:flex-row-reverse"
+  >
+    <!-- TopAppBar (Mobile Only) -->
+    <header
+      class="md:hidden bg-background shadow-sm docked full-width top-0 sticky flex flex-row-reverse justify-between items-center w-full px-margin-mobile py-sm z-50"
+    >
+      <div class="flex items-center gap-md">
+        <img
+          class="w-10 h-10 rounded-full object-cover"
+          data-alt="A highly detailed close-up portrait of a professional Arab man with a neat beard, wearing traditional Saudi attire (thobe and shemagh), smiling warmly. The lighting is soft and natural, suggesting a bright morning. The background is slightly blurred, showing a modern office environment with subtle teal and white accents, reflecting a premium corporate aesthetic. The image conveys calm authority and approachable professionalism."
+          src="https://lh3.googleusercontent.com/aida-public/AB6AXuBtWBS3dHT77Jh56z34AvKMtshpAFCcYSHrQaDS27qGepUsu88g36Luwr2VcMNk53hSNZCOumf0O68B75bxQ6rB9Wt4cvnIXl3gc7_YCmDzCJDxSWWQyBlxHVmaSBwzeVHltFIxMA8Ki9ELnpmlfb57OqTI5N04zt07bal_kauNo38M8xYxGv0SqY0koCFSWQ-Fh5uD7i9oDe9S7fkkzvznvTb_QRfC4poovY0i9k12Tl6J9nfIqAu7jad2kEwQ0hyWK5br1CajAF0"
+        />
+      </div>
+      <div class="text-headline-md font-headline-md text-primary">تقوى</div>
+      <div class="flex items-center">
+        <span
+          class="material-symbols-outlined text-primary cursor-pointer"
+          data-icon="settings"
+          >settings</span
+        >
+      </div>
+    </header>
+    <!-- NavigationDrawer (Desktop Only) -->
+    <nav
+      class="hidden md:flex flex-col h-screen sticky right-0 top-0 py-xl bg-surface-container-low border-l border-outline-variant w-[280px] z-40 shrink-0"
+    >
+      <div
+        class="px-lg pb-xl flex flex-col items-end gap-md border-b border-outline-variant mb-lg"
+      >
+        <div
+          class="text-headline-lg font-headline-lg text-primary w-full text-right mb-md"
+        >
+          تقوى
+        </div>
+        <div class="flex flex-row-reverse items-center gap-md w-full">
+          <img
+            class="w-12 h-12 rounded-full object-cover"
+            data-alt="A highly detailed close-up portrait of a professional Arab man with a neat beard, wearing traditional Saudi attire (thobe and shemagh), smiling warmly. The lighting is soft and natural, suggesting a bright morning. The background is slightly blurred, showing a modern office environment with subtle teal and white accents, reflecting a premium corporate aesthetic. The image conveys calm authority and approachable professionalism."
+            src="https://lh3.googleusercontent.com/aida-public/AB6AXuD4M42ll4lqntoA2pCBqQfG-vR7ahHqROXJ7m2GF19J2qK3Vv24rZ42Pr0_cBKYBs2Uy1RJSFN9dERWQWvrzqzbPhp8x-zbPRNGsWLfOr0HYlBXsisN2pXfVc-EEkUY6gs49klEIY6jwdGnrurMZjJSOR2cn6pmXGdZz9ZIeNTDSj51LdhtYlvIM41n6uSl-DaYylRyhIWSmpY-rO3HqsulKV9KczkhNHWQV0363VE8VpqbVHfxggeex1r9ehn7i3HyilrNEO0dADE"
+          />
+          <div class="flex flex-col text-right">
+            <span class="text-headline-sm font-headline-sm text-primary"
+              >أحمد محمد</span
+            >
+            <span class="text-label-md font-label-md text-on-surface-variant"
+              >ادارة</span
+            >
+          </div>
+        </div>
+      </div>
+      <ul class="flex flex-col gap-sm px-md w-full">
+        <li>
+          <a
+            class="flex flex-row-reverse items-center gap-md bg-secondary-container text-on-secondary-container rounded-lg px-4 py-3 translate-x-1 transition-transform"
+            href="#"
+          >
+            <span class="material-symbols-outlined filled" data-icon="dashboard"
+              >dashboard</span
+            >
+            <span class="text-label-md font-label-md font-bold"
+              >لوحة التحكم</span
+            >
+          </a>
+        </li>
+        <li>
+          <a
+            class="flex flex-row-reverse items-center gap-md text-on-surface-variant px-4 py-3 hover:bg-surface-container-highest transition-all rounded-lg"
+            href="#"
+          >
+            <span class="material-symbols-outlined" data-icon="badge"
+              >badge</span
+            >
+            <span class="text-label-md font-label-md">إدارة الطلاب</span>
+          </a>
+        </li>
+        <li>
+          <a
+            class="flex flex-row-reverse items-center gap-md text-on-surface-variant px-4 py-3 hover:bg-surface-container-highest transition-all rounded-lg"
+            href="#"
+          >
+            <span class="material-symbols-outlined" data-icon="settings"
+              >settings</span
+            >
+            <span class="text-label-md font-label-md">الإعدادات</span>
+          </a>
+        </li>
+      </ul>
+    </nav>
+    <!-- Main Content Canvas -->
+    <main
+      class="flex-1 px-margin-mobile md:px-margin-desktop py-lg pb-32 md:pb-lg w-full max-w-[1200px] mx-auto overflow-y-auto"
+    >
+      <!-- Welcome Section -->
+      <section class="mb-xl">
+        <div
+          class="bg-primary rounded-2xl p-lg relative overflow-hidden whisper-shadow text-on-primary"
+        >
+          <div class="relative z-10">
+            <h1
+              class="text-headline-lg-mobile md:text-headline-lg font-headline-lg-mobile md:font-headline-lg mb-sm"
+            >
+              مرحباً بك، أحمد محمد
+            </h1>
+            <p class="text-body-md font-body-md opacity-90">
+              إليك نظرة عامة على نشاط المعهد اليوم. نتمنى لك يوماً مباركاً
+              ومثمراً.
+            </p>
+          </div>
+          <!-- Decorative background elements -->
+          <div
+            class="absolute top-0 right-0 w-64 h-64 bg-white opacity-5 rounded-full blur-3xl -translate-y-1/2 translate-x-1/4"
+          ></div>
+          <div
+            class="absolute bottom-0 left-0 w-48 h-48 bg-secondary-container opacity-10 rounded-full blur-2xl translate-y-1/4 -translate-x-1/4"
+          ></div>
+        </div>
+      </section>
+      <!-- Summary Cards (Bento Grid) -->
+      <section class="mb-xl grid grid-cols-2 md:grid-cols-4 gap-md">
+        <!-- Card 1 -->
+        <div
+          class="bg-surface-container-lowest rounded-2xl p-md whisper-shadow hover-lift flex flex-col justify-between h-32"
+        >
+          <div class="flex justify-between items-start flex-row-reverse">
+            <span
+              class="material-symbols-outlined text-secondary bg-secondary-container rounded-full p-2"
+              data-icon="menu_book"
+              >menu_book</span
+            >
+            <span class="text-headline-md font-headline-md text-primary"
+              >12</span
+            >
+          </div>
+          <div class="text-right">
+            <span class="text-label-md font-label-md text-on-surface-variant"
+              >حلقات مسندة</span
+            >
+          </div>
+        </div>
+        <!-- Card 2 -->
+        <div
+          class="bg-surface-container-lowest rounded-2xl p-md whisper-shadow hover-lift flex flex-col justify-between h-32"
+        >
+          <div class="flex justify-between items-start flex-row-reverse">
+            <span
+              class="material-symbols-outlined text-primary bg-primary-container rounded-full p-2"
+              data-icon="group"
+              >group</span
+            >
+            <span class="text-headline-md font-headline-md text-primary"
+              >145</span
+            >
+          </div>
+          <div class="text-right">
+            <span class="text-label-md font-label-md text-on-surface-variant"
+              >إجمالي الطلاب</span
+            >
+          </div>
+        </div>
+        <!-- Card 3 -->
+        <div
+          class="bg-surface-container-lowest rounded-2xl p-md whisper-shadow hover-lift flex flex-col justify-between h-32"
+        >
+          <div class="flex justify-between items-start flex-row-reverse">
+            <span
+              class="material-symbols-outlined text-tertiary bg-tertiary-container rounded-full p-2"
+              data-icon="fact_check"
+              >fact_check</span
+            >
+            <span class="text-headline-md font-headline-md text-primary"
+              >92%</span
+            >
+          </div>
+          <div class="text-right">
+            <span class="text-label-md font-label-md text-on-surface-variant"
+              >حضور اليوم</span
+            >
+          </div>
+        </div>
+        <!-- Card 4 -->
+        <div
+          class="bg-surface-container-lowest rounded-2xl p-md whisper-shadow hover-lift flex flex-col justify-between h-32"
+        >
+          <div class="flex justify-between items-start flex-row-reverse">
+            <span
+              class="material-symbols-outlined text-error bg-error-container rounded-full p-2"
+              data-icon="pending_actions"
+              >pending_actions</span
+            >
+            <span class="text-headline-md font-headline-md text-error">5</span>
+          </div>
+          <div class="text-right">
+            <span class="text-label-md font-label-md text-error"
+              >تبريرات معلقة</span
+            >
+          </div>
+        </div>
+      </section>
+      <div class="grid grid-cols-1 md:grid-cols-3 gap-xl">
+        <!-- Quick Actions -->
+        <section class="md:col-span-1">
+          <h2
+            class="text-headline-sm font-headline-sm text-primary mb-md text-right"
+          >
+            إجراءات سريعة
+          </h2>
+          <div
+            class="bg-surface-container-lowest rounded-2xl p-lg whisper-shadow grid grid-cols-2 gap-sm"
+          >
+            <button
+              class="flex flex-col items-center justify-center gap-sm p-md rounded-xl bg-surface-container hover:bg-surface-container-high transition-colors text-primary"
+            >
+              <span class="material-symbols-outlined" data-icon="person_add"
+                >person_add</span
+              >
+              <span class="text-label-sm font-label-sm">إضافة طالب</span>
+            </button>
+            <button
+              class="flex flex-col items-center justify-center gap-sm p-md rounded-xl bg-surface-container hover:bg-surface-container-high transition-colors text-primary"
+            >
+              <span
+                class="material-symbols-outlined"
+                data-icon="manage_accounts"
+                >manage_accounts</span
+              >
+              <span class="text-label-sm font-label-sm">تعديل طالب</span>
+            </button>
+            <button
+              class="flex flex-col items-center justify-center gap-sm p-md rounded-xl bg-surface-container hover:bg-surface-container-high transition-colors text-primary"
+            >
+              <span class="material-symbols-outlined" data-icon="rule"
+                >rule</span
+              >
+              <span class="text-label-sm font-label-sm">تبرير غياب</span>
+            </button>
+            <button
+              class="flex flex-col items-center justify-center gap-sm p-md rounded-xl bg-surface-container hover:bg-surface-container-high transition-colors text-primary"
+            >
+              <span class="material-symbols-outlined" data-icon="groups"
+                >groups</span
+              >
+              <span class="text-label-sm font-label-sm">عرض الطلاب</span>
+            </button>
+          </div>
+        </section>
+        <!-- Recent Students List -->
+        <section class="md:col-span-2">
+          <div class="flex justify-between items-center mb-md flex-row-reverse">
+            <h2 class="text-headline-sm font-headline-sm text-primary">
+              أحدث الطلاب المضافين
+            </h2>
+            <a
+              class="text-label-md font-label-md text-secondary hover:text-primary transition-colors"
+              href="#"
+              >عرض الكل</a
+            >
+          </div>
+          <div
+            class="bg-surface-container-lowest rounded-2xl whisper-shadow overflow-hidden"
+          >
+            <div class="flex flex-col divide-y divide-outline-variant">
+              <!-- Student Item -->
+              <div
+                class="p-md flex items-center justify-between hover:bg-surface-container-lowest transition-colors flex-row-reverse"
+              >
+                <div class="flex items-center gap-md flex-row-reverse">
+                  <div
+                    class="w-10 h-10 rounded-full bg-secondary-container flex items-center justify-center text-on-secondary-container font-headline-sm"
+                  >
+                    ع
+                  </div>
+                  <div class="text-right">
+                    <p
+                      class="text-body-md font-body-md text-on-surface font-semibold"
+                    >
+                      عمر بن الخطاب
+                    </p>
+                    <p
+                      class="text-label-sm font-label-sm text-on-surface-variant"
+                    >
+                      حلقة الإمام النوري
+                    </p>
+                  </div>
+                </div>
+                <span
+                  class="px-3 py-1 bg-primary-container text-on-primary-container text-label-sm font-label-sm rounded-full"
+                  >نشط</span
+                >
+              </div>
+              <!-- Student Item -->
+              <div
+                class="p-md flex items-center justify-between hover:bg-surface-container-lowest transition-colors flex-row-reverse"
+              >
+                <div class="flex items-center gap-md flex-row-reverse">
+                  <div
+                    class="w-10 h-10 rounded-full bg-tertiary-container flex items-center justify-center text-on-tertiary-container font-headline-sm"
+                  >
+                    ع
+                  </div>
+                  <div class="text-right">
+                    <p
+                      class="text-body-md font-body-md text-on-surface font-semibold"
+                    >
+                      عثمان بن عفان
+                    </p>
+                    <p
+                      class="text-label-sm font-label-sm text-on-surface-variant"
+                    >
+                      حلقة الإمام الشاطبي
+                    </p>
+                  </div>
+                </div>
+                <span
+                  class="px-3 py-1 bg-primary-container text-on-primary-container text-label-sm font-label-sm rounded-full"
+                  >نشط</span
+                >
+              </div>
+              <!-- Student Item -->
+              <div
+                class="p-md flex items-center justify-between hover:bg-surface-container-lowest transition-colors flex-row-reverse"
+              >
+                <div class="flex items-center gap-md flex-row-reverse">
+                  <div
+                    class="w-10 h-10 rounded-full bg-surface-variant flex items-center justify-center text-on-surface-variant font-headline-sm"
+                  >
+                    ع
+                  </div>
+                  <div class="text-right">
+                    <p
+                      class="text-body-md font-body-md text-on-surface font-semibold"
+                    >
+                      علي بن أبي طالب
+                    </p>
+                    <p
+                      class="text-label-sm font-label-sm text-on-surface-variant"
+                    >
+                      حلقة الإمام الجزري
+                    </p>
+                  </div>
+                </div>
+                <span
+                  class="px-3 py-1 bg-error-container text-on-error-container text-label-sm font-label-sm rounded-full"
+                  >منقطع</span
+                >
+              </div>
+            </div>
+          </div>
+        </section>
+      </div>
+    </main>
+    <!-- BottomNavBar (Mobile Only) -->
+    <nav
+      class="md:hidden bg-surface-container-lowest shadow-[0px_-4px_20px_rgba(18,52,59,0.04)] docked full-width bottom-0 rounded-t-xl fixed left-0 w-full z-50 flex flex-row-reverse justify-around items-center px-2 py-3"
+    >
+      <a
+        class="flex flex-col items-center justify-center bg-primary-container text-on-primary-container rounded-xl px-4 py-1 scale-90 transition-transform"
+        href="#"
+      >
+        <span class="material-symbols-outlined filled" data-icon="home"
+          >home</span
+        >
+        <span class="text-label-sm font-label-sm mt-1">الرئيسية</span>
+      </a>
+      <a
+        class="flex flex-col items-center justify-center text-on-surface-variant px-4 py-1 hover:bg-surface-container-high rounded-xl transition-colors"
+        href="#"
+      >
+        <span class="material-symbols-outlined" data-icon="group">group</span>
+        <span class="text-label-sm font-label-sm mt-1">الطلاب</span>
+      </a>
+      <a
+        class="flex flex-col items-center justify-center text-on-surface-variant px-4 py-1 hover:bg-surface-container-high rounded-xl transition-colors"
+        href="#"
+      >
+        <span class="material-symbols-outlined" data-icon="menu_book"
+          >menu_book</span
+        >
+        <span class="text-label-sm font-label-sm mt-1">الحلقات</span>
+      </a>
+      <a
+        class="flex flex-col items-center justify-center text-on-surface-variant px-4 py-1 hover:bg-surface-container-high rounded-xl transition-colors relative"
+        href="#"
+      >
+        <span class="material-symbols-outlined" data-icon="notifications"
+          >notifications</span
+        >
+        <span
+          class="absolute top-1 right-3 w-2 h-2 bg-error rounded-full"
+        ></span>
+        <span class="text-label-sm font-label-sm mt-1">الإشعارات</span>
+      </a>
+      <a
+        class="flex flex-col items-center justify-center text-on-surface-variant px-4 py-1 hover:bg-surface-container-high rounded-xl transition-colors"
+        href="#"
+      >
+        <span class="material-symbols-outlined" data-icon="person">person</span>
+        <span class="text-label-sm font-label-sm mt-1">الحساب</span>
+      </a>
+    </nav>
+  </body>
+</html>
