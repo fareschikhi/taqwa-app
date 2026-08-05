@@ -13,6 +13,8 @@ export class CreateManagerDto {
   @IsString() password: string;
   @IsOptional() @IsString() avatar?: string;
   @IsOptional() @IsArray() @IsInt({ each: true }) halaqaIds?: number[];
+  @IsOptional() @IsBoolean() canManageAccounts?: boolean;
+  @IsOptional() @IsBoolean() canDeleteAccounts?: boolean;
 }
 
 export class UpdateManagerDto {
@@ -22,6 +24,8 @@ export class UpdateManagerDto {
   @IsOptional() @IsString() password?: string;
   @IsOptional() @IsString() avatar?: string;
   @IsOptional() @IsArray() @IsInt({ each: true }) halaqaIds?: number[];
+  @IsOptional() @IsBoolean() canManageAccounts?: boolean;
+  @IsOptional() @IsBoolean() canDeleteAccounts?: boolean;
 }
 
 export class UpdateManagerStatusDto {
