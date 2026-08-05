@@ -1,6 +1,7 @@
 import {
   Body,
   Controller,
+  Delete,
   Get,
   Param,
   ParseIntPipe,
@@ -13,11 +14,16 @@ import { Role } from '@prisma/client';
 import { JwtAuthGuard } from '../../common/guards/jwt-auth.guard';
 import { RolesGuard } from '../../common/guards/roles.guard';
 import { StudentOwnershipGuard } from '../../common/guards/student-ownership.guard';
+import { ManagerPermissionGuard } from '../../common/guards/manager-permission.guard';
 import { Roles } from '../../common/decorators/roles.decorator';
+import {
+  ManagerPermission,
+  RequirePermission,
+} from '../../common/decorators/permissions.decorator';
 import { StudentsService } from './students.service';
 import { CreateStudentDto, UpdateStudentDto } from './dto/student.dto';
 
-@UseGuards(JwtAuthGuard, RolesGuard)
+@UseGuards(JwtAuthGuard, RolesGuard, ManagerPermissionGuard)
 @Controller('students')
 export class StudentsController {
   constructor(private studentsService: StudentsService) {}
@@ -56,13 +62,22 @@ export class StudentsController {
 
   @Post()
   @Roles(Role.ADMIN, Role.MANAGER)
+  @RequirePermission(ManagerPermission.MANAGE_ACCOUNTS)
   create(@Body() dto: CreateStudentDto) {
     return this.studentsService.create(dto);
   }
 
   @Patch(':id')
   @Roles(Role.ADMIN, Role.TEACHER, Role.MANAGER)
+  @RequirePermission(ManagerPermission.MANAGE_ACCOUNTS)
   update(@Param('id', ParseIntPipe) id: number, @Body() dto: UpdateStudentDto) {
     return this.studentsService.update(id, dto);
+  }
+
+  @Delete(':id')
+  @Roles(Role.ADMIN, Role.MANAGER)
+  @RequirePermission(ManagerPermission.DELETE_ACCOUNTS)
+  remove(@Param('id', ParseIntPipe) id: number) {
+    return this.studentsService.remove(id);
   }
 }
