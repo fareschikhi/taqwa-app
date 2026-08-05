@@ -30,6 +30,13 @@ export class UsersService {
         student: { select: { id: true } },
         parent: { select: { id: true } },
         teacher: { select: { id: true } },
+        manager: {
+          select: {
+            id: true,
+            canManageAccounts: true,
+            canDeleteAccounts: true,
+          },
+        },
       },
     });
     if (!user) throw new NotFoundException('المستخدم غير موجود');

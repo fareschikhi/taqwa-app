@@ -76,7 +76,16 @@ export class ParentsService {
           },
         },
       },
-      include: { parent: true },
+      select: {
+        id: true,
+        fullName: true,
+        email: true,
+        phone: true,
+        avatar: true,
+        isActive: true,
+        createdAt: true,
+        parent: true,
+      },
     });
   }
 
@@ -119,6 +128,15 @@ export class ParentsService {
     return this.prisma.user.update({
       where: { id: parent.userId },
       data: { isActive: false },
+      select: {
+        id: true,
+        fullName: true,
+        email: true,
+        phone: true,
+        avatar: true,
+        isActive: true,
+        createdAt: true,
+      },
     });
   }
 }

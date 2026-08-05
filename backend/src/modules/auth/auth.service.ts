@@ -34,6 +34,13 @@ export class AuthService {
         student: { select: { id: true } },
         parent: { select: { id: true } },
         teacher: { select: { id: true } },
+        manager: {
+          select: {
+            id: true,
+            canManageAccounts: true,
+            canDeleteAccounts: true,
+          },
+        },
       },
     });
 
@@ -58,6 +65,7 @@ export class AuthService {
         student: user.student ? { id: user.student.id } : undefined,
         parent: user.parent ? { id: user.parent.id } : undefined,
         teacher: user.teacher ? { id: user.teacher.id } : undefined,
+        manager: user.manager ?? undefined,
       },
     };
   }
@@ -75,6 +83,13 @@ export class AuthService {
         student: { select: { id: true } },
         parent: { select: { id: true } },
         teacher: { select: { id: true } },
+        manager: {
+          select: {
+            id: true,
+            canManageAccounts: true,
+            canDeleteAccounts: true,
+          },
+        },
       },
     });
   }

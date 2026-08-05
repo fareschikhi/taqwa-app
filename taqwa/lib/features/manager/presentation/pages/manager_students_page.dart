@@ -40,19 +40,13 @@ class _ManagerStudentsPageState extends ConsumerState<ManagerStudentsPage> {
 
   Future<void> _loadStudents() async {
     try {
-      final authState = ref.read(authProvider);
-      final userId = authState.user?.id;
+      final mgrId = ref.read(authProvider).user?.managerId;
+      if (mgrId == null) {
+        if (mounted) setState(() => _isLoading = false);
+        return;
+      }
+
       final dio = DioClient.instance;
-
-      final managersRes = await dio.get(ApiEndpoints.managers);
-      final allManagers = managersRes.data as List;
-      final myManager = allManagers.firstWhere(
-        (m) => m['user']?['id'] == userId,
-        orElse: () => null,
-      );
-      if (myManager == null) return;
-      final int mgrId = myManager['id'];
-
       final res = await dio.get('${ApiEndpoints.managers}/$mgrId/students');
       final students = (res.data as List).cast<Map<String, dynamic>>();
 
@@ -133,18 +127,21 @@ class _ManagerStudentsPageState extends ConsumerState<ManagerStudentsPage> {
                       ),
                     ),
                     SizedBox(height: 16.h),
-                    AppButton(
-                      label: 'إضافة طالب جديد',
-                      variant: AppButtonVariant.gradient,
-                      icon: Icons.person_add,
-                      onPressed: () => Navigator.push(
-                        context,
-                        MaterialPageRoute(
-                          builder: (_) => const ManagerAddStudentPage(),
-                        ),
-                      ).then((_) => _loadStudents()),
-                    ),
-                    SizedBox(height: 16.h),
+                    if (ref.watch(authProvider).user?.canManageAccounts ??
+                        false) ...[
+                      AppButton(
+                        label: 'إضافة طالب جديد',
+                        variant: AppButtonVariant.gradient,
+                        icon: Icons.person_add,
+                        onPressed: () => Navigator.push(
+                          context,
+                          MaterialPageRoute(
+                            builder: (_) => const ManagerAddStudentPage(),
+                          ),
+                        ).then((_) => _loadStudents()),
+                      ),
+                      SizedBox(height: 16.h),
+                    ],
                     SearchBarWidget(
                       hint: 'ابحث عن طالب بالاسم أو رقم الهاتف...',
                       controller: _searchController,

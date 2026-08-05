@@ -256,10 +256,12 @@ model Notification {
 // ─────────────────────────────────────────────────────────────────────────────
 
 model Manager {
-  id        Int      @id @default(autoincrement())
-  userId    Int      @unique
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
+  id                Int      @id @default(autoincrement())
+  userId            Int      @unique
+  canManageAccounts Boolean  @default(false)
+  canDeleteAccounts Boolean  @default(false)
+  createdAt         DateTime @default(now())
+  updatedAt         DateTime @updatedAt
 
   user           User                   @relation(fields: [userId], references: [id], onDelete: Cascade)
   halaqas        ManagerHalaqa[]

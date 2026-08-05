@@ -57,7 +57,8 @@ export class ManagersService {
 
   async create(dto: CreateManagerDto) {
     const hash = await bcrypt.hash(dto.password, 10);
-    const { password, halaqaIds, ...rest } = dto;
+    const { password, halaqaIds, canManageAccounts, canDeleteAccounts, ...rest } =
+      dto;
 
     const phone =
       rest.phone && rest.phone.trim() !== '' ? rest.phone.trim() : undefined;
@@ -73,14 +74,17 @@ export class ManagersService {
         role: 'MANAGER',
         avatar: rest.avatar,
         manager: {
-          create:
-            halaqaIds && halaqaIds.length > 0
+          create: {
+            canManageAccounts: canManageAccounts ?? false,
+            canDeleteAccounts: canDeleteAccounts ?? false,
+            ...(halaqaIds && halaqaIds.length > 0
               ? {
                   halaqas: {
                     create: halaqaIds.map((halaqaId) => ({ halaqaId })),
                   },
                 }
-              : {},
+              : {}),
+          },
         },
       },
       include: {
@@ -100,7 +104,8 @@ export class ManagersService {
     const manager = await this.prisma.manager.findUnique({ where: { id } });
     if (!manager) throw new NotFoundException('المدير غير موجود');
 
-    const { password, halaqaIds, ...rest } = dto;
+    const { password, halaqaIds, canManageAccounts, canDeleteAccounts, ...rest } =
+      dto;
     const userUpdate: any = { ...rest };
     if (password) userUpdate.passwordHash = await bcrypt.hash(password, 10);
 
@@ -108,6 +113,16 @@ export class ManagersService {
       where: { id: manager.userId },
       data: userUpdate,
     });
+
+    if (canManageAccounts !== undefined || canDeleteAccounts !== undefined) {
+      await this.prisma.manager.update({
+        where: { id },
+        data: {
+          ...(canManageAccounts !== undefined ? { canManageAccounts } : {}),
+          ...(canDeleteAccounts !== undefined ? { canDeleteAccounts } : {}),
+        },
+      });
+    }
 
     if (halaqaIds !== undefined) {
       await this.prisma.managerHalaqa.deleteMany({ where: { managerId: id } });

@@ -11,6 +11,9 @@ class UserModel {
   final int? studentId;
   final int? parentId;
   final int? teacherId;
+  final int? managerId;
+  final bool canManageAccounts;
+  final bool canDeleteAccounts;
 
   UserModel({
     required this.id,
@@ -23,6 +26,9 @@ class UserModel {
     this.studentId,
     this.parentId,
     this.teacherId,
+    this.managerId,
+    this.canManageAccounts = false,
+    this.canDeleteAccounts = false,
   });
 
   factory UserModel.fromJson(Map<String, dynamic> json) {
@@ -58,6 +64,16 @@ class UserModel {
       tId = json['teacher']['id'];
     }
 
+    int? mId;
+    bool canManage = false;
+    bool canDelete = false;
+    if (json['manager'] != null) {
+      final m = json['manager'] as Map<String, dynamic>;
+      mId = (m['id'] as num?)?.toInt();
+      canManage = (m['canManageAccounts'] as bool?) ?? false;
+      canDelete = (m['canDeleteAccounts'] as bool?) ?? false;
+    }
+
     return UserModel(
       id: (json['id'] as num?)?.toInt() ?? 0,
       fullName: (json['fullName'] as String?) ?? '',
@@ -69,6 +85,9 @@ class UserModel {
       studentId: sId,
       parentId: pId,
       teacherId: tId,
+      managerId: mId,
+      canManageAccounts: canManage,
+      canDeleteAccounts: canDelete,
     );
   }
 
@@ -84,6 +103,12 @@ class UserModel {
       if (studentId != null) 'student': {'id': studentId},
       if (parentId != null) 'parent': {'id': parentId},
       if (teacherId != null) 'teacher': {'id': teacherId},
+      if (managerId != null)
+        'manager': {
+          'id': managerId,
+          'canManageAccounts': canManageAccounts,
+          'canDeleteAccounts': canDeleteAccounts,
+        },
     };
   }
 }
