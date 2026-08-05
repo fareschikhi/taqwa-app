@@ -236,6 +236,15 @@ export class StudentsService {
     return this.prisma.user.update({
       where: { id: student.userId },
       data: { isActive: false },
+      select: {
+        id: true,
+        fullName: true,
+        email: true,
+        phone: true,
+        avatar: true,
+        isActive: true,
+        createdAt: true,
+      },
     });
   }
 }
