@@ -7,6 +7,8 @@ class ManagerModel {
   final bool? isActive;
   // final List<Map<String, dynamic>>? halaqas;
   final int? justificationsCount;
+  final bool canManageAccounts;
+  final bool canDeleteAccounts;
 
   const ManagerModel({
     this.id,
@@ -17,6 +19,8 @@ class ManagerModel {
     this.isActive,
     // this.halaqas,
     this.justificationsCount,
+    this.canManageAccounts = false,
+    this.canDeleteAccounts = false,
   });
 
   factory ManagerModel.fromJson(Map<String, dynamic> json) {
@@ -38,6 +42,8 @@ class ManagerModel {
       isActive: user?['isActive'] ?? json['isActive'],
       // halaqas: halaqasList,
       justificationsCount: count?['justifications'],
+      canManageAccounts: (json['canManageAccounts'] as bool?) ?? false,
+      canDeleteAccounts: (json['canDeleteAccounts'] as bool?) ?? false,
     );
   }
 

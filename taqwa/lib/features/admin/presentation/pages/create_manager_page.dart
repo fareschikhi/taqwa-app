@@ -35,6 +35,8 @@ class _CreateManagerPageState extends State<CreateManagerPage> {
   final ImagePicker _picker = ImagePicker();
   // List<HalaqaModel> _allHalaqas = [];
   // final Set<int> _selectedHalaqaIds = {};
+  bool _canManageAccounts = false;
+  bool _canDeleteAccounts = false;
   bool get _isEditing => widget.editManager != null;
 
   @override
@@ -46,6 +48,8 @@ class _CreateManagerPageState extends State<CreateManagerPage> {
       _nameController.text = m.fullName;
       _phoneController.text = m.phone ?? '';
       _emailController.text = m.email ?? '';
+      _canManageAccounts = m.canManageAccounts;
+      _canDeleteAccounts = m.canDeleteAccounts;
       // if (m.halaqas != null) {
       //   for (final h in m.halaqas!) {
       //     final id = h['id'];
@@ -129,6 +133,8 @@ class _CreateManagerPageState extends State<CreateManagerPage> {
         if (_passwordController.text.isNotEmpty)
           'password': _passwordController.text,
         if (avatarUrl != null) 'avatar': avatarUrl,
+        'canManageAccounts': _canManageAccounts,
+        'canDeleteAccounts': _canDeleteAccounts,
         // if (_selectedHalaqaIds.isNotEmpty)
         //   'halaqaIds': _selectedHalaqaIds.toList(),
       };
@@ -416,6 +422,27 @@ class _CreateManagerPageState extends State<CreateManagerPage> {
                       //       ),
                       //     );
                       //   }),
+                      SizedBox(height: 24.h),
+                      _SectionHeader(
+                        icon: Icons.shield_outlined,
+                        title: 'الصلاحيات',
+                      ),
+                      SizedBox(height: 12.h),
+                      _PrivilegeSwitch(
+                        title: 'إنشاء وتعديل الحسابات',
+                        subtitle: 'إضافة أو تعديل طالب أو ولي أمر وربطهم',
+                        value: _canManageAccounts,
+                        onChanged: (v) =>
+                            setState(() => _canManageAccounts = v),
+                      ),
+                      SizedBox(height: 8.h),
+                      _PrivilegeSwitch(
+                        title: 'حذف الحسابات',
+                        subtitle: 'حذف حساب طالب أو ولي أمر',
+                        value: _canDeleteAccounts,
+                        onChanged: (v) =>
+                            setState(() => _canDeleteAccounts = v),
+                      ),
                       SizedBox(height: 32.h),
                       // Buttons
                       AppButton(
@@ -534,6 +561,65 @@ class _SectionHeader extends StatelessWidget {
         SizedBox(width: 8.w),
         Icon(icon, color: AppColors.primary, size: 22.w),
       ],
+    );
+  }
+}
+
+class _PrivilegeSwitch extends StatelessWidget {
+  const _PrivilegeSwitch({
+    required this.title,
+    required this.subtitle,
+    required this.value,
+    required this.onChanged,
+  });
+  final String title;
+  final String subtitle;
+  final bool value;
+  final ValueChanged<bool> onChanged;
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      padding: EdgeInsets.symmetric(horizontal: 12.w, vertical: 8.h),
+      decoration: BoxDecoration(
+        color: value
+            ? AppColors.primaryContainer.withValues(alpha: 0.3)
+            : AppColors.surfaceContainerLowest,
+        borderRadius: BorderRadius.circular(AppConstants.radiusMd),
+        border: Border.all(
+          color: value ? AppColors.primaryContainer : AppColors.outlineVariant,
+        ),
+      ),
+      child: Row(
+        children: [
+          Switch(
+            value: value,
+            onChanged: onChanged,
+            activeThumbColor: AppColors.primary,
+          ),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.end,
+              children: [
+                Text(
+                  title,
+                  style: AppTextStyles.bodyMd.copyWith(
+                    color: AppColors.onSurface,
+                    fontWeight: value ? FontWeight.w600 : FontWeight.w400,
+                  ),
+                ),
+                Text(
+                  subtitle,
+                  style: AppTextStyles.labelSm.copyWith(
+                    color: AppColors.onSurfaceVariant,
+                  ),
+                  textAlign: TextAlign.end,
+                ),
+              ],
+            ),
+          ),
+        ],
+      ),
     );
   }
 }
