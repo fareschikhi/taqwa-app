@@ -7,6 +7,7 @@ import '../../../../core/constants/app_constants.dart';
 import '../../../../core/providers/auth_provider.dart';
 import '../../../../core/network/dio_client.dart';
 import '../../../../core/network/api_endpoints.dart';
+import '../widgets/justification_form_card.dart';
 
 class ManagerDashboardPage extends ConsumerStatefulWidget {
   const ManagerDashboardPage({super.key});
@@ -18,6 +19,8 @@ class ManagerDashboardPage extends ConsumerStatefulWidget {
 
 class _ManagerDashboardPageState extends ConsumerState<ManagerDashboardPage> {
   Map<String, dynamic>? _stats;
+  List<dynamic> _students = [];
+  int? _managerId;
   bool _isLoading = true;
 
   @override
@@ -101,6 +104,8 @@ class _ManagerDashboardPageState extends ConsumerState<ManagerDashboardPage> {
                 : 0,
             'pendingJustifications': justifications.length,
           };
+          _managerId = mgrId;
+          _students = students;
           _isLoading = false;
         });
       }
@@ -138,6 +143,13 @@ class _ManagerDashboardPageState extends ConsumerState<ManagerDashboardPage> {
                             SizedBox(height: 20.h),
                             _buildStatCards(),
                             SizedBox(height: 24.h),
+                            if (_managerId != null)
+                              JustificationFormCard(
+                                managerId: _managerId!,
+                                students: _students,
+                                onSaved: _loadData,
+                              ),
+                            SizedBox(height: 32.h),
                           ],
                         ),
                       ),
