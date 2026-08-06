@@ -17,3 +17,6 @@ taqwa/**/flutter_export_environment.sh
 .DS_Store
 Thumbs.db
 
+# Database dumps (contain password hashes — never commit)
+backups/
+*.sql.bak
