@@ -38,6 +38,13 @@ export class AbsenceJustificationController {
     );
   }
 
+  // Declared before @Get(':id') so 'unjustified' isn't parsed as an id.
+  @Get('unjustified')
+  @Roles(Role.ADMIN, Role.MANAGER)
+  findUnjustified(@Query('managerId', ParseIntPipe) managerId: number) {
+    return this.absenceJustificationService.findUnjustified(managerId);
+  }
+
   @Get(':id')
   @Roles(Role.ADMIN, Role.MANAGER)
   findOne(@Param('id', ParseIntPipe) id: number) {

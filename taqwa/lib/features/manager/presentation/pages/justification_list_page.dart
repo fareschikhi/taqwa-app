@@ -5,8 +5,11 @@ import '../../../../core/theme/app_colors.dart';
 import '../../../../core/theme/app_text_styles.dart';
 import '../../../../core/constants/app_constants.dart';
 import '../../../../core/providers/auth_provider.dart';
+import '../../../../core/widgets/avatar_widget.dart';
+import '../../../../core/widgets/search_bar_widget.dart';
 import '../../../../features/data/repositories/absence_justification_repository.dart';
 import '../../../../features/data/models/absence_justification_model.dart';
+import '../../../../features/data/models/unjustified_attendance_model.dart';
 
 class JustificationListPage extends ConsumerStatefulWidget {
   const JustificationListPage({super.key});
@@ -20,8 +23,11 @@ class _JustificationListPageState
     extends ConsumerState<JustificationListPage> {
   final _repo = AbsenceJustificationRepository();
   List<AbsenceJustificationModel> _justifications = [];
+  List<UnjustifiedAttendanceModel> _unjustified = [];
   bool _isLoading = true;
-  int? _managerId;
+
+  /// 0 = pending (unjustified), 1 = already justified.
+  int _filterIndex = 0;
 
   @override
   void initState() {
@@ -33,15 +39,19 @@ class _JustificationListPageState
     try {
       // GET /managers is ADMIN-only, so read the manager row id off the auth
       // user instead of looking it up.
-      _managerId = ref.read(authProvider).user?.managerId;
+      final managerId = ref.read(authProvider).user?.managerId;
 
-      final list = await _repo.getAllJustifications(
-        managerId: _managerId,
+      final justifications = await _repo.getAllJustifications(
+        managerId: managerId,
       );
+      final unjustified = managerId == null
+          ? <UnjustifiedAttendanceModel>[]
+          : await _repo.getUnjustified(managerId);
 
       if (mounted) {
         setState(() {
-          _justifications = list;
+          _justifications = justifications;
+          _unjustified = unjustified;
           _isLoading = false;
         });
       }
@@ -89,6 +99,14 @@ class _JustificationListPageState
                       style: AppTextStyles.bodyMd
                           .copyWith(color: AppColors.onSurfaceVariant),
                     ),
+                    SizedBox(height: 12.h),
+                    FilterChipGroup(
+                      filters: [
+                        'بانتظار التبرير (${_unjustified.length})',
+                        'مبررة (${_justifications.length})',
+                      ],
+                      onChanged: (i) => setState(() => _filterIndex = i),
+                    ),
                   ],
                 ),
               ),
@@ -97,24 +115,7 @@ class _JustificationListPageState
                     ? const Center(
                         child: CircularProgressIndicator(
                             color: AppColors.primary))
-                    : _justifications.isEmpty
-                        ? SingleChildScrollView(
-                            physics: const AlwaysScrollableScrollPhysics(),
-                            child: Container(
-                              height: 350.h,
-                              alignment: Alignment.center,
-                              child: _buildEmptyState(),
-                            ),
-                          )
-                        : ListView.separated(
-                            physics: const AlwaysScrollableScrollPhysics(),
-                            padding: EdgeInsets.symmetric(horizontal: 16.w),
-                            itemCount: _justifications.length,
-                            separatorBuilder: (_, _) =>
-                                SizedBox(height: 12.h),
-                            itemBuilder: (_, i) =>
-                                _JustificationCard(item: _justifications[i]),
-                          ),
+                    : _buildList(),
               ),
             ],
           ),
@@ -123,7 +124,33 @@ class _JustificationListPageState
     );
   }
 
-  Widget _buildEmptyState() {
+  Widget _buildList() {
+    final showingPending = _filterIndex == 0;
+    final count = showingPending ? _unjustified.length : _justifications.length;
+
+    if (count == 0) {
+      return SingleChildScrollView(
+        physics: const AlwaysScrollableScrollPhysics(),
+        child: Container(
+          height: 350.h,
+          alignment: Alignment.center,
+          child: _buildEmptyState(showingPending: showingPending),
+        ),
+      );
+    }
+
+    return ListView.separated(
+      physics: const AlwaysScrollableScrollPhysics(),
+      padding: EdgeInsets.symmetric(horizontal: 16.w),
+      itemCount: count,
+      separatorBuilder: (_, _) => SizedBox(height: 12.h),
+      itemBuilder: (_, i) => showingPending
+          ? _UnjustifiedCard(item: _unjustified[i])
+          : _JustificationCard(item: _justifications[i]),
+    );
+  }
+
+  Widget _buildEmptyState({required bool showingPending}) {
     return Center(
       child: Column(
         mainAxisAlignment: MainAxisAlignment.center,
@@ -136,23 +163,102 @@ class _JustificationListPageState
               shape: BoxShape.circle,
             ),
             child: Icon(
-              Icons.rule_outlined,
+              showingPending ? Icons.check_circle_outline : Icons.rule_outlined,
               size: 40.w,
               color: AppColors.onSurfaceVariant,
             ),
           ),
           SizedBox(height: 16.h),
           Text(
-            'لا توجد تبريرات بعد',
+            showingPending
+                ? 'لا توجد غيابات بانتظار التبرير'
+                : 'لا توجد تبريرات بعد',
             style: AppTextStyles.headlineSm
                 .copyWith(color: AppColors.onSurface),
           ),
           SizedBox(height: 8.h),
           Text(
-            'ستظهر هنا تبريرات الغياب التي تضيفها',
+            showingPending
+                ? 'كل حالات الغياب والتأخر لدى طلابك مبررة'
+                : 'ستظهر هنا تبريرات الغياب التي تضيفها',
             style: AppTextStyles.bodyMd
                 .copyWith(color: AppColors.onSurfaceVariant),
             textAlign: TextAlign.center,
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+/// An absence or lateness still waiting for a justification.
+class _UnjustifiedCard extends StatelessWidget {
+  const _UnjustifiedCard({required this.item});
+  final UnjustifiedAttendanceModel item;
+
+  @override
+  Widget build(BuildContext context) {
+    final statusBg =
+        item.isLate ? AppColors.tertiaryContainer : AppColors.errorContainer;
+    final statusFg = item.isLate
+        ? AppColors.onTertiaryContainer
+        : AppColors.onErrorContainer;
+    final initial =
+        item.studentName.isNotEmpty ? item.studentName[0] : '؟';
+
+    return Container(
+      decoration: BoxDecoration(
+        color: AppColors.surfaceContainerLowest,
+        borderRadius: BorderRadius.circular(AppConstants.radiusXl),
+        boxShadow: const [
+          BoxShadow(
+            color: Color.fromRGBO(18, 52, 59, 0.04),
+            blurRadius: 20,
+            offset: Offset(0, 4),
+          ),
+        ],
+      ),
+      padding: EdgeInsets.all(16.w),
+      child: Row(
+        children: [
+          Container(
+            padding: EdgeInsets.symmetric(horizontal: 10.w, vertical: 4.h),
+            decoration: BoxDecoration(
+              color: statusBg,
+              borderRadius: BorderRadius.circular(AppConstants.radiusMd),
+            ),
+            child: Text(
+              item.statusLabel,
+              style: AppTextStyles.labelSm.copyWith(color: statusFg),
+            ),
+          ),
+          const Spacer(),
+          Column(
+            crossAxisAlignment: CrossAxisAlignment.end,
+            children: [
+              Text(
+                item.studentName,
+                style: AppTextStyles.headlineSm
+                    .copyWith(color: AppColors.onSurface),
+              ),
+              SizedBox(height: 2.h),
+              Text(
+                item.formattedDate,
+                style: AppTextStyles.labelMd
+                    .copyWith(color: AppColors.onSurfaceVariant),
+              ),
+            ],
+          ),
+          SizedBox(width: 12.w),
+          AvatarWidget(
+            avatarUrl: item.studentAvatar,
+            size: 44.w,
+            fallback: Text(
+              initial,
+              style: AppTextStyles.headlineSm.copyWith(
+                color: AppColors.onPrimaryContainer,
+              ),
+            ),
           ),
         ],
       ),

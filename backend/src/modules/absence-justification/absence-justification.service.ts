@@ -1,4 +1,5 @@
 import { Injectable, NotFoundException } from '@nestjs/common';
+import { AttendanceStatus } from '@prisma/client';
 import { PrismaService } from '../../prisma/prisma.service';
 import {
   CreateAbsenceJustificationDto,
@@ -33,6 +34,35 @@ export class AbsenceJustificationService {
       },
       include: this.include,
       orderBy: { createdAt: 'desc' },
+    });
+  }
+
+  /// Absent/late attendance rows for the manager's students that nobody has
+  /// justified yet. Answering this in one query keeps callers from walking
+  /// every student's attendance client-side.
+  async findUnjustified(managerId: number) {
+    const manager = await this.prisma.manager.findUnique({
+      where: { id: managerId },
+      include: { halaqas: { select: { halaqaId: true } } },
+    });
+    if (!manager) throw new NotFoundException('المدير غير موجود');
+
+    const halaqaIds = manager.halaqas.map((h) => h.halaqaId);
+
+    return this.prisma.attendance.findMany({
+      where: {
+        status: { in: [AttendanceStatus.ABSENT, AttendanceStatus.LATE] },
+        justification: { is: null },
+        student: { halaqaId: { in: halaqaIds } },
+      },
+      include: {
+        student: {
+          include: {
+            user: { select: { id: true, fullName: true, avatar: true } },
+          },
+        },
+      },
+      orderBy: { date: 'desc' },
     });
   }
 

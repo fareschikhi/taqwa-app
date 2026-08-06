@@ -2,6 +2,7 @@ import 'package:dio/dio.dart';
 import '../../../../core/network/dio_client.dart';
 import '../../../../core/network/api_endpoints.dart';
 import '../models/absence_justification_model.dart';
+import '../models/unjustified_attendance_model.dart';
 
 class AbsenceJustificationRemoteDatasource {
   final Dio _dio = DioClient.instance;
@@ -20,6 +21,16 @@ class AbsenceJustificationRemoteDatasource {
     );
     return (res.data as List)
         .map((e) => AbsenceJustificationModel.fromJson(e))
+        .toList();
+  }
+
+  Future<List<UnjustifiedAttendanceModel>> getUnjustified(int managerId) async {
+    final res = await _dio.get(
+      '${ApiEndpoints.absenceJustifications}/unjustified',
+      queryParameters: {'managerId': managerId},
+    );
+    return (res.data as List)
+        .map((e) => UnjustifiedAttendanceModel.fromJson(e))
         .toList();
   }
 

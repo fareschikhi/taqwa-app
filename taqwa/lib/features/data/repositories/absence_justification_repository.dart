@@ -1,6 +1,7 @@
 import 'package:dio/dio.dart';
 import '../datasources/absence_justification_remote_datasource.dart';
 import '../models/absence_justification_model.dart';
+import '../models/unjustified_attendance_model.dart';
 
 class AbsenceJustificationRepository {
   final _ds = AbsenceJustificationRemoteDatasource();
@@ -10,6 +11,9 @@ class AbsenceJustificationRepository {
     int? studentId,
   }) =>
       _ds.getAll(managerId: managerId, studentId: studentId);
+
+  Future<List<UnjustifiedAttendanceModel>> getUnjustified(int managerId) =>
+      _ds.getUnjustified(managerId);
 
   Future<AbsenceJustificationModel> getJustification(int id) =>
       _ds.getOne(id);
