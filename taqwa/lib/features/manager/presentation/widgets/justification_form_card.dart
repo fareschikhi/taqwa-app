@@ -7,6 +7,7 @@ import '../../../../core/network/dio_client.dart';
 import '../../../../core/network/api_endpoints.dart';
 import '../../../../core/widgets/app_button.dart';
 import '../../../../core/widgets/app_text_field.dart';
+import '../../../../core/widgets/user_selector_field.dart';
 import '../../../../features/data/repositories/absence_justification_repository.dart';
 
 /// Reason options offered to the manager, mapped onto [JustificationReasonType]
@@ -47,36 +48,24 @@ class JustificationFormCard extends StatefulWidget {
 
 class _JustificationFormCardState extends State<JustificationFormCard> {
   final _repo = AbsenceJustificationRepository();
-  final _searchController = TextEditingController();
   final _reasonController = TextEditingController();
   final _dateController = TextEditingController();
 
-  Map<String, dynamic>? _selectedStudent;
+  int? _selectedStudentId;
   DateTime? _selectedDate;
   String _reasonType = 'ILLNESS';
-  bool _isPickerOpen = false;
   bool _isSaving = false;
 
   @override
   void dispose() {
-    _searchController.dispose();
     _reasonController.dispose();
     _dateController.dispose();
     super.dispose();
   }
 
-  List<dynamic> get _filteredStudents {
-    final q = _searchController.text.trim().toLowerCase();
-    if (q.isEmpty) return widget.students;
-    return widget.students.where((s) {
-      final name = (s['user']?['fullName'] as String? ?? '').toLowerCase();
-      final halaqa = (s['halaqa']?['name'] as String? ?? '').toLowerCase();
-      return name.contains(q) || halaqa.contains(q);
-    }).toList();
-  }
-
-  String _studentName(Map<String, dynamic> student) =>
-      student['user']?['fullName'] as String? ?? 'غير معروف';
+  List<UserOption> get _studentOptions => widget.students
+      .map((s) => UserOption.fromJson(s as Map<String, dynamic>))
+      .toList();
 
   String _formatDate(DateTime d) =>
       '${d.day.toString().padLeft(2, '0')}/${d.month.toString().padLeft(2, '0')}/${d.year}';
@@ -98,7 +87,7 @@ class _JustificationFormCardState extends State<JustificationFormCard> {
       initialDate: _selectedDate ?? now,
       firstDate: DateTime(now.year - 1),
       lastDate: now,
-      locale: const Locale('ar'),
+      locale: const Locale('fr'),
     );
     if (picked != null) {
       setState(() {
@@ -130,11 +119,11 @@ class _JustificationFormCardState extends State<JustificationFormCard> {
   }
 
   Future<void> _submit() async {
-    final student = _selectedStudent;
+    final studentId = _selectedStudentId;
     final date = _selectedDate;
     final reason = _reasonController.text.trim();
 
-    if (student == null) {
+    if (studentId == null) {
       _showMessage('يرجى اختيار الطالب', isError: true);
       return;
     }
@@ -149,7 +138,6 @@ class _JustificationFormCardState extends State<JustificationFormCard> {
 
     setState(() => _isSaving = true);
     try {
-      final studentId = student['id'] as int;
       final attendance = await _findAttendance(studentId, date);
 
       if (attendance == null) {
@@ -184,13 +172,11 @@ class _JustificationFormCardState extends State<JustificationFormCard> {
       if (!mounted) return;
       _showMessage('تم حفظ العذر بنجاح');
       setState(() {
-        _selectedStudent = null;
+        _selectedStudentId = null;
         _selectedDate = null;
         _reasonType = 'ILLNESS';
         _reasonController.clear();
-        _searchController.clear();
         _dateController.clear();
-        _isPickerOpen = false;
       });
       widget.onSaved?.call();
     } catch (e) {
@@ -221,7 +207,15 @@ class _JustificationFormCardState extends State<JustificationFormCard> {
         children: [
           _buildHeader(),
           SizedBox(height: 20.h),
-          _buildStudentPicker(),
+          UserSelectorField(
+            label: 'الطالب *',
+            hint: 'ابحث واختر الطالب',
+            searchHint: 'ابحث باسم الطالب',
+            emptyText: 'لا يوجد طالب مطابق',
+            options: _studentOptions,
+            selectedId: _selectedStudentId,
+            onSelected: (o) => setState(() => _selectedStudentId = o.id),
+          ),
           SizedBox(height: 16.h),
           AppTextField(
             label: 'تاريخ الغياب',
@@ -295,178 +289,6 @@ class _JustificationFormCardState extends State<JustificationFormCard> {
           ],
         ),
       ],
-    );
-  }
-
-  Widget _buildStudentPicker() {
-    final selected = _selectedStudent;
-
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.end,
-      children: [
-        Text(
-          'الطالب *',
-          style: AppTextStyles.labelMd.copyWith(
-            color: AppColors.onSurfaceVariant,
-          ),
-        ),
-        SizedBox(height: 6.h),
-        GestureDetector(
-          onTap: () => setState(() => _isPickerOpen = !_isPickerOpen),
-          child: Container(
-            padding: EdgeInsets.symmetric(horizontal: 16.w, vertical: 14.h),
-            decoration: BoxDecoration(
-              color: AppColors.surfaceContainerLowest,
-              borderRadius: BorderRadius.circular(AppConstants.radiusMd),
-              border: Border.all(
-                color: _isPickerOpen
-                    ? AppColors.inputFocusBorder
-                    : AppColors.inputBorder,
-                width: _isPickerOpen ? 1.5 : 1,
-              ),
-            ),
-            child: Row(
-              children: [
-                Icon(
-                  _isPickerOpen ? Icons.expand_less : Icons.expand_more,
-                  color: AppColors.onSurfaceVariant,
-                  size: 22.w,
-                ),
-                Expanded(
-                  child: Text(
-                    selected == null ? 'ابحث واختر الطالب' : _studentName(selected),
-                    textAlign: TextAlign.right,
-                    style: AppTextStyles.bodyMd.copyWith(
-                      color: selected == null
-                          ? AppColors.inputPlaceholder
-                          : AppColors.onSurface,
-                    ),
-                  ),
-                ),
-              ],
-            ),
-          ),
-        ),
-        if (_isPickerOpen) ...[
-          SizedBox(height: 8.h),
-          _buildStudentPickerPanel(),
-        ],
-      ],
-    );
-  }
-
-  Widget _buildStudentPickerPanel() {
-    final results = _filteredStudents;
-
-    return Container(
-      decoration: BoxDecoration(
-        color: AppColors.surfaceContainerLow,
-        borderRadius: BorderRadius.circular(AppConstants.radiusMd),
-        border: Border.all(color: AppColors.inputBorder),
-      ),
-      padding: EdgeInsets.all(8.w),
-      child: Column(
-        children: [
-          TextField(
-            controller: _searchController,
-            autofocus: true,
-            textAlign: TextAlign.right,
-            textDirection: TextDirection.rtl,
-            onChanged: (_) => setState(() {}),
-            style: AppTextStyles.bodyMd.copyWith(color: AppColors.onSurface),
-            decoration: InputDecoration(
-              hintText: 'ابحث بالاسم أو الحلقة',
-              hintStyle: AppTextStyles.labelMd.copyWith(
-                color: AppColors.inputPlaceholder,
-              ),
-              prefixIcon: Icon(
-                Icons.search,
-                color: AppColors.onSurfaceVariant,
-                size: 20.w,
-              ),
-              filled: true,
-              fillColor: AppColors.surfaceContainerLowest,
-              isDense: true,
-              contentPadding: EdgeInsets.symmetric(
-                horizontal: 12.w,
-                vertical: 10.h,
-              ),
-              border: OutlineInputBorder(
-                borderRadius: BorderRadius.circular(AppConstants.radiusMd),
-                borderSide: const BorderSide(color: AppColors.inputBorder),
-              ),
-              enabledBorder: OutlineInputBorder(
-                borderRadius: BorderRadius.circular(AppConstants.radiusMd),
-                borderSide: const BorderSide(color: AppColors.inputBorder),
-              ),
-              focusedBorder: OutlineInputBorder(
-                borderRadius: BorderRadius.circular(AppConstants.radiusMd),
-                borderSide: const BorderSide(
-                  color: AppColors.inputFocusBorder,
-                  width: 1.5,
-                ),
-              ),
-            ),
-          ),
-          SizedBox(height: 8.h),
-          ConstrainedBox(
-            constraints: BoxConstraints(maxHeight: 200.h),
-            child: results.isEmpty
-                ? Padding(
-                    padding: EdgeInsets.symmetric(vertical: 20.h),
-                    child: Text(
-                      'لا يوجد طالب مطابق',
-                      style: AppTextStyles.labelMd.copyWith(
-                        color: AppColors.onSurfaceVariant,
-                      ),
-                    ),
-                  )
-                : ListView.builder(
-                    shrinkWrap: true,
-                    padding: EdgeInsets.zero,
-                    itemCount: results.length,
-                    itemBuilder: (_, i) {
-                      final student = results[i] as Map<String, dynamic>;
-                      final halaqa = student['halaqa']?['name'] as String?;
-                      return InkWell(
-                        onTap: () => setState(() {
-                          _selectedStudent = student;
-                          _isPickerOpen = false;
-                          _searchController.clear();
-                        }),
-                        borderRadius: BorderRadius.circular(
-                          AppConstants.radiusMd,
-                        ),
-                        child: Padding(
-                          padding: EdgeInsets.symmetric(
-                            horizontal: 10.w,
-                            vertical: 10.h,
-                          ),
-                          child: Column(
-                            crossAxisAlignment: CrossAxisAlignment.end,
-                            children: [
-                              Text(
-                                _studentName(student),
-                                style: AppTextStyles.bodyMd.copyWith(
-                                  color: AppColors.onSurface,
-                                ),
-                              ),
-                              if (halaqa != null && halaqa.isNotEmpty)
-                                Text(
-                                  halaqa,
-                                  style: AppTextStyles.labelSm.copyWith(
-                                    color: AppColors.onSurfaceVariant,
-                                  ),
-                                ),
-                            ],
-                          ),
-                        ),
-                      );
-                    },
-                  ),
-          ),
-        ],
-      ),
     );
   }
 
