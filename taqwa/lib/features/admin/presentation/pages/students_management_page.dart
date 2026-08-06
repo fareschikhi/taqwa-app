@@ -4,8 +4,10 @@ import '../../../../core/theme/app_colors.dart';
 import '../../../../core/theme/app_text_styles.dart';
 import '../../../../core/constants/app_constants.dart';
 import '../../../../core/widgets/search_bar_widget.dart';
+import '../../../../core/widgets/confirm_delete_dialog.dart';
 import '../../../../core/network/dio_client.dart';
 import '../../../../core/network/api_endpoints.dart';
+import '../../../../features/data/repositories/student_repository.dart';
 import 'create_student_page.dart';
 import '../admin_shell.dart';
 
@@ -23,6 +25,30 @@ class _StudentsManagementPageState extends State<StudentsManagementPage> {
   List<String> _halaqaFilters = ['الكل'];
   int _filterIndex = 0;
   bool _isLoading = true;
+  final _studentRepo = StudentRepository();
+
+  Future<void> _deleteStudent(int id) async {
+    final confirmed = await ConfirmDeleteDialog.show(
+      context,
+      title: 'حذف الطالب',
+      message: 'سيتم حذف حساب الطالب وجميع سجلاته نهائياً. '
+          'لا يمكن التراجع عن هذا الإجراء.',
+    );
+    if (!confirmed) return;
+    try {
+      await _studentRepo.deleteStudent(id);
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('تم حذف الطالب بنجاح')),
+      );
+      _load();
+    } catch (e) {
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text(StudentRepository.errorMessage(e))),
+      );
+    }
+  }
 
   @override
   void initState() {
@@ -187,8 +213,12 @@ class _StudentsManagementPageState extends State<StudentsManagementPage> {
                             padding: EdgeInsets.symmetric(horizontal: 16.w),
                             itemCount: _filtered.length,
                             separatorBuilder: (_, _) => SizedBox(height: 16.h),
-                            itemBuilder: (_, i) =>
-                                _StudentCard(student: _filtered[i]),
+                            itemBuilder: (_, i) => _StudentCard(
+                              student: _filtered[i],
+                              onDelete: () => _deleteStudent(
+                                _filtered[i]['id'] as int,
+                              ),
+                            ),
                           ),
               ),
             ],
@@ -209,8 +239,9 @@ class _StudentsManagementPageState extends State<StudentsManagementPage> {
 }
 
 class _StudentCard extends StatelessWidget {
-  const _StudentCard({required this.student});
+  const _StudentCard({required this.student, required this.onDelete});
   final Map<String, dynamic> student;
+  final VoidCallback onDelete;
 
   @override
   Widget build(BuildContext context) {
@@ -313,6 +344,20 @@ class _StudentCard extends StatelessWidget {
               SizedBox(width: 8.w),
               Expanded(
                 child: _InfoCell(label: 'حفظ', value: '$memCount'),
+              ),
+            ],
+          ),
+          SizedBox(height: 12.h),
+          Row(
+            mainAxisAlignment: MainAxisAlignment.end,
+            children: [
+              GestureDetector(
+                onTap: onDelete,
+                child: Icon(
+                  Icons.delete_outline,
+                  color: AppColors.error,
+                  size: 20.w,
+                ),
               ),
             ],
           ),

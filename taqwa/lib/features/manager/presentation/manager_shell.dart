@@ -5,6 +5,7 @@ import '../../../core/theme/app_text_styles.dart';
 import '../../../core/constants/app_constants.dart';
 import 'pages/manager_dashboard_page.dart';
 import 'pages/manager_students_page.dart';
+import 'pages/manager_parents_page.dart';
 import 'pages/justification_list_page.dart';
 
 class ManagerShell extends StatefulWidget {
@@ -20,6 +21,7 @@ class _ManagerShellState extends State<ManagerShell> {
   final List<Widget> _pages = const [
     ManagerDashboardPage(),
     ManagerStudentsPage(),
+    ManagerParentsPage(),
     JustificationListPage(),
   ];
 
@@ -42,6 +44,11 @@ class _ManagerShellState extends State<ManagerShell> {
         icon: Icons.group_outlined,
         activeIcon: Icons.group,
         label: 'الطلاب',
+      ),
+      _NavItem(
+        icon: Icons.family_restroom_outlined,
+        activeIcon: Icons.family_restroom,
+        label: 'أولياء الأمور',
       ),
       _NavItem(
         icon: Icons.rule_outlined,

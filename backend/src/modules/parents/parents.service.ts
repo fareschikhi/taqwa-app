@@ -125,18 +125,8 @@ export class ParentsService {
   async remove(id: number) {
     const parent = await this.prisma.parent.findUnique({ where: { id } });
     if (!parent) throw new NotFoundException('ولي الأمر غير موجود');
-    return this.prisma.user.update({
-      where: { id: parent.userId },
-      data: { isActive: false },
-      select: {
-        id: true,
-        fullName: true,
-        email: true,
-        phone: true,
-        avatar: true,
-        isActive: true,
-        createdAt: true,
-      },
-    });
+    // Hard delete — removing the user cascades to the parent row. Children are
+    // kept: students.parentId is ON DELETE SET NULL.
+    return this.prisma.user.delete({ where: { id: parent.userId } });
   }
 }

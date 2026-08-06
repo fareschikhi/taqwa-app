@@ -4,8 +4,10 @@ import '../../../../core/theme/app_colors.dart';
 import '../../../../core/theme/app_text_styles.dart';
 import '../../../../core/constants/app_constants.dart';
 import '../../../../core/widgets/search_bar_widget.dart';
+import '../../../../core/widgets/confirm_delete_dialog.dart';
 import '../../../../core/network/dio_client.dart';
 import '../../../../core/network/api_endpoints.dart';
+import '../../../../features/data/repositories/halaqa_repository.dart';
 import 'create_halaqa_page.dart';
 import '../admin_shell.dart';
 
@@ -21,6 +23,30 @@ class _HalaqasManagementPageState extends State<HalaqasManagementPage> {
   List<Map<String, dynamic>> _halaqas = [];
   List<Map<String, dynamic>> _filtered = [];
   bool _isLoading = true;
+  final _halaqaRepo = HalaqaRepository();
+
+  Future<void> _deleteHalaqa(int id) async {
+    final confirmed = await ConfirmDeleteDialog.show(
+      context,
+      title: 'حذف الحلقة',
+      message: 'سيتم حذف الحلقة نهائياً. '
+          'سيبقى الطلاب في النظام دون حلقة مسندة.',
+    );
+    if (!confirmed) return;
+    try {
+      await _halaqaRepo.deleteHalaqa(id);
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('تم حذف الحلقة بنجاح')),
+      );
+      _load();
+    } catch (e) {
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text(HalaqaRepository.errorMessage(e))),
+      );
+    }
+  }
 
   @override
   void initState() {
@@ -160,8 +186,12 @@ class _HalaqasManagementPageState extends State<HalaqasManagementPage> {
                               childAspectRatio: 0.85,
                             ),
                             itemCount: _filtered.length,
-                            itemBuilder: (_, i) =>
-                                _HalaqaCard(halaqa: _filtered[i]),
+                            itemBuilder: (_, i) => _HalaqaCard(
+                              halaqa: _filtered[i],
+                              onDelete: () => _deleteHalaqa(
+                                _filtered[i]['id'] as int,
+                              ),
+                            ),
                           ),
               ),
             ],
@@ -186,8 +216,9 @@ class _HalaqasManagementPageState extends State<HalaqasManagementPage> {
 }
 
 class _HalaqaCard extends StatelessWidget {
-  const _HalaqaCard({required this.halaqa});
+  const _HalaqaCard({required this.halaqa, required this.onDelete});
   final Map<String, dynamic> halaqa;
+  final VoidCallback onDelete;
 
   static const _levelIcons = {
     'متقدم': Icons.wb_sunny,
@@ -237,13 +268,26 @@ class _HalaqaCard extends StatelessWidget {
           Row(
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
-              IconButton(
-                onPressed: () {},
-                icon: const Icon(Icons.edit_outlined),
-                iconSize: 18.w,
-                color: AppColors.onSurfaceVariant,
-                padding: EdgeInsets.zero,
-                constraints: const BoxConstraints(),
+              Row(
+                children: [
+                  IconButton(
+                    onPressed: () {},
+                    icon: const Icon(Icons.edit_outlined),
+                    iconSize: 18.w,
+                    color: AppColors.onSurfaceVariant,
+                    padding: EdgeInsets.zero,
+                    constraints: const BoxConstraints(),
+                  ),
+                  SizedBox(width: 4.w),
+                  IconButton(
+                    onPressed: onDelete,
+                    icon: const Icon(Icons.delete_outline),
+                    iconSize: 18.w,
+                    color: AppColors.error,
+                    padding: EdgeInsets.zero,
+                    constraints: const BoxConstraints(),
+                  ),
+                ],
               ),
               Container(
                 width: 48.w,

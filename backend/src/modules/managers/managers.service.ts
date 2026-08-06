@@ -151,11 +151,9 @@ export class ManagersService {
   async remove(id: number) {
     const manager = await this.prisma.manager.findUnique({ where: { id } });
     if (!manager) throw new NotFoundException('المدير غير موجود');
-    // Soft delete — deactivate user
-    return this.prisma.user.update({
-      where: { id: manager.userId },
-      data: { isActive: false },
-    });
+    // Hard delete — removing the user cascades to the manager row, its halaqa
+    // assignments, and the absence justifications it authored.
+    return this.prisma.user.delete({ where: { id: manager.userId } });
   }
 
   async getStudents(id: number) {

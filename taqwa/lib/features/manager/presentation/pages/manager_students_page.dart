@@ -10,6 +10,8 @@ import '../../../../core/network/api_endpoints.dart';
 import '../../../../core/widgets/search_bar_widget.dart';
 import '../../../../core/widgets/app_button.dart';
 import 'manager_add_student_page.dart';
+import '../../../../core/widgets/confirm_delete_dialog.dart';
+import '../../../../features/data/repositories/student_repository.dart';
 
 class ManagerStudentsPage extends ConsumerStatefulWidget {
   const ManagerStudentsPage({super.key});
@@ -25,6 +27,30 @@ class _ManagerStudentsPageState extends ConsumerState<ManagerStudentsPage> {
   bool _isLoading = true;
   int _filterIndex = 0;
   final _searchController = TextEditingController();
+  final _studentRepo = StudentRepository();
+
+  Future<void> _deleteStudent(int id) async {
+    final confirmed = await ConfirmDeleteDialog.show(
+      context,
+      title: 'حذف الطالب',
+      message: 'سيتم حذف حساب الطالب وجميع سجلاته نهائياً. '
+          'لا يمكن التراجع عن هذا الإجراء.',
+    );
+    if (!confirmed) return;
+    try {
+      await _studentRepo.deleteStudent(id);
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('تم حذف الطالب بنجاح')),
+      );
+      _loadStudents();
+    } catch (e) {
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text(StudentRepository.errorMessage(e))),
+      );
+    }
+  }
 
   @override
   void initState() {
@@ -186,8 +212,15 @@ class _ManagerStudentsPageState extends ConsumerState<ManagerStudentsPage> {
                             padding: EdgeInsets.symmetric(horizontal: 16.w),
                             itemCount: _filtered.length,
                             separatorBuilder: (_, _) => SizedBox(height: 12.h),
-                            itemBuilder: (_, i) =>
-                                _StudentCard(student: _filtered[i]),
+                            itemBuilder: (_, i) => _StudentCard(
+                              student: _filtered[i],
+                              canDelete: ref.watch(authProvider).user
+                                      ?.canDeleteAccounts ??
+                                  false,
+                              onDelete: () => _deleteStudent(
+                                _filtered[i]['id'] as int,
+                              ),
+                            ),
                           ),
               ),
             ],
@@ -199,8 +232,14 @@ class _ManagerStudentsPageState extends ConsumerState<ManagerStudentsPage> {
 }
 
 class _StudentCard extends StatelessWidget {
-  const _StudentCard({required this.student});
+  const _StudentCard({
+    required this.student,
+    this.canDelete = false,
+    this.onDelete,
+  });
   final Map<String, dynamic> student;
+  final bool canDelete;
+  final VoidCallback? onDelete;
 
   @override
   Widget build(BuildContext context) {
@@ -235,6 +274,14 @@ class _StudentCard extends StatelessWidget {
             children: [
               Icon(Icons.visibility_outlined,
                   color: AppColors.primary, size: 20.w),
+              if (canDelete) ...[
+                SizedBox(height: 8.h),
+                GestureDetector(
+                  onTap: onDelete,
+                  child: Icon(Icons.delete_outline,
+                      color: AppColors.error, size: 20.w),
+                ),
+              ],
             ],
           ),
           const Spacer(),

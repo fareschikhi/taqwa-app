@@ -4,6 +4,7 @@ import '../../../../core/theme/app_colors.dart';
 import '../../../../core/theme/app_text_styles.dart';
 import '../../../../core/constants/app_constants.dart';
 import '../../../../core/widgets/search_bar_widget.dart';
+import '../../../../core/widgets/confirm_delete_dialog.dart';
 import '../../../../features/data/repositories/manager_repository.dart';
 import '../../../../features/data/models/manager_model.dart';
 import 'create_manager_page.dart';
@@ -70,6 +71,30 @@ class _ManagersManagementPageState extends State<ManagersManagementPage> {
       list = list.where((m) => m.isActive != true).toList();
     }
     _filtered = list;
+  }
+
+  Future<void> _deleteManager(ManagerModel m) async {
+    final confirmed = await ConfirmDeleteDialog.show(
+      context,
+      title: 'حذف المدير',
+      message: 'سيتم حذف حساب المدير نهائياً مع تعييناته للحلقات '
+          'وتبريرات الغياب التي سجّلها. لتعطيل الحساب مؤقتاً '
+          'استخدم زر إيقاف التنشيط بدلاً من الحذف.',
+    );
+    if (!confirmed) return;
+    try {
+      await _repo.deleteManager(m.id!);
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('تم حذف المدير بنجاح')),
+      );
+      _load();
+    } catch (e) {
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text(ManagerRepository.errorMessage(e))),
+      );
+    }
   }
 
   Future<void> _toggleStatus(ManagerModel m) async {
@@ -175,6 +200,7 @@ class _ManagersManagementPageState extends State<ManagersManagementPage> {
                                 ),
                               ).then((_) => _load()),
                               onToggleStatus: () => _toggleStatus(_filtered[i]),
+                              onDelete: () => _deleteManager(_filtered[i]),
                             ),
                           ),
               ),
@@ -293,10 +319,12 @@ class _ManagerCard extends StatelessWidget {
     required this.manager,
     required this.onEdit,
     required this.onToggleStatus,
+    required this.onDelete,
   });
   final ManagerModel manager;
   final VoidCallback onEdit;
   final VoidCallback onToggleStatus;
+  final VoidCallback onDelete;
 
   @override
   Widget build(BuildContext context) {
@@ -482,6 +510,26 @@ class _ManagerCard extends StatelessWidget {
                     color: isActive
                         ? AppColors.error
                         : AppColors.onPrimaryContainer,
+                  ),
+                ),
+              ),
+              SizedBox(width: 8.w),
+              // Delete btn
+              GestureDetector(
+                onTap: onDelete,
+                child: Container(
+                  width: 38.w,
+                  height: 38.w,
+                  decoration: BoxDecoration(
+                    borderRadius: BorderRadius.circular(
+                      AppConstants.radiusMd,
+                    ),
+                    color: AppColors.errorContainer,
+                  ),
+                  child: Icon(
+                    Icons.delete_outline,
+                    size: 18.w,
+                    color: AppColors.error,
                   ),
                 ),
               ),
