@@ -10,6 +10,7 @@ import '../../../../core/theme/app_text_styles.dart';
 import '../../../../core/constants/app_constants.dart';
 import '../../../../core/widgets/app_button.dart';
 import '../../../../core/widgets/app_text_field.dart';
+import '../../../../core/widgets/user_selector_field.dart';
 
 class CreateHalaqaPage extends StatefulWidget {
   const CreateHalaqaPage({super.key});
@@ -214,49 +215,23 @@ class _CreateHalaqaPageState extends State<CreateHalaqaPage> {
                               ),
                               SizedBox(height: 16.h),
                               // Teacher
-                              _FieldLabel(label: 'المعلم المسؤول *'),
-                              SizedBox(height: 6.h),
-                              Container(
-                                width: double.infinity,
-                                decoration: BoxDecoration(
-                                  color: AppColors.surfaceContainerLowest,
-                                  borderRadius: BorderRadius.circular(
-                                      AppConstants.radiusMd),
-                                  border: Border.all(
-                                      color: AppColors.inputBorder),
-                                ),
-                                padding:
-                                    EdgeInsets.symmetric(horizontal: 16.w),
-                                child: DropdownButtonHideUnderline(
-                                  child: DropdownButton<int>(
-                                    value: _selectedTeacherId,
-                                    isExpanded: true,
-                                    icon: const Icon(
-                                      Icons.person_outline,
-                                      color: AppColors.primary,
-                                    ),
-                                    hint: Text(
-                                      'اختر المعلم',
-                                      style: AppTextStyles.labelMd.copyWith(
-                                        color: AppColors.inputPlaceholder,
+                              UserSelectorField(
+                                label: 'المعلم المسؤول *',
+                                hint: 'اختر المعلم',
+                                searchHint: 'ابحث باسم المعلم',
+                                emptyText: 'لا يوجد معلم مطابق',
+                                options: _teachers
+                                    .map(
+                                      (t) => UserOption(
+                                        id: t.id,
+                                        fullName: t.fullName,
+                                        avatar: t.avatar,
                                       ),
-                                    ),
-                                    items: _teachers
-                                        .map(
-                                          (teacher) => DropdownMenuItem<int>(
-                                            value: teacher.id,
-                                            child: Text(
-                                              teacher.fullName,
-                                              style: AppTextStyles.bodyMd,
-                                              textAlign: TextAlign.end,
-                                            ),
-                                          ),
-                                        )
-                                        .toList(),
-                                    onChanged: (v) => setState(
-                                        () => _selectedTeacherId = v),
-                                  ),
-                                ),
+                                    )
+                                    .toList(),
+                                selectedId: _selectedTeacherId,
+                                onSelected: (o) => setState(
+                                    () => _selectedTeacherId = o.id),
                               ),
                             ],
                           ),
