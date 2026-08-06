@@ -129,10 +129,10 @@ export class TeachersService {
   async remove(id: number) {
     const teacher = await this.prisma.teacher.findUnique({ where: { id } });
     if (!teacher) throw new NotFoundException('المعلم غير موجود');
-    return this.prisma.user.update({
-      where: { id: teacher.userId },
-      data: { isActive: false },
-    });
+    // Hard delete — removing the user cascades to the teacher row AND to the
+    // halaqas they own (halaqas_teacherId_fkey is ON DELETE CASCADE). Students
+    // of those halaqas survive; their halaqaId is set to NULL.
+    return this.prisma.user.delete({ where: { id: teacher.userId } });
   }
 
   // ─── Teacher Dashboard Aggregates ───────────────────────────────────────────
