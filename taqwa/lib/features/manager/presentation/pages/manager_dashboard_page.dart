@@ -31,22 +31,16 @@ class _ManagerDashboardPageState extends ConsumerState<ManagerDashboardPage> {
 
   Future<void> _loadData() async {
     try {
-      final authState = ref.read(authProvider);
-      final managerId = authState.user?.id;
-      if (managerId == null) return;
+      // The manager's row id in the `managers` table rides on the auth user.
+      // Don't look it up through GET /managers: that route is ADMIN-only and
+      // 403s for a manager, which used to abort this whole load.
+      final mgrId = ref.read(authProvider).user?.managerId;
+      if (mgrId == null) {
+        if (mounted) setState(() => _isLoading = false);
+        return;
+      }
 
       final dio = DioClient.instance;
-
-      // get manager profile to find his id in managers table
-      final managersRes = await dio.get(ApiEndpoints.managers);
-      final allManagers = managersRes.data as List;
-      final myManager = allManagers.firstWhere(
-        (m) => m['user']?['id'] == managerId,
-        orElse: () => null,
-      );
-
-      if (myManager == null) return;
-      final int mgrId = myManager['id'];
 
       final studentsRes = await dio.get(
         '${ApiEndpoints.managers}/$mgrId/students',

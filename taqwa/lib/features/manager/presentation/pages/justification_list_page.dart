@@ -5,8 +5,6 @@ import '../../../../core/theme/app_colors.dart';
 import '../../../../core/theme/app_text_styles.dart';
 import '../../../../core/constants/app_constants.dart';
 import '../../../../core/providers/auth_provider.dart';
-import '../../../../core/network/dio_client.dart';
-import '../../../../core/network/api_endpoints.dart';
 import '../../../../features/data/repositories/absence_justification_repository.dart';
 import '../../../../features/data/models/absence_justification_model.dart';
 
@@ -33,19 +31,9 @@ class _JustificationListPageState
 
   Future<void> _loadJustifications() async {
     try {
-      final authState = ref.read(authProvider);
-      final userId = authState.user?.id;
-      final dio = DioClient.instance;
-
-      final managersRes = await dio.get(ApiEndpoints.managers);
-      final allManagers = managersRes.data as List;
-      final myManager = allManagers.firstWhere(
-        (m) => m['user']?['id'] == userId,
-        orElse: () => null,
-      );
-      if (myManager != null) {
-        _managerId = myManager['id'];
-      }
+      // GET /managers is ADMIN-only, so read the manager row id off the auth
+      // user instead of looking it up.
+      _managerId = ref.read(authProvider).user?.managerId;
 
       final list = await _repo.getAllJustifications(
         managerId: _managerId,
