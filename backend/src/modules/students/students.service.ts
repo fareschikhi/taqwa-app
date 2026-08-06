@@ -232,19 +232,8 @@ export class StudentsService {
   async remove(id: number) {
     const student = await this.prisma.student.findUnique({ where: { id } });
     if (!student) throw new NotFoundException('الطالب غير موجود');
-    // Soft delete — deactivate the linked user, matching parents/users services
-    return this.prisma.user.update({
-      where: { id: student.userId },
-      data: { isActive: false },
-      select: {
-        id: true,
-        fullName: true,
-        email: true,
-        phone: true,
-        avatar: true,
-        isActive: true,
-        createdAt: true,
-      },
-    });
+    // Hard delete — removing the user cascades to the student row and all of
+    // its attendance, memorization, evaluations, notes and justifications.
+    return this.prisma.user.delete({ where: { id: student.userId } });
   }
 }
