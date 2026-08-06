@@ -5,8 +5,10 @@ import '../../../../core/theme/app_text_styles.dart';
 import '../../../../core/constants/app_constants.dart';
 import '../../../../core/widgets/search_bar_widget.dart';
 import '../../../../core/widgets/app_button.dart';
+import '../../../../core/widgets/confirm_delete_dialog.dart';
 import '../../../../core/network/dio_client.dart';
 import '../../../../core/network/api_endpoints.dart';
+import '../../../../features/data/repositories/teacher_repository.dart';
 import 'create_teacher_page.dart';
 import '../admin_shell.dart';
 
@@ -23,6 +25,34 @@ class _TeachersManagementPageState extends State<TeachersManagementPage> {
   List<Map<String, dynamic>> _teachers = [];
   List<Map<String, dynamic>> _filtered = [];
   bool _isLoading = true;
+  final _teacherRepo = TeacherRepository();
+
+  Future<void> _deleteTeacher(int id, int halaqaCount) async {
+    final confirmed = await ConfirmDeleteDialog.show(
+      context,
+      title: 'حذف المعلم',
+      message: halaqaCount > 0
+          ? 'سيتم حذف حساب المعلم نهائياً، وسيتم أيضاً حذف '
+              '$halaqaCount من الحلقات المسندة إليه. '
+              'سيبقى الطلاب في النظام دون حلقة.'
+          : 'سيتم حذف حساب المعلم نهائياً. '
+              'لا يمكن التراجع عن هذا الإجراء.',
+    );
+    if (!confirmed) return;
+    try {
+      await _teacherRepo.deleteTeacher(id);
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('تم حذف المعلم بنجاح')),
+      );
+      _load();
+    } catch (e) {
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text(TeacherRepository.errorMessage(e))),
+      );
+    }
+  }
 
   @override
   void initState() {
@@ -209,8 +239,18 @@ class _TeachersManagementPageState extends State<TeachersManagementPage> {
                             itemCount: _filtered.length,
                             separatorBuilder: (_, _) =>
                                 SizedBox(height: 16.h),
-                            itemBuilder: (_, i) =>
-                                _TeacherCard(teacher: _filtered[i]),
+                            itemBuilder: (_, i) => _TeacherCard(
+                              teacher: _filtered[i],
+                              onDelete: () => _deleteTeacher(
+                                _filtered[i]['id'] as int,
+                                // findAll returns only _count.halaqas; the
+                                // halaqas relation itself is stripped server-side.
+                                (_filtered[i]['_count']
+                                        as Map<String, dynamic>?)?['halaqas']
+                                        as int? ??
+                                    0,
+                              ),
+                            ),
                           ),
               ),
             ],
@@ -222,8 +262,9 @@ class _TeachersManagementPageState extends State<TeachersManagementPage> {
 }
 
 class _TeacherCard extends StatelessWidget {
-  const _TeacherCard({required this.teacher});
+  const _TeacherCard({required this.teacher, required this.onDelete});
   final Map<String, dynamic> teacher;
+  final VoidCallback onDelete;
 
   @override
   Widget build(BuildContext context) {
@@ -231,9 +272,10 @@ class _TeacherCard extends StatelessWidget {
     final name = user['fullName'] ?? '';
     final phone = user['phone'] ?? '';
     final isActive = user['isActive'] ?? true;
-    final halaqas = teacher['halaqas'] as List? ?? [];
     final counts = teacher['_count'] as Map<String, dynamic>? ?? {};
     final studentCount = counts['students'] ?? 0;
+    // The halaqas relation is stripped by findAll; only _count survives.
+    final halaqaCount = counts['halaqas'] ?? 0;
 
     return Container(
       decoration: BoxDecoration(
@@ -345,7 +387,7 @@ class _TeacherCard extends StatelessWidget {
                   child: Column(
                     children: [
                        Text(
-                         '${halaqas.length}',
+                         '$halaqaCount',
                         style: AppTextStyles.headlineMd.copyWith(
                           color: AppColors.onSurface,
                         ),
@@ -392,7 +434,7 @@ class _TeacherCard extends StatelessWidget {
               _ActionBtn(
                 icon: Icons.delete_outline,
                 color: AppColors.error,
-                onTap: () {},
+                onTap: onDelete,
               ),
               _ActionBtn(
                 icon: Icons.assignment_add,
