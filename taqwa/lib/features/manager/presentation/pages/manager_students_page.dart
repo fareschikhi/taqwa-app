@@ -9,9 +9,10 @@ import '../../../../core/network/dio_client.dart';
 import '../../../../core/network/api_endpoints.dart';
 import '../../../../core/widgets/search_bar_widget.dart';
 import '../../../../core/widgets/app_button.dart';
-import 'manager_add_student_page.dart';
 import '../../../../core/widgets/confirm_delete_dialog.dart';
+import '../../../../features/data/models/student/student_model.dart';
 import '../../../../features/data/repositories/student_repository.dart';
+import '../../../shared/presentation/pages/student_form_page.dart';
 
 class ManagerStudentsPage extends ConsumerStatefulWidget {
   const ManagerStudentsPage({super.key});
@@ -29,20 +30,37 @@ class _ManagerStudentsPageState extends ConsumerState<ManagerStudentsPage> {
   final _searchController = TextEditingController();
   final _studentRepo = StudentRepository();
 
+  /// Opens the shared student form: [student] null creates, otherwise edits
+  /// that row. The manager id scopes the halaqa options to the ones they own.
+  Future<void> _openForm(Map<String, dynamic>? student) async {
+    final mgrId = ref.read(authProvider).user?.managerId;
+    await Navigator.push(
+      context,
+      MaterialPageRoute(
+        builder: (_) => StudentFormPage(
+          student: student == null ? null : StudentModel.fromJson(student),
+          managerId: mgrId,
+        ),
+      ),
+    );
+    if (mounted) _loadStudents();
+  }
+
   Future<void> _deleteStudent(int id) async {
     final confirmed = await ConfirmDeleteDialog.show(
       context,
       title: 'حذف الطالب',
-      message: 'سيتم حذف حساب الطالب وجميع سجلاته نهائياً. '
+      message:
+          'سيتم حذف حساب الطالب وجميع سجلاته نهائياً. '
           'لا يمكن التراجع عن هذا الإجراء.',
     );
     if (!confirmed) return;
     try {
       await _studentRepo.deleteStudent(id);
       if (!mounted) return;
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('تم حذف الطالب بنجاح')),
-      );
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(const SnackBar(content: Text('تم حذف الطالب بنجاح')));
       _loadStudents();
     } catch (e) {
       if (!mounted) return;
@@ -98,17 +116,22 @@ class _ManagerStudentsPageState extends ConsumerState<ManagerStudentsPage> {
     }).toList();
 
     if (_filterIndex == 1) {
-      list = list.where((s) => (s['user']?['isActive'] ?? true) == true).toList();
+      list = list
+          .where((s) => (s['user']?['isActive'] ?? true) == true)
+          .toList();
     } else if (_filterIndex == 2) {
-      list = list.where((s) => (s['user']?['isActive'] ?? true) == false).toList();
+      list = list
+          .where((s) => (s['user']?['isActive'] ?? true) == false)
+          .toList();
     }
     _filtered = list;
   }
 
   @override
   Widget build(BuildContext context) {
-    final activeCount =
-        _students.where((s) => s['user']?['isActive'] == true).length;
+    final activeCount = _students
+        .where((s) => s['user']?['isActive'] == true)
+        .length;
     final inactiveCount = _students.length - activeCount;
 
     return Scaffold(
@@ -159,12 +182,7 @@ class _ManagerStudentsPageState extends ConsumerState<ManagerStudentsPage> {
                         label: 'إضافة طالب جديد',
                         variant: AppButtonVariant.gradient,
                         icon: Icons.person_add,
-                        onPressed: () => Navigator.push(
-                          context,
-                          MaterialPageRoute(
-                            builder: (_) => const ManagerAddStudentPage(),
-                          ),
-                        ).then((_) => _loadStudents()),
+                        onPressed: () => _openForm(null),
                       ),
                       SizedBox(height: 16.h),
                     ],
@@ -193,35 +211,42 @@ class _ManagerStudentsPageState extends ConsumerState<ManagerStudentsPage> {
               Expanded(
                 child: _isLoading
                     ? const Center(
-                        child: CircularProgressIndicator(color: AppColors.primary))
+                        child: CircularProgressIndicator(
+                          color: AppColors.primary,
+                        ),
+                      )
                     : _filtered.isEmpty
-                        ? SingleChildScrollView(
-                            physics: const AlwaysScrollableScrollPhysics(),
-                            child: Container(
-                              height: 300.h,
-                              alignment: Alignment.center,
-                              child: Text(
-                                'لا يوجد طلاب',
-                                style: AppTextStyles.bodyMd.copyWith(
-                                    color: AppColors.onSurfaceVariant),
-                              ),
-                            ),
-                          )
-                        : ListView.separated(
-                            physics: const AlwaysScrollableScrollPhysics(),
-                            padding: EdgeInsets.symmetric(horizontal: 16.w),
-                            itemCount: _filtered.length,
-                            separatorBuilder: (_, _) => SizedBox(height: 12.h),
-                            itemBuilder: (_, i) => _StudentCard(
-                              student: _filtered[i],
-                              canDelete: ref.watch(authProvider).user
-                                      ?.canDeleteAccounts ??
-                                  false,
-                              onDelete: () => _deleteStudent(
-                                _filtered[i]['id'] as int,
-                              ),
+                    ? SingleChildScrollView(
+                        physics: const AlwaysScrollableScrollPhysics(),
+                        child: Container(
+                          height: 300.h,
+                          alignment: Alignment.center,
+                          child: Text(
+                            'لا يوجد طلاب',
+                            style: AppTextStyles.bodyMd.copyWith(
+                              color: AppColors.onSurfaceVariant,
                             ),
                           ),
+                        ),
+                      )
+                    : ListView.separated(
+                        physics: const AlwaysScrollableScrollPhysics(),
+                        padding: EdgeInsets.symmetric(horizontal: 16.w),
+                        itemCount: _filtered.length,
+                        separatorBuilder: (_, _) => SizedBox(height: 12.h),
+                        itemBuilder: (_, i) => _StudentCard(
+                          student: _filtered[i],
+                          canManage:
+                              ref.watch(authProvider).user?.canManageAccounts ??
+                              false,
+                          canDelete:
+                              ref.watch(authProvider).user?.canDeleteAccounts ??
+                              false,
+                          onEdit: () => _openForm(_filtered[i]),
+                          onDelete: () =>
+                              _deleteStudent(_filtered[i]['id'] as int),
+                        ),
+                      ),
               ),
             ],
           ),
@@ -234,11 +259,15 @@ class _ManagerStudentsPageState extends ConsumerState<ManagerStudentsPage> {
 class _StudentCard extends StatelessWidget {
   const _StudentCard({
     required this.student,
+    this.canManage = false,
     this.canDelete = false,
+    this.onEdit,
     this.onDelete,
   });
   final Map<String, dynamic> student;
+  final bool canManage;
   final bool canDelete;
+  final VoidCallback? onEdit;
   final VoidCallback? onDelete;
 
   @override
@@ -272,14 +301,29 @@ class _StudentCard extends StatelessWidget {
           Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              Icon(Icons.visibility_outlined,
-                  color: AppColors.primary, size: 20.w),
+              // Icon(Icons.visibility_outlined,
+              //     color: AppColors.primary, size: 20.w),
+              if (canManage) ...[
+                SizedBox(height: 8.h),
+                GestureDetector(
+                  onTap: onEdit,
+                  child: Icon(
+                    Icons.edit_outlined,
+                    color: AppColors.onSurfaceVariant,
+                    size: 25.w,
+                  ),
+                ),
+              ],
+              SizedBox(height: 8.h),
               if (canDelete) ...[
                 SizedBox(height: 8.h),
                 GestureDetector(
                   onTap: onDelete,
-                  child: Icon(Icons.delete_outline,
-                      color: AppColors.error, size: 20.w),
+                  child: Icon(
+                    Icons.delete_outline,
+                    color: AppColors.error,
+                    size: 25.w,
+                  ),
                 ),
               ],
             ],
@@ -304,8 +348,11 @@ class _StudentCard extends StatelessWidget {
                       color: AppColors.primaryContainer,
                       shape: BoxShape.circle,
                     ),
-                    child: Icon(Icons.person,
-                        color: AppColors.onPrimaryContainer, size: 28.w),
+                    child: Icon(
+                      Icons.person,
+                      color: AppColors.onPrimaryContainer,
+                      size: 28.w,
+                    ),
                   ),
                 ],
               ),
@@ -315,12 +362,16 @@ class _StudentCard extends StatelessWidget {
                   children: [
                     Text(
                       phone,
-                      style: AppTextStyles.labelMd
-                          .copyWith(color: AppColors.onSurfaceVariant),
+                      style: AppTextStyles.labelMd.copyWith(
+                        color: AppColors.onSurfaceVariant,
+                      ),
                     ),
                     SizedBox(width: 4.w),
-                    const Icon(Icons.phone_outlined,
-                        size: 14, color: AppColors.onSurfaceVariant),
+                    const Icon(
+                      Icons.phone_outlined,
+                      size: 14,
+                      color: AppColors.onSurfaceVariant,
+                    ),
                   ],
                 ),
               SizedBox(height: 8.h),
@@ -328,25 +379,34 @@ class _StudentCard extends StatelessWidget {
                 children: [
                   Container(
                     padding: EdgeInsets.symmetric(
-                        horizontal: 8.w, vertical: 3.h),
+                      horizontal: 8.w,
+                      vertical: 3.h,
+                    ),
                     decoration: BoxDecoration(
                       color: AppColors.surfaceContainerHigh,
-                      borderRadius: BorderRadius.circular(AppConstants.radiusMd),
+                      borderRadius: BorderRadius.circular(
+                        AppConstants.radiusMd,
+                      ),
                     ),
                     child: Text(
                       '$attendanceCount حضور',
                       style: AppTextStyles.labelSm.copyWith(
-                          color: AppColors.onSurfaceVariant),
+                        color: AppColors.onSurfaceVariant,
+                      ),
                     ),
                   ),
                   SizedBox(width: 8.w),
                   Container(
                     padding: EdgeInsets.symmetric(
-                        horizontal: 8.w, vertical: 3.h),
+                      horizontal: 8.w,
+                      vertical: 3.h,
+                    ),
                     decoration: BoxDecoration(
                       color: (isActive ? AppColors.primary : AppColors.outline)
                           .withValues(alpha: 0.1),
-                      borderRadius: BorderRadius.circular(AppConstants.radiusFull),
+                      borderRadius: BorderRadius.circular(
+                        AppConstants.radiusFull,
+                      ),
                     ),
                     child: Row(
                       mainAxisSize: MainAxisSize.min,
@@ -378,8 +438,9 @@ class _StudentCard extends StatelessWidget {
               SizedBox(height: 4.h),
               Text(
                 halaqaName,
-                style: AppTextStyles.labelSm
-                    .copyWith(color: AppColors.onSurfaceVariant),
+                style: AppTextStyles.labelSm.copyWith(
+                  color: AppColors.onSurfaceVariant,
+                ),
               ),
             ],
           ),
@@ -411,8 +472,7 @@ class _FilterChipGroup extends StatelessWidget {
             onTap: () => onChanged(e.key),
             child: Container(
               margin: EdgeInsets.only(right: e.key == 0 ? 0 : 8.w),
-              padding:
-                  EdgeInsets.symmetric(horizontal: 14.w, vertical: 8.h),
+              padding: EdgeInsets.symmetric(horizontal: 14.w, vertical: 8.h),
               decoration: BoxDecoration(
                 color: isSelected
                     ? AppColors.primaryContainer

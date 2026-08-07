@@ -1,6 +1,7 @@
 class StudentModel {
   final int? id;
   final String fullName;
+  final String? phone;
   final String birthDate;
   final String address;
   final int? halaqaId;
@@ -11,6 +12,7 @@ class StudentModel {
   const StudentModel({
     this.id,
     required this.fullName,
+    this.phone,
     this.birthDate = '',
     this.address = '',
     this.halaqaId,
@@ -40,6 +42,7 @@ class StudentModel {
           (json['fullName'] as String?) ??
           (userMap?['fullName'] as String?) ??
           '',
+      phone: (json['phone'] as String?) ?? (userMap?['phone'] as String?),
       birthDate: birthDateRaw,
       address: addressRaw,
       halaqaId:

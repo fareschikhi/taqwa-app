@@ -7,8 +7,9 @@ import '../../../../core/widgets/search_bar_widget.dart';
 import '../../../../core/widgets/confirm_delete_dialog.dart';
 import '../../../../core/network/dio_client.dart';
 import '../../../../core/network/api_endpoints.dart';
+import '../../../../features/data/models/student/student_model.dart';
 import '../../../../features/data/repositories/student_repository.dart';
-import 'create_student_page.dart';
+import '../../../shared/presentation/pages/student_form_page.dart';
 import '../admin_shell.dart';
 
 class StudentsManagementPage extends StatefulWidget {
@@ -26,6 +27,20 @@ class _StudentsManagementPageState extends State<StudentsManagementPage> {
   int _filterIndex = 0;
   bool _isLoading = true;
   final _studentRepo = StudentRepository();
+
+  /// Opens the shared student form: [student] null creates, otherwise edits
+  /// that row. The list holds raw API maps, so it is decoded here.
+  Future<void> _openForm(Map<String, dynamic>? student) async {
+    await Navigator.push(
+      context,
+      MaterialPageRoute(
+        builder: (_) => StudentFormPage(
+          student: student == null ? null : StudentModel.fromJson(student),
+        ),
+      ),
+    );
+    if (mounted) _load();
+  }
 
   Future<void> _deleteStudent(int id) async {
     final confirmed = await ConfirmDeleteDialog.show(
@@ -215,6 +230,7 @@ class _StudentsManagementPageState extends State<StudentsManagementPage> {
                             separatorBuilder: (_, _) => SizedBox(height: 16.h),
                             itemBuilder: (_, i) => _StudentCard(
                               student: _filtered[i],
+                              onEdit: () => _openForm(_filtered[i]),
                               onDelete: () => _deleteStudent(
                                 _filtered[i]['id'] as int,
                               ),
@@ -227,10 +243,7 @@ class _StudentsManagementPageState extends State<StudentsManagementPage> {
       ),
       floatingActionButton: FloatingActionButton(
         heroTag: 'fab_student',
-        onPressed: () => Navigator.push(
-          context,
-          MaterialPageRoute(builder: (_) => const CreateStudentPage()),
-        ).then((_) => _load()),
+        onPressed: () => _openForm(null),
         backgroundColor: AppColors.primary,
         child: const Icon(Icons.person_add, color: AppColors.onPrimary),
       ),
@@ -239,8 +252,13 @@ class _StudentsManagementPageState extends State<StudentsManagementPage> {
 }
 
 class _StudentCard extends StatelessWidget {
-  const _StudentCard({required this.student, required this.onDelete});
+  const _StudentCard({
+    required this.student,
+    required this.onEdit,
+    required this.onDelete,
+  });
   final Map<String, dynamic> student;
+  final VoidCallback onEdit;
   final VoidCallback onDelete;
 
   @override
@@ -356,6 +374,15 @@ class _StudentCard extends StatelessWidget {
                 child: Icon(
                   Icons.delete_outline,
                   color: AppColors.error,
+                  size: 20.w,
+                ),
+              ),
+              SizedBox(width: 12.w),
+              GestureDetector(
+                onTap: onEdit,
+                child: Icon(
+                  Icons.edit_outlined,
+                  color: AppColors.onSurfaceVariant,
                   size: 20.w,
                 ),
               ),

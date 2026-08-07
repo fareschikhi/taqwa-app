@@ -58,26 +58,13 @@ class _ManagerDashboardPageState extends ConsumerState<ManagerDashboardPage> {
       );
       final justifications = justRes.data as List;
 
-      // Count today's attendance for the manager's students
-      int presentToday = 0;
-      final total = students.length;
-      final today = DateTime.now();
-      final dateStr =
-          '${today.year}-${today.month.toString().padLeft(2, '0')}-${today.day.toString().padLeft(2, '0')}';
-
-      for (final s in students) {
-        try {
-          final attRes = await dio.get(
-            '${ApiEndpoints.attendance}/student/${s['id']}',
-          );
-          final attList = attRes.data as List;
-          final todayAtt = attList.where((a) {
-            final d = a['date'] as String? ?? '';
-            return d.startsWith(dateStr) && a['status'] == 'PRESENT';
-          });
-          if (todayAtt.isNotEmpty) presentToday++;
-        } catch (_) {}
-      }
+      // Absences and latenesses still waiting for a justification — the same
+      // list the "بانتظار التبرير" tab of the justifications page shows.
+      final unjustifiedRes = await dio.get(
+        '${ApiEndpoints.absenceJustifications}/unjustified',
+        queryParameters: {'managerId': mgrId},
+      );
+      final unjustified = unjustifiedRes.data as List;
 
       // Distinct parents across the manager's students. Derived from the
       // students payload because GET /parents needs MANAGE_ACCOUNTS, which
@@ -91,12 +78,10 @@ class _ManagerDashboardPageState extends ConsumerState<ManagerDashboardPage> {
         setState(() {
           _stats = {
             'halaqas': halaqas.length,
-            'students': total,
+            'students': students.length,
             'parents': parentIds.length,
-            'attendanceRate': total > 0
-                ? ((presentToday / total) * 100).round()
-                : 0,
-            'pendingJustifications': justifications.length,
+            'unjustified': unjustified.length,
+            'justifications': justifications.length,
           };
           _managerId = mgrId;
           _students = students;
@@ -247,19 +232,19 @@ class _ManagerDashboardPageState extends ConsumerState<ManagerDashboardPage> {
         label: 'إجمالي الأولياء',
       ),
       _StatData(
-        icon: Icons.fact_check_outlined,
-        iconColor: AppColors.tertiary,
-        iconBg: AppColors.tertiaryContainer,
-        value: '${_stats?['attendanceRate'] ?? 0}%',
-        label: 'حضور اليوم',
-      ),
-      _StatData(
         icon: Icons.pending_actions_outlined,
         iconColor: AppColors.error,
         iconBg: AppColors.errorContainer,
-        value: '${_stats?['pendingJustifications'] ?? 0}',
-        label: 'تبريرات',
+        value: '${_stats?['unjustified'] ?? 0}',
+        label: 'بانتظار التبرير',
         isAlert: true,
+      ),
+      _StatData(
+        icon: Icons.fact_check_outlined,
+        iconColor: AppColors.tertiary,
+        iconBg: AppColors.tertiaryContainer,
+        value: '${_stats?['justifications'] ?? 0}',
+        label: 'تبريرات مسجلة',
       ),
     ];
 

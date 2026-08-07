@@ -7,10 +7,11 @@ import '../../../../core/constants/app_constants.dart';
 import '../../../../core/providers/auth_provider.dart';
 import '../../../../core/widgets/search_bar_widget.dart';
 import '../../../../core/widgets/app_button.dart';
+import '../../../../core/widgets/avatar_widget.dart';
 import '../../../../core/widgets/confirm_delete_dialog.dart';
 import '../../../../features/data/models/parent/parent_model.dart';
 import '../../../../features/data/repositories/parent_repository.dart';
-import 'manager_parent_form_page.dart';
+import '../../../shared/presentation/pages/parent_form_page.dart';
 
 class ManagerParentsPage extends ConsumerStatefulWidget {
   const ManagerParentsPage({super.key});
@@ -82,26 +83,36 @@ class _ManagerParentsPageState extends ConsumerState<ManagerParentsPage> {
     _filtered = list;
   }
 
+  /// Opens the shared parent form: [parent] null creates, otherwise edits.
+  Future<void> _openForm(ParentModel? parent) async {
+    await Navigator.push(
+      context,
+      MaterialPageRoute(builder: (_) => ParentFormPage(parent: parent)),
+    );
+    if (mounted) _load();
+  }
+
   Future<void> _deleteParent(int id) async {
     final confirmed = await ConfirmDeleteDialog.show(
       context,
       title: 'حذف ولي الأمر',
-      message: 'سيتم حذف حساب ولي الأمر نهائياً. '
+      message:
+          'سيتم حذف حساب ولي الأمر نهائياً. '
           'سيبقى الأبناء في النظام دون ولي أمر مرتبط.',
     );
     if (!confirmed) return;
     try {
       await _repo.deleteParent(id);
       if (!mounted) return;
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('تم حذف ولي الأمر بنجاح')),
-      );
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(const SnackBar(content: Text('تم حذف ولي الأمر بنجاح')));
       _load();
     } catch (e) {
       if (!mounted) return;
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text(ParentRepository.errorMessage(e))),
-      );
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(SnackBar(content: Text(ParentRepository.errorMessage(e))));
     }
   }
 
@@ -158,12 +169,7 @@ class _ManagerParentsPageState extends ConsumerState<ManagerParentsPage> {
                         label: 'إضافة ولي أمر',
                         variant: AppButtonVariant.gradient,
                         icon: Icons.person_add,
-                        onPressed: () => Navigator.push(
-                          context,
-                          MaterialPageRoute(
-                            builder: (_) => const ManagerParentFormPage(),
-                          ),
-                        ).then((_) => _load()),
+                        onPressed: () => _openForm(null),
                       ),
                       SizedBox(height: 16.h),
                       SearchBarWidget(
@@ -203,47 +209,38 @@ class _ManagerParentsPageState extends ConsumerState<ManagerParentsPage> {
                         ),
                       )
                     : _isLoading
-                        ? const Center(
-                            child: CircularProgressIndicator(
-                              color: AppColors.primary,
+                    ? const Center(
+                        child: CircularProgressIndicator(
+                          color: AppColors.primary,
+                        ),
+                      )
+                    : _filtered.isEmpty
+                    ? SingleChildScrollView(
+                        physics: const AlwaysScrollableScrollPhysics(),
+                        child: Container(
+                          height: 300.h,
+                          alignment: Alignment.center,
+                          child: Text(
+                            'لا يوجد أولياء أمور',
+                            style: AppTextStyles.bodyMd.copyWith(
+                              color: AppColors.onSurfaceVariant,
                             ),
-                          )
-                        : _filtered.isEmpty
-                            ? SingleChildScrollView(
-                                physics: const AlwaysScrollableScrollPhysics(),
-                                child: Container(
-                                  height: 300.h,
-                                  alignment: Alignment.center,
-                                  child: Text(
-                                    'لا يوجد أولياء أمور',
-                                    style: AppTextStyles.bodyMd.copyWith(
-                                      color: AppColors.onSurfaceVariant,
-                                    ),
-                                  ),
-                                ),
-                              )
-                            : ListView.separated(
-                                physics: const AlwaysScrollableScrollPhysics(),
-                                padding: EdgeInsets.symmetric(horizontal: 16.w),
-                                itemCount: _filtered.length,
-                                separatorBuilder: (_, _) =>
-                                    SizedBox(height: 12.h),
-                                itemBuilder: (_, i) => _ParentCard(
-                                  parent: _filtered[i],
-                                  canManage: canManage,
-                                  canDelete: canDelete,
-                                  onEdit: () => Navigator.push(
-                                    context,
-                                    MaterialPageRoute(
-                                      builder: (_) => ManagerParentFormPage(
-                                        editParent: _filtered[i],
-                                      ),
-                                    ),
-                                  ).then((_) => _load()),
-                                  onDelete: () =>
-                                      _deleteParent(_filtered[i].id!),
-                                ),
-                              ),
+                          ),
+                        ),
+                      )
+                    : ListView.separated(
+                        physics: const AlwaysScrollableScrollPhysics(),
+                        padding: EdgeInsets.symmetric(horizontal: 16.w),
+                        itemCount: _filtered.length,
+                        separatorBuilder: (_, _) => SizedBox(height: 12.h),
+                        itemBuilder: (_, i) => _ParentCard(
+                          parent: _filtered[i],
+                          canManage: canManage,
+                          canDelete: canDelete,
+                          onEdit: () => _openForm(_filtered[i]),
+                          onDelete: () => _deleteParent(_filtered[i].id!),
+                        ),
+                      ),
               ),
             ],
           ),
@@ -285,11 +282,76 @@ class _ParentCard extends StatelessWidget {
         ],
       ),
       padding: EdgeInsets.all(16.w),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.end,
+      // The Spacer has to be a direct child of this Row: a list item has no
+      // bounded height, so a flex child inside the Column would throw.
+      child: Row(
         children: [
-          Row(
+          // Actions, pinned to the left edge like the students card.
+          if (canManage || canDelete)
+            Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                if (canDelete)
+                  GestureDetector(
+                    onTap: onDelete,
+                    child: Icon(
+                      Icons.delete_outline,
+                      color: AppColors.error,
+                      size: 25.w,
+                    ),
+                  ),
+                if (canDelete && canManage) SizedBox(height: 12.h),
+                if (canManage)
+                  GestureDetector(
+                    onTap: onEdit,
+                    child: Icon(
+                      Icons.edit_outlined,
+                      color: AppColors.onSurfaceVariant,
+                      size: 25.w,
+                    ),
+                  ),
+              ],
+            ),
+          const Spacer(),
+          Column(
+            crossAxisAlignment: CrossAxisAlignment.end,
             children: [
+              Row(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  Column(
+                    crossAxisAlignment: CrossAxisAlignment.end,
+                    children: [
+                      Text(
+                        parent.fullName,
+                        style: AppTextStyles.headlineSm.copyWith(
+                          color: AppColors.onSurface,
+                        ),
+                      ),
+                      if ((parent.phone ?? '').isNotEmpty)
+                        Text(
+                          parent.phone!,
+                          style: AppTextStyles.labelMd.copyWith(
+                            color: AppColors.onSurfaceVariant,
+                          ),
+                        ),
+                    ],
+                  ),
+                  SizedBox(width: 12.w),
+                  AvatarWidget(
+                    avatarUrl: parent.avatar,
+                    size: 44.w,
+                    backgroundColor: AppColors.tertiaryContainer,
+                    fallback: Text(
+                      parent.fullName.isNotEmpty ? parent.fullName[0] : '؟',
+                      style: AppTextStyles.headlineSm.copyWith(
+                        color: AppColors.onTertiaryContainer,
+                      ),
+                    ),
+                  ),
+                ],
+              ),
+              SizedBox(height: 8.h),
               Container(
                 padding: EdgeInsets.symmetric(horizontal: 8.w, vertical: 3.h),
                 decoration: BoxDecoration(
@@ -304,72 +366,8 @@ class _ParentCard extends StatelessWidget {
                   ),
                 ),
               ),
-              const Spacer(),
-              Column(
-                crossAxisAlignment: CrossAxisAlignment.end,
-                children: [
-                  Text(
-                    parent.fullName,
-                    style: AppTextStyles.headlineSm.copyWith(
-                      color: AppColors.onSurface,
-                    ),
-                  ),
-                  if ((parent.phone ?? '').isNotEmpty)
-                    Text(
-                      parent.phone!,
-                      style: AppTextStyles.labelMd.copyWith(
-                        color: AppColors.onSurfaceVariant,
-                      ),
-                    ),
-                ],
-              ),
-              SizedBox(width: 12.w),
-              Container(
-                width: 44.w,
-                height: 44.w,
-                decoration: BoxDecoration(
-                  color: AppColors.tertiaryContainer,
-                  shape: BoxShape.circle,
-                ),
-                child: Center(
-                  child: Text(
-                    parent.fullName.isNotEmpty ? parent.fullName[0] : '؟',
-                    style: AppTextStyles.headlineSm.copyWith(
-                      color: AppColors.onTertiaryContainer,
-                    ),
-                  ),
-                ),
-              ),
             ],
           ),
-          if (canManage || canDelete) ...[
-            SizedBox(height: 12.h),
-            Row(
-              mainAxisAlignment: MainAxisAlignment.end,
-              children: [
-                if (canDelete) ...[
-                  GestureDetector(
-                    onTap: onDelete,
-                    child: Icon(
-                      Icons.delete_outline,
-                      color: AppColors.error,
-                      size: 20.w,
-                    ),
-                  ),
-                  SizedBox(width: 12.w),
-                ],
-                if (canManage)
-                  GestureDetector(
-                    onTap: onEdit,
-                    child: Icon(
-                      Icons.edit_outlined,
-                      color: AppColors.onSurfaceVariant,
-                      size: 20.w,
-                    ),
-                  ),
-              ],
-            ),
-          ],
         ],
       ),
     );

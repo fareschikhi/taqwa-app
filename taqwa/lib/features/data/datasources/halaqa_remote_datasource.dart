@@ -10,6 +10,11 @@ class HalaqaRemoteDatasource {
     return (res.data as List).map((e) => HalaqaModel.fromJson(e)).toList();
   }
 
+  Future<List<HalaqaModel>> getForManager(int managerId) async {
+    final res = await _dio.get('/managers/$managerId/halaqas');
+    return (res.data as List).map((e) => HalaqaModel.fromJson(e)).toList();
+  }
+
   Future<HalaqaModel> getOne(int id) async {
     final res = await _dio.get('/halaqas/$id');
     return HalaqaModel.fromJson(res.data);
