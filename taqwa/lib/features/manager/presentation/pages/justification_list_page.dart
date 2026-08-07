@@ -10,6 +10,7 @@ import '../../../../core/widgets/search_bar_widget.dart';
 import '../../../../features/data/repositories/absence_justification_repository.dart';
 import '../../../../features/data/models/absence_justification_model.dart';
 import '../../../../features/data/models/unjustified_attendance_model.dart';
+import '../widgets/justify_absence_sheet.dart';
 
 class JustificationListPage extends ConsumerStatefulWidget {
   const JustificationListPage({super.key});
@@ -19,12 +20,12 @@ class JustificationListPage extends ConsumerStatefulWidget {
       _JustificationListPageState();
 }
 
-class _JustificationListPageState
-    extends ConsumerState<JustificationListPage> {
+class _JustificationListPageState extends ConsumerState<JustificationListPage> {
   final _repo = AbsenceJustificationRepository();
   List<AbsenceJustificationModel> _justifications = [];
   List<UnjustifiedAttendanceModel> _unjustified = [];
   bool _isLoading = true;
+  int? _managerId;
 
   /// 0 = pending (unjustified), 1 = already justified.
   int _filterIndex = 0;
@@ -40,6 +41,7 @@ class _JustificationListPageState
       // GET /managers is ADMIN-only, so read the manager row id off the auth
       // user instead of looking it up.
       final managerId = ref.read(authProvider).user?.managerId;
+      _managerId = managerId;
 
       final justifications = await _repo.getAllJustifications(
         managerId: managerId,
@@ -79,7 +81,8 @@ class _JustificationListPageState
                     Text(
                       'تقوى',
                       style: AppTextStyles.headlineMd.copyWith(
-                          color: AppColors.primary),
+                        color: AppColors.primary,
+                      ),
                     ),
                   ],
                 ),
@@ -91,13 +94,15 @@ class _JustificationListPageState
                   children: [
                     Text(
                       'تبريرات الغياب',
-                      style: AppTextStyles.headlineLgMobile
-                          .copyWith(color: AppColors.onSurface),
+                      style: AppTextStyles.headlineLgMobile.copyWith(
+                        color: AppColors.onSurface,
+                      ),
                     ),
                     Text(
                       'سجل تبريرات الغياب للطلاب',
-                      style: AppTextStyles.bodyMd
-                          .copyWith(color: AppColors.onSurfaceVariant),
+                      style: AppTextStyles.bodyMd.copyWith(
+                        color: AppColors.onSurfaceVariant,
+                      ),
                     ),
                     SizedBox(height: 12.h),
                     FilterChipGroup(
@@ -114,7 +119,9 @@ class _JustificationListPageState
                 child: _isLoading
                     ? const Center(
                         child: CircularProgressIndicator(
-                            color: AppColors.primary))
+                          color: AppColors.primary,
+                        ),
+                      )
                     : _buildList(),
               ),
             ],
@@ -145,9 +152,32 @@ class _JustificationListPageState
       itemCount: count,
       separatorBuilder: (_, _) => SizedBox(height: 12.h),
       itemBuilder: (_, i) => showingPending
-          ? _UnjustifiedCard(item: _unjustified[i])
+          ? _UnjustifiedCard(
+              item: _unjustified[i],
+              onTap: () => _justify(_unjustified[i]),
+            )
           : _JustificationCard(item: _justifications[i]),
     );
+  }
+
+  Future<void> _justify(UnjustifiedAttendanceModel item) async {
+    final managerId = _managerId;
+    if (managerId == null) return;
+
+    final saved = await JustifyAbsenceSheet.show(
+      context,
+      managerId: managerId,
+      item: item,
+    );
+    if (saved && mounted) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text('تم حفظ العذر بنجاح', textAlign: TextAlign.right),
+          backgroundColor: AppColors.primary,
+        ),
+      );
+      await _loadJustifications();
+    }
   }
 
   Widget _buildEmptyState({required bool showingPending}) {
@@ -173,16 +203,18 @@ class _JustificationListPageState
             showingPending
                 ? 'لا توجد غيابات بانتظار التبرير'
                 : 'لا توجد تبريرات بعد',
-            style: AppTextStyles.headlineSm
-                .copyWith(color: AppColors.onSurface),
+            style: AppTextStyles.headlineSm.copyWith(
+              color: AppColors.onSurface,
+            ),
           ),
           SizedBox(height: 8.h),
           Text(
             showingPending
                 ? 'كل حالات الغياب والتأخر لدى طلابك مبررة'
                 : 'ستظهر هنا تبريرات الغياب التي تضيفها',
-            style: AppTextStyles.bodyMd
-                .copyWith(color: AppColors.onSurfaceVariant),
+            style: AppTextStyles.bodyMd.copyWith(
+              color: AppColors.onSurfaceVariant,
+            ),
             textAlign: TextAlign.center,
           ),
         ],
@@ -193,18 +225,19 @@ class _JustificationListPageState
 
 /// An absence or lateness still waiting for a justification.
 class _UnjustifiedCard extends StatelessWidget {
-  const _UnjustifiedCard({required this.item});
+  const _UnjustifiedCard({required this.item, required this.onTap});
   final UnjustifiedAttendanceModel item;
+  final VoidCallback onTap;
 
   @override
   Widget build(BuildContext context) {
-    final statusBg =
-        item.isLate ? AppColors.tertiaryContainer : AppColors.errorContainer;
+    final statusBg = item.isLate
+        ? AppColors.tertiaryContainer
+        : AppColors.errorContainer;
     final statusFg = item.isLate
         ? AppColors.onTertiaryContainer
         : AppColors.onErrorContainer;
-    final initial =
-        item.studentName.isNotEmpty ? item.studentName[0] : '؟';
+    final initial = item.studentName.isNotEmpty ? item.studentName[0] : '؟';
 
     return Container(
       decoration: BoxDecoration(
@@ -218,49 +251,72 @@ class _UnjustifiedCard extends StatelessWidget {
           ),
         ],
       ),
-      padding: EdgeInsets.all(16.w),
-      child: Row(
-        children: [
-          Container(
-            padding: EdgeInsets.symmetric(horizontal: 10.w, vertical: 4.h),
-            decoration: BoxDecoration(
-              color: statusBg,
-              borderRadius: BorderRadius.circular(AppConstants.radiusMd),
-            ),
-            child: Text(
-              item.statusLabel,
-              style: AppTextStyles.labelSm.copyWith(color: statusFg),
+      // Transparent Material so the tap ripple paints above the card's own
+      // background instead of behind it.
+      child: Material(
+        color: Colors.transparent,
+        borderRadius: BorderRadius.circular(AppConstants.radiusXl),
+        child: InkWell(
+          onTap: onTap,
+          borderRadius: BorderRadius.circular(AppConstants.radiusXl),
+          child: Padding(
+            padding: EdgeInsets.all(16.w),
+            child: Row(
+              children: [
+                Icon(
+                  Icons.edit_calendar_outlined,
+                  color: AppColors.primary,
+                  size: 20.w,
+                ),
+                SizedBox(width: 8.w),
+                Container(
+                  padding: EdgeInsets.symmetric(
+                    horizontal: 10.w,
+                    vertical: 4.h,
+                  ),
+                  decoration: BoxDecoration(
+                    color: statusBg,
+                    borderRadius: BorderRadius.circular(AppConstants.radiusMd),
+                  ),
+                  child: Text(
+                    item.statusLabel,
+                    style: AppTextStyles.labelSm.copyWith(color: statusFg),
+                  ),
+                ),
+                const Spacer(),
+                Column(
+                  crossAxisAlignment: CrossAxisAlignment.end,
+                  children: [
+                    Text(
+                      item.studentName,
+                      style: AppTextStyles.headlineSm.copyWith(
+                        color: AppColors.onSurface,
+                      ),
+                    ),
+                    SizedBox(height: 2.h),
+                    Text(
+                      item.formattedDate,
+                      style: AppTextStyles.labelMd.copyWith(
+                        color: AppColors.onSurfaceVariant,
+                      ),
+                    ),
+                  ],
+                ),
+                SizedBox(width: 12.w),
+                AvatarWidget(
+                  avatarUrl: item.studentAvatar,
+                  size: 44.w,
+                  fallback: Text(
+                    initial,
+                    style: AppTextStyles.headlineSm.copyWith(
+                      color: AppColors.onPrimaryContainer,
+                    ),
+                  ),
+                ),
+              ],
             ),
           ),
-          const Spacer(),
-          Column(
-            crossAxisAlignment: CrossAxisAlignment.end,
-            children: [
-              Text(
-                item.studentName,
-                style: AppTextStyles.headlineSm
-                    .copyWith(color: AppColors.onSurface),
-              ),
-              SizedBox(height: 2.h),
-              Text(
-                item.formattedDate,
-                style: AppTextStyles.labelMd
-                    .copyWith(color: AppColors.onSurfaceVariant),
-              ),
-            ],
-          ),
-          SizedBox(width: 12.w),
-          AvatarWidget(
-            avatarUrl: item.studentAvatar,
-            size: 44.w,
-            fallback: Text(
-              initial,
-              style: AppTextStyles.headlineSm.copyWith(
-                color: AppColors.onPrimaryContainer,
-              ),
-            ),
-          ),
-        ],
+        ),
       ),
     );
   }
@@ -272,12 +328,9 @@ class _JustificationCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final attendance =
-        item.attendance ?? {};
+    final attendance = item.attendance ?? {};
     final dateStr = attendance['date'] as String? ?? '';
-    final date = dateStr.isNotEmpty
-        ? DateTime.tryParse(dateStr)
-        : null;
+    final date = dateStr.isNotEmpty ? DateTime.tryParse(dateStr) : null;
     final formattedDate = date != null
         ? '${date.day.toString().padLeft(2, '0')}/${date.month.toString().padLeft(2, '0')}/${date.year}'
         : 'غير محدد';
@@ -317,23 +370,36 @@ class _JustificationCard extends StatelessWidget {
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
               Container(
-                padding: EdgeInsets.symmetric(
-                    horizontal: 10.w, vertical: 4.h),
+                padding: EdgeInsets.symmetric(horizontal: 10.w, vertical: 4.h),
                 decoration: BoxDecoration(
                   color: bgColor,
-                  borderRadius:
-                      BorderRadius.circular(AppConstants.radiusMd),
+                  borderRadius: BorderRadius.circular(AppConstants.radiusMd),
                 ),
                 child: Text(
                   item.reasonLabel,
-                  style:
-                      AppTextStyles.labelSm.copyWith(color: fgColor),
+                  style: AppTextStyles.labelSm.copyWith(color: fgColor),
                 ),
               ),
-              Text(
-                item.studentName,
-                style: AppTextStyles.headlineSm
-                    .copyWith(color: AppColors.onSurface),
+              Row(
+                children: [
+                  Text(
+                    item.studentName,
+                    style: AppTextStyles.headlineSm.copyWith(
+                      color: AppColors.onSurface,
+                    ),
+                  ),
+                  SizedBox(width: 12.w),
+                  AvatarWidget(
+                    avatarUrl: item.studentAvatar,
+                    size: 44.w,
+                    fallback: Text(
+                      item.studentName.isNotEmpty ? item.studentName[0] : '؟',
+                      style: AppTextStyles.headlineSm.copyWith(
+                        color: AppColors.onPrimaryContainer,
+                      ),
+                    ),
+                  ),
+                ],
               ),
             ],
           ),
@@ -343,8 +409,7 @@ class _JustificationCard extends StatelessWidget {
             padding: EdgeInsets.all(12.w),
             decoration: BoxDecoration(
               color: AppColors.surfaceContainerLow,
-              borderRadius:
-                  BorderRadius.circular(AppConstants.radiusMd),
+              borderRadius: BorderRadius.circular(AppConstants.radiusMd),
             ),
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.end,
@@ -355,13 +420,15 @@ class _JustificationCard extends StatelessWidget {
                     Text(
                       formattedDate,
                       style: AppTextStyles.labelMd.copyWith(
-                          color: AppColors.onSurface,
-                          fontWeight: FontWeight.w600),
+                        color: AppColors.onSurface,
+                        fontWeight: FontWeight.w600,
+                      ),
                     ),
                     Text(
                       'تاريخ الغياب',
                       style: AppTextStyles.labelMd.copyWith(
-                          color: AppColors.onSurfaceVariant),
+                        color: AppColors.onSurfaceVariant,
+                      ),
                     ),
                   ],
                 ),
@@ -369,8 +436,9 @@ class _JustificationCard extends StatelessWidget {
                   SizedBox(height: 6.h),
                   Text(
                     item.notes!,
-                    style: AppTextStyles.bodyMd
-                        .copyWith(color: AppColors.onSurfaceVariant),
+                    style: AppTextStyles.bodyMd.copyWith(
+                      color: AppColors.onSurfaceVariant,
+                    ),
                     textAlign: TextAlign.right,
                   ),
                 ],

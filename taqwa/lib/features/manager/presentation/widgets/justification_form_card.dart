@@ -9,14 +9,7 @@ import '../../../../core/widgets/app_button.dart';
 import '../../../../core/widgets/app_text_field.dart';
 import '../../../../core/widgets/user_selector_field.dart';
 import '../../../../features/data/repositories/absence_justification_repository.dart';
-
-/// Reason options offered to the manager, mapped onto [JustificationReasonType]
-/// on the backend.
-const _reasonTypes = <String, String>{
-  'ILLNESS': 'مرض',
-  'OCCASION': 'مناسبة (عائلية، اجتماعية)',
-  'OTHER': 'أخرى',
-};
+import 'justification_reason_fields.dart';
 
 /// Inline form that lets a manager justify a student's absence or lateness.
 ///
@@ -53,7 +46,7 @@ class _JustificationFormCardState extends State<JustificationFormCard> {
 
   int? _selectedStudentId;
   DateTime? _selectedDate;
-  String _reasonType = 'ILLNESS';
+  String _reasonType = JustificationReasonFields.defaultReasonType;
   bool _isSaving = false;
 
   @override
@@ -131,8 +124,9 @@ class _JustificationFormCardState extends State<JustificationFormCard> {
       _showMessage('يرجى اختيار تاريخ الغياب', isError: true);
       return;
     }
-    if (_reasonType == 'OTHER' && reason.isEmpty) {
-      _showMessage('يرجى كتابة سبب الغياب', isError: true);
+    final reasonError = JustificationReasonFields.validate(_reasonType, reason);
+    if (reasonError != null) {
+      _showMessage(reasonError, isError: true);
       return;
     }
 
@@ -162,11 +156,7 @@ class _JustificationFormCardState extends State<JustificationFormCard> {
         'studentId': studentId,
         'attendanceId': attendanceId,
         'managerId': widget.managerId,
-        'reasonType': _reasonType,
-        if (_reasonType == 'OTHER')
-          'customReason': reason
-        else if (reason.isNotEmpty)
-          'notes': reason,
+        ...JustificationReasonFields.payload(_reasonType, reason),
       });
 
       if (!mounted) return;
@@ -229,16 +219,10 @@ class _JustificationFormCardState extends State<JustificationFormCard> {
             ),
           ),
           SizedBox(height: 16.h),
-          _buildReasonTypeField(),
-          SizedBox(height: 16.h),
-          AppTextField(
-            label: _reasonType == 'OTHER' ? 'سبب الغياب *' : 'ملاحظات إضافية',
-            hint: _reasonType == 'OTHER'
-                ? 'يرجى توضيح العذر هنا...'
-                : 'أضف أي تفاصيل أخرى (اختياري)',
+          JustificationReasonFields(
+            reasonType: _reasonType,
+            onReasonTypeChanged: (v) => setState(() => _reasonType = v),
             controller: _reasonController,
-            maxLines: 3,
-            minLines: 2,
           ),
           SizedBox(height: 20.h),
           AppButton(
@@ -292,50 +276,4 @@ class _JustificationFormCardState extends State<JustificationFormCard> {
     );
   }
 
-  Widget _buildReasonTypeField() {
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.end,
-      children: [
-        Text(
-          'نوع العذر *',
-          style: AppTextStyles.labelMd.copyWith(
-            color: AppColors.onSurfaceVariant,
-          ),
-        ),
-        SizedBox(height: 6.h),
-        Container(
-          padding: EdgeInsets.symmetric(horizontal: 16.w),
-          decoration: BoxDecoration(
-            color: AppColors.surfaceContainerLowest,
-            borderRadius: BorderRadius.circular(AppConstants.radiusMd),
-            border: Border.all(color: AppColors.inputBorder),
-          ),
-          child: DropdownButtonHideUnderline(
-            child: DropdownButton<String>(
-              value: _reasonType,
-              isExpanded: true,
-              borderRadius: BorderRadius.circular(AppConstants.radiusMd),
-              icon: Icon(
-                Icons.expand_more,
-                color: AppColors.onSurfaceVariant,
-                size: 22.w,
-              ),
-              style: AppTextStyles.bodyMd.copyWith(color: AppColors.onSurface),
-              onChanged: (v) {
-                if (v != null) setState(() => _reasonType = v);
-              },
-              items: _reasonTypes.entries
-                  .map(
-                    (e) => DropdownMenuItem(
-                      value: e.key,
-                      child: Text(e.value, textAlign: TextAlign.right),
-                    ),
-                  )
-                  .toList(),
-            ),
-          ),
-        ),
-      ],
-    );
-  }
 }

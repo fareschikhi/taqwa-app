@@ -55,6 +55,11 @@ class AbsenceJustificationModel {
     return user?['fullName'] ?? 'غير معروف';
   }
 
+  String? get studentAvatar {
+    final user = student?['user'] as Map<String, dynamic>?;
+    return user?['avatar'] as String?;
+  }
+
   String get reasonLabel {
     switch (reasonType) {
       case 'ILLNESS':
