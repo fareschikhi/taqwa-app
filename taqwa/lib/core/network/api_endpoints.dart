@@ -16,4 +16,5 @@ class ApiEndpoints {
   static const String managers = '/managers';
   static const String absenceJustifications = '/absence-justifications';
   static const String studentNotes = '/student-notes';
+  static const String uploads = '/uploads';
 }

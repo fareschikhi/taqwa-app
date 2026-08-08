@@ -7,7 +7,7 @@ import '../../../../core/theme/app_text_styles.dart';
 import '../../../../core/constants/app_constants.dart';
 import '../../../../core/widgets/app_button.dart';
 import '../../../../core/widgets/app_text_field.dart';
-import '../../../../core/services/cloudinary_service.dart';
+import '../../../../core/services/image_upload_service.dart';
 // import '../../../../core/models/halaqa_model.dart';
 import '../../../../features/data/repositories/manager_repository.dart';
 // import '../../../../features/data/repositories/halaqa_repository.dart';
@@ -121,7 +121,7 @@ class _CreateManagerPageState extends State<CreateManagerPage> {
     try {
       String? avatarUrl;
       if (_selectedImage != null) {
-        avatarUrl = await CloudinaryService.uploadImage(_selectedImage!);
+        avatarUrl = await ImageUploadService.uploadImage(_selectedImage!);
       }
 
       final data = <String, dynamic>{

@@ -2,7 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:image_picker/image_picker.dart';
 import '../../../../core/constants/app_constants.dart';
-import '../../../../core/services/cloudinary_service.dart';
+import '../../../../core/services/image_upload_service.dart';
 import '../../../../core/theme/app_colors.dart';
 import '../../../../core/theme/app_text_styles.dart';
 import '../../../../core/widgets/app_button.dart';
@@ -70,7 +70,7 @@ class _ParentFormPageState extends State<ParentFormPage> {
     try {
       String? avatarUrl;
       if (_pickedImage != null) {
-        avatarUrl = await CloudinaryService.uploadImage(_pickedImage!);
+        avatarUrl = await ImageUploadService.uploadImage(_pickedImage!);
       }
 
       final password = _passwordController.text.trim();

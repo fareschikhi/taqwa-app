@@ -1,4 +1,5 @@
 import { Module } from '@nestjs/common';
+import { ConfigModule } from '@nestjs/config';
 import { AppController } from './app.controller';
 import { AppService } from './app.service';
 import { PrismaModule } from './prisma/prisma.module';
@@ -15,9 +16,13 @@ import { NotificationsModule } from './modules/notifications/notifications.modul
 import { ManagersModule } from './modules/managers/managers.module';
 import { AbsenceJustificationModule } from './modules/absence-justification/absence-justification.module';
 import { StudentNotesModule } from './modules/student-notes/student-notes.module';
+import { UploadsModule } from './modules/uploads/uploads.module';
 
 @Module({
   imports: [
+    // Loads backend/.env into process.env. Prisma reads that file on its own,
+    // but nothing else did, so every other process.env lookup was undefined.
+    ConfigModule.forRoot({ isGlobal: true }),
     PrismaModule,
     AuthModule,
     UsersModule,
@@ -32,6 +37,7 @@ import { StudentNotesModule } from './modules/student-notes/student-notes.module
     ManagersModule,
     AbsenceJustificationModule,
     StudentNotesModule,
+    UploadsModule,
   ],
   controllers: [AppController],
   providers: [AppService],

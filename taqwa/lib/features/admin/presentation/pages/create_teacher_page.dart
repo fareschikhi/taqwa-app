@@ -8,7 +8,7 @@ import '../../../../core/constants/app_constants.dart';
 import '../../../../core/widgets/app_button.dart';
 import '../../../../core/widgets/app_text_field.dart';
 import '../../../../core/models/teacher/teacher_payload_dto.dart';
-import '../../../../core/services/cloudinary_service.dart';
+import '../../../../core/services/image_upload_service.dart';
 import '../../../data/repositories/teacher_repository.dart';
 
 class CreateTeacherPage extends StatefulWidget {
@@ -88,7 +88,7 @@ class _CreateTeacherPageState extends State<CreateTeacherPage> {
     try {
       String? avatarUrl;
       if (_selectedImage != null) {
-        avatarUrl = await CloudinaryService.uploadImage(_selectedImage!);
+        avatarUrl = await ImageUploadService.uploadImage(_selectedImage!);
       }
 
       await _repo.createTeacher(
