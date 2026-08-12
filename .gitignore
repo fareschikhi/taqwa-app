@@ -2,6 +2,10 @@
 backend/node_modules/
 backend/dist/
 backend/.env
+# Any local env variant (.env.aiven, .env.local, ...) holds real credentials.
+# The example file is the one deliberate exception.
+backend/.env.*
+!backend/.env.example
 backend/coverage/
 backend/*.tsbuildinfo
 
