@@ -6,8 +6,13 @@
   // the project root — which silently broke `start:prod` (node dist/main).
   // The seed script is excluded because it runs through ts-node at the
   // command line and has no place in a production build.
+  // `incremental` is off here even though tsconfig.json enables it for the dev
+  // server. nest-cli deletes dist/ before every build, which leaves the cache
+  // describing output files that no longer exist — TypeScript then emits
+  // nothing and still exits 0, so the build "succeeds" with an empty dist/.
   "compilerOptions": {
-    "rootDir": "./src"
+    "rootDir": "./src",
+    "incremental": false
   },
   "exclude": ["node_modules", "test", "dist", "prisma", "**/*spec.ts"]
 }

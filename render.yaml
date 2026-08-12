@@ -15,11 +15,19 @@ services:
     # Render would build from the repository root, where there is no package.json.
     rootDir: backend
 
-    # `npm run build` runs `prisma generate` before `nest build`. Prisma's
+    # `npm install`, not `npm ci`. The lockfile has no top-level entry for
+    # @emnapi/core or @emnapi/runtime, which @napi-rs/wasm-runtime declares as
+    # peer dependencies. Windows never selects that package — it resolves the
+    # native win32 binding instead — so the gap cannot be closed by
+    # regenerating the lockfile here, and `npm ci` refuses to install on Linux.
+    # `npm install` resolves peers at install time. Versions are still pinned
+    # by the lockfile wherever it is complete.
+    #
+    # `npm run build` then runs `prisma generate` before `nest build`. Prisma's
     # install-time hook is unreliable once npm serves dependencies from cache,
     # and a missing client only surfaces at runtime, so it is generated here
     # explicitly.
-    buildCommand: npm ci && npm run build
+    buildCommand: npm install --no-audit --no-fund && npm run build
 
     # Migrations are applied on boot rather than at build time: the build step
     # has no reason to hold database credentials, and `migrate deploy` is
