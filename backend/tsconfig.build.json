@@ -1,4 +1,13 @@
 {
   "extends": "./tsconfig.json",
-  "exclude": ["node_modules", "test", "dist", "**/*spec.ts"]
+  // rootDir is explicit so the emitted tree is always dist/main.js and not
+  // dist/src/main.js. TypeScript otherwise infers the root from whatever it
+  // compiles, and including prisma/seed.ts pushed the common ancestor up to
+  // the project root — which silently broke `start:prod` (node dist/main).
+  // The seed script is excluded because it runs through ts-node at the
+  // command line and has no place in a production build.
+  "compilerOptions": {
+    "rootDir": "./src"
+  },
+  "exclude": ["node_modules", "test", "dist", "prisma", "**/*spec.ts"]
 }
