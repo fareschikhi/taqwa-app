@@ -1,0 +1,52 @@
+# Render Blueprint for the Taqwa API.
+#
+# Render reads this when you create a service from the repo, so the deploy is
+# reproducible instead of a set of values typed into a dashboard once and
+# forgotten. Creating the service by hand works too — the four settings that
+# matter are rootDir, buildCommand, startCommand and healthCheckPath.
+
+services:
+  - type: web
+    name: taqwa-api
+    runtime: node
+    plan: free
+
+    # This repository holds both the API and the Flutter app. Without rootDir,
+    # Render would build from the repository root, where there is no package.json.
+    rootDir: backend
+
+    # `npm run build` runs `prisma generate` before `nest build`. Prisma's
+    # install-time hook is unreliable once npm serves dependencies from cache,
+    # and a missing client only surfaces at runtime, so it is generated here
+    # explicitly.
+    buildCommand: npm ci && npm run build
+
+    # Migrations are applied on boot rather than at build time: the build step
+    # has no reason to hold database credentials, and `migrate deploy` is
+    # idempotent, so restarts are safe.
+    startCommand: npx prisma migrate deploy && npm run start:prod
+
+    # main.ts sets a global `api` prefix, so the root controller answers at
+    # /api and not at /. Pointing the health check at / would 404 and Render
+    # would restart a perfectly healthy service.
+    healthCheckPath: /api
+
+    envVars:
+      # `sync: false` means Render prompts for the value and stores it as a
+      # secret. Nothing here is ever committed.
+      - key: DATABASE_URL
+        sync: false
+      - key: JWT_SECRET
+        sync: false
+      - key: CLOUDINARY_CLOUD_NAME
+        sync: false
+      - key: CLOUDINARY_API_KEY
+        sync: false
+      - key: CLOUDINARY_API_SECRET
+        sync: false
+
+      # Not a secret, and the app has no default for it.
+      - key: JWT_EXPIRES_IN
+        value: 7d
+
+    # PORT is injected by Render; main.ts already reads it and binds 0.0.0.0.
