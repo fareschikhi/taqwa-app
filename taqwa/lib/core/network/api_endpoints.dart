@@ -1,8 +1,12 @@
 class ApiEndpoints {
-  // Use 'http://10.0.2.2:3000/api' for Android emulator
-  // Use 'http://localhost:3000/api' for physical device (with adb reverse tcp:3000 tcp:3000)
-  // Use 'http://10.172.59.43:3000/api' for physical device on local network (no adb needed)
-  static const String baseUrl = 'http://192.168.100.76:3000/api';
+  // Production API on Render. A phone needs a public address, so a LAN IP only
+  // works while the device sits on the same network as the dev machine.
+  //
+  // For local development, swap in one of these:
+  //   'http://10.0.2.2:3000/api'        Android emulator
+  //   'http://localhost:3000/api'       physical device via `adb reverse tcp:3000 tcp:3000`
+  //   'http://192.168.100.76:3000/api'  physical device on the same WiFi
+  static const String baseUrl = 'https://taqwa-api-txbq.onrender.com/api';
   static const String login = '/auth/login';
   static const String users = '/users';
   static const String teachers = '/teachers';
