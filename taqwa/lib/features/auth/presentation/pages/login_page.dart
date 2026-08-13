@@ -74,7 +74,10 @@ class _LoginPageState extends ConsumerState<LoginPage>
   //   });
   // }
   Future<void> _login() async {
-    // if (!_formKey.currentState!.validate()) return;
+    // Runs the "required field" validators the form already declares. Without
+    // this an empty form reaches the API, which answers "incorrect credentials"
+    // instead of pointing at the field the user left blank.
+    if (!_formKey.currentState!.validate()) return;
     setState(() => _isLoading = true);
 
     // admin 0000
@@ -84,8 +87,8 @@ class _LoginPageState extends ConsumerState<LoginPage>
     // password: '123456',
     final success = await ref
         .read(authProvider.notifier)
-        .login('1001', '123456');
-    // .login(_phoneController.text.trim(), _passwordController.text);
+        // .login('1001', '123456');
+        .login(_phoneController.text.trim(), _passwordController.text);
 
     if (!mounted) return;
     setState(() => _isLoading = false);
