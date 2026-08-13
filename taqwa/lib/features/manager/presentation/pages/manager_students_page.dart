@@ -5,13 +5,12 @@ import '../../../../core/theme/app_colors.dart';
 import '../../../../core/theme/app_text_styles.dart';
 import '../../../../core/constants/app_constants.dart';
 import '../../../../core/providers/auth_provider.dart';
-import 'package:taqwa/features/data/network/dio_client.dart';
-import 'package:taqwa/features/data/network/api_endpoints.dart';
 import '../../../../core/widgets/search_bar_widget.dart';
 import '../../../../core/widgets/app_button.dart';
 import '../../../../core/widgets/confirm_delete_dialog.dart';
 import '../../../../features/data/models/student/student_model.dart';
 import '../../../../features/data/repositories/student_repository.dart';
+import '../../../../features/data/repositories/manager_repository.dart';
 import '../../../shared/presentation/pages/student_form_page.dart';
 
 class ManagerStudentsPage extends ConsumerStatefulWidget {
@@ -29,6 +28,7 @@ class _ManagerStudentsPageState extends ConsumerState<ManagerStudentsPage> {
   int _filterIndex = 0;
   final _searchController = TextEditingController();
   final _studentRepo = StudentRepository();
+  final _managerRepo = ManagerRepository();
 
   /// Opens the shared student form: [student] null creates, otherwise edits
   /// that row. The manager id scopes the halaqa options to the ones they own.
@@ -90,9 +90,7 @@ class _ManagerStudentsPageState extends ConsumerState<ManagerStudentsPage> {
         return;
       }
 
-      final dio = DioClient.instance;
-      final res = await dio.get('${ApiEndpoints.managers}/$mgrId/students');
-      final students = (res.data as List).cast<Map<String, dynamic>>();
+      final students = await _managerRepo.getManagerStudents(mgrId);
 
       if (mounted) {
         setState(() {
