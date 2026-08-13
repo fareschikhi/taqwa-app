@@ -3,8 +3,7 @@ import 'package:flutter_screenutil/flutter_screenutil.dart';
 import '../../../../core/theme/app_colors.dart';
 import '../../../../core/theme/app_text_styles.dart';
 import '../../../../core/constants/app_constants.dart';
-import 'package:taqwa/features/data/network/dio_client.dart';
-import 'package:taqwa/features/data/network/api_endpoints.dart';
+import 'package:taqwa/features/data/repositories/student_repository.dart';
 import '../../../../core/widgets/app_button.dart';
 import '../../../../core/widgets/app_text_field.dart';
 import '../../../../core/widgets/user_selector_field.dart';
@@ -41,6 +40,7 @@ class JustificationFormCard extends StatefulWidget {
 
 class _JustificationFormCardState extends State<JustificationFormCard> {
   final _repo = AbsenceJustificationRepository();
+  final _studentRepo = StudentRepository();
   final _reasonController = TextEditingController();
   final _dateController = TextEditingController();
 
@@ -95,17 +95,14 @@ class _JustificationFormCardState extends State<JustificationFormCard> {
     final dateStr =
         '${date.year}-${date.month.toString().padLeft(2, '0')}-${date.day.toString().padLeft(2, '0')}';
 
-    final res = await DioClient.instance.get(
-      '${ApiEndpoints.attendance}/student/$studentId',
-    );
-    final records = res.data as List;
+    final records = await _studentRepo.getAttendanceHistory(studentId);
 
     for (final record in records) {
       final recordDate = record['date'] as String? ?? '';
       final status = record['status'] as String? ?? '';
       if (recordDate.startsWith(dateStr) &&
           (status == 'ABSENT' || status == 'LATE')) {
-        return record as Map<String, dynamic>;
+        return record;
       }
     }
     return null;
