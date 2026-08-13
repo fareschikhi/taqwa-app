@@ -25,3 +25,6 @@ Thumbs.db
 # Database dumps (contain password hashes — never commit)
 backups/
 *.sql.bak
+
+# Local scratch notes (may contain test credentials).
+taqwa_note.txt
