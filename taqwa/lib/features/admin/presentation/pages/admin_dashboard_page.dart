@@ -40,6 +40,9 @@ class _AdminDashboardPageState extends ConsumerState<AdminDashboardPage> {
 
   Future<void> _loadStats() async {
     try {
+      // getAllStudents() is capped at the backend's page size, so the real
+      // total comes from a separate count call, fetched in parallel with it.
+      final studentsCountFuture = _studentRepo.getStudentsCount();
       final results = await Future.wait([
         _studentRepo.getAllStudents(),
         _teacherRepo.getAllTeachers(),
@@ -47,10 +50,10 @@ class _AdminDashboardPageState extends ConsumerState<AdminDashboardPage> {
         _managerRepo.getAllManagers(),
       ]);
 
-      final students = results[0];
       final teachers = results[1];
       final halaqas = results[2];
       final managers = results[3];
+      final studentsCount = await studentsCountFuture;
 
       // Compute today's attendance rate from today's records
       String rate = '—';
@@ -67,7 +70,7 @@ class _AdminDashboardPageState extends ConsumerState<AdminDashboardPage> {
 
       if (mounted) {
         setState(() {
-          _studentsCount = students.length;
+          _studentsCount = studentsCount;
           _teachersCount = teachers.length;
           _halaqasCount = halaqas.length;
           _managersCount = managers.length;

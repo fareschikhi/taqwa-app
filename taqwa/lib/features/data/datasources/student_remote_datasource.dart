@@ -15,6 +15,13 @@ class StudentRemoteDatasource {
         .toList();
   }
 
+  /// The backend paginates `/students` and caps `data` at the page's
+  /// `limit`, but the response still carries the real `total` count.
+  Future<int> getCount() async {
+    final res = await _dio.get('/students');
+    return res.data['total'] as int;
+  }
+
   Future<StudentModel> getOne(int id) async {
     final res = await _dio.get('/students/$id');
     return StudentModel.fromJson(res.data);

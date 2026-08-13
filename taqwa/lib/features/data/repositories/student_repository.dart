@@ -9,6 +9,8 @@ class StudentRepository {
 
   Future<List<StudentModel>> getAllStudents() => _ds.getAll();
 
+  Future<int> getStudentsCount() => _ds.getCount();
+
   Future<StudentModel> getStudent(int id) => _ds.getOne(id);
 
   Future<StudentModel> createStudent(StudentPayloadDto student) =>
