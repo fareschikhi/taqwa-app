@@ -5,9 +5,8 @@ import '../../../../core/theme/app_text_styles.dart';
 import '../../../../core/constants/app_constants.dart';
 import '../../../../core/widgets/search_bar_widget.dart';
 import '../../../../core/widgets/confirm_delete_dialog.dart';
-import 'package:taqwa/features/data/network/dio_client.dart';
-import 'package:taqwa/features/data/network/api_endpoints.dart';
-import '../../../../features/data/repositories/halaqa_repository.dart';
+import 'package:taqwa/features/data/repositories/halaqa_repository.dart';
+import 'package:taqwa/features/data/models/halaqa/halaqa_model.dart';
 import 'create_halaqa_page.dart';
 import '../admin_shell.dart';
 
@@ -20,8 +19,8 @@ class HalaqasManagementPage extends StatefulWidget {
 
 class _HalaqasManagementPageState extends State<HalaqasManagementPage> {
   final _searchController = TextEditingController();
-  List<Map<String, dynamic>> _halaqas = [];
-  List<Map<String, dynamic>> _filtered = [];
+  List<HalaqaModel> _halaqas = [];
+  List<HalaqaModel> _filtered = [];
   bool _isLoading = true;
   final _halaqaRepo = HalaqaRepository();
 
@@ -62,9 +61,7 @@ class _HalaqasManagementPageState extends State<HalaqasManagementPage> {
 
   Future<void> _load() async {
     try {
-      final dio = DioClient.instance;
-      final res = await dio.get(ApiEndpoints.halaqas);
-      final list = (res.data as List).cast<Map<String, dynamic>>();
+      final list = await _halaqaRepo.getAllHalaqas();
       if (mounted) {
         setState(() {
           _halaqas = list;
@@ -82,11 +79,8 @@ class _HalaqasManagementPageState extends State<HalaqasManagementPage> {
     _filtered = q.isEmpty
         ? _halaqas
         : _halaqas.where((h) {
-            final name = (h['name'] ?? '').toString().toLowerCase();
-            final teacher = h['teacher'] as Map<String, dynamic>? ?? {};
-            final teacherUser = teacher['user'] as Map<String, dynamic>? ?? {};
-            final teacherName =
-                (teacherUser['fullName'] ?? '').toString().toLowerCase();
+            final name = h.name.toLowerCase();
+            final teacherName = (h.teacherName ?? '').toLowerCase();
             return name.contains(q) || teacherName.contains(q);
           }).toList();
   }
@@ -188,9 +182,7 @@ class _HalaqasManagementPageState extends State<HalaqasManagementPage> {
                             itemCount: _filtered.length,
                             itemBuilder: (_, i) => _HalaqaCard(
                               halaqa: _filtered[i],
-                              onDelete: () => _deleteHalaqa(
-                                _filtered[i]['id'] as int,
-                              ),
+                              onDelete: () => _deleteHalaqa(_filtered[i].id),
                             ),
                           ),
               ),
@@ -217,7 +209,7 @@ class _HalaqasManagementPageState extends State<HalaqasManagementPage> {
 
 class _HalaqaCard extends StatelessWidget {
   const _HalaqaCard({required this.halaqa, required this.onDelete});
-  final Map<String, dynamic> halaqa;
+  final HalaqaModel halaqa;
   final VoidCallback onDelete;
 
   static const _levelIcons = {
@@ -239,13 +231,10 @@ class _HalaqaCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final name = halaqa['name'] ?? '';
-    final level = halaqa['level'] ?? '';
-    final teacher = halaqa['teacher'] as Map<String, dynamic>? ?? {};
-    final teacherUser = teacher['user'] as Map<String, dynamic>? ?? {};
-    final teacherName = teacherUser['fullName'] ?? '';
-    final counts = halaqa['_count'] as Map<String, dynamic>? ?? {};
-    final studentCount = counts['students'] ?? 0;
+    final name = halaqa.name;
+    final level = halaqa.level ?? '';
+    final teacherName = halaqa.teacherName ?? '';
+    final studentCount = halaqa.studentCount;
     final icon = _levelIcons[level] ?? Icons.local_library;
     final levelColor = _levelColor(level);
 
