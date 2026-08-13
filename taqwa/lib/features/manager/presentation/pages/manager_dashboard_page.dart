@@ -5,8 +5,8 @@ import '../../../../core/theme/app_colors.dart';
 import '../../../../core/theme/app_text_styles.dart';
 import '../../../../core/constants/app_constants.dart';
 import '../../../../core/providers/auth_provider.dart';
-import 'package:taqwa/features/data/network/dio_client.dart';
-import 'package:taqwa/features/data/network/api_endpoints.dart';
+import 'package:taqwa/features/data/repositories/manager_repository.dart';
+import 'package:taqwa/features/data/repositories/absence_justification_repository.dart';
 import '../widgets/justification_form_card.dart';
 
 class ManagerDashboardPage extends ConsumerStatefulWidget {
@@ -18,6 +18,8 @@ class ManagerDashboardPage extends ConsumerStatefulWidget {
 }
 
 class _ManagerDashboardPageState extends ConsumerState<ManagerDashboardPage> {
+  final _managerRepo = ManagerRepository();
+  final _justificationRepo = AbsenceJustificationRepository();
   Map<String, dynamic>? _stats;
   List<dynamic> _students = [];
   int? _managerId;
@@ -40,31 +42,14 @@ class _ManagerDashboardPageState extends ConsumerState<ManagerDashboardPage> {
         return;
       }
 
-      final dio = DioClient.instance;
-
-      final studentsRes = await dio.get(
-        '${ApiEndpoints.managers}/$mgrId/students',
-      );
-      final students = studentsRes.data as List;
-
-      final halaqasRes = await dio.get(
-        '${ApiEndpoints.managers}/$mgrId/halaqas',
-      );
-      final halaqas = halaqasRes.data as List;
-
-      final justRes = await dio.get(
-        ApiEndpoints.absenceJustifications,
-        queryParameters: {'managerId': mgrId},
-      );
-      final justifications = justRes.data as List;
+      final students = await _managerRepo.getManagerStudents(mgrId);
+      final halaqas = await _managerRepo.getManagerHalaqas(mgrId);
+      final justifications =
+          await _justificationRepo.getAllJustifications(managerId: mgrId);
 
       // Absences and latenesses still waiting for a justification — the same
       // list the "بانتظار التبرير" tab of the justifications page shows.
-      final unjustifiedRes = await dio.get(
-        '${ApiEndpoints.absenceJustifications}/unjustified',
-        queryParameters: {'managerId': mgrId},
-      );
-      final unjustified = unjustifiedRes.data as List;
+      final unjustified = await _justificationRepo.getUnjustified(mgrId);
 
       // Distinct parents across the manager's students. Derived from the
       // students payload because GET /parents needs MANAGE_ACCOUNTS, which
