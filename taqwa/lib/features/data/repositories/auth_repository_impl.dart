@@ -30,6 +30,4 @@ class AuthRepository {
     );
     return result;
   }
-
-  Future<void> logout() async => _storage.deleteAll();
 }
