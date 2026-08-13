@@ -29,254 +29,238 @@ class _ReportsPageState extends State<ReportsPage> {
           child: CustomScrollView(
             physics: const AlwaysScrollableScrollPhysics(),
             slivers: [
-            SliverPadding(
-              padding: EdgeInsets.symmetric(horizontal: 16.w),
-              sliver: SliverList(
-                delegate: SliverChildListDelegate([
-                  SizedBox(height: 16.h),
-                  // Header
-                  Row(
-                    children: [
-                      GestureDetector(
-                        onTap: () => AdminShellScope.of(context)?.openMenu(),
-                        child: Container(
-                          width: 40.w,
-                          height: 40.w,
-                          decoration: BoxDecoration(
-                            color: AppColors.surfaceContainer,
-                            borderRadius:
-                                BorderRadius.circular(AppConstants.radiusMd),
-                          ),
-                          child: const Icon(
-                            Icons.menu,
-                            color: AppColors.onSurfaceVariant,
-                          ),
-                        ),
-                      ),
-                      SizedBox(width: 8.w),
-                      Container(
-                        padding: EdgeInsets.symmetric(
-                          horizontal: 12.w,
-                          vertical: 6.h,
-                        ),
-                        decoration: BoxDecoration(
-                          color: AppColors.primaryContainer.withValues(
-                            alpha: 0.3,
-                          ),
-                          borderRadius: BorderRadius.circular(
-                            AppConstants.radiusFull,
-                          ),
-                          border: Border.all(color: AppColors.outlineVariant),
-                        ),
-                        child: Row(
-                          mainAxisSize: MainAxisSize.min,
-                          children: [
-                            const Icon(
-                              Icons.download_outlined,
-                              size: 16,
-                              color: AppColors.primary,
-                            ),
-                            SizedBox(width: 4.w),
-                            Text(
-                              'تصدير',
-                              style: AppTextStyles.labelMd.copyWith(
-                                color: AppColors.primary,
+              SliverPadding(
+                padding: EdgeInsets.symmetric(horizontal: 16.w),
+                sliver: SliverList(
+                  delegate: SliverChildListDelegate([
+                    SizedBox(height: 16.h),
+                    // Header
+                    Row(
+                      children: [
+                        GestureDetector(
+                          onTap: () => AdminShellScope.of(context)?.openMenu(),
+                          child: Container(
+                            width: 40.w,
+                            height: 40.w,
+                            decoration: BoxDecoration(
+                              color: AppColors.surfaceContainer,
+                              borderRadius: BorderRadius.circular(
+                                AppConstants.radiusMd,
                               ),
                             ),
-                          ],
+                            child: const Icon(
+                              Icons.menu,
+                              color: AppColors.onSurfaceVariant,
+                            ),
+                          ),
                         ),
-                      ),
-                      const Spacer(),
-                      Text(
-                        'التقارير والإحصاءات',
-                        style: AppTextStyles.headlineLgMobile.copyWith(
-                          color: AppColors.onSurface,
+                        SizedBox(width: 8.w),
+                        Container(
+                          padding: EdgeInsets.symmetric(
+                            horizontal: 12.w,
+                            vertical: 6.h,
+                          ),
+                          decoration: BoxDecoration(
+                            color: AppColors.primaryContainer.withValues(
+                              alpha: 0.3,
+                            ),
+                            borderRadius: BorderRadius.circular(
+                              AppConstants.radiusFull,
+                            ),
+                            border: Border.all(color: AppColors.outlineVariant),
+                          ),
                         ),
-                      ),
-                    ],
-                  ),
-                  SizedBox(height: 4.h),
-                  Align(
-                    alignment: AlignmentDirectional.centerEnd,
-                    child: Text(
-                      'تتبع أداء المعهد بشكل دوري',
-                      style: AppTextStyles.bodyMd.copyWith(
-                        color: AppColors.onSurfaceVariant,
+                        const Spacer(),
+                        Text(
+                          'التقارير والإحصاءات',
+                          style: AppTextStyles.headlineLgMobile.copyWith(
+                            color: AppColors.onSurface,
+                          ),
+                        ),
+                      ],
+                    ),
+                    SizedBox(height: 4.h),
+                    Align(
+                      alignment: AlignmentDirectional.centerEnd,
+                      child: Text(
+                        'تتبع أداء المعهد بشكل دوري',
+                        style: AppTextStyles.bodyMd.copyWith(
+                          color: AppColors.onSurfaceVariant,
+                        ),
                       ),
                     ),
-                  ),
-                  SizedBox(height: 16.h),
-                  // Period filter
-                  SingleChildScrollView(
-                    scrollDirection: Axis.horizontal,
-                    reverse: true,
-                    child: Row(
-                      children: List.generate(_periods.length, (i) {
-                        final selected = _periodIndex == i;
-                        return Padding(
-                          padding: EdgeInsets.only(left: 8.w),
-                          child: GestureDetector(
-                            onTap: () => setState(() => _periodIndex = i),
-                            child: AnimatedContainer(
-                              duration: AppConstants.animFast,
-                              padding: EdgeInsets.symmetric(
-                                horizontal: 16.w,
-                                vertical: 8.h,
-                              ),
-                              decoration: BoxDecoration(
-                                color: selected
-                                    ? AppColors.primary
-                                    : AppColors.surfaceContainerLowest,
-                                borderRadius: BorderRadius.circular(
-                                  AppConstants.radiusFull,
+                    SizedBox(height: 16.h),
+                    // Period filter
+                    SingleChildScrollView(
+                      scrollDirection: Axis.horizontal,
+                      reverse: true,
+                      child: Row(
+                        children: List.generate(_periods.length, (i) {
+                          final selected = _periodIndex == i;
+                          return Padding(
+                            padding: EdgeInsets.only(left: 8.w),
+                            child: GestureDetector(
+                              onTap: () => setState(() => _periodIndex = i),
+                              child: AnimatedContainer(
+                                duration: AppConstants.animFast,
+                                padding: EdgeInsets.symmetric(
+                                  horizontal: 16.w,
+                                  vertical: 8.h,
                                 ),
-                                border: Border.all(
+                                decoration: BoxDecoration(
                                   color: selected
                                       ? AppColors.primary
-                                      : AppColors.outlineVariant,
+                                      : AppColors.surfaceContainerLowest,
+                                  borderRadius: BorderRadius.circular(
+                                    AppConstants.radiusFull,
+                                  ),
+                                  border: Border.all(
+                                    color: selected
+                                        ? AppColors.primary
+                                        : AppColors.outlineVariant,
+                                  ),
                                 ),
-                              ),
-                              child: Text(
-                                _periods[i],
-                                style: AppTextStyles.labelMd.copyWith(
-                                  color: selected
-                                      ? AppColors.onPrimary
-                                      : AppColors.onSurfaceVariant,
+                                child: Text(
+                                  _periods[i],
+                                  style: AppTextStyles.labelMd.copyWith(
+                                    color: selected
+                                        ? AppColors.onPrimary
+                                        : AppColors.onSurfaceVariant,
+                                  ),
                                 ),
                               ),
                             ),
-                          ),
-                        );
-                      }),
+                          );
+                        }),
+                      ),
                     ),
-                  ),
-                  SizedBox(height: 20.h),
-                  // KPI row
-                  GridView(
-                    shrinkWrap: true,
-                    physics: const NeverScrollableScrollPhysics(),
-                    gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
-                      crossAxisCount: 2,
-                      crossAxisSpacing: 12.w,
-                      mainAxisSpacing: 12.h,
-                      childAspectRatio: 1.6,
-                    ),
-                    children: [
-                      StatCard(
-                        value: '1,240',
-                        label: 'إجمالي الطلاب',
-                        icon: Icons.group,
-                        trend: '5.2%+',
-                        trendPositive: true,
+                    SizedBox(height: 20.h),
+                    // KPI row
+                    GridView(
+                      shrinkWrap: true,
+                      physics: const NeverScrollableScrollPhysics(),
+                      gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
+                        crossAxisCount: 2,
+                        crossAxisSpacing: 12.w,
+                        mainAxisSpacing: 12.h,
+                        childAspectRatio: 1.6,
                       ),
-                      StatCard(
-                        value: '94%',
-                        label: 'نسبة الحضور',
-                        icon: Icons.check_circle,
-                        valueColor: AppColors.primary,
-                        iconColor: AppColors.primary,
-                        iconBgColor: AppColors.primaryContainer,
-                        bubbleColor: AppColors.primaryContainer,
-                      ),
-                      StatCard(
-                        value: '82',
-                        label: 'الحلقات النشطة',
-                        icon: Icons.menu_book,
-                        iconColor: AppColors.tertiary,
-                        iconBgColor: AppColors.tertiaryContainer,
-                        bubbleColor: AppColors.tertiaryContainer,
-                      ),
-                      StatCard(
-                        value: '14',
-                        label: 'طلاب متأخرون',
-                        icon: Icons.warning_amber_outlined,
-                        iconColor: AppColors.error,
-                        iconBgColor: AppColors.errorContainer,
-                        bubbleColor: AppColors.errorContainer,
-                        valueColor: AppColors.error,
-                      ),
-                    ],
-                  ),
-                  SizedBox(height: 20.h),
-                  // Memorization completion
-                  AppCard(
-                    padding: EdgeInsets.all(20.w),
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.end,
                       children: [
-                        Text(
-                          'إتمام الحفظ',
-                          style: AppTextStyles.headlineSm.copyWith(
-                            color: AppColors.onSurface,
-                          ),
+                        StatCard(
+                          value: '1,240',
+                          label: 'إجمالي الطلاب',
+                          icon: Icons.group,
+                          trend: '5.2%+',
+                          trendPositive: true,
                         ),
-                        SizedBox(height: 4.h),
-                        Text(
-                          'نسبة الطلاب الذين أتموا أهداف الحفظ هذا الشهر',
-                          style: AppTextStyles.labelSm.copyWith(
-                            color: AppColors.onSurfaceVariant,
-                          ),
-                          textAlign: TextAlign.end,
+                        StatCard(
+                          value: '94%',
+                          label: 'نسبة الحضور',
+                          icon: Icons.check_circle,
+                          valueColor: AppColors.primary,
+                          iconColor: AppColors.primary,
+                          iconBgColor: AppColors.primaryContainer,
+                          bubbleColor: AppColors.primaryContainer,
                         ),
-                        SizedBox(height: 20.h),
-                        Center(child: _DonutChart(percentage: 0.65)),
-                        SizedBox(height: 20.h),
-                        Row(
-                          mainAxisAlignment: MainAxisAlignment.spaceEvenly,
-                          children: [
-                            _LegendItem(
-                              color: AppColors.primary,
-                              label: 'أتمّوا الهدف',
-                              value: '65%',
-                            ),
-                            _LegendItem(
-                              color: AppColors.surfaceContainerHigh,
-                              label: 'لم يتموا الهدف',
-                              value: '35%',
-                            ),
-                          ],
+                        StatCard(
+                          value: '82',
+                          label: 'الحلقات النشطة',
+                          icon: Icons.menu_book,
+                          iconColor: AppColors.tertiary,
+                          iconBgColor: AppColors.tertiaryContainer,
+                          bubbleColor: AppColors.tertiaryContainer,
+                        ),
+                        StatCard(
+                          value: '14',
+                          label: 'طلاب متأخرون',
+                          icon: Icons.warning_amber_outlined,
+                          iconColor: AppColors.error,
+                          iconBgColor: AppColors.errorContainer,
+                          bubbleColor: AppColors.errorContainer,
+                          valueColor: AppColors.error,
                         ),
                       ],
                     ),
-                  ),
-                  SizedBox(height: 16.h),
-                  // Teacher performance
-                  AppCard(
-                    padding: EdgeInsets.all(20.w),
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.end,
-                      children: [
-                        Text(
-                          'أداء المعلمين',
-                          style: AppTextStyles.headlineSm.copyWith(
-                            color: AppColors.onSurface,
+                    SizedBox(height: 20.h),
+                    // Memorization completion
+                    AppCard(
+                      padding: EdgeInsets.all(20.w),
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.end,
+                        children: [
+                          Text(
+                            'إتمام الحفظ',
+                            style: AppTextStyles.headlineSm.copyWith(
+                              color: AppColors.onSurface,
+                            ),
                           ),
-                        ),
-                        SizedBox(height: 16.h),
-                        _TeacherPerfRow(name: 'الشيخ محمود', score: 0.92),
-                        SizedBox(height: 12.h),
-                        _TeacherPerfRow(name: 'الشيخ يوسف', score: 0.88),
-                        SizedBox(height: 12.h),
-                        _TeacherPerfRow(name: 'الشيخ أحمد', score: 0.78),
-                        SizedBox(height: 12.h),
-                        _TeacherPerfRow(
-                          name: 'الشيخ عبدالله',
-                          score: 0.65,
-                          color: AppColors.secondary,
-                        ),
-                      ],
+                          SizedBox(height: 4.h),
+                          Text(
+                            'نسبة الطلاب الذين أتموا أهداف الحفظ هذا الشهر',
+                            style: AppTextStyles.labelSm.copyWith(
+                              color: AppColors.onSurfaceVariant,
+                            ),
+                            textAlign: TextAlign.end,
+                          ),
+                          SizedBox(height: 20.h),
+                          Center(child: _DonutChart(percentage: 0.65)),
+                          SizedBox(height: 20.h),
+                          Row(
+                            mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+                            children: [
+                              _LegendItem(
+                                color: AppColors.primary,
+                                label: 'أتمّوا الهدف',
+                                value: '65%',
+                              ),
+                              _LegendItem(
+                                color: AppColors.surfaceContainerHigh,
+                                label: 'لم يتموا الهدف',
+                                value: '35%',
+                              ),
+                            ],
+                          ),
+                        ],
+                      ),
                     ),
-                  ),
-                  // Weekly Attendance Chart
-                  SizedBox(height: 32.h),
-                ]),
+                    SizedBox(height: 16.h),
+                    // Teacher performance
+                    AppCard(
+                      padding: EdgeInsets.all(20.w),
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.end,
+                        children: [
+                          Text(
+                            'أداء المعلمين',
+                            style: AppTextStyles.headlineSm.copyWith(
+                              color: AppColors.onSurface,
+                            ),
+                          ),
+                          SizedBox(height: 16.h),
+                          _TeacherPerfRow(name: 'الشيخ محمود', score: 0.92),
+                          SizedBox(height: 12.h),
+                          _TeacherPerfRow(name: 'الشيخ يوسف', score: 0.88),
+                          SizedBox(height: 12.h),
+                          _TeacherPerfRow(name: 'الشيخ أحمد', score: 0.78),
+                          SizedBox(height: 12.h),
+                          _TeacherPerfRow(
+                            name: 'الشيخ عبدالله',
+                            score: 0.65,
+                            color: AppColors.secondary,
+                          ),
+                        ],
+                      ),
+                    ),
+                    // Weekly Attendance Chart
+                    SizedBox(height: 32.h),
+                  ]),
+                ),
               ),
-            ),
-          ],
+            ],
+          ),
         ),
       ),
-    ),
-  );
+    );
   }
 }
 
