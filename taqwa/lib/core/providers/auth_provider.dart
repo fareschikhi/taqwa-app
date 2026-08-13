@@ -3,8 +3,8 @@ import 'package:dio/dio.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 import '../models/user_model.dart';
-import '../network/dio_client.dart';
-import '../network/api_endpoints.dart';
+import 'package:taqwa/features/data/network/dio_client.dart';
+import 'package:taqwa/features/data/network/api_endpoints.dart';
 
 class AuthState {
   final bool isLoading;

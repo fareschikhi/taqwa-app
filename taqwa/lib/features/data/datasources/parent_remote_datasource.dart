@@ -1,6 +1,6 @@
 import 'package:dio/dio.dart';
-import '../../../../core/network/dio_client.dart';
-import '../../../../core/network/api_endpoints.dart';
+import 'package:taqwa/features/data/network/dio_client.dart';
+import 'package:taqwa/features/data/network/api_endpoints.dart';
 import '../models/parent/parent_model.dart';
 import '../models/parent/parent_child_model.dart';
 import '../models/parent/parent_payload_dto.dart';

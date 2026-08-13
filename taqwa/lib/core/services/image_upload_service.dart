@@ -1,7 +1,7 @@
 import 'package:dio/dio.dart';
 import 'package:image_picker/image_picker.dart';
-import '../network/api_endpoints.dart';
-import '../network/dio_client.dart';
+import 'package:taqwa/features/data/network/api_endpoints.dart';
+import 'package:taqwa/features/data/network/dio_client.dart';
 
 /// Uploads images through our own API rather than straight to Cloudinary.
 ///

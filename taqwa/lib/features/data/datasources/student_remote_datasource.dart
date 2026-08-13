@@ -1,7 +1,7 @@
 import 'package:dio/dio.dart';
 import 'package:taqwa/features/data/models/student/student_payload_dto.dart';
-import '../../../../core/network/dio_client.dart';
-import '../../../../core/network/api_endpoints.dart';
+import 'package:taqwa/features/data/network/dio_client.dart';
+import 'package:taqwa/features/data/network/api_endpoints.dart';
 import '../models/student/student_model.dart';
 import '../models/attendance_summary_model.dart';
 

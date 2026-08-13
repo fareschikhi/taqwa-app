@@ -1,5 +1,5 @@
 import 'package:dio/dio.dart';
-import '../../../core/network/dio_client.dart';
+import 'package:taqwa/features/data/network/dio_client.dart';
 import '../models/auth_response_model.dart';
 
 class AuthRemoteDatasource {

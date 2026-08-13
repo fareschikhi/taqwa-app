@@ -2,7 +2,7 @@ import 'dart:typed_data';
 
 import 'package:dio/dio.dart';
 import 'package:flutter_test/flutter_test.dart';
-import 'package:taqwa/core/network/interceptors/error_interceptor.dart';
+import 'package:taqwa/features/data/network/interceptors/error_interceptor.dart';
 
 /// Fails every request with a caller-supplied [DioException], so the
 /// interceptor can be exercised without touching the network.

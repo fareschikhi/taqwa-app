@@ -1,6 +1,6 @@
 import 'package:dio/dio.dart';
-import '../../../../core/network/dio_client.dart';
-import '../../../../core/network/api_endpoints.dart';
+import 'package:taqwa/features/data/network/dio_client.dart';
+import 'package:taqwa/features/data/network/api_endpoints.dart';
 import '../models/absence_justification_model.dart';
 import '../models/unjustified_attendance_model.dart';
 

@@ -1,5 +1,5 @@
 import 'package:dio/dio.dart';
-import 'package:taqwa/core/network/dio_client.dart';
+import 'package:taqwa/features/data/network/dio_client.dart';
 import 'package:taqwa/core/models/halaqa_model.dart';
 
 class HalaqaRemoteDatasource {

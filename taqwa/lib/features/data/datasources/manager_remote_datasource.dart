@@ -1,6 +1,6 @@
 import 'package:dio/dio.dart';
-import '../../../../core/network/dio_client.dart';
-import '../../../../core/network/api_endpoints.dart';
+import 'package:taqwa/features/data/network/dio_client.dart';
+import 'package:taqwa/features/data/network/api_endpoints.dart';
 import '../models/manager_model.dart';
 
 class ManagerRemoteDatasource {

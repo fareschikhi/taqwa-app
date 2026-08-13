@@ -7,8 +7,8 @@ import '../../../../core/constants/app_constants.dart';
 import '../../../../core/providers/auth_provider.dart';
 import '../../../../core/widgets/stat_card.dart';
 import '../../../../core/widgets/app_card.dart';
-import '../../../../core/network/dio_client.dart';
-import '../../../../core/network/api_endpoints.dart';
+import 'package:taqwa/features/data/network/dio_client.dart';
+import 'package:taqwa/features/data/network/api_endpoints.dart';
 import '../admin_shell.dart';
 
 class AdminDashboardPage extends ConsumerStatefulWidget {

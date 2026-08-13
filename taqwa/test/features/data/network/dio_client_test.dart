@@ -1,5 +1,5 @@
 import 'package:flutter_test/flutter_test.dart';
-import 'package:taqwa/core/network/dio_client.dart';
+import 'package:taqwa/features/data/network/dio_client.dart';
 
 void main() {
   // The API runs on Render's free plan, which stops an idle service and only
