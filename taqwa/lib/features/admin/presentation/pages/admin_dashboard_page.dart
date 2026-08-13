@@ -7,8 +7,10 @@ import '../../../../core/constants/app_constants.dart';
 import '../../../../core/providers/auth_provider.dart';
 import '../../../../core/widgets/stat_card.dart';
 import '../../../../core/widgets/app_card.dart';
-import 'package:taqwa/features/data/network/dio_client.dart';
-import 'package:taqwa/features/data/network/api_endpoints.dart';
+import 'package:taqwa/features/data/repositories/student_repository.dart';
+import 'package:taqwa/features/data/repositories/teacher_repository.dart';
+import 'package:taqwa/features/data/repositories/halaqa_repository.dart';
+import 'package:taqwa/features/data/repositories/manager_repository.dart';
 import '../admin_shell.dart';
 
 class AdminDashboardPage extends ConsumerStatefulWidget {
@@ -19,6 +21,10 @@ class AdminDashboardPage extends ConsumerStatefulWidget {
 }
 
 class _AdminDashboardPageState extends ConsumerState<AdminDashboardPage> {
+  final _studentRepo = StudentRepository();
+  final _teacherRepo = TeacherRepository();
+  final _halaqaRepo = HalaqaRepository();
+  final _managerRepo = ManagerRepository();
   bool _isLoading = true;
   int _studentsCount = 0;
   int _teachersCount = 0;
@@ -34,18 +40,17 @@ class _AdminDashboardPageState extends ConsumerState<AdminDashboardPage> {
 
   Future<void> _loadStats() async {
     try {
-      final dio = DioClient.instance;
       final results = await Future.wait([
-        dio.get(ApiEndpoints.students),
-        dio.get(ApiEndpoints.teachers),
-        dio.get(ApiEndpoints.halaqas),
-        dio.get(ApiEndpoints.managers),
+        _studentRepo.getAllStudents(),
+        _teacherRepo.getAllTeachers(),
+        _halaqaRepo.getAllHalaqas(),
+        _managerRepo.getAllManagers(),
       ]);
 
-      final students = results[0].data as List;
-      final teachers = results[1].data as List;
-      final halaqas = results[2].data as List;
-      final managers = results[3].data as List;
+      final students = results[0];
+      final teachers = results[1];
+      final halaqas = results[2];
+      final managers = results[3];
 
       // Compute today's attendance rate from today's records
       String rate = '—';
@@ -53,11 +58,7 @@ class _AdminDashboardPageState extends ConsumerState<AdminDashboardPage> {
         final today = DateTime.now();
         final dateStr =
             '${today.year}-${today.month.toString().padLeft(2, '0')}-${today.day.toString().padLeft(2, '0')}';
-        final attRes = await dio.get(
-          '${ApiEndpoints.attendance}/date',
-          queryParameters: {'date': dateStr},
-        );
-        final attList = attRes.data as List;
+        final attList = await _teacherRepo.getAttendanceByDate(dateStr);
         if (attList.isNotEmpty) {
           final present = attList.where((a) => a['status'] == 'PRESENT').length;
           rate = '${((present / attList.length) * 100).round()}%';
