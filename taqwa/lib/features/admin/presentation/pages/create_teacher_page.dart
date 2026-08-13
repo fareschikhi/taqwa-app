@@ -7,7 +7,7 @@ import '../../../../core/theme/app_text_styles.dart';
 import '../../../../core/constants/app_constants.dart';
 import '../../../../core/widgets/app_button.dart';
 import '../../../../core/widgets/app_text_field.dart';
-import '../../../../core/models/teacher/teacher_payload_dto.dart';
+import 'package:taqwa/features/data/models/teacher/teacher_payload_dto.dart';
 import 'package:taqwa/features/data/services/image_upload_service.dart';
 import '../../../data/repositories/teacher_repository.dart';
 

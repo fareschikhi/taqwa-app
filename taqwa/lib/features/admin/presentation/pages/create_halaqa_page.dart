@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
-import 'package:taqwa/core/models/teacher/teacher_model.dart';
+import 'package:taqwa/features/data/models/teacher/teacher_model.dart';
 import 'package:taqwa/features/data/models/student/student_model.dart';
 import 'package:taqwa/features/data/repositories/halaqa_repository.dart';
 import 'package:taqwa/features/data/repositories/student_repository.dart';

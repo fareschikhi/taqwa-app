@@ -6,7 +6,7 @@ import '../../../../core/theme/app_text_styles.dart';
 import '../../../../core/constants/app_constants.dart';
 import '../../../../core/widgets/app_button.dart';
 import '../../../../core/widgets/app_text_field.dart';
-import '../../../../core/models/user_model.dart';
+import 'package:taqwa/features/data/models/user_model.dart';
 import '../../../../core/providers/auth_provider.dart';
 import '../../../admin/presentation/admin_shell.dart';
 import '../../../teacher/presentation/teacher_shell.dart';

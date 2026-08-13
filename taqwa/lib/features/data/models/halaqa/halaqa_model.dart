@@ -1,4 +1,4 @@
-import 'student/student_model.dart';
+import 'halaqa_student_model.dart';
 
 class HalaqaModel {
   final int id;
@@ -8,7 +8,7 @@ class HalaqaModel {
   final int teacherId;
   final String? teacherName;
   final int studentCount;
-  final List<StudentModel> students;
+  final List<HalaqaStudentModel> students;
 
   HalaqaModel({
     required this.id,
@@ -27,11 +27,11 @@ class HalaqaModel {
       tName = json['teacher']['user']['fullName'];
     }
 
-    var studentsList = <StudentModel>[];
+    var studentsList = <HalaqaStudentModel>[];
     if (json['students'] != null) {
       for (var item in json['students']) {
         if (item['student'] != null) {
-          studentsList.add(StudentModel.fromJson(item['student']));
+          studentsList.add(HalaqaStudentModel.fromJson(item['student']));
         }
       }
     }

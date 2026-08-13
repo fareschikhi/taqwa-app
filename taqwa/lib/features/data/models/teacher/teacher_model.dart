@@ -1,4 +1,4 @@
-import '../user_model.dart';
+import 'package:taqwa/features/data/models/user_model.dart';
 
 class TeacherModel {
   final int id;

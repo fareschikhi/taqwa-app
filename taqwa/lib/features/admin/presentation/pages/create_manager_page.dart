@@ -8,7 +8,7 @@ import '../../../../core/constants/app_constants.dart';
 import '../../../../core/widgets/app_button.dart';
 import '../../../../core/widgets/app_text_field.dart';
 import 'package:taqwa/features/data/services/image_upload_service.dart';
-// import '../../../../core/models/halaqa_model.dart';
+// import 'package:taqwa/features/data/models/halaqa/halaqa_model.dart';
 import '../../../../features/data/repositories/manager_repository.dart';
 // import '../../../../features/data/repositories/halaqa_repository.dart';
 import '../../../../features/data/models/manager_model.dart';

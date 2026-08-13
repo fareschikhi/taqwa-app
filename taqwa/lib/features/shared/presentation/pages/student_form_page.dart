@@ -2,7 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:image_picker/image_picker.dart';
 import '../../../../core/constants/app_constants.dart';
-import '../../../../core/models/halaqa_model.dart';
+import 'package:taqwa/features/data/models/halaqa/halaqa_model.dart';
 import 'package:taqwa/features/data/services/image_upload_service.dart';
 import '../../../../core/theme/app_colors.dart';
 import '../../../../core/theme/app_text_styles.dart';

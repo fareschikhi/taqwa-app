@@ -1,6 +1,6 @@
 import 'package:dio/dio.dart';
-import 'package:taqwa/core/models/teacher/teacher_payload_dto.dart';
-import 'package:taqwa/core/models/teacher/teacher_model.dart';
+import 'package:taqwa/features/data/models/teacher/teacher_payload_dto.dart';
+import 'package:taqwa/features/data/models/teacher/teacher_model.dart';
 import 'package:taqwa/features/data/network/dio_client.dart';
 import 'package:taqwa/features/data/network/api_endpoints.dart';
 import '../models/attendance_summary_model.dart';

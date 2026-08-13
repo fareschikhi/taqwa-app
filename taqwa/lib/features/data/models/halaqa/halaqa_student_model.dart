@@ -1,6 +1,6 @@
-import '../user_model.dart';
+import 'package:taqwa/features/data/models/user_model.dart';
 
-class StudentModel {
+class HalaqaStudentModel {
   final int id;
   final int userId;
   final DateTime? birthDate;
@@ -11,7 +11,7 @@ class StudentModel {
   final int? averageMemorizationScore;
   final int? averageRevisionScore;
 
-  StudentModel({
+  HalaqaStudentModel({
     required this.id,
     required this.userId,
     this.birthDate,
@@ -23,13 +23,13 @@ class StudentModel {
     this.averageRevisionScore,
   });
 
-  factory StudentModel.fromJson(Map<String, dynamic> json) {
+  factory HalaqaStudentModel.fromJson(Map<String, dynamic> json) {
     String? tName;
     if (json['teacher'] != null && json['teacher']['user'] != null) {
       tName = json['teacher']['user']['fullName'];
     }
 
-    return StudentModel(
+    return HalaqaStudentModel(
       id: (json['id'] as num?)?.toInt() ?? (json['student']?['id'] as num?)?.toInt() ?? 0,
       userId: (json['userId'] as num?)?.toInt() ?? (json['user']?['id'] as num?)?.toInt() ?? 0,
       birthDate: json['birthDate'] != null
