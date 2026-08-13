@@ -1,5 +1,6 @@
 import 'package:dio/dio.dart';
 import 'package:taqwa/features/data/network/dio_client.dart';
+import 'package:taqwa/features/data/network/api_endpoints.dart';
 import '../models/auth_response_model.dart';
 
 class AuthRemoteDatasource {
@@ -11,7 +12,7 @@ class AuthRemoteDatasource {
     required String password,
   }) async {
     final response = await _dio.post(
-      '/auth/login',
+      ApiEndpoints.login,
       data: {'phone': ?phone, 'email': ?email, 'password': password},
     );
     return AuthResponseModel.fromJson(response.data);
