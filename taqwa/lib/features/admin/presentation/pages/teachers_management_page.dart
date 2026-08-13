@@ -6,9 +6,8 @@ import '../../../../core/constants/app_constants.dart';
 import '../../../../core/widgets/search_bar_widget.dart';
 import '../../../../core/widgets/app_button.dart';
 import '../../../../core/widgets/confirm_delete_dialog.dart';
-import 'package:taqwa/features/data/network/dio_client.dart';
-import 'package:taqwa/features/data/network/api_endpoints.dart';
-import '../../../../features/data/repositories/teacher_repository.dart';
+import 'package:taqwa/features/data/repositories/teacher_repository.dart';
+import 'package:taqwa/features/data/models/teacher/teacher_model.dart';
 import 'create_teacher_page.dart';
 import '../admin_shell.dart';
 
@@ -22,8 +21,8 @@ class TeachersManagementPage extends StatefulWidget {
 class _TeachersManagementPageState extends State<TeachersManagementPage> {
   int _filterIndex = 0;
   final _searchController = TextEditingController();
-  List<Map<String, dynamic>> _teachers = [];
-  List<Map<String, dynamic>> _filtered = [];
+  List<TeacherModel> _teachers = [];
+  List<TeacherModel> _filtered = [];
   bool _isLoading = true;
   final _teacherRepo = TeacherRepository();
 
@@ -68,9 +67,7 @@ class _TeachersManagementPageState extends State<TeachersManagementPage> {
 
   Future<void> _load() async {
     try {
-      final dio = DioClient.instance;
-      final res = await dio.get(ApiEndpoints.teachers);
-      final list = (res.data as List).cast<Map<String, dynamic>>();
+      final list = await _teacherRepo.getAllTeachers();
       if (mounted) {
         setState(() {
           _teachers = list;
@@ -86,28 +83,21 @@ class _TeachersManagementPageState extends State<TeachersManagementPage> {
   void _applyFilter() {
     final q = _searchController.text.toLowerCase();
     var list = _teachers.where((t) {
-      final user = t['user'] as Map<String, dynamic>? ?? {};
-      final name = (user['fullName'] ?? '').toString().toLowerCase();
-      final phone = (user['phone'] ?? '').toString();
+      final name = t.fullName.toLowerCase();
+      final phone = t.phone ?? '';
       return q.isEmpty || name.contains(q) || phone.contains(q);
     }).toList();
 
     if (_filterIndex == 1) {
-      list = list.where((t) {
-        final user = t['user'] as Map<String, dynamic>? ?? {};
-        return user['isActive'] == true;
-      }).toList();
+      list = list.where((t) => t.isActive == true).toList();
     } else if (_filterIndex == 2) {
-      list = list.where((t) {
-        final user = t['user'] as Map<String, dynamic>? ?? {};
-        return user['isActive'] != true;
-      }).toList();
+      list = list.where((t) => t.isActive != true).toList();
     }
     _filtered = list;
   }
 
   int get _activeCount =>
-      _teachers.where((t) => (t['user']?['isActive'] ?? false) == true).length;
+      _teachers.where((t) => t.isActive == true).length;
 
   @override
   Widget build(BuildContext context) {
@@ -242,13 +232,10 @@ class _TeachersManagementPageState extends State<TeachersManagementPage> {
                             itemBuilder: (_, i) => _TeacherCard(
                               teacher: _filtered[i],
                               onDelete: () => _deleteTeacher(
-                                _filtered[i]['id'] as int,
+                                _filtered[i].id,
                                 // findAll returns only _count.halaqas; the
                                 // halaqas relation itself is stripped server-side.
-                                (_filtered[i]['_count']
-                                        as Map<String, dynamic>?)?['halaqas']
-                                        as int? ??
-                                    0,
+                                _filtered[i].halaqaCount,
                               ),
                             ),
                           ),
@@ -263,19 +250,17 @@ class _TeachersManagementPageState extends State<TeachersManagementPage> {
 
 class _TeacherCard extends StatelessWidget {
   const _TeacherCard({required this.teacher, required this.onDelete});
-  final Map<String, dynamic> teacher;
+  final TeacherModel teacher;
   final VoidCallback onDelete;
 
   @override
   Widget build(BuildContext context) {
-    final user = teacher['user'] as Map<String, dynamic>? ?? {};
-    final name = user['fullName'] ?? '';
-    final phone = user['phone'] ?? '';
-    final isActive = user['isActive'] ?? true;
-    final counts = teacher['_count'] as Map<String, dynamic>? ?? {};
-    final studentCount = counts['students'] ?? 0;
+    final name = teacher.fullName;
+    final phone = teacher.phone ?? '';
+    final isActive = teacher.isActive;
+    final studentCount = teacher.studentCount;
     // The halaqas relation is stripped by findAll; only _count survives.
-    final halaqaCount = counts['halaqas'] ?? 0;
+    final halaqaCount = teacher.halaqaCount;
 
     return Container(
       decoration: BoxDecoration(
