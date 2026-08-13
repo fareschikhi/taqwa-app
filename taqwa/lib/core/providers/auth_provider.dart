@@ -3,8 +3,8 @@ import 'package:dio/dio.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 import 'package:taqwa/features/data/models/user_model.dart';
-import 'package:taqwa/features/data/network/dio_client.dart';
-import 'package:taqwa/features/data/network/api_endpoints.dart';
+import 'package:taqwa/features/data/repositories/auth_repository_impl.dart';
+import 'package:taqwa/features/data/datasources/user_remote_datasource.dart';
 
 class AuthState {
   final bool isLoading;
@@ -36,7 +36,8 @@ class AuthState {
 
 class AuthNotifier extends Notifier<AuthState> {
   final FlutterSecureStorage _storage = const FlutterSecureStorage();
-  final Dio _dio = DioClient.instance;
+  final AuthRepository _authRepository = AuthRepository();
+  final UserRemoteDatasource _userDatasource = UserRemoteDatasource();
 
   @override
   AuthState build() {
@@ -62,8 +63,7 @@ class AuthNotifier extends Notifier<AuthState> {
         );
 
         // Fetch fresh profile in the background
-        final response = await _dio.get('${ApiEndpoints.users}/me');
-        final freshUser = UserModel.fromJson(response.data);
+        final freshUser = await _userDatasource.me();
         await _storage.write(key: 'cached_user', value: jsonEncode(freshUser.toJson()));
         
         state = state.copyWith(user: freshUser);
@@ -78,18 +78,11 @@ class AuthNotifier extends Notifier<AuthState> {
   Future<bool> login(String identifier, String password) async {
     state = state.copyWith(isLoading: true);
     try {
-      final isEmail = identifier.contains('@');
-      final payload = {
-        if (isEmail) 'email': identifier else 'phone': identifier,
-        'password': password,
-      };
-
-      final response = await _dio.post(ApiEndpoints.login, data: payload);
-      final token = response.data['accessToken'];
-      final user = UserModel.fromJson(response.data['user']);
-
-      await _storage.write(key: 'jwt_token', value: token);
-      await _storage.write(key: 'cached_user', value: jsonEncode(user.toJson()));
+      final result = await _authRepository.login(
+        identifier: identifier,
+        password: password,
+      );
+      final user = result.user;
 
       state = state.copyWith(
         user: user,
