@@ -54,22 +54,6 @@ class _ReportsPageState extends State<ReportsPage> {
                             ),
                           ),
                         ),
-                        SizedBox(width: 8.w),
-                        Container(
-                          padding: EdgeInsets.symmetric(
-                            horizontal: 12.w,
-                            vertical: 6.h,
-                          ),
-                          decoration: BoxDecoration(
-                            color: AppColors.primaryContainer.withValues(
-                              alpha: 0.3,
-                            ),
-                            borderRadius: BorderRadius.circular(
-                              AppConstants.radiusFull,
-                            ),
-                            border: Border.all(color: AppColors.outlineVariant),
-                          ),
-                        ),
                         const Spacer(),
                         Text(
                           'التقارير والإحصاءات',
