@@ -7,6 +7,7 @@ import '../../../../core/widgets/search_bar_widget.dart';
 import '../../../../core/widgets/confirm_delete_dialog.dart';
 import 'package:taqwa/features/data/repositories/halaqa_repository.dart';
 import 'package:taqwa/features/data/models/halaqa/halaqa_model.dart';
+import 'package:taqwa/core/widgets/card_action_row.dart';
 import 'create_halaqa_page.dart';
 import '../admin_shell.dart';
 
@@ -23,6 +24,15 @@ class _HalaqasManagementPageState extends State<HalaqasManagementPage> {
   List<HalaqaModel> _filtered = [];
   bool _isLoading = true;
   final _halaqaRepo = HalaqaRepository();
+
+  /// Opens the create/edit form: [halaqa] null creates, otherwise edits.
+  Future<void> _openForm(HalaqaModel? halaqa) async {
+    await Navigator.push(
+      context,
+      MaterialPageRoute(builder: (_) => CreateHalaqaPage(editHalaqa: halaqa)),
+    );
+    if (mounted) _load();
+  }
 
   Future<void> _deleteHalaqa(int id) async {
     final confirmed = await ConfirmDeleteDialog.show(
@@ -182,6 +192,7 @@ class _HalaqasManagementPageState extends State<HalaqasManagementPage> {
                             itemCount: _filtered.length,
                             itemBuilder: (_, i) => _HalaqaCard(
                               halaqa: _filtered[i],
+                              onEdit: () => _openForm(_filtered[i]),
                               onDelete: () => _deleteHalaqa(_filtered[i].id),
                             ),
                           ),
@@ -208,8 +219,13 @@ class _HalaqasManagementPageState extends State<HalaqasManagementPage> {
 }
 
 class _HalaqaCard extends StatelessWidget {
-  const _HalaqaCard({required this.halaqa, required this.onDelete});
+  const _HalaqaCard({
+    required this.halaqa,
+    required this.onEdit,
+    required this.onDelete,
+  });
   final HalaqaModel halaqa;
+  final VoidCallback onEdit;
   final VoidCallback onDelete;
 
   static const _levelIcons = {
@@ -254,40 +270,14 @@ class _HalaqaCard extends StatelessWidget {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.end,
         children: [
-          Row(
-            mainAxisAlignment: MainAxisAlignment.spaceBetween,
-            children: [
-              Row(
-                children: [
-                  IconButton(
-                    onPressed: () {},
-                    icon: const Icon(Icons.edit_outlined),
-                    iconSize: 18.w,
-                    color: AppColors.onSurfaceVariant,
-                    padding: EdgeInsets.zero,
-                    constraints: const BoxConstraints(),
-                  ),
-                  SizedBox(width: 4.w),
-                  IconButton(
-                    onPressed: onDelete,
-                    icon: const Icon(Icons.delete_outline),
-                    iconSize: 18.w,
-                    color: AppColors.error,
-                    padding: EdgeInsets.zero,
-                    constraints: const BoxConstraints(),
-                  ),
-                ],
-              ),
-              Container(
-                width: 48.w,
-                height: 48.w,
-                decoration: BoxDecoration(
-                  gradient: AppColors.brandGradient,
-                  borderRadius: BorderRadius.circular(AppConstants.radiusMd),
-                ),
-                child: Icon(icon, color: AppColors.onPrimary, size: 26.w),
-              ),
-            ],
+          Container(
+            width: 48.w,
+            height: 48.w,
+            decoration: BoxDecoration(
+              gradient: AppColors.brandGradient,
+              borderRadius: BorderRadius.circular(AppConstants.radiusMd),
+            ),
+            child: Icon(icon, color: AppColors.onPrimary, size: 26.w),
           ),
           SizedBox(height: 12.h),
           Text(
@@ -336,6 +326,8 @@ class _HalaqaCard extends StatelessWidget {
               ),
             ],
           ),
+          SizedBox(height: 12.h),
+          CardActionRow(onDelete: onDelete, onEdit: onEdit),
         ],
       ),
     );

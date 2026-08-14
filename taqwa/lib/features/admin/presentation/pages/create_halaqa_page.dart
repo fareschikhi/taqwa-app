@@ -5,6 +5,7 @@ import 'package:taqwa/features/data/models/student/student_model.dart';
 import 'package:taqwa/features/data/repositories/halaqa_repository.dart';
 import 'package:taqwa/features/data/repositories/student_repository.dart';
 import 'package:taqwa/features/data/repositories/teacher_repository.dart';
+import 'package:taqwa/features/data/models/halaqa/halaqa_model.dart';
 import '../../../../core/theme/app_colors.dart';
 import '../../../../core/theme/app_text_styles.dart';
 import '../../../../core/constants/app_constants.dart';
@@ -13,7 +14,9 @@ import '../../../../core/widgets/app_text_field.dart';
 import '../../../../core/widgets/user_selector_field.dart';
 
 class CreateHalaqaPage extends StatefulWidget {
-  const CreateHalaqaPage({super.key});
+  /// Pass [editHalaqa] to pre-fill the form for editing an existing halaqa.
+  const CreateHalaqaPage({super.key, this.editHalaqa});
+  final HalaqaModel? editHalaqa;
 
   @override
   State<CreateHalaqaPage> createState() => _CreateHalaqaPageState();
@@ -38,9 +41,23 @@ class _CreateHalaqaPageState extends State<CreateHalaqaPage> {
   bool _showStudentDropdown = false;
   int? _selectedTeacherId;
 
+  bool get _isEditing => widget.editHalaqa != null;
+
   @override
   void initState() {
     super.initState();
+    if (_isEditing) {
+      final h = widget.editHalaqa!;
+      _nameController.text = h.name;
+      _descriptionController.text = h.description ?? '';
+      _selectedTeacherId = h.teacherId;
+      _selectedStudents.addAll(h.students.map((s) => StudentModel(
+            id: s.id,
+            userId: s.userId,
+            fullName: s.user.fullName,
+            avatar: s.user.avatar,
+          )));
+    }
     _loadTeachers();
     _loadStudents();
     _studentSearchController.addListener(_onSearchChanged);
@@ -58,7 +75,9 @@ class _CreateHalaqaPageState extends State<CreateHalaqaPage> {
       if (mounted) {
         setState(() {
           _allStudents = result;
-          _filteredStudents = result;
+          _filteredStudents = result
+              .where((s) => !_selectedStudents.any((sel) => sel.id == s.id))
+              .toList();
         });
       }
     } catch (_) {
@@ -123,12 +142,20 @@ class _CreateHalaqaPageState extends State<CreateHalaqaPage> {
               _selectedStudents.map((s) => s.id).whereType<int>().toList(),
       };
 
-      await _repo.createHalaqa(data);
+      if (_isEditing) {
+        await _repo.updateHalaqa(widget.editHalaqa!.id, data);
+      } else {
+        await _repo.createHalaqa(data);
+      }
 
       if (!mounted) return;
 
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('تم إضافة الحلقة بنجاح')),
+        SnackBar(
+          content: Text(
+            _isEditing ? 'تم تحديث بيانات الحلقة' : 'تم إضافة الحلقة بنجاح',
+          ),
+        ),
       );
       Navigator.pop(context, true);
     } catch (e) {
@@ -460,7 +487,7 @@ class _CreateHalaqaPageState extends State<CreateHalaqaPage> {
                         ),
                         SizedBox(height: 24.h),
                         AppButton(
-                          label: 'إضافة حلقة',
+                          label: _isEditing ? 'حفظ التعديلات' : 'إضافة حلقة',
                           variant: AppButtonVariant.gradient,
                           icon: Icons.save_outlined,
                           isLoading: _isLoading,
