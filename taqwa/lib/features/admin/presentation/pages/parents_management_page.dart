@@ -7,8 +7,10 @@ import '../../../../core/widgets/search_bar_widget.dart';
 import '../../../../core/widgets/app_button.dart';
 import '../../../../core/widgets/avatar_widget.dart';
 import '../../../../core/widgets/confirm_delete_dialog.dart';
+import 'package:taqwa/core/widgets/card_action_row.dart';
 import '../../../../features/data/models/parent/parent_model.dart';
 import '../../../../features/data/repositories/parent_repository.dart';
+import '../../../../features/data/repositories/user_repository.dart';
 import '../../../shared/presentation/pages/parent_form_page.dart';
 import '../admin_shell.dart';
 
@@ -21,6 +23,7 @@ class ParentsManagementPage extends StatefulWidget {
 
 class _ParentsManagementPageState extends State<ParentsManagementPage> {
   final _repo = ParentRepository();
+  final _userRepo = UserRepository();
   final _searchController = TextEditingController();
   List<ParentModel> _parents = [];
   List<ParentModel> _filtered = [];
@@ -104,6 +107,22 @@ class _ParentsManagementPageState extends State<ParentsManagementPage> {
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(content: Text(ParentRepository.errorMessage(e))),
       );
+    }
+  }
+
+  Future<void> _toggleStatus(ParentModel parent) async {
+    final userId = parent.userId;
+    if (userId == null) return;
+    final newStatus = !(parent.isActive ?? true);
+    try {
+      await _userRepo.setActive(userId, newStatus);
+      _load();
+    } catch (e) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text(ParentRepository.errorMessage(e))),
+        );
+      }
     }
   }
 
@@ -221,8 +240,10 @@ class _ParentsManagementPageState extends State<ParentsManagementPage> {
                             separatorBuilder: (_, _) => SizedBox(height: 16.h),
                             itemBuilder: (_, i) => _ParentCard(
                               parent: _filtered[i],
+                              isActive: _filtered[i].isActive ?? true,
                               onEdit: () => _openForm(_filtered[i]),
                               onDelete: () => _deleteParent(_filtered[i].id!),
+                              onToggleActive: () => _toggleStatus(_filtered[i]),
                             ),
                           ),
               ),
@@ -237,18 +258,20 @@ class _ParentsManagementPageState extends State<ParentsManagementPage> {
 class _ParentCard extends StatelessWidget {
   const _ParentCard({
     required this.parent,
+    required this.isActive,
     required this.onEdit,
     required this.onDelete,
+    required this.onToggleActive,
   });
 
   final ParentModel parent;
+  final bool isActive;
   final VoidCallback onEdit;
   final VoidCallback onDelete;
+  final VoidCallback onToggleActive;
 
   @override
   Widget build(BuildContext context) {
-    final isActive = parent.isActive ?? true;
-
     return Container(
       decoration: BoxDecoration(
         color: AppColors.surfaceContainerLowest,
@@ -337,21 +360,11 @@ class _ParentCard extends StatelessWidget {
                   ],
                 ),
                 SizedBox(height: 12.h),
-                Row(
-                  mainAxisAlignment: MainAxisAlignment.end,
-                  children: [
-                    _SmallAction(
-                      icon: Icons.delete_outline,
-                      color: AppColors.error,
-                      onTap: onDelete,
-                    ),
-                    SizedBox(width: 8.w),
-                    _SmallAction(
-                      icon: Icons.edit_outlined,
-                      color: AppColors.onSurfaceVariant,
-                      onTap: onEdit,
-                    ),
-                  ],
+                CardActionRow(
+                  isActive: isActive,
+                  onToggleActive: onToggleActive,
+                  onDelete: onDelete,
+                  onEdit: onEdit,
                 ),
               ],
             ),
@@ -372,21 +385,4 @@ class _ParentCard extends StatelessWidget {
       ),
     );
   }
-}
-
-class _SmallAction extends StatelessWidget {
-  const _SmallAction({
-    required this.icon,
-    required this.color,
-    required this.onTap,
-  });
-  final IconData icon;
-  final Color color;
-  final VoidCallback onTap;
-
-  @override
-  Widget build(BuildContext context) => GestureDetector(
-    onTap: onTap,
-    child: Icon(icon, color: color, size: 20.w),
-  );
 }
