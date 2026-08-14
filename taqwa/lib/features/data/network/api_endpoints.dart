@@ -1,12 +1,21 @@
 class ApiEndpoints {
-  // Production API on Render. A phone needs a public address, so a LAN IP only
-  // works while the device sits on the same network as the dev machine.
-  //
-  // For local development, swap in one of these:
-  //   'http://10.0.2.2:3000/api'        Android emulator
-  //   'http://localhost:3000/api'       physical device via `adb reverse tcp:3000 tcp:3000`
-  //   'http://192.168.100.76:3000/api'  physical device on the same WiFi
-  static const String baseUrl = 'https://taqwa-api-txbq.onrender.com/api';
+  /// Where the app talks to the API. Defaults to production on Render, and is
+  /// overridden at build time so pointing at a local backend never means
+  /// editing this file (and never means accidentally committing a localhost URL):
+  ///
+  ///   flutter run --dart-define=API_BASE_URL=http://10.0.2.2:3000/api
+  ///
+  /// Which address depends on how the app reaches the dev machine:
+  ///   http://10.0.2.2:3000/api        Android emulator (its alias for the host)
+  ///   http://localhost:3000/api       USB device, after `adb reverse tcp:3000 tcp:3000`
+  ///   `http://<dev-machine-LAN-IP>:3000/api`  device on the same WiFi
+  ///
+  /// A phone needs a public address, so a LAN IP only works while the device
+  /// sits on the same network as the dev machine.
+  static const String baseUrl = String.fromEnvironment(
+    'API_BASE_URL',
+    defaultValue: 'https://taqwa-api-txbq.onrender.com/api',
+  );
   static const String login = '/auth/login';
   static const String users = '/users';
   static const String teachers = '/teachers';
