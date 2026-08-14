@@ -11,6 +11,8 @@ import '../../../../features/data/models/student/student_model.dart';
 import '../../../../features/data/repositories/student_repository.dart';
 import '../../../shared/presentation/pages/student_form_page.dart';
 import '../admin_shell.dart';
+import 'package:taqwa/core/widgets/card_action_row.dart';
+import 'package:taqwa/features/data/repositories/user_repository.dart';
 
 class StudentsManagementPage extends StatefulWidget {
   const StudentsManagementPage({super.key});
@@ -27,6 +29,7 @@ class _StudentsManagementPageState extends State<StudentsManagementPage> {
   int _filterIndex = 0;
   bool _isLoading = true;
   final _studentRepo = StudentRepository();
+  final _userRepo = UserRepository();
 
   /// Opens the shared student form: [student] null creates, otherwise edits
   /// that row. The list holds raw API maps, so it is decoded here.
@@ -56,6 +59,22 @@ class _StudentsManagementPageState extends State<StudentsManagementPage> {
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(content: Text('تم حذف الطالب بنجاح')),
       );
+      _load();
+    } catch (e) {
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text(StudentRepository.errorMessage(e))),
+      );
+    }
+  }
+
+  Future<void> _toggleStatus(Map<String, dynamic> student) async {
+    final user = student['user'] as Map<String, dynamic>?;
+    final userId = (user?['id'] as num?)?.toInt();
+    if (userId == null) return;
+    final newStatus = !(user?['isActive'] ?? true);
+    try {
+      await _userRepo.setActive(userId, newStatus);
       _load();
     } catch (e) {
       if (!mounted) return;
@@ -234,6 +253,8 @@ class _StudentsManagementPageState extends State<StudentsManagementPage> {
                               onDelete: () => _deleteStudent(
                                 _filtered[i]['id'] as int,
                               ),
+                              onToggleActive: () =>
+                                  _toggleStatus(_filtered[i]),
                             ),
                           ),
               ),
@@ -256,10 +277,12 @@ class _StudentCard extends StatelessWidget {
     required this.student,
     required this.onEdit,
     required this.onDelete,
+    required this.onToggleActive,
   });
   final Map<String, dynamic> student;
   final VoidCallback onEdit;
   final VoidCallback onDelete;
+  final VoidCallback onToggleActive;
 
   @override
   Widget build(BuildContext context) {
@@ -366,27 +389,11 @@ class _StudentCard extends StatelessWidget {
             ],
           ),
           SizedBox(height: 12.h),
-          Row(
-            mainAxisAlignment: MainAxisAlignment.end,
-            children: [
-              GestureDetector(
-                onTap: onDelete,
-                child: Icon(
-                  Icons.delete_outline,
-                  color: AppColors.error,
-                  size: 20.w,
-                ),
-              ),
-              SizedBox(width: 12.w),
-              GestureDetector(
-                onTap: onEdit,
-                child: Icon(
-                  Icons.edit_outlined,
-                  color: AppColors.onSurfaceVariant,
-                  size: 20.w,
-                ),
-              ),
-            ],
+          CardActionRow(
+            isActive: isActive,
+            onToggleActive: onToggleActive,
+            onDelete: onDelete,
+            onEdit: onEdit,
           ),
         ],
       ),
