@@ -10,4 +10,8 @@ class UserRemoteDatasource {
     final response = await _dio.get('${ApiEndpoints.users}/me');
     return UserModel.fromJson(response.data);
   }
+
+  Future<void> setActive(int userId, bool isActive) async {
+    await _dio.patch('${ApiEndpoints.users}/$userId', data: {'isActive': isActive});
+  }
 }

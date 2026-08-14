@@ -1,5 +1,6 @@
 class StudentModel {
   final int? id;
+  final int? userId;
   final String fullName;
   final String? phone;
   final String birthDate;
@@ -11,6 +12,7 @@ class StudentModel {
 
   const StudentModel({
     this.id,
+    this.userId,
     required this.fullName,
     this.phone,
     this.birthDate = '',
@@ -38,6 +40,7 @@ class StudentModel {
 
     return StudentModel(
       id: (json['id'] as num?)?.toInt() ?? (studentMap?['id'] as num?)?.toInt(),
+      userId: (userMap?['id'] as num?)?.toInt(),
       fullName:
           (json['fullName'] as String?) ??
           (userMap?['fullName'] as String?) ??

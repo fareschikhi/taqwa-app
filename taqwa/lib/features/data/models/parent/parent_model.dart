@@ -2,6 +2,7 @@ import 'parent_child_model.dart';
 
 class ParentModel {
   final int? id;
+  final int? userId;
   final String fullName;
   final String? phone;
   final String? email;
@@ -12,6 +13,7 @@ class ParentModel {
 
   const ParentModel({
     this.id,
+    this.userId,
     required this.fullName,
     this.phone,
     this.email,
@@ -43,6 +45,7 @@ class ParentModel {
       // Prefer parentMap.id if root is User; fall back to root id
       id: (parentMap?['id'] as num?)?.toInt() ??
           (json['id'] as num?)?.toInt(),
+      userId: (userMap?['id'] as num?)?.toInt(),
 
       // User fields: root first (Format B), nested 'user' second (Format A)
       fullName: (json['fullName'] as String?) ??
