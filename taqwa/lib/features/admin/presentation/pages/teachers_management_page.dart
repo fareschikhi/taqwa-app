@@ -8,6 +8,8 @@ import '../../../../core/widgets/app_button.dart';
 import '../../../../core/widgets/confirm_delete_dialog.dart';
 import 'package:taqwa/features/data/repositories/teacher_repository.dart';
 import 'package:taqwa/features/data/models/teacher/teacher_model.dart';
+import 'package:taqwa/core/widgets/card_action_row.dart';
+import 'package:taqwa/features/data/repositories/user_repository.dart';
 import 'create_teacher_page.dart';
 import '../admin_shell.dart';
 
@@ -25,6 +27,30 @@ class _TeachersManagementPageState extends State<TeachersManagementPage> {
   List<TeacherModel> _filtered = [];
   bool _isLoading = true;
   final _teacherRepo = TeacherRepository();
+  final _userRepo = UserRepository();
+
+  /// Opens the create/edit form: [teacher] null creates, otherwise edits.
+  Future<void> _openForm(TeacherModel? teacher) async {
+    await Navigator.push(
+      context,
+      MaterialPageRoute(builder: (_) => CreateTeacherPage(editTeacher: teacher)),
+    );
+    if (mounted) _load();
+  }
+
+  Future<void> _toggleStatus(TeacherModel teacher) async {
+    final newStatus = !teacher.isActive;
+    try {
+      await _userRepo.setActive(teacher.userId, newStatus);
+      _load();
+    } catch (e) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text(TeacherRepository.errorMessage(e))),
+        );
+      }
+    }
+  }
 
   Future<void> _deleteTeacher(int id, int halaqaCount) async {
     final confirmed = await ConfirmDeleteDialog.show(
@@ -231,12 +257,15 @@ class _TeachersManagementPageState extends State<TeachersManagementPage> {
                                 SizedBox(height: 16.h),
                             itemBuilder: (_, i) => _TeacherCard(
                               teacher: _filtered[i],
+                              isActive: _filtered[i].isActive,
+                              onEdit: () => _openForm(_filtered[i]),
                               onDelete: () => _deleteTeacher(
                                 _filtered[i].id,
                                 // findAll returns only _count.halaqas; the
                                 // halaqas relation itself is stripped server-side.
                                 _filtered[i].halaqaCount,
                               ),
+                              onToggleActive: () => _toggleStatus(_filtered[i]),
                             ),
                           ),
               ),
@@ -249,15 +278,23 @@ class _TeachersManagementPageState extends State<TeachersManagementPage> {
 }
 
 class _TeacherCard extends StatelessWidget {
-  const _TeacherCard({required this.teacher, required this.onDelete});
+  const _TeacherCard({
+    required this.teacher,
+    required this.isActive,
+    required this.onEdit,
+    required this.onDelete,
+    required this.onToggleActive,
+  });
   final TeacherModel teacher;
+  final bool isActive;
+  final VoidCallback onEdit;
   final VoidCallback onDelete;
+  final VoidCallback onToggleActive;
 
   @override
   Widget build(BuildContext context) {
     final name = teacher.fullName;
     final phone = teacher.phone ?? '';
-    final isActive = teacher.isActive;
     final studentCount = teacher.studentCount;
     // The halaqas relation is stripped by findAll; only _count survives.
     final halaqaCount = teacher.halaqaCount;
@@ -413,50 +450,14 @@ class _TeacherCard extends StatelessWidget {
             ),
           ),
           SizedBox(height: 16.h),
-          Row(
-            mainAxisAlignment: MainAxisAlignment.spaceAround,
-            children: [
-              _ActionBtn(
-                icon: Icons.delete_outline,
-                color: AppColors.error,
-                onTap: onDelete,
-              ),
-              _ActionBtn(
-                icon: Icons.assignment_add,
-                color: AppColors.secondary,
-                onTap: () {},
-              ),
-              _ActionBtn(
-                icon: Icons.edit_outlined,
-                color: AppColors.onSurfaceVariant,
-                onTap: () {},
-              ),
-              _ActionBtn(
-                icon: Icons.visibility_outlined,
-                color: AppColors.primary,
-                onTap: () {},
-              ),
-            ],
+          CardActionRow(
+            isActive: isActive,
+            onToggleActive: onToggleActive,
+            onDelete: onDelete,
+            onEdit: onEdit,
           ),
         ],
       ),
     );
   }
-}
-
-class _ActionBtn extends StatelessWidget {
-  const _ActionBtn({
-    required this.icon,
-    required this.color,
-    required this.onTap,
-  });
-  final IconData icon;
-  final Color color;
-  final VoidCallback onTap;
-
-  @override
-  Widget build(BuildContext context) => GestureDetector(
-    onTap: onTap,
-    child: Icon(icon, color: color, size: 24.w),
-  );
 }

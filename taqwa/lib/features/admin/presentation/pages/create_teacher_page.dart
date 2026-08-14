@@ -8,11 +8,14 @@ import '../../../../core/constants/app_constants.dart';
 import '../../../../core/widgets/app_button.dart';
 import '../../../../core/widgets/app_text_field.dart';
 import 'package:taqwa/features/data/models/teacher/teacher_payload_dto.dart';
+import 'package:taqwa/features/data/models/teacher/teacher_model.dart';
 import 'package:taqwa/features/data/services/image_upload_service.dart';
 import '../../../data/repositories/teacher_repository.dart';
 
 class CreateTeacherPage extends StatefulWidget {
-  const CreateTeacherPage({super.key});
+  /// Pass [editTeacher] to pre-fill the form for editing an existing teacher.
+  const CreateTeacherPage({super.key, this.editTeacher});
+  final TeacherModel? editTeacher;
 
   @override
   State<CreateTeacherPage> createState() => _CreateTeacherPageState();
@@ -30,8 +33,39 @@ class _CreateTeacherPageState extends State<CreateTeacherPage> {
   bool _isLoading = false;
   XFile? _selectedImage;
   final ImagePicker _picker = ImagePicker();
+  bool get _isEditing => widget.editTeacher != null;
 
   // final _specializations = ['التجويد', 'الحفظ', 'القراءات', 'التفسير', 'الفقه'];
+
+  @override
+  void initState() {
+    super.initState();
+    if (_isEditing) {
+      final t = widget.editTeacher!;
+      _nameController.text = t.fullName;
+      _phoneController.text = t.phone ?? '';
+      _emailController.text = t.email ?? '';
+    }
+  }
+
+  /// The freshly picked file wins over the stored avatar, so the preview
+  /// updates the moment the user chooses a new photo.
+  DecorationImage? _avatarImage() {
+    if (_selectedImage != null) {
+      return DecorationImage(
+        image: FileImage(File(_selectedImage!.path)),
+        fit: BoxFit.cover,
+      );
+    }
+    final existing = widget.editTeacher?.avatar;
+    if (existing != null && existing.isNotEmpty) {
+      return DecorationImage(image: NetworkImage(existing), fit: BoxFit.cover);
+    }
+    return null;
+  }
+
+  bool get _hasAvatarImage =>
+      _selectedImage != null || (widget.editTeacher?.avatar?.isNotEmpty ?? false);
 
   Future<void> _pickImage() async {
     showModalBottomSheet(
@@ -91,27 +125,51 @@ class _CreateTeacherPageState extends State<CreateTeacherPage> {
         avatarUrl = await ImageUploadService.uploadImage(_selectedImage!);
       }
 
-      await _repo.createTeacher(
-        TeacherPayloadDto(
-          fullName: _nameController.text.trim(),
-          phone: _phoneController.text.trim(),
-          password: _passwordController.text,
-          email: _emailController.text.trim().isEmpty
-              ? null
-              : _emailController.text.trim(),
-          dateOfBirth: _dobController.text.isEmpty ? null : _dobController.text,
-          address: _addressController.text.trim().isEmpty
-              ? null
-              : _addressController.text.trim(),
-          avatar: avatarUrl,
-        ),
-      );
+      if (_isEditing) {
+        final data = <String, dynamic>{
+          'fullName': _nameController.text.trim(),
+          if (_phoneController.text.trim().isNotEmpty)
+            'phone': _phoneController.text.trim(),
+          if (_emailController.text.trim().isNotEmpty)
+            'email': _emailController.text.trim(),
+          if (_passwordController.text.isNotEmpty)
+            'password': _passwordController.text,
+          if (_dobController.text.isNotEmpty)
+            'dateOfBirth': _dobController.text,
+          if (_addressController.text.trim().isNotEmpty)
+            'address': _addressController.text.trim(),
+        };
+        if (avatarUrl != null) data['avatar'] = avatarUrl;
+        await _repo.updateTeacher(widget.editTeacher!.id, data);
+      } else {
+        await _repo.createTeacher(
+          TeacherPayloadDto(
+            fullName: _nameController.text.trim(),
+            phone: _phoneController.text.trim(),
+            password: _passwordController.text,
+            email: _emailController.text.trim().isEmpty
+                ? null
+                : _emailController.text.trim(),
+            dateOfBirth: _dobController.text.isEmpty
+                ? null
+                : _dobController.text,
+            address: _addressController.text.trim().isEmpty
+                ? null
+                : _addressController.text.trim(),
+            avatar: avatarUrl,
+          ),
+        );
+      }
 
       if (!mounted) return;
 
-      ScaffoldMessenger.of(
-        context,
-      ).showSnackBar(const SnackBar(content: Text('تم إضافة المعلم بنجاح')));
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text(
+            _isEditing ? 'تم تحديث بيانات المعلم' : 'تم إضافة المعلم بنجاح',
+          ),
+        ),
+      );
 
       // if (addAnother) {
       //   _formKey.currentState!.reset();
@@ -177,22 +235,15 @@ class _CreateTeacherPageState extends State<CreateTeacherPage> {
                                     decoration: BoxDecoration(
                                       color: AppColors.surfaceContainerHigh,
                                       shape: BoxShape.circle,
-                                      image: _selectedImage != null
-                                          ? DecorationImage(
-                                              image: FileImage(
-                                                File(_selectedImage!.path),
-                                              ),
-                                              fit: BoxFit.cover,
-                                            )
-                                          : null,
+                                      image: _avatarImage(),
                                     ),
-                                    child: _selectedImage == null
-                                        ? Icon(
+                                    child: _hasAvatarImage
+                                        ? null
+                                        : Icon(
                                             Icons.camera_alt_outlined,
                                             color: AppColors.onSurfaceVariant,
                                             size: 36.w,
-                                          )
-                                        : null,
+                                          ),
                                   ),
                                   Positioned(
                                     bottom: 0,
@@ -205,9 +256,9 @@ class _CreateTeacherPageState extends State<CreateTeacherPage> {
                                         shape: BoxShape.circle,
                                       ),
                                       child: Icon(
-                                        _selectedImage == null
-                                            ? Icons.upload
-                                            : Icons.check,
+                                        _hasAvatarImage
+                                            ? Icons.check
+                                            : Icons.upload,
                                         color: AppColors.onPrimary,
                                         size: 16.w,
                                       ),
@@ -308,7 +359,9 @@ class _CreateTeacherPageState extends State<CreateTeacherPage> {
                       ),
                       SizedBox(height: 16.h),
                       AppTextField(
-                        label: 'كلمة المرور المبدئية',
+                        label: _isEditing
+                            ? 'كلمة المرور الجديدة (اتركه فارغاً للإبقاء)'
+                            : 'كلمة المرور المبدئية',
                         hint: '••••••••',
                         controller: _passwordController,
                         obscureText: true,
@@ -354,7 +407,7 @@ class _CreateTeacherPageState extends State<CreateTeacherPage> {
                       SizedBox(height: 32.h),
                       // Buttons
                       AppButton(
-                        label: 'حفظ المعلم',
+                        label: _isEditing ? 'حفظ التعديلات' : 'حفظ المعلم',
                         variant: AppButtonVariant.gradient,
                         icon: Icons.save_outlined,
                         isLoading: _isLoading,
@@ -412,7 +465,7 @@ class _CreateTeacherPageState extends State<CreateTeacherPage> {
             mainAxisAlignment: MainAxisAlignment.end,
             children: [
               Text(
-                'إضافة معلم جديد',
+                _isEditing ? 'تعديل معلم' : 'إضافة معلم جديد',
                 style: AppTextStyles.labelSm.copyWith(
                   color: AppColors.onSurfaceVariant,
                 ),
@@ -432,13 +485,15 @@ class _CreateTeacherPageState extends State<CreateTeacherPage> {
           ),
           SizedBox(height: 8.h),
           Text(
-            'إضافة معلم جديد',
+            _isEditing ? 'تعديل بيانات المعلم' : 'إضافة معلم جديد',
             style: AppTextStyles.headlineLgMobile.copyWith(
               color: AppColors.onSurface,
             ),
           ),
           Text(
-            'قم بإدخال بيانات المعلم الجديد لإضافته إلى النظام.',
+            _isEditing
+                ? 'قم بتحديث بيانات المعلم.'
+                : 'قم بإدخال بيانات المعلم الجديد لإضافته إلى النظام.',
             style: AppTextStyles.bodyMd.copyWith(
               color: AppColors.onSurfaceVariant,
             ),
