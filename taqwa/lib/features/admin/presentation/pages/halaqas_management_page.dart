@@ -285,6 +285,8 @@ class _HalaqaCard extends StatelessWidget {
             style: AppTextStyles.headlineSm
                 .copyWith(color: AppColors.onSurface),
             textAlign: TextAlign.end,
+            maxLines: 2,
+            overflow: TextOverflow.ellipsis,
           ),
           SizedBox(height: 4.h),
           Text(
