@@ -1,8 +1,12 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
+import '../../../core/providers/auth_provider.dart';
 import '../../../core/theme/app_colors.dart';
 import '../../../core/theme/app_text_styles.dart';
 import '../../../core/constants/app_constants.dart';
+import '../../../core/widgets/confirm_logout_dialog.dart';
+import '../../auth/presentation/pages/login_page.dart';
 import 'pages/admin_dashboard_page.dart';
 import 'pages/students_management_page.dart';
 import 'pages/halaqas_management_page.dart';
@@ -34,14 +38,14 @@ class AdminShellScope extends InheritedWidget {
   }
 }
 
-class AdminShell extends StatefulWidget {
+class AdminShell extends ConsumerStatefulWidget {
   const AdminShell({super.key});
 
   @override
-  State<AdminShell> createState() => _AdminShellState();
+  ConsumerState<AdminShell> createState() => _AdminShellState();
 }
 
-class _AdminShellState extends State<AdminShell> {
+class _AdminShellState extends ConsumerState<AdminShell> {
   int _currentIndex = 0;
   final GlobalKey<ScaffoldState> _scaffoldKey = GlobalKey<ScaffoldState>();
 
@@ -54,6 +58,17 @@ class _AdminShellState extends State<AdminShell> {
     ParentsManagementPage(),
     ReportsPage(),
   ];
+
+  Future<void> _logout() async {
+    Navigator.pop(context);
+    final confirmed = await ConfirmLogoutDialog.show(context);
+    if (!confirmed) return;
+    await ref.read(authProvider.notifier).logout();
+    if (!mounted) return;
+    Navigator.of(
+      context,
+    ).pushReplacement(MaterialPageRoute(builder: (_) => const LoginPage()));
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -230,6 +245,41 @@ class _AdminShellState extends State<AdminShell> {
                 },
               ),
             ),
+            SizedBox(height: 12.h),
+            const Divider(color: AppColors.outlineVariant, height: 1),
+            SizedBox(height: 12.h),
+            // Logout
+            Padding(
+              padding: EdgeInsets.symmetric(horizontal: 12.w),
+              child: InkWell(
+                onTap: _logout,
+                borderRadius: BorderRadius.circular(AppConstants.radiusMd),
+                child: Padding(
+                  padding: EdgeInsets.symmetric(
+                    horizontal: 16.w,
+                    vertical: 12.h,
+                  ),
+                  child: Row(
+                    children: [
+                      Icon(
+                        Icons.logout,
+                        color: AppColors.error,
+                        size: 22.w,
+                      ),
+                      SizedBox(width: 14.w),
+                      Text(
+                        'تسجيل الخروج',
+                        style: AppTextStyles.labelMd.copyWith(
+                          color: AppColors.error,
+                          fontWeight: FontWeight.w500,
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+              ),
+            ),
+            SizedBox(height: 12.h),
           ],
         ),
       ),
