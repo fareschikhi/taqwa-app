@@ -285,101 +285,114 @@ class _ParentCard extends StatelessWidget {
         ],
       ),
       padding: EdgeInsets.all(20.w),
-      child: Row(
-        crossAxisAlignment: CrossAxisAlignment.start,
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.end,
         children: [
-          Expanded(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.end,
-              children: [
-                Row(
-                  mainAxisAlignment: MainAxisAlignment.end,
+          Row(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.end,
                   children: [
-                    Container(
-                      padding: EdgeInsets.symmetric(
-                        horizontal: 8.w,
-                        vertical: 3.h,
-                      ),
-                      decoration: BoxDecoration(
-                        color: (isActive ? AppColors.primary : AppColors.outline)
-                            .withValues(alpha: 0.1),
-                        borderRadius: BorderRadius.circular(
-                          AppConstants.radiusFull,
+                    Row(
+                      mainAxisAlignment: MainAxisAlignment.end,
+                      children: [
+                        Container(
+                          padding: EdgeInsets.symmetric(
+                            horizontal: 8.w,
+                            vertical: 3.h,
+                          ),
+                          decoration: BoxDecoration(
+                            color:
+                                (isActive
+                                        ? AppColors.primary
+                                        : AppColors.outline)
+                                    .withValues(alpha: 0.1),
+                            borderRadius: BorderRadius.circular(
+                              AppConstants.radiusFull,
+                            ),
+                          ),
+                          child: Text(
+                            isActive ? 'نشط' : 'غير نشط',
+                            style: AppTextStyles.labelSm.copyWith(
+                              color: isActive
+                                  ? AppColors.primary
+                                  : AppColors.outline,
+                            ),
+                          ),
                         ),
-                      ),
-                      child: Text(
-                        isActive ? 'نشط' : 'غير نشط',
-                        style: AppTextStyles.labelSm.copyWith(
-                          color:
-                              isActive ? AppColors.primary : AppColors.outline,
-                        ),
-                      ),
+                      ],
                     ),
-                  ],
-                ),
-                SizedBox(height: 8.h),
-                Text(
-                  parent.fullName,
-                  style: AppTextStyles.bodyMdBold.copyWith(
-                    color: AppColors.onSurface,
-                  ),
-                  textAlign: TextAlign.end,
-                ),
-                if ((parent.phone ?? '').isNotEmpty) ...[
-                  SizedBox(height: 4.h),
-                  Row(
-                    mainAxisAlignment: MainAxisAlignment.end,
-                    children: [
-                      Text(
-                        parent.phone!,
-                        style: AppTextStyles.labelSm.copyWith(
-                          color: AppColors.onSurfaceVariant,
-                        ),
+                    SizedBox(height: 8.h),
+                    Text(
+                      parent.fullName,
+                      style: AppTextStyles.bodyMdBold.copyWith(
+                        color: AppColors.onSurface,
                       ),
-                      SizedBox(width: 4.w),
-                      const Icon(
-                        Icons.phone_outlined,
-                        size: 14,
-                        color: AppColors.onSurfaceVariant,
+                      textAlign: TextAlign.end,
+                    ),
+                    if ((parent.phone ?? '').isNotEmpty) ...[
+                      SizedBox(height: 4.h),
+                      Row(
+                        mainAxisAlignment: MainAxisAlignment.end,
+                        children: [
+                          Text(
+                            parent.phone!,
+                            style: AppTextStyles.labelSm.copyWith(
+                              color: AppColors.onSurfaceVariant,
+                            ),
+                          ),
+                          SizedBox(width: 4.w),
+                          const Icon(
+                            Icons.phone_outlined,
+                            size: 14,
+                            color: AppColors.onSurfaceVariant,
+                          ),
+                        ],
                       ),
                     ],
-                  ),
-                ],
-                SizedBox(height: 8.h),
-                Row(
-                  mainAxisAlignment: MainAxisAlignment.end,
-                  children: [
-                    Text(
-                      '${parent.children.length} طالب مرتبط',
-                      style: AppTextStyles.labelSm.copyWith(
-                        color: AppColors.primary,
-                      ),
+                    SizedBox(height: 8.h),
+                    Row(
+                      mainAxisAlignment: MainAxisAlignment.end,
+                      children: [
+                        Text(
+                          '${parent.children.length} طالب مرتبط',
+                          style: AppTextStyles.labelSm.copyWith(
+                            color: AppColors.primary,
+                          ),
+                        ),
+                        SizedBox(width: 4.w),
+                        const Icon(
+                          Icons.group,
+                          size: 14,
+                          color: AppColors.primary,
+                        ),
+                      ],
                     ),
-                    SizedBox(width: 4.w),
-                    const Icon(Icons.group, size: 14, color: AppColors.primary),
                   ],
                 ),
-                SizedBox(height: 12.h),
-                CardActionRow(
-                  isActive: isActive,
-                  onToggleActive: onToggleActive,
-                  onDelete: onDelete,
-                  onEdit: onEdit,
-                ),
-              ],
-            ),
-          ),
-          SizedBox(width: 16.w),
-          AvatarWidget(
-            avatarUrl: parent.avatar,
-            size: 52.w,
-            backgroundColor: AppColors.tertiaryContainer,
-            fallback: Text(
-              parent.fullName.isNotEmpty ? parent.fullName[0] : '؟',
-              style: AppTextStyles.headlineSm.copyWith(
-                color: AppColors.onTertiaryContainer,
               ),
-            ),
+              SizedBox(width: 16.w),
+              AvatarWidget(
+                avatarUrl: parent.avatar,
+                size: 52.w,
+                backgroundColor: AppColors.tertiaryContainer,
+                fallback: Text(
+                  parent.fullName.isNotEmpty ? parent.fullName[0] : '؟',
+                  style: AppTextStyles.headlineSm.copyWith(
+                    color: AppColors.onTertiaryContainer,
+                  ),
+                ),
+              ),
+            ],
+          ),
+          SizedBox(height: 12.h),
+          CardActionRow(
+            isActive: isActive,
+            onToggleActive: onToggleActive,
+            onDelete: onDelete,
+            onEdit: onEdit,
           ),
         ],
       ),
