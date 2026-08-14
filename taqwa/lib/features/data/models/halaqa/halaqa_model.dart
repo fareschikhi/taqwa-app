@@ -8,6 +8,14 @@ class HalaqaModel {
   final int teacherId;
   final String? teacherName;
   final int studentCount;
+
+  /// Always empty as of today's API. `GET /halaqas` (`findAll`) selects only
+  /// the teacher and `_count.students`, so no student rows arrive at all; and
+  /// `Halaqa.students` is a plain `Student[]` relation, so the rows that
+  /// `GET /halaqas/:id` (`findOne`) does return are bare students, not the
+  /// `{ student: {...} }` join rows the parser below reads. Use
+  /// [studentCount] for the size of a roster; there is currently no endpoint
+  /// that fills this list.
   final List<HalaqaStudentModel> students;
 
   HalaqaModel({

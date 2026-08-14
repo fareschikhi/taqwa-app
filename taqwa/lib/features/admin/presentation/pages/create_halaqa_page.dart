@@ -13,6 +13,29 @@ import '../../../../core/widgets/app_button.dart';
 import '../../../../core/widgets/app_text_field.dart';
 import '../../../../core/widgets/user_selector_field.dart';
 
+/// Builds the body sent to create or update a halaqa.
+///
+/// [studentIds] is dropped whenever [isEditing]: the update endpoint replaces
+/// the halaqa's entire roster with whatever it is handed, and the edit form
+/// never learns the current roster, so sending a partial list would disconnect
+/// every student the admin did not re-pick. The picker is hidden on edit for
+/// the same reason; this guard keeps the payload honest regardless.
+@visibleForTesting
+Map<String, dynamic> buildHalaqaPayload({
+  required String name,
+  required int teacherId,
+  required String description,
+  required List<int> studentIds,
+  required bool isEditing,
+}) {
+  return <String, dynamic>{
+    'name': name,
+    'teacherId': teacherId,
+    if (description.isNotEmpty) 'description': description,
+    if (!isEditing && studentIds.isNotEmpty) 'studentIds': studentIds,
+  };
+}
+
 class CreateHalaqaPage extends StatefulWidget {
   /// Pass [editHalaqa] to pre-fill the form for editing an existing halaqa.
   const CreateHalaqaPage({super.key, this.editHalaqa});
@@ -51,15 +74,10 @@ class _CreateHalaqaPageState extends State<CreateHalaqaPage> {
       _nameController.text = h.name;
       _descriptionController.text = h.description ?? '';
       _selectedTeacherId = h.teacherId;
-      _selectedStudents.addAll(h.students.map((s) => StudentModel(
-            id: s.id,
-            userId: s.userId,
-            fullName: s.user.fullName,
-            avatar: s.user.avatar,
-          )));
     }
     _loadTeachers();
-    _loadStudents();
+    // Students back the create-only picker, so they are not needed on edit.
+    if (!_isEditing) _loadStudents();
     _studentSearchController.addListener(_onSearchChanged);
   }
 
@@ -132,15 +150,14 @@ class _CreateHalaqaPageState extends State<CreateHalaqaPage> {
     setState(() => _isLoading = true);
 
     try {
-      final data = <String, dynamic>{
-        'name': _nameController.text.trim(),
-        'teacherId': _selectedTeacherId,
-        if (_descriptionController.text.trim().isNotEmpty)
-          'description': _descriptionController.text.trim(),
-        if (_selectedStudents.isNotEmpty)
-          'studentIds':
-              _selectedStudents.map((s) => s.id).whereType<int>().toList(),
-      };
+      final data = buildHalaqaPayload(
+        name: _nameController.text.trim(),
+        teacherId: _selectedTeacherId!,
+        description: _descriptionController.text.trim(),
+        studentIds:
+            _selectedStudents.map((s) => s.id).whereType<int>().toList(),
+        isEditing: _isEditing,
+      );
 
       if (_isEditing) {
         await _repo.updateHalaqa(widget.editHalaqa!.id, data);
@@ -263,228 +280,236 @@ class _CreateHalaqaPageState extends State<CreateHalaqaPage> {
                             ],
                           ),
                         ),
-                        SizedBox(height: 20.h),
-                        // ── Students card ──────────────────────────────────
-                        Container(
-                          padding: EdgeInsets.all(20.w),
-                          decoration: BoxDecoration(
-                            color: AppColors.surfaceContainerLowest,
-                            borderRadius:
-                                BorderRadius.circular(AppConstants.radiusXl),
-                            boxShadow: const [
-                              BoxShadow(
-                                color: Color.fromRGBO(18, 52, 59, 0.04),
-                                blurRadius: 20,
-                                offset: Offset(0, 4),
-                              ),
-                            ],
-                          ),
-                          child: Column(
-                            crossAxisAlignment: CrossAxisAlignment.end,
-                            children: [
-                              Row(
-                                mainAxisAlignment: MainAxisAlignment.end,
-                                children: [
-                                  if (_selectedStudents.isNotEmpty)
-                                    Container(
-                                      padding: EdgeInsets.symmetric(
-                                          horizontal: 8.w, vertical: 2.h),
-                                      decoration: BoxDecoration(
-                                        color: AppColors.primary
-                                            .withValues(alpha: 0.12),
-                                        borderRadius: BorderRadius.circular(
-                                            AppConstants.radiusFull),
-                                      ),
-                                      child: Text(
-                                        '${_selectedStudents.length} طلاب',
-                                        style:
-                                            AppTextStyles.labelSm.copyWith(
-                                          color: AppColors.primary,
-                                          fontWeight: FontWeight.w600,
-                                        ),
-                                      ),
-                                    ),
-                                  if (_selectedStudents.isNotEmpty)
-                                    SizedBox(width: 8.w),
-                                  _SectionHeader(
-                                    icon: Icons.people_outline,
-                                    title: 'الطلاب (اختياري)',
-                                  ),
-                                ],
-                              ),
-                              SizedBox(height: 4.h),
-                              Align(
-                                alignment: AlignmentDirectional.centerEnd,
-                                child: Text(
-                                  'ابحث عن طالب وأضفه إلى الحلقة',
-                                  style: AppTextStyles.labelSm.copyWith(
-                                    color: AppColors.onSurfaceVariant,
-                                  ),
+                        // The student picker is create-only. On update the API
+                        // replaces the whole roster with whatever `studentIds`
+                        // contains, and the form has no way to know the current
+                        // roster (see the note on HalaqaModel.students), so
+                        // sending it here would disconnect every student the
+                        // admin did not re-pick.
+                        if (!_isEditing) ...[
+                          SizedBox(height: 20.h),
+                          // ── Students card ──────────────────────────────────
+                          Container(
+                            padding: EdgeInsets.all(20.w),
+                            decoration: BoxDecoration(
+                              color: AppColors.surfaceContainerLowest,
+                              borderRadius:
+                                  BorderRadius.circular(AppConstants.radiusXl),
+                              boxShadow: const [
+                                BoxShadow(
+                                  color: Color.fromRGBO(18, 52, 59, 0.04),
+                                  blurRadius: 20,
+                                  offset: Offset(0, 4),
                                 ),
-                              ),
-                              SizedBox(height: 12.h),
-                              // ── Search box ───────────────────────────────
-                              Container(
-                                decoration: BoxDecoration(
-                                  color: AppColors.surfaceContainerLowest,
-                                  borderRadius: BorderRadius.circular(
-                                      AppConstants.radiusMd),
-                                  border: Border.all(
-                                    color: _showStudentDropdown
-                                        ? AppColors.primary
-                                        : AppColors.inputBorder,
-                                    width: _showStudentDropdown ? 1.5 : 1.0,
-                                  ),
-                                ),
-                                child: Row(
+                              ],
+                            ),
+                            child: Column(
+                              crossAxisAlignment: CrossAxisAlignment.end,
+                              children: [
+                                Row(
+                                  mainAxisAlignment: MainAxisAlignment.end,
                                   children: [
-                                    Expanded(
-                                      child: TextField(
-                                        controller: _studentSearchController,
-                                        textAlign: TextAlign.right,
-                                        textDirection: TextDirection.rtl,
-                                        style: AppTextStyles.bodyMd,
-                                        onTap: () => setState(
-                                            () => _showStudentDropdown = true),
-                                        decoration: InputDecoration(
-                                          hintText: 'ابحث عن طالب بالاسم...',
-                                          hintStyle: AppTextStyles.labelMd
-                                              .copyWith(
-                                            color: AppColors.inputPlaceholder,
-                                          ),
-                                          border: InputBorder.none,
-                                          contentPadding: EdgeInsets.symmetric(
-                                            horizontal: 16.w,
-                                            vertical: 14.h,
+                                    if (_selectedStudents.isNotEmpty)
+                                      Container(
+                                        padding: EdgeInsets.symmetric(
+                                            horizontal: 8.w, vertical: 2.h),
+                                        decoration: BoxDecoration(
+                                          color: AppColors.primary
+                                              .withValues(alpha: 0.12),
+                                          borderRadius: BorderRadius.circular(
+                                              AppConstants.radiusFull),
+                                        ),
+                                        child: Text(
+                                          '${_selectedStudents.length} طلاب',
+                                          style:
+                                              AppTextStyles.labelSm.copyWith(
+                                            color: AppColors.primary,
+                                            fontWeight: FontWeight.w600,
                                           ),
                                         ),
                                       ),
-                                    ),
-                                    Padding(
-                                      padding: EdgeInsets.only(left: 12.w),
-                                      child: _isLoadingStudents
-                                          ? SizedBox(
-                                              width: 18.w,
-                                              height: 18.w,
-                                              child:
-                                                  const CircularProgressIndicator(
-                                                strokeWidth: 2,
-                                                color: AppColors.primary,
-                                              ),
-                                            )
-                                          : const Icon(
-                                              Icons.search,
-                                              color: AppColors.primary,
-                                            ),
+                                    if (_selectedStudents.isNotEmpty)
+                                      SizedBox(width: 8.w),
+                                    _SectionHeader(
+                                      icon: Icons.people_outline,
+                                      title: 'الطلاب (اختياري)',
                                     ),
                                   ],
                                 ),
-                              ),
-                              // ── Dropdown results inline (takes normal space) ──
-                              if (_showStudentDropdown &&
-                                  _filteredStudents.isNotEmpty) ...[
-                                SizedBox(height: 8.h),
+                                SizedBox(height: 4.h),
+                                Align(
+                                  alignment: AlignmentDirectional.centerEnd,
+                                  child: Text(
+                                    'ابحث عن طالب وأضفه إلى الحلقة',
+                                    style: AppTextStyles.labelSm.copyWith(
+                                      color: AppColors.onSurfaceVariant,
+                                    ),
+                                  ),
+                                ),
+                                SizedBox(height: 12.h),
+                                // ── Search box ───────────────────────────────
                                 Container(
-                                  constraints:
-                                      BoxConstraints(maxHeight: 220.h),
                                   decoration: BoxDecoration(
                                     color: AppColors.surfaceContainerLowest,
                                     borderRadius: BorderRadius.circular(
                                         AppConstants.radiusMd),
                                     border: Border.all(
-                                        color: AppColors.outlineVariant),
-                                    boxShadow: const [
-                                      BoxShadow(
-                                        color: Color.fromRGBO(18, 52, 59, 0.06),
-                                        blurRadius: 10,
-                                        offset: Offset(0, 4),
+                                      color: _showStudentDropdown
+                                          ? AppColors.primary
+                                          : AppColors.inputBorder,
+                                      width: _showStudentDropdown ? 1.5 : 1.0,
+                                    ),
+                                  ),
+                                  child: Row(
+                                    children: [
+                                      Expanded(
+                                        child: TextField(
+                                          controller: _studentSearchController,
+                                          textAlign: TextAlign.right,
+                                          textDirection: TextDirection.rtl,
+                                          style: AppTextStyles.bodyMd,
+                                          onTap: () => setState(
+                                              () => _showStudentDropdown = true),
+                                          decoration: InputDecoration(
+                                            hintText: 'ابحث عن طالب بالاسم...',
+                                            hintStyle: AppTextStyles.labelMd
+                                                .copyWith(
+                                              color: AppColors.inputPlaceholder,
+                                            ),
+                                            border: InputBorder.none,
+                                            contentPadding: EdgeInsets.symmetric(
+                                              horizontal: 16.w,
+                                              vertical: 14.h,
+                                            ),
+                                          ),
+                                        ),
+                                      ),
+                                      Padding(
+                                        padding: EdgeInsets.only(left: 12.w),
+                                        child: _isLoadingStudents
+                                            ? SizedBox(
+                                                width: 18.w,
+                                                height: 18.w,
+                                                child:
+                                                    const CircularProgressIndicator(
+                                                  strokeWidth: 2,
+                                                  color: AppColors.primary,
+                                                ),
+                                              )
+                                            : const Icon(
+                                                Icons.search,
+                                                color: AppColors.primary,
+                                              ),
                                       ),
                                     ],
                                   ),
-                                  child: ListView.separated(
-                                    shrinkWrap: true,
-                                    padding: EdgeInsets.symmetric(
-                                        vertical: 4.h),
-                                    separatorBuilder: (context, index) =>
-                                        Divider(
-                                      height: 1,
-                                      color: AppColors.outlineVariant,
-                                    ),
-                                    itemCount: _filteredStudents.length,
-                                    itemBuilder: (ctx, i) {
-                                      final s = _filteredStudents[i];
-                                      return InkWell(
-                                        onTap: () => _addStudent(s),
-                                        child: Padding(
-                                          padding: EdgeInsets.symmetric(
-                                            horizontal: 12.w,
-                                            vertical: 10.h,
-                                          ),
-                                          child: Row(
-                                            children: [
-                                              Expanded(
-                                                child: Text(
-                                                  s.fullName,
-                                                  style: AppTextStyles.bodyMd
-                                                      .copyWith(
-                                                    fontWeight: FontWeight.w600,
-                                                  ),
-                                                  textAlign: TextAlign.end,
-                                                ),
-                                              ),
-                                              SizedBox(width: 10.w),
-                                              StudentAvatar(
-                                                avatarUrl: s.avatar,
-                                                name: s.fullName,
-                                                size: 36.w,
-                                              ),
-                                            ],
-                                          ),
+                                ),
+                                // ── Dropdown results inline (takes normal space) ──
+                                if (_showStudentDropdown &&
+                                    _filteredStudents.isNotEmpty) ...[
+                                  SizedBox(height: 8.h),
+                                  Container(
+                                    constraints:
+                                        BoxConstraints(maxHeight: 220.h),
+                                    decoration: BoxDecoration(
+                                      color: AppColors.surfaceContainerLowest,
+                                      borderRadius: BorderRadius.circular(
+                                          AppConstants.radiusMd),
+                                      border: Border.all(
+                                          color: AppColors.outlineVariant),
+                                      boxShadow: const [
+                                        BoxShadow(
+                                          color: Color.fromRGBO(18, 52, 59, 0.06),
+                                          blurRadius: 10,
+                                          offset: Offset(0, 4),
                                         ),
-                                      );
-                                    },
-                                  ),
-                                ),
-                              ],
-                              if (_showStudentDropdown &&
-                                  _filteredStudents.isEmpty &&
-                                  _studentSearchController.text.isNotEmpty) ...[
-                                SizedBox(height: 8.h),
-                                Container(
-                                  width: double.infinity,
-                                  padding: EdgeInsets.all(14.w),
-                                  decoration: BoxDecoration(
-                                    color: AppColors.surfaceContainerLowest,
-                                    borderRadius: BorderRadius.circular(
-                                        AppConstants.radiusMd),
-                                    border: Border.all(
-                                        color: AppColors.outlineVariant),
-                                  ),
-                                  child: Text(
-                                    'لا يوجد طلاب مطابقون',
-                                    style: AppTextStyles.labelMd.copyWith(
-                                      color: AppColors.onSurfaceVariant,
+                                      ],
                                     ),
-                                    textAlign: TextAlign.center,
-                                  ),
-                                ),
-                              ],
-                              // ── Selected students cards ───────────────────
-                              if (_selectedStudents.isNotEmpty) ...[
-                                SizedBox(height: 16.h),
-                                ..._selectedStudents.map(
-                                  (s) => Padding(
-                                    padding: EdgeInsets.only(bottom: 8.h),
-                                    child: SelectedStudentCard(
-                                      student: s,
-                                      onRemove: () => _removeStudent(s),
+                                    child: ListView.separated(
+                                      shrinkWrap: true,
+                                      padding: EdgeInsets.symmetric(
+                                          vertical: 4.h),
+                                      separatorBuilder: (context, index) =>
+                                          Divider(
+                                        height: 1,
+                                        color: AppColors.outlineVariant,
+                                      ),
+                                      itemCount: _filteredStudents.length,
+                                      itemBuilder: (ctx, i) {
+                                        final s = _filteredStudents[i];
+                                        return InkWell(
+                                          onTap: () => _addStudent(s),
+                                          child: Padding(
+                                            padding: EdgeInsets.symmetric(
+                                              horizontal: 12.w,
+                                              vertical: 10.h,
+                                            ),
+                                            child: Row(
+                                              children: [
+                                                Expanded(
+                                                  child: Text(
+                                                    s.fullName,
+                                                    style: AppTextStyles.bodyMd
+                                                        .copyWith(
+                                                      fontWeight: FontWeight.w600,
+                                                    ),
+                                                    textAlign: TextAlign.end,
+                                                  ),
+                                                ),
+                                                SizedBox(width: 10.w),
+                                                StudentAvatar(
+                                                  avatarUrl: s.avatar,
+                                                  name: s.fullName,
+                                                  size: 36.w,
+                                                ),
+                                              ],
+                                            ),
+                                          ),
+                                        );
+                                      },
                                     ),
                                   ),
-                                ),
+                                ],
+                                if (_showStudentDropdown &&
+                                    _filteredStudents.isEmpty &&
+                                    _studentSearchController.text.isNotEmpty) ...[
+                                  SizedBox(height: 8.h),
+                                  Container(
+                                    width: double.infinity,
+                                    padding: EdgeInsets.all(14.w),
+                                    decoration: BoxDecoration(
+                                      color: AppColors.surfaceContainerLowest,
+                                      borderRadius: BorderRadius.circular(
+                                          AppConstants.radiusMd),
+                                      border: Border.all(
+                                          color: AppColors.outlineVariant),
+                                    ),
+                                    child: Text(
+                                      'لا يوجد طلاب مطابقون',
+                                      style: AppTextStyles.labelMd.copyWith(
+                                        color: AppColors.onSurfaceVariant,
+                                      ),
+                                      textAlign: TextAlign.center,
+                                    ),
+                                  ),
+                                ],
+                                // ── Selected students cards ───────────────────
+                                if (_selectedStudents.isNotEmpty) ...[
+                                  SizedBox(height: 16.h),
+                                  ..._selectedStudents.map(
+                                    (s) => Padding(
+                                      padding: EdgeInsets.only(bottom: 8.h),
+                                      child: SelectedStudentCard(
+                                        student: s,
+                                        onRemove: () => _removeStudent(s),
+                                      ),
+                                    ),
+                                  ),
+                                ],
                               ],
-                            ],
+                            ),
                           ),
-                        ),
+                        ],
                         SizedBox(height: 24.h),
                         AppButton(
                           label: _isEditing ? 'حفظ التعديلات' : 'إضافة حلقة',
