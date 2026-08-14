@@ -11,7 +11,9 @@ import '../../../../features/data/models/student/student_model.dart';
 import '../../../../features/data/repositories/student_repository.dart';
 import '../../../shared/presentation/pages/student_form_page.dart';
 import '../admin_shell.dart';
+import 'package:taqwa/core/widgets/avatar_widget.dart';
 import 'package:taqwa/core/widgets/card_action_row.dart';
+import 'package:taqwa/core/widgets/confirm_status_dialog.dart';
 import 'package:taqwa/features/data/repositories/user_repository.dart';
 
 class StudentsManagementPage extends StatefulWidget {
@@ -72,7 +74,17 @@ class _StudentsManagementPageState extends State<StudentsManagementPage> {
     final user = student['user'] as Map<String, dynamic>?;
     final userId = (user?['id'] as num?)?.toInt();
     if (userId == null) return;
-    final newStatus = !(user?['isActive'] ?? true);
+    final isActive = (user?['isActive'] as bool?) ?? true;
+    final newStatus = !isActive;
+    final confirmed = await ConfirmStatusDialog.show(
+      context,
+      isCurrentlyActive: isActive,
+      userName:
+          (user?['fullName'] as String?) ??
+          (student['fullName'] as String?) ??
+          'هذا الحساب',
+    );
+    if (!confirmed) return;
     try {
       await _userRepo.setActive(userId, newStatus);
       _load();
@@ -361,17 +373,16 @@ class _StudentCard extends StatelessWidget {
                 ],
               ),
               SizedBox(width: 12.w),
-              Container(
-                width: 44.w,
-                height: 44.w,
-                decoration: BoxDecoration(
-                  color: AppColors.primaryContainer,
-                  shape: BoxShape.circle,
-                ),
-                child: Icon(
-                  Icons.person,
-                  color: AppColors.onPrimaryContainer,
-                  size: 26.w,
+              AvatarWidget(
+                avatarUrl:
+                    (student['avatar'] as String?) ??
+                    (user['avatar'] as String?),
+                size: 44.w,
+                fallback: Text(
+                  fullName.isNotEmpty ? fullName[0] : '؟',
+                  style: AppTextStyles.headlineSm.copyWith(
+                    color: AppColors.onPrimaryContainer,
+                  ),
                 ),
               ),
             ],

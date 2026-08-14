@@ -8,7 +8,9 @@ import '../../../../core/widgets/app_button.dart';
 import '../../../../core/widgets/confirm_delete_dialog.dart';
 import 'package:taqwa/features/data/repositories/teacher_repository.dart';
 import 'package:taqwa/features/data/models/teacher/teacher_model.dart';
+import 'package:taqwa/core/widgets/avatar_widget.dart';
 import 'package:taqwa/core/widgets/card_action_row.dart';
+import 'package:taqwa/core/widgets/confirm_status_dialog.dart';
 import 'package:taqwa/features/data/repositories/user_repository.dart';
 import 'create_teacher_page.dart';
 import '../admin_shell.dart';
@@ -40,6 +42,12 @@ class _TeachersManagementPageState extends State<TeachersManagementPage> {
 
   Future<void> _toggleStatus(TeacherModel teacher) async {
     final newStatus = !teacher.isActive;
+    final confirmed = await ConfirmStatusDialog.show(
+      context,
+      isCurrentlyActive: teacher.isActive,
+      userName: teacher.user.fullName,
+    );
+    if (!confirmed) return;
     try {
       await _userRepo.setActive(teacher.userId, newStatus);
       _load();
@@ -346,21 +354,14 @@ class _TeacherCard extends StatelessWidget {
                 ),
               ),
               const Spacer(),
-              Container(
-                width: AppConstants.avatarXl,
-                height: AppConstants.avatarXl,
-                decoration: BoxDecoration(
-                  color: AppColors.primaryContainer,
-                  shape: BoxShape.circle,
-                  border: Border.all(
-                    color: AppColors.primaryContainer,
-                    width: 2,
+              AvatarWidget(
+                avatarUrl: teacher.avatar,
+                size: AppConstants.avatarXl,
+                fallback: Text(
+                  name.isNotEmpty ? name[0] : '؟',
+                  style: AppTextStyles.headlineMd.copyWith(
+                    color: AppColors.onPrimaryContainer,
                   ),
-                ),
-                child: Icon(
-                  Icons.person,
-                  color: AppColors.onPrimaryContainer,
-                  size: 36.w,
                 ),
               ),
             ],

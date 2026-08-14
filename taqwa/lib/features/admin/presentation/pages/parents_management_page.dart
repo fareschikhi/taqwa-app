@@ -8,6 +8,7 @@ import '../../../../core/widgets/app_button.dart';
 import '../../../../core/widgets/avatar_widget.dart';
 import '../../../../core/widgets/confirm_delete_dialog.dart';
 import 'package:taqwa/core/widgets/card_action_row.dart';
+import 'package:taqwa/core/widgets/confirm_status_dialog.dart';
 import '../../../../features/data/models/parent/parent_model.dart';
 import '../../../../features/data/repositories/parent_repository.dart';
 import 'package:taqwa/features/data/repositories/user_repository.dart';
@@ -113,7 +114,14 @@ class _ParentsManagementPageState extends State<ParentsManagementPage> {
   Future<void> _toggleStatus(ParentModel parent) async {
     final userId = parent.userId;
     if (userId == null) return;
-    final newStatus = !(parent.isActive ?? true);
+    final isActive = parent.isActive ?? true;
+    final newStatus = !isActive;
+    final confirmed = await ConfirmStatusDialog.show(
+      context,
+      isCurrentlyActive: isActive,
+      userName: parent.fullName,
+    );
+    if (!confirmed) return;
     try {
       await _userRepo.setActive(userId, newStatus);
       _load();

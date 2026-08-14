@@ -5,7 +5,9 @@ import '../../../../core/theme/app_text_styles.dart';
 import '../../../../core/constants/app_constants.dart';
 import '../../../../core/widgets/search_bar_widget.dart';
 import '../../../../core/widgets/confirm_delete_dialog.dart';
+import 'package:taqwa/core/widgets/avatar_widget.dart';
 import 'package:taqwa/core/widgets/card_action_row.dart';
+import 'package:taqwa/core/widgets/confirm_status_dialog.dart';
 import '../../../../features/data/repositories/manager_repository.dart';
 import '../../../../features/data/models/manager_model.dart';
 import 'create_manager_page.dart';
@@ -99,7 +101,14 @@ class _ManagersManagementPageState extends State<ManagersManagementPage> {
   }
 
   Future<void> _toggleStatus(ManagerModel m) async {
-    final newStatus = !(m.isActive ?? true);
+    final isActive = m.isActive ?? true;
+    final newStatus = !isActive;
+    final confirmed = await ConfirmStatusDialog.show(
+      context,
+      isCurrentlyActive: isActive,
+      userName: m.fullName,
+    );
+    if (!confirmed) return;
     try {
       await _repo.updateManagerStatus(m.id!, newStatus);
       _load();
@@ -406,24 +415,22 @@ class _ManagerCard extends StatelessWidget {
                     ],
                   ),
                   SizedBox(width: 12.w),
-                  // Avatar circle
-                  Container(
-                    width: 52.w,
-                    height: 52.w,
-                    decoration: BoxDecoration(
-                      color: isActive
-                          ? AppColors.primaryContainer
-                          : AppColors.surfaceContainerHigh,
-                      borderRadius: BorderRadius.circular(
-                        AppConstants.radiusMd,
+                  // Avatar circle. Keeps the inactive-dimmed background the
+                  // card already used, so a deactivated manager still reads as
+                  // deactivated even when they have a photo.
+                  AvatarWidget(
+                    avatarUrl: manager.avatar,
+                    size: 52.w,
+                    backgroundColor: isActive
+                        ? AppColors.primaryContainer
+                        : AppColors.surfaceContainerHigh,
+                    fallback: Text(
+                      manager.fullName.isNotEmpty ? manager.fullName[0] : '؟',
+                      style: AppTextStyles.headlineSm.copyWith(
+                        color: isActive
+                            ? AppColors.onPrimaryContainer
+                            : AppColors.onSurfaceVariant,
                       ),
-                    ),
-                    child: Icon(
-                      Icons.manage_accounts,
-                      color: isActive
-                          ? AppColors.onPrimaryContainer
-                          : AppColors.onSurfaceVariant,
-                      size: 28.w,
                     ),
                   ),
                 ],
