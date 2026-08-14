@@ -187,7 +187,7 @@ class _HalaqasManagementPageState extends State<HalaqasManagementPage> {
                               crossAxisCount: 2,
                               crossAxisSpacing: 12.w,
                               mainAxisSpacing: 12.h,
-                              childAspectRatio: 0.85,
+                              childAspectRatio: 0.62,
                             ),
                             itemCount: _filtered.length,
                             itemBuilder: (_, i) => _HalaqaCard(
@@ -292,7 +292,7 @@ class _HalaqaCard extends StatelessWidget {
             style: AppTextStyles.labelSm
                 .copyWith(color: AppColors.onSurfaceVariant),
             textAlign: TextAlign.end,
-            maxLines: 2,
+            maxLines: 1,
             overflow: TextOverflow.ellipsis,
           ),
           const Spacer(),
