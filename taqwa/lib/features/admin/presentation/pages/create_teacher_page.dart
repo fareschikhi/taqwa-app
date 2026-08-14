@@ -134,10 +134,9 @@ class _CreateTeacherPageState extends State<CreateTeacherPage> {
             'email': _emailController.text.trim(),
           if (_passwordController.text.isNotEmpty)
             'password': _passwordController.text,
-          if (_dobController.text.isNotEmpty)
-            'dateOfBirth': _dobController.text,
-          if (_addressController.text.trim().isNotEmpty)
-            'address': _addressController.text.trim(),
+          // No dateOfBirth/address here: UpdateTeacherDto declares neither and
+          // the API's whitelisting ValidationPipe drops them without an error,
+          // so the fields are hidden on edit rather than silently discarded.
         };
         if (avatarUrl != null) data['avatar'] = avatarUrl;
         await _repo.updateTeacher(widget.editTeacher!.id, data);
@@ -299,36 +298,41 @@ class _CreateTeacherPageState extends State<CreateTeacherPage> {
                         hint: 'أدخل الاسم كاملاً',
                         controller: _nameController,
                       ),
-                      SizedBox(height: 16.h),
-                      AppTextField(
-                        label: 'تاريخ الميلاد',
-                        hint: 'dd/mm/yyyy',
-                        controller: _dobController,
-                        readOnly: true,
-                        onTap: () async {
-                          final picked = await showDatePicker(
-                            context: context,
-                            initialDate: DateTime(1990),
-                            firstDate: DateTime(1900),
-                            lastDate: DateTime.now(),
-                            locale: const Locale('fr'),
-                          );
-                          if (picked != null) {
-                            _dobController.text =
-                                '${picked.day.toString().padLeft(2, '0')}/${picked.month.toString().padLeft(2, '0')}/${picked.year}';
-                          }
-                        },
-                        suffixIcon: const Icon(
-                          Icons.calendar_today_outlined,
-                          color: AppColors.onSurfaceVariant,
+                      // Date of birth and address are create-only: the update
+                      // endpoint stores neither, so showing them on edit would
+                      // invite input that is dropped on save.
+                      if (!_isEditing) ...[
+                        SizedBox(height: 16.h),
+                        AppTextField(
+                          label: 'تاريخ الميلاد',
+                          hint: 'dd/mm/yyyy',
+                          controller: _dobController,
+                          readOnly: true,
+                          onTap: () async {
+                            final picked = await showDatePicker(
+                              context: context,
+                              initialDate: DateTime(1990),
+                              firstDate: DateTime(1900),
+                              lastDate: DateTime.now(),
+                              locale: const Locale('fr'),
+                            );
+                            if (picked != null) {
+                              _dobController.text =
+                                  '${picked.day.toString().padLeft(2, '0')}/${picked.month.toString().padLeft(2, '0')}/${picked.year}';
+                            }
+                          },
+                          suffixIcon: const Icon(
+                            Icons.calendar_today_outlined,
+                            color: AppColors.onSurfaceVariant,
+                          ),
                         ),
-                      ),
-                      SizedBox(height: 16.h),
-                      AppTextField(
-                        label: 'العنوان السكني',
-                        hint: 'المدينة، الحي، الشارع',
-                        controller: _addressController,
-                      ),
+                        SizedBox(height: 16.h),
+                        AppTextField(
+                          label: 'العنوان السكني',
+                          hint: 'المدينة، الحي، الشارع',
+                          controller: _addressController,
+                        ),
+                      ],
                       SizedBox(height: 24.h),
                       // Section: Contact & Employment
                       _SectionHeader(
