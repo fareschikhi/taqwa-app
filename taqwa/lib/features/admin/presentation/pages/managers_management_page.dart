@@ -5,7 +5,7 @@ import '../../../../core/theme/app_text_styles.dart';
 import '../../../../core/constants/app_constants.dart';
 import '../../../../core/widgets/search_bar_widget.dart';
 import '../../../../core/widgets/confirm_delete_dialog.dart';
-import '../../../../core/widgets/card_action_row.dart';
+import 'package:taqwa/core/widgets/card_action_row.dart';
 import '../../../../features/data/repositories/manager_repository.dart';
 import '../../../../features/data/models/manager_model.dart';
 import 'create_manager_page.dart';
