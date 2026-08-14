@@ -10,7 +10,7 @@ import '../../../../core/widgets/confirm_delete_dialog.dart';
 import 'package:taqwa/core/widgets/card_action_row.dart';
 import '../../../../features/data/models/parent/parent_model.dart';
 import '../../../../features/data/repositories/parent_repository.dart';
-import '../../../../features/data/repositories/user_repository.dart';
+import 'package:taqwa/features/data/repositories/user_repository.dart';
 import '../../../shared/presentation/pages/parent_form_page.dart';
 import '../admin_shell.dart';
 
