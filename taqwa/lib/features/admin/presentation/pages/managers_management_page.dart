@@ -5,6 +5,7 @@ import '../../../../core/theme/app_text_styles.dart';
 import '../../../../core/constants/app_constants.dart';
 import '../../../../core/widgets/search_bar_widget.dart';
 import '../../../../core/widgets/confirm_delete_dialog.dart';
+import '../../../../core/widgets/card_action_row.dart';
 import '../../../../features/data/repositories/manager_repository.dart';
 import '../../../../features/data/models/manager_model.dart';
 import 'create_manager_page.dart';
@@ -489,84 +490,11 @@ class _ManagerCard extends StatelessWidget {
           //   ),
           // ),
           SizedBox(height: 12.h),
-          // Action buttons row
-          Row(
-            children: [
-              // Toggle status btn
-              GestureDetector(
-                onTap: onToggleStatus,
-                child: Container(
-                  width: 38.w,
-                  height: 38.w,
-                  decoration: BoxDecoration(
-                    borderRadius: BorderRadius.circular(AppConstants.radiusMd),
-                    color: isActive
-                        ? AppColors.errorContainer
-                        : AppColors.primaryContainer,
-                  ),
-                  child: Icon(
-                    isActive ? Icons.block : Icons.check_circle_outline,
-                    size: 18.w,
-                    color: isActive
-                        ? AppColors.error
-                        : AppColors.onPrimaryContainer,
-                  ),
-                ),
-              ),
-              SizedBox(width: 8.w),
-              // Delete btn
-              GestureDetector(
-                onTap: onDelete,
-                child: Container(
-                  width: 38.w,
-                  height: 38.w,
-                  decoration: BoxDecoration(
-                    borderRadius: BorderRadius.circular(
-                      AppConstants.radiusMd,
-                    ),
-                    color: AppColors.errorContainer,
-                  ),
-                  child: Icon(
-                    Icons.delete_outline,
-                    size: 18.w,
-                    color: AppColors.error,
-                  ),
-                ),
-              ),
-              SizedBox(width: 8.w),
-              // Edit button
-              Expanded(
-                child: GestureDetector(
-                  onTap: onEdit,
-                  child: Container(
-                    height: 38.h,
-                    decoration: BoxDecoration(
-                      border: Border.all(color: AppColors.outlineVariant),
-                      borderRadius: BorderRadius.circular(
-                        AppConstants.radiusMd,
-                      ),
-                    ),
-                    child: Row(
-                      mainAxisAlignment: MainAxisAlignment.center,
-                      children: [
-                        Icon(
-                          Icons.edit_outlined,
-                          size: 16.w,
-                          color: AppColors.secondary,
-                        ),
-                        SizedBox(width: 4.w),
-                        Text(
-                          'تعديل',
-                          style: AppTextStyles.labelMd.copyWith(
-                            color: AppColors.secondary,
-                          ),
-                        ),
-                      ],
-                    ),
-                  ),
-                ),
-              ),
-            ],
+          CardActionRow(
+            isActive: isActive,
+            onToggleActive: onToggleStatus,
+            onDelete: onDelete,
+            onEdit: onEdit,
           ),
         ],
       ),
