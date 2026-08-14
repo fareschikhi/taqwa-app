@@ -203,10 +203,7 @@ class _HalaqasManagementPageState extends State<HalaqasManagementPage> {
       ),
       floatingActionButton: FloatingActionButton.extended(
         heroTag: 'fab_halaqa',
-        onPressed: () => Navigator.push(
-          context,
-          MaterialPageRoute(builder: (_) => const CreateHalaqaPage()),
-        ).then((_) => _load()),
+        onPressed: () => _openForm(null),
         backgroundColor: AppColors.primary,
         icon: const Icon(Icons.add, color: AppColors.onPrimary),
         label: Text(

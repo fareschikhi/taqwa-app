@@ -202,12 +202,7 @@ class _TeachersManagementPageState extends State<TeachersManagementPage> {
                       label: 'إضافة معلم جديد',
                       variant: AppButtonVariant.gradient,
                       icon: Icons.person_add,
-                      onPressed: () => Navigator.push(
-                        context,
-                        MaterialPageRoute(
-                          builder: (_) => const CreateTeacherPage(),
-                        ),
-                      ).then((_) => _load()),
+                      onPressed: () => _openForm(null),
                     ),
                     SizedBox(height: 16.h),
                     SearchBarWidget(
