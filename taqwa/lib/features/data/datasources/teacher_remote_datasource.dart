@@ -165,7 +165,7 @@ class TeacherRemoteDatasource {
   Future<Map<String, dynamic>> submitMemorization({
     required int studentId,
     required int surahNumber,
-    required int pagesDone,
+    required int amountDone,
     required String memorizationType,
   }) async {
     final response = await _dio.post(
@@ -173,7 +173,7 @@ class TeacherRemoteDatasource {
       data: {
         'studentId': studentId,
         'surahNumber': surahNumber,
-        'pagesDone': pagesDone,
+        'amountDone': amountDone,
         'memorizationType': memorizationType,
       },
     );

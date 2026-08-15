@@ -119,13 +119,13 @@ class TeacherRepository {
   Future<void> submitMemorization({
     required int studentId,
     required int surahNumber,
-    required int pagesDone,
+    required int amountDone,
     required String memorizationType,
   }) async {
     await _ds.submitMemorization(
       studentId: studentId,
       surahNumber: surahNumber,
-      pagesDone: pagesDone,
+      amountDone: amountDone,
       memorizationType: memorizationType,
     );
   }

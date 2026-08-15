@@ -4,6 +4,7 @@ import 'package:flutter_screenutil/flutter_screenutil.dart';
 import '../../../../core/theme/app_colors.dart';
 import '../../../../core/theme/app_text_styles.dart';
 import '../../../../core/constants/app_constants.dart';
+import '../../../../core/enums/memorization_type.dart';
 import '../../../../core/providers/selected_child_provider.dart';
 import '../../../data/repositories/student_repository.dart';
 
@@ -252,12 +253,12 @@ class _ChildProgressPageState extends ConsumerState<ChildProgressPage> {
   }
 
   Widget _buildRecordItem(Map<String, dynamic> entry) {
-    final type = entry['memorizationType'] as String?;
-    final typeLabel = switch (type) {
-      'SMALLREVISION' => 'مراجعة صغرى',
-      'BIGREVISION' => 'مراجعة كبرى',
-      _ => 'حفظ جديد',
-    };
+    // An unrecognised type falls back to new memorization, matching the
+    // column default on the server.
+    final type =
+        MemorizationTypeX.fromApi(entry['memorizationType'] as String?) ??
+        MemorizationType.hifz;
+    final typeLabel = type == MemorizationType.hifz ? 'حفظ جديد' : type.label;
     String dateStr = '';
     try {
       final dt = DateTime.parse(
@@ -317,7 +318,7 @@ class _ChildProgressPageState extends ConsumerState<ChildProgressPage> {
                       ),
                     ),
                     child: Text(
-                      '${entry['pagesDone']} صفحة',
+                      '${entry['amountDone']} ${type.unitLabel}',
                       style: AppTextStyles.caption.copyWith(
                         color: AppColors.onSurfaceVariant,
                       ),

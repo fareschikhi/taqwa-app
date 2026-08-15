@@ -216,23 +216,25 @@ async function main() {
   }
 
   // ── Memorization progress ────────────────────────────────────────
+  // amountDone carries pages for MEMORIZING and hizbs for either revision,
+  // so each entry states its own amount rather than sharing one counter.
   const memorizationCycle = [
-    Memorization.MEMORIZING,
-    Memorization.SMALLREVISION,
-    Memorization.BIGREVISION,
+    { type: Memorization.MEMORIZING, amountDone: 2 }, // 2 pages
+    { type: Memorization.SMALLREVISION, amountDone: 3 }, // 3 hizbs
+    { type: Memorization.BIGREVISION, amountDone: 8 }, // 8 hizbs
   ];
 
   const date = new Date();
 
   for (const student of students) {
-    for (let i = 0; i < 3; i++) {
+    for (const [i, entry] of memorizationCycle.entries()) {
       await prisma.memorizationProgress.create({
         data: {
           studentId: student.id,
           surahNumber: 78 + i,
-          pagesDone: 2 + i,
+          amountDone: entry.amountDone,
           date,
-          memorizationType: memorizationCycle[i],
+          memorizationType: entry.type,
         },
       });
     }

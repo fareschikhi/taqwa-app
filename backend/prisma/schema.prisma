@@ -176,7 +176,7 @@ model MemorizationProgress {
   id               Int          @id @default(autoincrement())
   studentId        Int
   surahNumber      Int
-  pagesDone         Int
+  amountDone       Int
   memorizationType Memorization @default(MEMORIZING)
   recordedAt       DateTime     @default(now())
   date             DateTime     @db.Date 

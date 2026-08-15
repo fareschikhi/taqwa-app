@@ -21,11 +21,22 @@ class MemorizationEntrySheet extends StatefulWidget {
 
 class _MemorizationEntrySheetState extends State<MemorizationEntrySheet> {
   int? _selectedSurah;
-  int _pagesNumber = 1;
+  int _amount = 1;
   MemorizationType? _selectedType;
   bool _isSaving = false;
 
   final _repo = TeacherRepository();
+
+  /// The unit only becomes known once a type is picked, so the counter stays
+  /// inert until then rather than collecting a number with no unit attached.
+  void _onTypeChanged(MemorizationType? type) {
+    setState(() {
+      _selectedType = type;
+      // Pages and hizbs are not interchangeable quantities; carrying the old
+      // number across a unit switch would silently change what it means.
+      _amount = 1;
+    });
+  }
 
   Future<void> _submit() async {
     if (_selectedSurah == null || _selectedType == null) {
@@ -48,7 +59,7 @@ class _MemorizationEntrySheetState extends State<MemorizationEntrySheet> {
       await _repo.submitMemorization(
         studentId: widget.student.id,
         surahNumber: _selectedSurah!,
-        pagesDone: _pagesNumber,
+        amountDone: _amount,
         memorizationType: _selectedType!.apiValue,
       );
       if (mounted) Navigator.pop(context, true);
@@ -153,47 +164,6 @@ class _MemorizationEntrySheetState extends State<MemorizationEntrySheet> {
                   SizedBox(height: 12.h),
 
                   Text(
-                    'عدد الصفحات',
-                    style: AppTextStyles.labelMd.copyWith(
-                      color: AppColors.onSurfaceVariant,
-                    ),
-                  ),
-                  SizedBox(height: 6.h),
-                  Container(
-                    decoration: BoxDecoration(
-                      color: AppColors.surfaceContainerLow,
-                      borderRadius: BorderRadius.circular(
-                        AppConstants.radiusMd,
-                      ),
-                      border: Border.all(color: AppColors.inputBorder),
-                    ),
-                    child: Row(
-                      children: [
-                        IconButton(
-                          icon: const Icon(Icons.add, size: 18),
-                          onPressed: () => setState(() => _pagesNumber++),
-                          color: AppColors.primary,
-                        ),
-                        Expanded(
-                          child: Text(
-                            '$_pagesNumber',
-                            textAlign: TextAlign.center,
-                            style: AppTextStyles.bodyMdBold,
-                          ),
-                        ),
-                        IconButton(
-                          icon: const Icon(Icons.remove, size: 18),
-                          onPressed: () => setState(() {
-                            if (_pagesNumber > 1) _pagesNumber--;
-                          }),
-                          color: AppColors.onSurfaceVariant,
-                        ),
-                      ],
-                    ),
-                  ),
-                  SizedBox(height: 12.h),
-
-                  Text(
                     'نوع العرض',
                     style: AppTextStyles.labelMd.copyWith(
                       color: AppColors.onSurfaceVariant,
@@ -213,7 +183,57 @@ class _MemorizationEntrySheetState extends State<MemorizationEntrySheet> {
                       SegmentOption(value: MemorizationType.hifz, label: 'حفظ'),
                     ],
                     selected: _selectedType,
-                    onChanged: (v) => setState(() => _selectedType = v),
+                    onChanged: _onTypeChanged,
+                  ),
+                  SizedBox(height: 12.h),
+
+                  Text(
+                    // Revision is counted in hizbs, memorization in pages.
+                    _selectedType?.amountLabel ?? 'العدد',
+                    style: AppTextStyles.labelMd.copyWith(
+                      color: AppColors.onSurfaceVariant,
+                    ),
+                  ),
+                  SizedBox(height: 6.h),
+                  Container(
+                    decoration: BoxDecoration(
+                      color: AppColors.surfaceContainerLow,
+                      borderRadius: BorderRadius.circular(
+                        AppConstants.radiusMd,
+                      ),
+                      border: Border.all(color: AppColors.inputBorder),
+                    ),
+                    child: Row(
+                      children: [
+                        IconButton(
+                          icon: const Icon(Icons.add, size: 18),
+                          onPressed: _selectedType == null
+                              ? null
+                              : () => setState(() {
+                                  if (_amount < _selectedType!.maxAmount) {
+                                    _amount++;
+                                  }
+                                }),
+                          color: AppColors.primary,
+                        ),
+                        Expanded(
+                          child: Text(
+                            _selectedType == null ? '—' : '$_amount',
+                            textAlign: TextAlign.center,
+                            style: AppTextStyles.bodyMdBold,
+                          ),
+                        ),
+                        IconButton(
+                          icon: const Icon(Icons.remove, size: 18),
+                          onPressed: _selectedType == null
+                              ? null
+                              : () => setState(() {
+                                  if (_amount > 1) _amount--;
+                                }),
+                          color: AppColors.onSurfaceVariant,
+                        ),
+                      ],
+                    ),
                   ),
                 ],
               ),
