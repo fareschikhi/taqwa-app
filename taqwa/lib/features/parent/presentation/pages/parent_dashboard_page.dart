@@ -8,6 +8,8 @@ import '../../../../core/widgets/app_card.dart';
 import '../../../../core/widgets/avatar_widget.dart';
 import '../../../../core/providers/auth_provider.dart';
 import '../../../../core/providers/selected_child_provider.dart';
+import '../../../../core/utils/last_session.dart';
+import '../../../../core/widgets/last_session_card.dart';
 import '../../../data/repositories/student_repository.dart';
 import '../../../data/models/attendance_summary_model.dart';
 import '../../../data/models/parent/parent_child_model.dart';
@@ -28,6 +30,7 @@ class _ParentDashboardPageState extends ConsumerState<ParentDashboardPage> {
   AttendanceSummaryModel? _attendance;
   Map<String, dynamic>? _progress;
   List<Map<String, dynamic>> _notes = [];
+  List<Map<String, dynamic>> _attendanceHistory = [];
 
   @override
   void initState() {
@@ -48,6 +51,7 @@ class _ParentDashboardPageState extends ConsumerState<ParentDashboardPage> {
         _repo.getAttendanceSummary(childId),
         _repo.getMemorizationProgress(childId),
         _repo.getProfile(childId),
+        _repo.getAttendanceHistory(childId),
       ]);
       final profile = results[2] as Map<String, dynamic>;
       final rawNotes = (profile['notes'] as List?) ?? [];
@@ -56,6 +60,7 @@ class _ParentDashboardPageState extends ConsumerState<ParentDashboardPage> {
           _attendance = results[0] as AttendanceSummaryModel;
           _progress = results[1] as Map<String, dynamic>;
           _notes = rawNotes.cast<Map<String, dynamic>>();
+          _attendanceHistory = results[3] as List<Map<String, dynamic>>;
           _isLoading = false;
         });
       }
@@ -111,7 +116,7 @@ class _ParentDashboardPageState extends ConsumerState<ParentDashboardPage> {
                         ),
                       )
                     else ...[
-                      _buildQuickStats(),
+                      _buildLastSession(),
                       SizedBox(height: 20.h),
                       _buildTeacherNotes(),
                     ],
@@ -137,18 +142,6 @@ class _ParentDashboardPageState extends ConsumerState<ParentDashboardPage> {
         padding: EdgeInsets.symmetric(horizontal: 16.w, vertical: 8.h),
         child: Row(
           children: [
-            Container(
-              width: 40.w,
-              height: 40.w,
-              decoration: BoxDecoration(
-                color: AppColors.surfaceContainer,
-                borderRadius: BorderRadius.circular(AppConstants.radiusMd),
-              ),
-              child: const Icon(
-                Icons.notifications_outlined,
-                color: AppColors.onSurfaceVariant,
-              ),
-            ),
             const Spacer(),
             Container(
               width: 36.w,
@@ -198,13 +191,10 @@ class _ParentDashboardPageState extends ConsumerState<ParentDashboardPage> {
   }
 
   Widget _buildChildCard(BuildContext context, ParentChildModel child) {
-    final attendanceRate = _attendance?.rate ?? 0;
+    // The card reports the current month; the attendance history tab keeps
+    // showing the whole enrolment, which is why both figures are available.
+    final monthAttendanceRate = _attendance?.monthRate ?? 0;
     final pagesDone = (_progress?['totalPagesDone'] as num?)?.toInt() ?? 0;
-    final typeCounts =
-        (_progress?['typeCounts'] as Map<String, dynamic>?) ?? {};
-    final reviewCount =
-        ((typeCounts['SMALLREVISION'] as num?)?.toInt() ?? 0) +
-        ((typeCounts['BIGREVISION'] as num?)?.toInt() ?? 0);
 
     return GestureDetector(
       onTap: () => Navigator.push(
@@ -289,12 +279,16 @@ class _ParentDashboardPageState extends ConsumerState<ParentDashboardPage> {
                 color: AppColors.onPrimary.withValues(alpha: 0.1),
                 borderRadius: BorderRadius.circular(AppConstants.radiusMd),
               ),
+              // Two figures, not three: how much of the Qur'an the child has
+              // memorised, and whether they have been turning up lately.
+              // Revision counts belong to the teacher's view of the work, not
+              // to a parent's summary of it.
               child: Row(
                 children: [
                   Expanded(
                     child: _StatChip(
-                      label: 'حضور',
-                      value: _isLoading ? '--' : '$attendanceRate%',
+                      label: 'حضور الشهر',
+                      value: _isLoading ? '--' : '$monthAttendanceRate%',
                     ),
                   ),
                   Container(
@@ -308,17 +302,6 @@ class _ParentDashboardPageState extends ConsumerState<ParentDashboardPage> {
                       value: _isLoading ? '--' : '$pagesDone صفحة',
                     ),
                   ),
-                  Container(
-                    width: 1,
-                    height: 40.h,
-                    color: AppColors.onPrimary.withValues(alpha: 0.3),
-                  ),
-                  Expanded(
-                    child: _StatChip(
-                      label: 'مراجعة',
-                      value: _isLoading ? '--' : '$reviewCount مرة',
-                    ),
-                  ),
                 ],
               ),
             ),
@@ -328,40 +311,27 @@ class _ParentDashboardPageState extends ConsumerState<ParentDashboardPage> {
     );
   }
 
-  Widget _buildQuickStats() {
-    final totalSurahs = (_progress?['totalSurahs'] as num?)?.toInt() ?? 0;
-    final typeCounts =
-        (_progress?['typeCounts'] as Map<String, dynamic>?) ?? {};
-    final newCount = (typeCounts['MEMORIZING'] as num?)?.toInt() ?? 0;
+  /// A parent opening the app wants to know how the last halaqa went, which a
+  /// running count of sessions never told them. The memorization shown is the
+  /// one recorded on the day of that attendance, so the two cannot disagree.
+  Widget _buildLastSession() {
+    final records =
+        (_progress?['records'] as List?)?.cast<Map<String, dynamic>>() ??
+        const <Map<String, dynamic>>[];
 
     return Column(
       crossAxisAlignment: CrossAxisAlignment.end,
       children: [
         Text(
-          'تقدم الحفظ',
-          style: AppTextStyles.headlineSm.copyWith(
-            color: AppColors.onSurface,
-          ),
+          'آخر حضور',
+          style: AppTextStyles.headlineSm.copyWith(color: AppColors.onSurface),
         ),
         SizedBox(height: 12.h),
-        Row(
-          children: [
-            Expanded(
-              child: _StatCard(
-                title: 'سور تم تناولها',
-                value: '$totalSurahs',
-                color: AppColors.primary,
-              ),
-            ),
-            SizedBox(width: 12.w),
-            Expanded(
-              child: _StatCard(
-                title: 'جلسات حفظ جديد',
-                value: '$newCount',
-                color: AppColors.secondary,
-              ),
-            ),
-          ],
+        LastSessionCard(
+          session: lastSessionOf(
+            attendance: _attendanceHistory,
+            memorization: records,
+          ),
         ),
       ],
     );
@@ -373,9 +343,7 @@ class _ParentDashboardPageState extends ConsumerState<ParentDashboardPage> {
       children: [
         Text(
           'ملاحظات المعلم',
-          style: AppTextStyles.headlineSm.copyWith(
-            color: AppColors.onSurface,
-          ),
+          style: AppTextStyles.headlineSm.copyWith(color: AppColors.onSurface),
         ),
         SizedBox(height: 12.h),
         if (_notes.isEmpty)
@@ -399,7 +367,7 @@ class _ParentDashboardPageState extends ConsumerState<ParentDashboardPage> {
             }
             final teacherName =
                 (n['teacher'] as Map<String, dynamic>?)?['user']
-                        as Map<String, dynamic>? ??
+                    as Map<String, dynamic>? ??
                 {};
 
             return Padding(
@@ -441,40 +409,6 @@ class _ParentDashboardPageState extends ConsumerState<ParentDashboardPage> {
             );
           }),
       ],
-    );
-  }
-}
-
-class _StatCard extends StatelessWidget {
-  const _StatCard({
-    required this.title,
-    required this.value,
-    required this.color,
-  });
-  final String title;
-  final String value;
-  final Color color;
-
-  @override
-  Widget build(BuildContext context) {
-    return AppCard(
-      padding: EdgeInsets.all(16.w),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.end,
-        children: [
-          Text(
-            value,
-            style: AppTextStyles.headlineMd.copyWith(color: color),
-          ),
-          SizedBox(height: 4.h),
-          Text(
-            title,
-            style: AppTextStyles.labelSm.copyWith(
-              color: AppColors.onSurfaceVariant,
-            ),
-          ),
-        ],
-      ),
     );
   }
 }

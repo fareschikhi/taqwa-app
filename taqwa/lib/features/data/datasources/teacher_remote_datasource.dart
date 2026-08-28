@@ -101,6 +101,15 @@ class TeacherRemoteDatasource {
         .toList();
   }
 
+  /// Per-day attendance rates for the current school week, Sunday first. A day
+  /// with no register taken carries a null rate rather than a zero.
+  Future<List<Map<String, dynamic>>> getWeeklyAttendanceRates() async {
+    final response = await _dio.get('${ApiEndpoints.attendance}/week');
+    return (response.data as List)
+        .map((e) => e as Map<String, dynamic>)
+        .toList();
+  }
+
   Future<Map<String, dynamic>> submitAttendanceBatch(
     List<Map<String, dynamic>> records,
   ) async {

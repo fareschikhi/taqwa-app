@@ -90,10 +90,12 @@ class AppTextStyles {
   // ═══════════════════════════════════════
   // Utility Styles
   // ═══════════════════════════════════════
+  // 10sp reads as decoration rather than data on a phone: at that size a
+  // parent misses the amount pill on their child's progress list entirely.
   static TextStyle get caption => GoogleFonts.tajawal(
-        fontSize: 10.sp,
+        fontSize: 12.sp,
         fontWeight: FontWeight.w400,
-        height: 14 / 10,
+        height: 16 / 12,
       );
 
   static TextStyle get button => GoogleFonts.tajawal(

@@ -46,8 +46,9 @@ class _ManagerDashboardPageState extends ConsumerState<ManagerDashboardPage> {
 
       final students = await _managerRepo.getManagerStudents(mgrId);
       final halaqas = await _managerRepo.getManagerHalaqas(mgrId);
-      final justifications =
-          await _justificationRepo.getAllJustifications(managerId: mgrId);
+      final justifications = await _justificationRepo.getAllJustifications(
+        managerId: mgrId,
+      );
 
       // Absences and latenesses still waiting for a justification — the same
       // list the "بانتظار التبرير" tab of the justifications page shows.
@@ -204,7 +205,7 @@ class _ManagerDashboardPageState extends ConsumerState<ManagerDashboardPage> {
               ),
               SizedBox(height: 4.h),
               Text(
-                'إليك نظرة عامة على نشاط المعهد اليوم',
+                'إليك نظرة عامة على نشاط المدرسة القرآنية اليوم',
                 style: AppTextStyles.bodyMd.copyWith(
                   color: AppColors.onPrimary.withValues(alpha: 0.9),
                 ),

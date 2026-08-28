@@ -72,6 +72,9 @@ class TeacherRepository {
     return _ds.getAttendanceByDate(date);
   }
 
+  Future<List<Map<String, dynamic>>> getWeeklyAttendanceRates() =>
+      _ds.getWeeklyAttendanceRates();
+
   Future<void> submitAttendanceBatch(List<Map<String, dynamic>> records) async {
     await _ds.submitAttendanceBatch(records);
   }

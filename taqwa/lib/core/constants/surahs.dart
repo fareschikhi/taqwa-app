@@ -120,3 +120,20 @@ const List<Surah> kSurahs = [
   Surah(113, 'الفلق'),
   Surah(114, 'الناس'),
 ];
+
+/// The Arabic name of surah [number], or null when the number falls outside
+/// the mushaf. Read screens pull the number off untyped JSON, so an unusable
+/// value costs the name rather than throwing at them.
+String? surahNameOf(int? number) {
+  for (final surah in kSurahs) {
+    if (surah.number == number) return surah.name;
+  }
+  return null;
+}
+
+/// How a surah is named on screen: its name when known, its number when the
+/// value falls outside the mushaf, so a bad row still reads as an entry.
+String surahLabelOf(int? number) {
+  final name = surahNameOf(number);
+  return name != null ? 'سورة $name' : 'سورة رقم ${number ?? '-'}';
+}

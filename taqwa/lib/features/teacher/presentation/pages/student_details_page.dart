@@ -15,8 +15,6 @@ class StudentDetailsPage extends StatefulWidget {
 }
 
 class _StudentDetailsPageState extends State<StudentDetailsPage> {
-  int _starRating = 4;
-
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -63,34 +61,6 @@ class _StudentDetailsPageState extends State<StudentDetailsPage> {
                     ],
                   ),
                   SizedBox(height: 20.h),
-                  // Star rating
-                  // AppCard(
-                  //   padding: EdgeInsets.all(16.w),
-                  //   child: Column(crossAxisAlignment: CrossAxisAlignment.end, children: [
-                  //     Text('التقييم الشخصي للطالب',
-                  //         style: AppTextStyles.headlineSm.copyWith(color: AppColors.onSurface)),
-                  //     SizedBox(height: 12.h),
-                  //     Row(
-                  //       mainAxisAlignment: MainAxisAlignment.center,
-                  //       children: List.generate(5, (i) {
-                  //         return GestureDetector(
-                  //           onTap: () => setState(() => _starRating = i + 1),
-                  //           child: Icon(
-                  //             i < _starRating ? Icons.star : Icons.star_border,
-                  //             color: i < _starRating ? AppColors.warning : AppColors.outlineVariant,
-                  //             size: 36.w,
-                  //           ),
-                  //         );
-                  //       }),
-                  //     ),
-                  //     SizedBox(height: 8.h),
-                  //     Center(child: Text(
-                  //       _starRating >= 5 ? 'ممتاز' : _starRating >= 4 ? 'جيد جداً' : _starRating >= 3 ? 'جيد' : 'مقبول',
-                  //       style: AppTextStyles.bodyMd.copyWith(color: AppColors.primary),
-                  //     )),
-                  //   ]),
-                  // ),
-                  // SizedBox(height: 16.h),
                   // Current task
                   AppCard(
                     padding: EdgeInsets.all(16.w),

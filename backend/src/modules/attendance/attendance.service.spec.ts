@@ -1,0 +1,366 @@
+import { AttendanceStatus } from '@prisma/client';
+import { AttendanceService } from './attendance.service';
+
+describe('AttendanceService memorization cleanup', () => {
+  const makePrisma = () => {
+    const tx = {
+      attendance: {
+        upsert: jest
+          .fn()
+          .mockImplementation(({ create }) => Promise.resolve({ id: 1, ...create })),
+        update: jest.fn().mockResolvedValue({
+          id: 1,
+          studentId: 7,
+          date: new Date('2026-08-26'),
+          status: AttendanceStatus.ABSENT,
+        }),
+      },
+      memorizationProgress: { deleteMany: jest.fn().mockResolvedValue({ count: 1 }) },
+    };
+    const prisma = {
+      $transaction: jest.fn((cb: any) => cb(tx)),
+      tx,
+    };
+    return prisma;
+  };
+
+  const dto = (status: AttendanceStatus) => ({
+    studentId: 7,
+    date: '2026-08-26',
+    status,
+  });
+
+  it('deletes that date\'s memorization when a student is marked absent', async () => {
+    const prisma = makePrisma();
+    const service = new AttendanceService(prisma as any);
+
+    await service.create(dto(AttendanceStatus.ABSENT));
+
+    expect(prisma.tx.memorizationProgress.deleteMany).toHaveBeenCalledWith({
+      where: { studentId: 7, date: new Date('2026-08-26') },
+    });
+  });
+
+  it('deletes in the same transaction as the attendance write', async () => {
+    const prisma = makePrisma();
+    const service = new AttendanceService(prisma as any);
+
+    await service.create(dto(AttendanceStatus.ABSENT));
+
+    expect(prisma.$transaction).toHaveBeenCalled();
+  });
+
+  it('keeps memorization when the student is marked present', async () => {
+    const prisma = makePrisma();
+    const service = new AttendanceService(prisma as any);
+
+    await service.create(dto(AttendanceStatus.PRESENT));
+
+    expect(prisma.tx.memorizationProgress.deleteMany).not.toHaveBeenCalled();
+  });
+
+  it('keeps memorization when the student is marked late', async () => {
+    const prisma = makePrisma();
+    const service = new AttendanceService(prisma as any);
+
+    await service.create(dto(AttendanceStatus.LATE));
+
+    expect(prisma.tx.memorizationProgress.deleteMany).not.toHaveBeenCalled();
+  });
+
+  // The teacher marks a whole halaqa and saves it in one batch, so this is the
+  // path nearly every absence now arrives through. Cleaning up only on the
+  // single-record route would leave recitation standing for a batched absence.
+  it('cleans up each absent student in a batch, and only those', async () => {
+    const prisma = makePrisma();
+    const service = new AttendanceService(prisma as any);
+
+    await service.createBatch({
+      records: [
+        { studentId: 7, date: '2026-08-26', status: AttendanceStatus.ABSENT },
+        { studentId: 8, date: '2026-08-26', status: AttendanceStatus.PRESENT },
+        { studentId: 9, date: '2026-08-26', status: AttendanceStatus.ABSENT },
+      ],
+    });
+
+    expect(prisma.tx.memorizationProgress.deleteMany).toHaveBeenCalledTimes(2);
+    expect(prisma.tx.memorizationProgress.deleteMany).toHaveBeenCalledWith({
+      where: { studentId: 7, date: new Date('2026-08-26') },
+    });
+    expect(prisma.tx.memorizationProgress.deleteMany).toHaveBeenCalledWith({
+      where: { studentId: 9, date: new Date('2026-08-26') },
+    });
+    expect(prisma.tx.memorizationProgress.deleteMany).not.toHaveBeenCalledWith({
+      where: { studentId: 8, date: new Date('2026-08-26') },
+    });
+  });
+
+  it('batches the whole save into one transaction', async () => {
+    const prisma = makePrisma();
+    const service = new AttendanceService(prisma as any);
+
+    await service.createBatch({
+      records: [
+        { studentId: 7, date: '2026-08-26', status: AttendanceStatus.ABSENT },
+        { studentId: 8, date: '2026-08-26', status: AttendanceStatus.ABSENT },
+      ],
+    });
+
+    // One save, one transaction: a partial write would leave the halaqa split
+    // between saved and unsaved with nothing on screen saying which.
+    expect(prisma.$transaction).toHaveBeenCalledTimes(1);
+  });
+
+  it('also cleans up when a PATCH flips an existing row to absent', async () => {
+    const prisma = makePrisma();
+    const service = new AttendanceService(prisma as any);
+
+    await service.update(1, { status: AttendanceStatus.ABSENT });
+
+    expect(prisma.tx.memorizationProgress.deleteMany).toHaveBeenCalledWith({
+      where: { studentId: 7, date: new Date('2026-08-26') },
+    });
+  });
+});
+
+describe('AttendanceService.getStudentAttendanceSummary', () => {
+  /**
+   * Counts are answered from the `where` clause, so the tests describe the
+   * data rather than the call order: a row is "this month" only if the query
+   * carried a date window.
+   */
+  const makePrisma = (rows: {
+    present: number;
+    absent: number;
+    late: number;
+    monthPresent: number;
+    monthAbsent: number;
+    monthLate: number;
+  }) => ({
+    attendance: {
+      count: jest.fn(({ where }: any) => {
+        const scoped = where.date !== undefined;
+        if (where.status === 'PRESENT') {
+          return Promise.resolve(scoped ? rows.monthPresent : rows.present);
+        }
+        if (where.status === 'ABSENT') {
+          return Promise.resolve(scoped ? rows.monthAbsent : rows.absent);
+        }
+        if (where.status === 'LATE') {
+          return Promise.resolve(scoped ? rows.monthLate : rows.late);
+        }
+        return Promise.resolve(rows.present + rows.absent + rows.late);
+      }),
+    },
+  });
+
+  const counts = {
+    present: 6,
+    absent: 3,
+    late: 1,
+    monthPresent: 2,
+    monthAbsent: 1,
+    monthLate: 0,
+  };
+
+  it('keeps the all-time breakdown the history page reads', async () => {
+    const service = new AttendanceService(makePrisma(counts) as any);
+
+    const summary = await service.getStudentAttendanceSummary(7);
+
+    expect(summary).toMatchObject({
+      present: 6,
+      absent: 3,
+      late: 1,
+      total: 10,
+      // 6 present + 1 late of 10 days: the late day counts as attendance.
+      rate: 70,
+    });
+  });
+
+  it('reports this month separately from all time', async () => {
+    const service = new AttendanceService(makePrisma(counts) as any);
+
+    const summary = await service.getStudentAttendanceSummary(7);
+
+    // 2 of 3 this month, against 7 of 10 overall.
+    expect(summary.monthPresent).toBe(2);
+    expect(summary.monthAbsent).toBe(1);
+    expect(summary.monthLate).toBe(0);
+    expect(summary.monthRate).toBe(67);
+  });
+
+  it('scopes the month counts to a UTC window over the current month', async () => {
+    const prisma = makePrisma(counts);
+    const service = new AttendanceService(prisma as any);
+
+    await service.getStudentAttendanceSummary(7);
+
+    const scoped = prisma.attendance.count.mock.calls
+      .map(([arg]: any) => arg.where)
+      .filter((w: any) => w.date !== undefined);
+
+    expect(scoped).toHaveLength(3);
+    for (const where of scoped) {
+      const { gte, lte } = where.date;
+      // A local-time window would sit hours off the UTC-midnight date column
+      // and drop the first or last day of the month.
+      expect(gte.getUTCDate()).toBe(1);
+      expect(gte.getUTCHours()).toBe(0);
+      expect(lte.getUTCMonth()).toBe(gte.getUTCMonth());
+      expect(lte.getTime()).toBeGreaterThan(gte.getTime());
+    }
+  });
+
+  it('reports a month with no attendance as zero rather than dividing by it', async () => {
+    const service = new AttendanceService(
+      makePrisma({
+        ...counts,
+        monthPresent: 0,
+        monthAbsent: 0,
+        monthLate: 0,
+      }) as any,
+    );
+
+    const summary = await service.getStudentAttendanceSummary(7);
+
+    expect(summary.monthRate).toBe(0);
+  });
+
+  it('counts a late day as attendance, not as an absence', async () => {
+    // Turning up late is turning up. A month of nothing but late arrivals is
+    // full attendance, and one absence among them is the only thing that
+    // pulls the figure down.
+    const service = new AttendanceService(
+      makePrisma({
+        present: 0,
+        absent: 0,
+        late: 9,
+        monthPresent: 0,
+        monthAbsent: 0,
+        monthLate: 9,
+      }) as any,
+    );
+
+    const summary = await service.getStudentAttendanceSummary(7);
+
+    expect(summary.monthRate).toBe(100);
+    expect(summary.rate).toBe(100);
+  });
+
+  it('holds only absences against the month rate', async () => {
+    const service = new AttendanceService(
+      makePrisma({
+        present: 1,
+        absent: 1,
+        late: 2,
+        monthPresent: 1,
+        monthAbsent: 1,
+        monthLate: 2,
+      }) as any,
+    );
+
+    const summary = await service.getStudentAttendanceSummary(7);
+
+    // 1 present + 2 late attended, 1 absent: 3 of 4.
+    expect(summary.monthRate).toBe(75);
+  });
+});
+
+describe('AttendanceService.getWeeklyAttendanceRates', () => {
+  const DAY_MS = 24 * 60 * 60 * 1000;
+
+  /** Sunday of the week the given date falls in, at UTC midnight. */
+  const sundayOf = (d: Date) => {
+    const utc = Date.UTC(d.getUTCFullYear(), d.getUTCMonth(), d.getUTCDate());
+    return new Date(utc - new Date(utc).getUTCDay() * DAY_MS);
+  };
+
+  /** rows: [dayOffsetFromSunday, status, count] */
+  const makePrisma = (rows: Array<[number, string, number]>) => {
+    const sunday = sundayOf(new Date());
+    return {
+      attendance: {
+        groupBy: jest.fn(() =>
+          Promise.resolve(
+            rows.map(([offset, status, count]) => ({
+              date: new Date(sunday.getTime() + offset * DAY_MS),
+              status,
+              _count: { _all: count },
+            })),
+          ),
+        ),
+      },
+    };
+  };
+
+  it('reports the five school days of the week, Sunday first', async () => {
+    const service = new AttendanceService(makePrisma([]) as any);
+
+    const week = await service.getWeeklyAttendanceRates();
+
+    expect(week).toHaveLength(5);
+    const sunday = sundayOf(new Date());
+    expect(week[0].date).toBe(sunday.toISOString().slice(0, 10));
+    expect(week[4].date).toBe(
+      new Date(sunday.getTime() + 4 * DAY_MS).toISOString().slice(0, 10),
+    );
+  });
+
+  it('counts late arrivals as attendance, the same as everywhere else', async () => {
+    const service = new AttendanceService(
+      makePrisma([
+        [0, 'PRESENT', 6],
+        [0, 'LATE', 2],
+        [0, 'ABSENT', 2],
+      ]) as any,
+    );
+
+    const week = await service.getWeeklyAttendanceRates();
+
+    // 6 present + 2 late of 10 marked.
+    expect(week[0]).toMatchObject({ present: 8, absent: 2, rate: 80 });
+  });
+
+  it('leaves an unmarked day null instead of calling it 0%', async () => {
+    // A day with no register taken is not a day everyone missed, and a 0% bar
+    // on the dashboard would read as exactly that.
+    const service = new AttendanceService(
+      makePrisma([[1, 'PRESENT', 4]]) as any,
+    );
+
+    const week = await service.getWeeklyAttendanceRates();
+
+    expect(week[0].rate).toBeNull();
+    expect(week[0].present).toBe(0);
+    expect(week[1].rate).toBe(100);
+  });
+
+  it('keeps each day separate rather than pooling the week', async () => {
+    const service = new AttendanceService(
+      makePrisma([
+        [0, 'PRESENT', 1],
+        [0, 'ABSENT', 3],
+        [2, 'PRESENT', 3],
+        [2, 'ABSENT', 1],
+      ]) as any,
+    );
+
+    const week = await service.getWeeklyAttendanceRates();
+
+    expect(week[0].rate).toBe(25);
+    expect(week[2].rate).toBe(75);
+  });
+
+  it('asks the database only for that week', async () => {
+    const prisma = makePrisma([]);
+    const service = new AttendanceService(prisma as any);
+
+    await service.getWeeklyAttendanceRates();
+
+    const { where } = prisma.attendance.groupBy.mock.calls[0][0] as any;
+    const sunday = sundayOf(new Date());
+    expect(where.date.gte.getTime()).toBe(sunday.getTime());
+    expect(where.date.lte.getTime()).toBe(sunday.getTime() + 4 * DAY_MS);
+  });
+});

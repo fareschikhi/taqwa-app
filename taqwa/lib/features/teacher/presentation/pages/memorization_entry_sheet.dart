@@ -6,6 +6,7 @@ import '../../../../core/theme/app_text_styles.dart';
 import '../../../../core/constants/app_constants.dart';
 import '../../../../core/constants/surahs.dart';
 import '../../../../core/enums/memorization_type.dart';
+import '../../../../core/utils/memorization_error_message.dart';
 import '../../../../core/widgets/app_card.dart';
 import '../../../../core/widgets/app_button.dart';
 import '../../../data/models/teacher_student_model.dart';
@@ -63,13 +64,13 @@ class _MemorizationEntrySheetState extends State<MemorizationEntrySheet> {
         memorizationType: _selectedType!.apiValue,
       );
       if (mounted) Navigator.pop(context, true);
-    } catch (_) {
+    } catch (e) {
       if (mounted) {
         setState(() => _isSaving = false);
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
             content: Text(
-              'فشل حفظ المراجعة',
+              _errorMessage(e),
               style: AppTextStyles.labelMd.copyWith(color: AppColors.onPrimary),
               textDirection: TextDirection.rtl,
             ),
@@ -80,6 +81,8 @@ class _MemorizationEntrySheetState extends State<MemorizationEntrySheet> {
       }
     }
   }
+
+  String _errorMessage(Object error) => memorizationErrorMessage(error);
 
   @override
   Widget build(BuildContext context) {

@@ -69,10 +69,11 @@ export class UsersService {
       this.prisma.student.count(),
       this.prisma.teacher.count(),
       this.prisma.halaqa.count(),
+      // Late arrivals count as attendance, not against it.
       this.prisma.attendance.count({
         where: {
           date: new Date(new Date().setHours(0, 0, 0, 0)),
-          status: 'PRESENT',
+          status: { in: ['PRESENT', 'LATE'] },
         },
       }),
     ]);

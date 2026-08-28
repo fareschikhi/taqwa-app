@@ -5,7 +5,11 @@ class ManagerModel {
   final String? email;
   final String? avatar;
   final bool? isActive;
-  // final List<Map<String, dynamic>>? halaqas;
+
+  /// The halaqas this manager is responsible for, already unwrapped out of the
+  /// `ManagerHalaqa` join rows the API returns — each entry is the halaqa
+  /// itself (`{id, name, level}`). Null when the endpoint didn't include them.
+  final List<Map<String, dynamic>>? halaqas;
   final int? justificationsCount;
   final bool canManageAccounts;
   final bool canDeleteAccounts;
@@ -17,7 +21,7 @@ class ManagerModel {
     this.email,
     this.avatar,
     this.isActive,
-    // this.halaqas,
+    this.halaqas,
     this.justificationsCount,
     this.canManageAccounts = false,
     this.canDeleteAccounts = false,
@@ -25,12 +29,12 @@ class ManagerModel {
 
   factory ManagerModel.fromJson(Map<String, dynamic> json) {
     final user = json['user'] as Map<String, dynamic>?;
-    // List<Map<String, dynamic>>? halaqasList;
-    // if (json['halaqas'] != null) {
-    //   halaqasList = (json['halaqas'] as List)
-    //       .map((h) => h['halaqa'] as Map<String, dynamic>)
-    //       .toList();
-    // }
+    List<Map<String, dynamic>>? halaqasList;
+    if (json['halaqas'] != null) {
+      halaqasList = (json['halaqas'] as List)
+          .map((h) => h['halaqa'] as Map<String, dynamic>)
+          .toList();
+    }
     final count = json['_count'] as Map<String, dynamic>?;
 
     return ManagerModel(
@@ -40,7 +44,7 @@ class ManagerModel {
       email: user?['email'] ?? json['email'],
       avatar: user?['avatar'] ?? json['avatar'],
       isActive: user?['isActive'] ?? json['isActive'],
-      // halaqas: halaqasList,
+      halaqas: halaqasList,
       justificationsCount: count?['justifications'],
       canManageAccounts: (json['canManageAccounts'] as bool?) ?? false,
       canDeleteAccounts: (json['canDeleteAccounts'] as bool?) ?? false,
@@ -54,10 +58,10 @@ class ManagerModel {
     if (avatar != null) 'avatar': avatar,
   };
 
-  // String get firstHalaqaName {
-  //   if (halaqas == null || halaqas!.isEmpty) return 'غير معين';
-  //   return halaqas!.first['name'] ?? 'غير معين';
-  // }
+  String get firstHalaqaName {
+    if (halaqas == null || halaqas!.isEmpty) return 'غير معين';
+    return halaqas!.first['name'] ?? 'غير معين';
+  }
 
-  // int get halaqasCount => halaqas?.length ?? 0;
+  int get halaqasCount => halaqas?.length ?? 0;
 }

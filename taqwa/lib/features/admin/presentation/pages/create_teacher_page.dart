@@ -35,8 +35,6 @@ class _CreateTeacherPageState extends State<CreateTeacherPage> {
   final ImagePicker _picker = ImagePicker();
   bool get _isEditing => widget.editTeacher != null;
 
-  // final _specializations = ['التجويد', 'الحفظ', 'القراءات', 'التفسير', 'الفقه'];
-
   @override
   void initState() {
     super.initState();
@@ -170,17 +168,7 @@ class _CreateTeacherPageState extends State<CreateTeacherPage> {
         ),
       );
 
-      // if (addAnother) {
-      //   _formKey.currentState!.reset();
-      //   _nameController.clear();
-      //   _phoneController.clear();
-      //   _emailController.clear();
-      //   _passwordController.clear();
-      //   _addressController.clear();
-      //   _dobController.clear();
-      // } else {
       Navigator.pop(context, true); // true = refresh caller list
-      // }
     } catch (e) {
       if (!mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(
@@ -375,39 +363,6 @@ class _CreateTeacherPageState extends State<CreateTeacherPage> {
                         ),
                       ),
                       SizedBox(height: 16.h),
-                      // Text('التخصص', style: AppTextStyles.labelMd.copyWith(color: AppColors.onSurfaceVariant)),
-                      // SizedBox(height: 6.h),
-                      // Container(
-                      //   decoration: BoxDecoration(
-                      //     color: AppColors.surfaceContainerLowest,
-                      //     borderRadius: BorderRadius.circular(AppConstants.radiusMd),
-                      //     border: Border.all(color: AppColors.inputBorder),
-                      //   ),
-                      //   padding: EdgeInsets.symmetric(horizontal: 16.w),
-                      //   child: DropdownButtonHideUnderline(
-                      //     child: DropdownButton<String>(
-                      //       value: _specialization,
-                      //       isExpanded: true,
-                      //       hint: Text('اختر التخصص...',
-                      //           style: AppTextStyles.labelMd.copyWith(color: AppColors.inputPlaceholder)),
-                      //       items: _specializations.map((s) => DropdownMenuItem(
-                      //         value: s, child: Text(s, style: AppTextStyles.bodyMd))).toList(),
-                      //       onChanged: (v) => setState(() => _specialization = v),
-                      //     ),
-                      //   ),
-                      // ),
-                      // SizedBox(height: 16.h),
-                      // AppTextField(label: 'تاريخ التعيين', hint: 'dd/mm/yyyy',
-                      //     readOnly: true, onTap: () async {
-                      //       await showDatePicker(
-                      //         context: context,
-                      //         initialDate: DateTime.now(),
-                      //         firstDate: DateTime(2000),
-                      //         lastDate: DateTime.now().add(const Duration(days: 365)),
-                      //       );
-                      //     },
-                      //     suffixIcon: const Icon(Icons.calendar_today_outlined,
-                      //         color: AppColors.onSurfaceVariant)),
                       SizedBox(height: 32.h),
                       // Buttons
                       AppButton(
@@ -418,13 +373,6 @@ class _CreateTeacherPageState extends State<CreateTeacherPage> {
                         onPressed: () => _submit(),
                       ),
                       SizedBox(height: 12.h),
-                      // AppButton(
-                      //   label: 'حفظ وإضافة آخر',
-                      //   variant: AppButtonVariant.secondary,
-                      //   icon: Icons.person_add,
-                      //   onPressed: () => _submit(addAnother: true),
-                      // ),
-                      // SizedBox(height: 12.h),
                       AppButton(
                         label: 'إلغاء',
                         variant: AppButtonVariant.tertiary,

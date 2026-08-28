@@ -5,9 +5,11 @@ import '../../../../core/theme/app_colors.dart';
 import '../../../../core/theme/app_text_styles.dart';
 import '../../../../core/constants/app_constants.dart';
 import '../../../../core/providers/auth_provider.dart';
+import '../../../../core/utils/student_grouping.dart';
 import '../../../../core/widgets/search_bar_widget.dart';
 import '../../../../core/widgets/app_button.dart';
 import '../../../../core/widgets/confirm_delete_dialog.dart';
+import '../../../../core/widgets/halaqa_group_section.dart';
 import '../../../../features/data/models/student/student_model.dart';
 import '../../../../features/data/repositories/student_repository.dart';
 import '../../../../features/data/repositories/manager_repository.dart';
@@ -23,9 +25,12 @@ class ManagerStudentsPage extends ConsumerStatefulWidget {
 
 class _ManagerStudentsPageState extends ConsumerState<ManagerStudentsPage> {
   List<Map<String, dynamic>> _students = [];
-  List<Map<String, dynamic>> _filtered = [];
+  List<HalaqaGroup> _groups = [];
   bool _isLoading = true;
   int _filterIndex = 0;
+
+  /// Halaqa ids the user folded away, kept across reloads and filter changes.
+  final Set<int?> _collapsed = {};
   final _searchController = TextEditingController();
   final _studentRepo = StudentRepository();
   final _managerRepo = ManagerRepository();
@@ -122,8 +127,14 @@ class _ManagerStudentsPageState extends ConsumerState<ManagerStudentsPage> {
           .where((s) => (s['user']?['isActive'] ?? true) == false)
           .toList();
     }
-    _filtered = list;
+    _groups = groupStudentsByHalaqa(list);
   }
+
+  /// A collapsed section would hide a search hit, so searching overrides the
+  /// folded state without discarding it.
+  bool _isExpanded(HalaqaGroup group) =>
+      _searchController.text.trim().isNotEmpty ||
+      !_collapsed.contains(group.halaqaId);
 
   @override
   Widget build(BuildContext context) {
@@ -213,7 +224,7 @@ class _ManagerStudentsPageState extends ConsumerState<ManagerStudentsPage> {
                           color: AppColors.primary,
                         ),
                       )
-                    : _filtered.isEmpty
+                    : _groups.isEmpty
                     ? SingleChildScrollView(
                         physics: const AlwaysScrollableScrollPhysics(),
                         child: Container(
@@ -230,20 +241,42 @@ class _ManagerStudentsPageState extends ConsumerState<ManagerStudentsPage> {
                     : ListView.separated(
                         physics: const AlwaysScrollableScrollPhysics(),
                         padding: EdgeInsets.symmetric(horizontal: 16.w),
-                        itemCount: _filtered.length,
-                        separatorBuilder: (_, _) => SizedBox(height: 12.h),
-                        itemBuilder: (_, i) => _StudentCard(
-                          student: _filtered[i],
-                          canManage:
+                        itemCount: _groups.length,
+                        separatorBuilder: (_, _) => SizedBox(height: 20.h),
+                        itemBuilder: (_, i) {
+                          final group = _groups[i];
+                          final canManage =
                               ref.watch(authProvider).user?.canManageAccounts ??
-                              false,
-                          canDelete:
+                              false;
+                          final canDelete =
                               ref.watch(authProvider).user?.canDeleteAccounts ??
-                              false,
-                          onEdit: () => _openForm(_filtered[i]),
-                          onDelete: () =>
-                              _deleteStudent(_filtered[i]['id'] as int),
-                        ),
+                              false;
+                          return HalaqaGroupSection(
+                            title: group.name,
+                            count: group.students.length,
+                            isUnassigned: group.isUnassigned,
+                            isExpanded: _isExpanded(group),
+                            onToggle: () => setState(() {
+                              if (!_collapsed.remove(group.halaqaId)) {
+                                _collapsed.add(group.halaqaId);
+                              }
+                            }),
+                            children: [
+                              for (final student in group.students)
+                                Padding(
+                                  padding: EdgeInsets.only(bottom: 12.h),
+                                  child: _StudentCard(
+                                    student: student,
+                                    canManage: canManage,
+                                    canDelete: canDelete,
+                                    onEdit: () => _openForm(student),
+                                    onDelete: () =>
+                                        _deleteStudent(student['id'] as int),
+                                  ),
+                                ),
+                            ],
+                          );
+                        },
                       ),
               ),
             ],
@@ -274,9 +307,10 @@ class _StudentCard extends StatelessWidget {
     final fullName = user['fullName'] ?? '';
     final phone = user['phone'] ?? '';
     final isActive = user['isActive'] ?? true;
-    final halaqas = student['halaqas'] as List? ?? [];
-    final halaqaName = halaqas.isNotEmpty
-        ? (halaqas.first['halaqa']?['name'] ?? '')
+    // The endpoint embeds a single `halaqa` object, not a join list.
+    final halaqa = student['halaqa'] as Map<String, dynamic>?;
+    final halaqaName = (halaqa?['name']?.toString().trim().isNotEmpty ?? false)
+        ? halaqa!['name'].toString()
         : 'غير مسجل في حلقة';
     final count = student['_count'] as Map<String, dynamic>? ?? {};
     final attendanceCount = count['attendance'] ?? 0;

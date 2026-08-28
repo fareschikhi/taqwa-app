@@ -1,7 +1,5 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
-import 'package:taqwa/features/teacher/presentation/pages/evaluation_page.dart';
-import 'package:taqwa/features/teacher/presentation/pages/memorization_progress_page.dart';
 import '../../../core/theme/app_colors.dart';
 import '../../../core/theme/app_text_styles.dart';
 import '../../../core/theme/app_shadows.dart';
@@ -30,8 +28,6 @@ class _TeacherShellState extends State<TeacherShell> {
     super.initState();
     _pages = [
       TeacherDashboardPage(key: _dashboardKey),
-      // const MemorizationProgressPage(),
-      // const EvaluationPage(),
       const StudentListPage(),
       const AttendancePage(),
       const NotesPage(),

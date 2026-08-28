@@ -30,6 +30,10 @@ export class AttendanceController {
   @UseGuards(StudentOwnershipGuard)
   getSummary(@Param('id', ParseIntPipe) id: number) { return this.attendanceService.getStudentAttendanceSummary(id); }
 
+  @Get('week')
+  @Roles(Role.ADMIN, Role.MANAGER)
+  getWeek() { return this.attendanceService.getWeeklyAttendanceRates(); }
+
   @Get('date')
   @Roles(Role.ADMIN, Role.TEACHER, Role.MANAGER)
   findByDate(@Query('date') date: string) { return this.attendanceService.findByDate(date); }

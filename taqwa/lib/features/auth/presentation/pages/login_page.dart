@@ -54,25 +54,6 @@ class _LoginPageState extends ConsumerState<LoginPage>
     super.dispose();
   }
 
-  // void _login(String role) {
-  //   setState(() => _isLoading = true);
-  //   Future.delayed(const Duration(seconds: 1), () {
-  //     if (!mounted) return;
-  //     setState(() => _isLoading = false);
-  //     Widget dest;
-  //     switch (role) {
-  //       case 'admin':
-  //         dest = const AdminShell();
-  //       case 'teacher':
-  //         dest = const TeacherShell();
-  //       default:
-  //         dest = const ParentShell();
-  //     }
-  //     Navigator.of(
-  //       context,
-  //     ).pushReplacement(MaterialPageRoute(builder: (_) => dest));
-  //   });
-  // }
   Future<void> _login() async {
     // Runs the "required field" validators the form already declares. Without
     // this an empty form reaches the API, which answers "incorrect credentials"
@@ -80,14 +61,8 @@ class _LoginPageState extends ConsumerState<LoginPage>
     if (!_formKey.currentState!.validate()) return;
     setState(() => _isLoading = true);
 
-    // admin 0000
-    // parent 3001
-    // teacher 2001
-    // manager 1001
-    // password: '123456',
     final success = await ref
         .read(authProvider.notifier)
-        // .login('1001', '123456');
         .login(_phoneController.text.trim(), _passwordController.text);
 
     if (!mounted) return;
@@ -218,6 +193,7 @@ class _LoginPageState extends ConsumerState<LoginPage>
                             label: 'كلمة المرور',
                             hint: '••••••••',
                             controller: _passwordController,
+
                             obscureText: true,
                             prefixIcon: const Icon(
                               Icons.lock_outline,
@@ -250,43 +226,6 @@ class _LoginPageState extends ConsumerState<LoginPage>
                         ],
                       ),
                     ),
-                    // SizedBox(height: 24.h),
-                    // // Demo role switcher
-                    // Text(
-                    //   'الدخول التجريبي',
-                    //   style: AppTextStyles.labelMd.copyWith(
-                    //     color: AppColors.onSurfaceVariant,
-                    //   ),
-                    // ),
-                    // SizedBox(height: 12.h),
-                    // Row(
-                    //   children: [
-                    //     Expanded(
-                    //       child: _DemoRoleButton(
-                    //         label: 'مدير',
-                    //         icon: Icons.admin_panel_settings_outlined,
-                    //         onTap: () => _login('admin'),
-                    //       ),
-                    //     ),
-                    //     SizedBox(width: 8.w),
-                    //     Expanded(
-                    //       child: _DemoRoleButton(
-                    //         label: 'معلم',
-                    //         icon: Icons.school_outlined,
-                    //         onTap: () => _login('teacher'),
-                    //       ),
-                    //     ),
-                    //     SizedBox(width: 8.w),
-                    //     Expanded(
-                    //       child: _DemoRoleButton(
-                    //         label: 'ولي أمر',
-                    //         icon: Icons.family_restroom_outlined,
-                    //         onTap: () => _login('parent'),
-                    //       ),
-                    //     ),
-                    //   ],
-                    // ),
-                    // SizedBox(height: 32.h),
                   ],
                 ),
               ),

@@ -11,9 +11,11 @@ import '../../../../features/data/models/student/student_model.dart';
 import '../../../../features/data/repositories/student_repository.dart';
 import '../../../shared/presentation/pages/student_form_page.dart';
 import '../admin_shell.dart';
+import 'package:taqwa/core/utils/student_grouping.dart';
 import 'package:taqwa/core/widgets/avatar_widget.dart';
 import 'package:taqwa/core/widgets/card_action_row.dart';
 import 'package:taqwa/core/widgets/confirm_status_dialog.dart';
+import 'package:taqwa/core/widgets/halaqa_group_section.dart';
 import 'package:taqwa/features/data/repositories/user_repository.dart';
 
 class StudentsManagementPage extends StatefulWidget {
@@ -26,10 +28,14 @@ class StudentsManagementPage extends StatefulWidget {
 class _StudentsManagementPageState extends State<StudentsManagementPage> {
   final _searchController = TextEditingController();
   List<Map<String, dynamic>> _students = [];
-  List<Map<String, dynamic>> _filtered = [];
+  List<HalaqaGroup> _groups = [];
   List<String> _halaqaFilters = ['الكل'];
   int _filterIndex = 0;
   bool _isLoading = true;
+
+  /// Halaqa ids the user folded away, kept across reloads and filter changes.
+  /// Null stands for the unassigned bucket.
+  final Set<int?> _collapsed = {};
   final _studentRepo = StudentRepository();
   final _userRepo = UserRepository();
 
@@ -146,8 +152,14 @@ class _StudentsManagementPageState extends State<StudentsManagementPage> {
         return halaqa?['name'] == target;
       }).toList();
     }
-    _filtered = list;
+    _groups = groupStudentsByHalaqa(list);
   }
+
+  /// A collapsed section would hide a search hit, so searching overrides the
+  /// folded state without discarding it.
+  bool _isExpanded(HalaqaGroup group) =>
+      _searchController.text.trim().isNotEmpty ||
+      !_collapsed.contains(group.halaqaId);
 
   @override
   Widget build(BuildContext context) {
@@ -241,7 +253,7 @@ class _StudentsManagementPageState extends State<StudentsManagementPage> {
                 child: _isLoading
                     ? const Center(
                         child: CircularProgressIndicator(color: AppColors.primary))
-                    : _filtered.isEmpty
+                    : _groups.isEmpty
                         ? SingleChildScrollView(
                             physics: const AlwaysScrollableScrollPhysics(),
                             child: Container(
@@ -257,17 +269,37 @@ class _StudentsManagementPageState extends State<StudentsManagementPage> {
                         : ListView.separated(
                             physics: const AlwaysScrollableScrollPhysics(),
                             padding: EdgeInsets.symmetric(horizontal: 16.w),
-                            itemCount: _filtered.length,
-                            separatorBuilder: (_, _) => SizedBox(height: 16.h),
-                            itemBuilder: (_, i) => _StudentCard(
-                              student: _filtered[i],
-                              onEdit: () => _openForm(_filtered[i]),
-                              onDelete: () => _deleteStudent(
-                                _filtered[i]['id'] as int,
-                              ),
-                              onToggleActive: () =>
-                                  _toggleStatus(_filtered[i]),
-                            ),
+                            itemCount: _groups.length,
+                            separatorBuilder: (_, _) => SizedBox(height: 20.h),
+                            itemBuilder: (_, i) {
+                              final group = _groups[i];
+                              return HalaqaGroupSection(
+                                title: group.name,
+                                count: group.students.length,
+                                isUnassigned: group.isUnassigned,
+                                isExpanded: _isExpanded(group),
+                                onToggle: () => setState(() {
+                                  if (!_collapsed.remove(group.halaqaId)) {
+                                    _collapsed.add(group.halaqaId);
+                                  }
+                                }),
+                                children: [
+                                  for (final student in group.students)
+                                    Padding(
+                                      padding: EdgeInsets.only(bottom: 16.h),
+                                      child: _StudentCard(
+                                        student: student,
+                                        onEdit: () => _openForm(student),
+                                        onDelete: () => _deleteStudent(
+                                          student['id'] as int,
+                                        ),
+                                        onToggleActive: () =>
+                                            _toggleStatus(student),
+                                      ),
+                                    ),
+                                ],
+                              );
+                            },
                           ),
               ),
             ],

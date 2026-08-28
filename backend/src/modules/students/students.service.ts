@@ -209,15 +209,15 @@ export class StudentsService {
     });
     if (!student) throw new NotFoundException('الطالب غير موجود');
 
-    const [presentCount] = await Promise.all([
-      this.prisma.attendance.count({
-        where: { studentId: id, status: 'PRESENT' },
-      }),
-    ]);
+    // Arriving late is still arriving, so LATE counts towards the rate
+    // alongside PRESENT — only an ABSENT day is held against the student.
+    const attendedCount = await this.prisma.attendance.count({
+      where: { studentId: id, status: { in: ['PRESENT', 'LATE'] } },
+    });
     const totalAttendance = student._count.attendance;
     const attendanceRate =
       totalAttendance > 0
-        ? Math.round((presentCount / totalAttendance) * 100)
+        ? Math.round((attendedCount / totalAttendance) * 100)
         : 0;
 
     return { ...student, attendanceRate };

@@ -8,9 +8,9 @@ import '../../../../core/constants/app_constants.dart';
 import '../../../../core/widgets/app_button.dart';
 import '../../../../core/widgets/app_text_field.dart';
 import 'package:taqwa/features/data/services/image_upload_service.dart';
-// import 'package:taqwa/features/data/models/halaqa/halaqa_model.dart';
+import 'package:taqwa/features/data/models/halaqa/halaqa_model.dart';
 import '../../../../features/data/repositories/manager_repository.dart';
-// import '../../../../features/data/repositories/halaqa_repository.dart';
+import '../../../../features/data/repositories/halaqa_repository.dart';
 import '../../../../features/data/models/manager_model.dart';
 
 class CreateManagerPage extends StatefulWidget {
@@ -24,7 +24,7 @@ class CreateManagerPage extends StatefulWidget {
 
 class _CreateManagerPageState extends State<CreateManagerPage> {
   final _repo = ManagerRepository();
-  // final _halaqaRepo = HalaqaRepository();
+  final _halaqaRepo = HalaqaRepository();
   final _formKey = GlobalKey<FormState>();
   final _nameController = TextEditingController();
   final _phoneController = TextEditingController();
@@ -33,8 +33,8 @@ class _CreateManagerPageState extends State<CreateManagerPage> {
   bool _isLoading = false;
   XFile? _selectedImage;
   final ImagePicker _picker = ImagePicker();
-  // List<HalaqaModel> _allHalaqas = [];
-  // final Set<int> _selectedHalaqaIds = {};
+  List<HalaqaModel> _allHalaqas = [];
+  final Set<int> _selectedHalaqaIds = {};
   bool _canManageAccounts = false;
   bool _canDeleteAccounts = false;
   bool get _isEditing => widget.editManager != null;
@@ -42,7 +42,7 @@ class _CreateManagerPageState extends State<CreateManagerPage> {
   @override
   void initState() {
     super.initState();
-    // _loadHalaqas();
+    _loadHalaqas();
     if (_isEditing) {
       final m = widget.editManager!;
       _nameController.text = m.fullName;
@@ -50,12 +50,12 @@ class _CreateManagerPageState extends State<CreateManagerPage> {
       _emailController.text = m.email ?? '';
       _canManageAccounts = m.canManageAccounts;
       _canDeleteAccounts = m.canDeleteAccounts;
-      // if (m.halaqas != null) {
-      //   for (final h in m.halaqas!) {
-      //     final id = h['id'];
-      //     if (id != null) _selectedHalaqaIds.add(id as int);
-      //   }
-      // }
+      if (m.halaqas != null) {
+        for (final h in m.halaqas!) {
+          final id = h['id'];
+          if (id != null) _selectedHalaqaIds.add(id as int);
+        }
+      }
     }
   }
 
@@ -107,12 +107,12 @@ class _CreateManagerPageState extends State<CreateManagerPage> {
     );
   }
 
-  // Future<void> _loadHalaqas() async {
-  //   try {
-  //     final list = await _halaqaRepo.getAllHalaqas();
-  //     if (mounted) setState(() => _allHalaqas = list);
-  //   } catch (_) {}
-  // }
+  Future<void> _loadHalaqas() async {
+    try {
+      final list = await _halaqaRepo.getAllHalaqas();
+      if (mounted) setState(() => _allHalaqas = list);
+    } catch (_) {}
+  }
 
   Future<void> _submit({bool addAnother = false}) async {
     if (!_formKey.currentState!.validate()) return;
@@ -135,8 +135,11 @@ class _CreateManagerPageState extends State<CreateManagerPage> {
         if (avatarUrl != null) 'avatar': avatarUrl,
         'canManageAccounts': _canManageAccounts,
         'canDeleteAccounts': _canDeleteAccounts,
-        // if (_selectedHalaqaIds.isNotEmpty)
-        //   'halaqaIds': _selectedHalaqaIds.toList(),
+        // Always send the list when editing, so clearing every toggle actually
+        // unassigns: the API only rewrites assignments when halaqaIds is present,
+        // and an omitted key would silently keep the old ones.
+        if (_isEditing || _selectedHalaqaIds.isNotEmpty)
+          'halaqaIds': _selectedHalaqaIds.toList(),
       };
 
       if (_isEditing) {
@@ -160,7 +163,7 @@ class _CreateManagerPageState extends State<CreateManagerPage> {
         _phoneController.clear();
         _emailController.clear();
         _passwordController.clear();
-        // setState(() => _selectedHalaqaIds.clear());
+        setState(() => _selectedHalaqaIds.clear());
       } else {
         Navigator.pop(context, true);
       }
@@ -334,94 +337,94 @@ class _CreateManagerPageState extends State<CreateManagerPage> {
                           color: AppColors.onSurfaceVariant,
                         ),
                       ),
-                      // SizedBox(height: 24.h),
-                      // // Section: Halaqa assignment
-                      // _SectionHeader(
-                      //   icon: Icons.menu_book_outlined,
-                      //   title: 'الحلقات المعينة',
-                      // ),
-                      // SizedBox(height: 12.h),
-                      // if (_allHalaqas.isEmpty)
-                      //   Padding(
-                      //     padding: EdgeInsets.symmetric(vertical: 8.h),
-                      //     child: Text(
-                      //       'لا توجد حلقات متاحة',
-                      //       style: AppTextStyles.bodyMd.copyWith(
-                      //           color: AppColors.onSurfaceVariant),
-                      //       textAlign: TextAlign.right,
-                      //     ),
-                      //   )
-                      // else
-                      //   ..._allHalaqas.map((h) {
-                      //     final id = h.id;
-                      //     final name = h.name;
-                      //     final level = h.level ?? '';
-                      //     final isSelected = _selectedHalaqaIds.contains(id);
-                      //     return GestureDetector(
-                      //       onTap: () => setState(() {
-                      //         if (isSelected) {
-                      //           _selectedHalaqaIds.remove(id);
-                      //         } else {
-                      //           _selectedHalaqaIds.add(id);
-                      //         }
-                      //       }),
-                      //       child: Container(
-                      //         margin: EdgeInsets.only(bottom: 8.h),
-                      //         padding: EdgeInsets.all(12.w),
-                      //         decoration: BoxDecoration(
-                      //           color: isSelected
-                      //               ? AppColors.primaryContainer
-                      //                   .withValues(alpha: 0.3)
-                      //               : AppColors.surfaceContainerLowest,
-                      //           borderRadius: BorderRadius.circular(
-                      //               AppConstants.radiusMd),
-                      //           border: Border.all(
-                      //             color: isSelected
-                      //                 ? AppColors.primaryContainer
-                      //                 : AppColors.outlineVariant,
-                      //           ),
-                      //         ),
-                      //         child: Row(
-                      //           mainAxisAlignment:
-                      //               MainAxisAlignment.spaceBetween,
-                      //           children: [
-                      //             Icon(
-                      //               isSelected
-                      //                   ? Icons.check_circle
-                      //                   : Icons.circle_outlined,
-                      //               color: isSelected
-                      //                   ? AppColors.primary
-                      //                   : AppColors.outline,
-                      //               size: 20.w,
-                      //             ),
-                      //             Column(
-                      //               crossAxisAlignment:
-                      //                   CrossAxisAlignment.end,
-                      //               children: [
-                      //                 Text(
-                      //                   name,
-                      //                   style: AppTextStyles.bodyMd.copyWith(
-                      //                     color: AppColors.onSurface,
-                      //                     fontWeight: isSelected
-                      //                         ? FontWeight.w600
-                      //                         : FontWeight.w400,
-                      //                   ),
-                      //                 ),
-                      //                 if (level.isNotEmpty)
-                      //                   Text(
-                      //                     level,
-                      //                     style: AppTextStyles.labelSm
-                      //                         .copyWith(
-                      //                             color: AppColors
-                      //                                 .onSurfaceVariant),
-                      //                   ),
-                      //               ],
-                      //             ),
-                      //           ],
-                      //         ),
-                      //       ),
-                      //     );
-                      //   }),
+                      SizedBox(height: 24.h),
+                      // Section: Halaqa assignment
+                      _SectionHeader(
+                        icon: Icons.menu_book_outlined,
+                        title: 'الحلقات المعينة',
+                      ),
+                      SizedBox(height: 12.h),
+                      if (_allHalaqas.isEmpty)
+                        Padding(
+                          padding: EdgeInsets.symmetric(vertical: 8.h),
+                          child: Text(
+                            'لا توجد حلقات متاحة',
+                            style: AppTextStyles.bodyMd.copyWith(
+                                color: AppColors.onSurfaceVariant),
+                            textAlign: TextAlign.right,
+                          ),
+                        )
+                      else
+                        ..._allHalaqas.map((h) {
+                          final id = h.id;
+                          final name = h.name;
+                          final level = h.level ?? '';
+                          final isSelected = _selectedHalaqaIds.contains(id);
+                          return GestureDetector(
+                            onTap: () => setState(() {
+                              if (isSelected) {
+                                _selectedHalaqaIds.remove(id);
+                              } else {
+                                _selectedHalaqaIds.add(id);
+                              }
+                            }),
+                            child: Container(
+                              margin: EdgeInsets.only(bottom: 8.h),
+                              padding: EdgeInsets.all(12.w),
+                              decoration: BoxDecoration(
+                                color: isSelected
+                                    ? AppColors.primaryContainer
+                                        .withValues(alpha: 0.3)
+                                    : AppColors.surfaceContainerLowest,
+                                borderRadius: BorderRadius.circular(
+                                    AppConstants.radiusMd),
+                                border: Border.all(
+                                  color: isSelected
+                                      ? AppColors.primaryContainer
+                                      : AppColors.outlineVariant,
+                                ),
+                              ),
+                              child: Row(
+                                mainAxisAlignment:
+                                    MainAxisAlignment.spaceBetween,
+                                children: [
+                                  Icon(
+                                    isSelected
+                                        ? Icons.check_circle
+                                        : Icons.circle_outlined,
+                                    color: isSelected
+                                        ? AppColors.primary
+                                        : AppColors.outline,
+                                    size: 20.w,
+                                  ),
+                                  Column(
+                                    crossAxisAlignment:
+                                        CrossAxisAlignment.end,
+                                    children: [
+                                      Text(
+                                        name,
+                                        style: AppTextStyles.bodyMd.copyWith(
+                                          color: AppColors.onSurface,
+                                          fontWeight: isSelected
+                                              ? FontWeight.w600
+                                              : FontWeight.w400,
+                                        ),
+                                      ),
+                                      if (level.isNotEmpty)
+                                        Text(
+                                          level,
+                                          style: AppTextStyles.labelSm
+                                              .copyWith(
+                                                  color: AppColors
+                                                      .onSurfaceVariant),
+                                        ),
+                                    ],
+                                  ),
+                                ],
+                              ),
+                            ),
+                          );
+                        }),
                       SizedBox(height: 24.h),
                       _SectionHeader(
                         icon: Icons.shield_outlined,

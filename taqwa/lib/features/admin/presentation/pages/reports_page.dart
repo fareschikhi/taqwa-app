@@ -67,7 +67,7 @@ class _ReportsPageState extends State<ReportsPage> {
                     Align(
                       alignment: AlignmentDirectional.centerEnd,
                       child: Text(
-                        'تتبع أداء المعهد بشكل دوري',
+                        'تتبع أداء المدرسة القرآنية بشكل دوري',
                         style: AppTextStyles.bodyMd.copyWith(
                           color: AppColors.onSurfaceVariant,
                         ),

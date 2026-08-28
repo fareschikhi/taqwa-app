@@ -4,6 +4,7 @@ import 'package:flutter_screenutil/flutter_screenutil.dart';
 import '../../../../core/theme/app_colors.dart';
 import '../../../../core/theme/app_text_styles.dart';
 import '../../../../core/constants/app_constants.dart';
+import '../../../../core/utils/weekly_attendance.dart';
 import '../../../../core/providers/auth_provider.dart';
 import '../../../../core/widgets/stat_card.dart';
 import '../../../../core/widgets/app_card.dart';
@@ -31,6 +32,7 @@ class _AdminDashboardPageState extends ConsumerState<AdminDashboardPage> {
   int _halaqasCount = 0;
   int _managersCount = 0;
   String _attendanceRate = '—';
+  List<DayAttendanceRate> _week = const [];
 
   @override
   void initState() {
@@ -63,9 +65,21 @@ class _AdminDashboardPageState extends ConsumerState<AdminDashboardPage> {
             '${today.year}-${today.month.toString().padLeft(2, '0')}-${today.day.toString().padLeft(2, '0')}';
         final attList = await _teacherRepo.getAttendanceByDate(dateStr);
         if (attList.isNotEmpty) {
-          final present = attList.where((a) => a['status'] == 'PRESENT').length;
+          // A late arrival is attendance, not an absence — the same rule the
+          // server applies to every other rate in the app.
+          final present = attList
+              .where((a) => a['status'] == 'PRESENT' || a['status'] == 'LATE')
+              .length;
           rate = '${((present / attList.length) * 100).round()}%';
         }
+      } catch (_) {}
+
+      // The weekly chart is a nicety: if it fails the rest of the dashboard
+      // still loads, and the chart says it has nothing rather than inventing
+      // a week.
+      List<DayAttendanceRate> week = const [];
+      try {
+        week = weeklyRatesFrom(await _teacherRepo.getWeeklyAttendanceRates());
       } catch (_) {}
 
       if (mounted) {
@@ -75,6 +89,7 @@ class _AdminDashboardPageState extends ConsumerState<AdminDashboardPage> {
           _halaqasCount = halaqas.length;
           _managersCount = managers.length;
           _attendanceRate = rate;
+          _week = week;
           _isLoading = false;
         });
       }
@@ -186,7 +201,7 @@ class _AdminDashboardPageState extends ConsumerState<AdminDashboardPage> {
         ),
         SizedBox(height: 4.h),
         Text(
-          'إليك نظرة عامة على أداء المعهد اليوم.',
+          'إليك نظرة عامة على أداء المدرسة القرآنية اليوم.',
           style: AppTextStyles.bodyMd.copyWith(
             color: AppColors.onSurfaceVariant,
           ),
@@ -283,7 +298,7 @@ class _AdminDashboardPageState extends ConsumerState<AdminDashboardPage> {
               ),
               const Spacer(),
               Text(
-                'نسب الحضور ',
+                'نسب الحضور',
                 style: AppTextStyles.headlineSm.copyWith(
                   color: AppColors.onSurface,
                 ),
@@ -291,142 +306,30 @@ class _AdminDashboardPageState extends ConsumerState<AdminDashboardPage> {
             ],
           ),
           SizedBox(height: 20.h),
-          SizedBox(
-            height: 120.h,
-            child: _AttendanceBarChart(
-              days: ['الأحد', 'الاثنين', 'الثلاثاء', 'الأربعاء', 'الخميس'],
-              values: [0.92, 0.88, 0.96, 0.82, 0.90],
-            ),
-          ),
+          if (_week.isEmpty)
+            Padding(
+              padding: EdgeInsets.symmetric(vertical: 32.h),
+              child: Center(
+                child: Text(
+                  _isLoading ? 'جارٍ التحميل...' : 'لا يوجد سجل حضور هذا الأسبوع',
+                  style: AppTextStyles.bodyMd.copyWith(
+                    color: AppColors.onSurfaceVariant,
+                  ),
+                ),
+              ),
+            )
+          else
+            SizedBox(height: 120.h, child: _AttendanceBarChart(days: _week)),
         ],
       ),
     );
   }
 }
 
-// class _ActivityItem extends StatelessWidget {
-//   const _ActivityItem({
-//     required this.title,
-//     required this.subtitle,
-//     required this.time,
-//     required this.icon,
-//     required this.iconBgColor,
-//     required this.iconColor,
-//   });
-
-//   final String title, subtitle, time;
-//   final IconData icon;
-//   final Color iconBgColor, iconColor;
-
-//   @override
-//   Widget build(BuildContext context) {
-//     return Row(
-//       crossAxisAlignment: CrossAxisAlignment.start,
-//       children: [
-//         Expanded(
-//           child: Column(
-//             crossAxisAlignment: CrossAxisAlignment.end,
-//             children: [
-//               Text(
-//                 title,
-//                 style: AppTextStyles.labelMdBold.copyWith(
-//                   color: AppColors.onSurface,
-//                 ),
-//               ),
-//               SizedBox(height: 2.h),
-//               Text(
-//                 subtitle,
-//                 style: AppTextStyles.labelSm.copyWith(color: AppColors.outline),
-//               ),
-//               SizedBox(height: 2.h),
-//               Text(
-//                 time,
-//                 style: AppTextStyles.caption.copyWith(
-//                   color: AppColors.outlineVariant,
-//                 ),
-//               ),
-//             ],
-//           ),
-//         ),
-//         SizedBox(width: 12.w),
-//         Container(
-//           width: 36.w,
-//           height: 36.w,
-//           decoration: BoxDecoration(color: iconBgColor, shape: BoxShape.circle),
-//           child: Icon(icon, color: iconColor, size: 18.w),
-//         ),
-//       ],
-//     );
-//   }
-// }
-
-// class _BarChartWidget extends StatelessWidget {
-//   const _BarChartWidget({required this.values, required this.labels});
-//   final List<double> values;
-//   final List<String> labels;
-
-//   @override
-//   Widget build(BuildContext context) {
-//     return Column(
-//       children: [
-//         Expanded(
-//           child: Row(
-//             crossAxisAlignment: CrossAxisAlignment.end,
-//             children: List.generate(values.length, (i) {
-//               return Expanded(
-//                 child: Padding(
-//                   padding: EdgeInsets.symmetric(horizontal: 3.w),
-//                   child: Column(
-//                     mainAxisAlignment: MainAxisAlignment.end,
-//                     children: [
-//                       Flexible(
-//                         child: FractionallySizedBox(
-//                           heightFactor: values[i],
-//                           alignment: Alignment.bottomCenter,
-//                           child: Container(
-//                             decoration: BoxDecoration(
-//                               gradient: AppColors.brandGradient,
-//                               borderRadius: BorderRadius.only(
-//                                 topLeft: Radius.circular(4.r),
-//                                 topRight: Radius.circular(4.r),
-//                               ),
-//                             ),
-//                           ),
-//                         ),
-//                       ),
-//                     ],
-//                   ),
-//                 ),
-//               );
-//             }),
-//           ),
-//         ),
-//         Divider(color: AppColors.outlineVariant, height: 1),
-//         SizedBox(height: 8.h),
-//         Row(
-//           children: labels.reversed
-//               .map(
-//                 (l) => Expanded(
-//                   child: Text(
-//                     l,
-//                     style: AppTextStyles.caption.copyWith(
-//                       color: AppColors.outline,
-//                     ),
-//                     textAlign: TextAlign.center,
-//                   ),
-//                 ),
-//               )
-//               .toList(),
-//         ),
-//       ],
-//     );
-//   }
-// }
-
 class _AttendanceBarChart extends StatelessWidget {
-  const _AttendanceBarChart({required this.days, required this.values});
-  final List<String> days;
-  final List<double> values;
+  const _AttendanceBarChart({required this.days});
+
+  final List<DayAttendanceRate> days;
 
   @override
   Widget build(BuildContext context) {
@@ -435,51 +338,19 @@ class _AttendanceBarChart extends StatelessWidget {
         Expanded(
           child: Row(
             crossAxisAlignment: CrossAxisAlignment.end,
-            children: List.generate(
-              days.length,
-              (i) => Expanded(
-                child: Padding(
-                  padding: EdgeInsets.symmetric(horizontal: 4.w),
-                  child: Column(
-                    mainAxisAlignment: MainAxisAlignment.end,
-                    children: [
-                      Text(
-                        '${(values[i] * 100).round()}%',
-                        style: AppTextStyles.caption.copyWith(
-                          color: AppColors.primary,
-                        ),
-                      ),
-                      SizedBox(height: 4.h),
-                      Flexible(
-                        child: FractionallySizedBox(
-                          heightFactor: values[i],
-                          alignment: Alignment.bottomCenter,
-                          child: Container(
-                            decoration: BoxDecoration(
-                              color: AppColors.primary.withValues(alpha: 0.8),
-                              borderRadius: BorderRadius.only(
-                                topLeft: Radius.circular(4.r),
-                                topRight: Radius.circular(4.r),
-                              ),
-                            ),
-                          ),
-                        ),
-                      ),
-                    ],
-                  ),
-                ),
-              ),
-            ),
+            children: days.map((day) => Expanded(child: _bar(day))).toList(),
           ),
         ),
         Divider(color: AppColors.outlineVariant, height: 1),
         SizedBox(height: 8.h),
+        // Not reversed: the app runs left-to-right, so a label has to sit under
+        // the bar it belongs to rather than mirroring the row above it.
         Row(
-          children: days.reversed
+          children: days
               .map(
-                (d) => Expanded(
+                (day) => Expanded(
                   child: Text(
-                    d,
+                    day.label,
                     style: AppTextStyles.caption.copyWith(
                       color: AppColors.outline,
                     ),
@@ -490,6 +361,49 @@ class _AttendanceBarChart extends StatelessWidget {
               .toList(),
         ),
       ],
+    );
+  }
+
+  Widget _bar(DayAttendanceRate day) {
+    final rate = day.rate;
+    return Padding(
+      padding: EdgeInsets.symmetric(horizontal: 4.w),
+      child: Column(
+        children: [
+          Text(
+            rate == null ? '—' : '$rate%',
+            style: AppTextStyles.caption.copyWith(
+              color: rate == null ? AppColors.outline : AppColors.primary,
+            ),
+          ),
+          SizedBox(height: 4.h),
+          // The track is drawn whether or not there is a figure to fill it, so
+          // an unmarked day reads as an empty column instead of vanishing into
+          // the baseline the way a 0% bar would.
+          Expanded(
+            child: Container(
+              decoration: BoxDecoration(
+                color: AppColors.outlineVariant.withValues(alpha: 0.3),
+                borderRadius: BorderRadius.vertical(
+                  top: Radius.circular(4.r),
+                ),
+              ),
+              child: FractionallySizedBox(
+                heightFactor: (rate ?? 0) / 100,
+                alignment: Alignment.bottomCenter,
+                child: Container(
+                  decoration: BoxDecoration(
+                    color: AppColors.primary.withValues(alpha: 0.8),
+                    borderRadius: BorderRadius.vertical(
+                      top: Radius.circular(4.r),
+                    ),
+                  ),
+                ),
+              ),
+            ),
+          ),
+        ],
+      ),
     );
   }
 }

@@ -4,8 +4,10 @@ import 'package:flutter_screenutil/flutter_screenutil.dart';
 import '../../../../core/theme/app_colors.dart';
 import '../../../../core/theme/app_text_styles.dart';
 import '../../../../core/constants/app_constants.dart';
+import '../../../../core/constants/surahs.dart';
 import '../../../../core/enums/memorization_type.dart';
 import '../../../../core/providers/selected_child_provider.dart';
+import '../../../../core/utils/memorization_history.dart';
 import '../../../data/repositories/student_repository.dart';
 
 class ChildProgressPage extends ConsumerStatefulWidget {
@@ -93,10 +95,6 @@ class _ChildProgressPageState extends ConsumerState<ChildProgressPage> {
                     SizedBox(height: 16.h),
                     Row(
                       children: [
-                        const Icon(
-                          Icons.notifications_outlined,
-                          color: AppColors.onSurfaceVariant,
-                        ),
                         const Spacer(),
                         Text(
                           'تقوى',
@@ -108,7 +106,7 @@ class _ChildProgressPageState extends ConsumerState<ChildProgressPage> {
                     ),
                     SizedBox(height: 16.h),
                     Text(
-                      'تقدم المقرأة',
+                      'تقدم المدرسة القرآنية',
                       style: AppTextStyles.headlineLgMobile.copyWith(
                         color: AppColors.onSurface,
                       ),
@@ -221,11 +219,25 @@ class _ChildProgressPageState extends ConsumerState<ChildProgressPage> {
                         ],
                       ),
                       SizedBox(height: 20.h),
-                      Text(
-                        'سجل الحفظ والمراجعة',
-                        style: AppTextStyles.headlineSm.copyWith(
-                          color: AppColors.onSurface,
-                        ),
+                      Row(
+                        children: [
+                          Text(
+                            'سجل الحفظ والمراجعة',
+                            style: AppTextStyles.headlineSm.copyWith(
+                              color: AppColors.onSurface,
+                            ),
+                          ),
+                          const Spacer(),
+                          // Say the list is trimmed, so an older entry that is
+                          // missing does not read as lost data.
+                          if (_history.length > kRecentMemorizationLimit)
+                            Text(
+                              'آخر $kRecentMemorizationLimit إدخالات',
+                              style: AppTextStyles.labelSm.copyWith(
+                                color: AppColors.onSurfaceVariant,
+                              ),
+                            ),
+                        ],
                       ),
                       SizedBox(height: 12.h),
                       if (_history.isEmpty)
@@ -239,7 +251,7 @@ class _ChildProgressPageState extends ConsumerState<ChildProgressPage> {
                           ),
                         )
                       else
-                        ..._history.map(_buildRecordItem),
+                        ...recentMemorization(_history).map(_buildRecordItem),
                     ],
                     SizedBox(height: 32.h),
                   ]),
@@ -259,6 +271,7 @@ class _ChildProgressPageState extends ConsumerState<ChildProgressPage> {
         MemorizationTypeX.fromApi(entry['memorizationType'] as String?) ??
         MemorizationType.hifz;
     final typeLabel = type == MemorizationType.hifz ? 'حفظ جديد' : type.label;
+    final surahLabel = surahLabelOf((entry['surahNumber'] as num?)?.toInt());
     String dateStr = '';
     try {
       final dt = DateTime.parse(
@@ -276,14 +289,14 @@ class _ChildProgressPageState extends ConsumerState<ChildProgressPage> {
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           Container(
-            padding: EdgeInsets.symmetric(horizontal: 8.w, vertical: 3.h),
+            padding: EdgeInsets.symmetric(horizontal: 10.w, vertical: 4.h),
             decoration: BoxDecoration(
               color: AppColors.primary.withValues(alpha: 0.1),
               borderRadius: BorderRadius.circular(AppConstants.radiusFull),
             ),
             child: Text(
               typeLabel,
-              style: AppTextStyles.labelSm.copyWith(color: AppColors.primary),
+              style: AppTextStyles.labelMd.copyWith(color: AppColors.primary),
             ),
           ),
           const Spacer(),
@@ -291,25 +304,25 @@ class _ChildProgressPageState extends ConsumerState<ChildProgressPage> {
             crossAxisAlignment: CrossAxisAlignment.end,
             children: [
               Text(
-                'سورة رقم ${entry['surahNumber']}',
-                style: AppTextStyles.labelMdBold.copyWith(
+                surahLabel,
+                style: AppTextStyles.bodyMdBold.copyWith(
                   color: AppColors.onSurface,
                 ),
               ),
-              SizedBox(height: 2.h),
+              SizedBox(height: 4.h),
               Row(
                 children: [
                   Text(
                     dateStr,
-                    style: AppTextStyles.caption.copyWith(
-                      color: AppColors.outline,
+                    style: AppTextStyles.labelSm.copyWith(
+                      color: AppColors.onSurfaceVariant,
                     ),
                   ),
                   SizedBox(width: 6.w),
                   Container(
                     padding: EdgeInsets.symmetric(
-                      horizontal: 6.w,
-                      vertical: 2.h,
+                      horizontal: 10.w,
+                      vertical: 3.h,
                     ),
                     decoration: BoxDecoration(
                       color: AppColors.surfaceContainerHigh,
@@ -319,8 +332,8 @@ class _ChildProgressPageState extends ConsumerState<ChildProgressPage> {
                     ),
                     child: Text(
                       '${entry['amountDone']} ${type.unitLabel}',
-                      style: AppTextStyles.caption.copyWith(
-                        color: AppColors.onSurfaceVariant,
+                      style: AppTextStyles.labelMd.copyWith(
+                        color: AppColors.onSurface,
                       ),
                     ),
                   ),

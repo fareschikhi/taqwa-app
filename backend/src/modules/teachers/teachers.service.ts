@@ -159,11 +159,14 @@ export class TeachersService {
       return { present: 0, absent: 0, rate: 0, month: now.getMonth() + 1 };
     }
 
+    // `present` covers everyone who turned up, late ones included: a late
+    // student is not an absence, and the dashboard shows this count beside the
+    // absences as the two halves of the month.
     const [present, absent] = await Promise.all([
       this.prisma.attendance.count({
         where: {
           studentId: { in: studentIds },
-          status: 'PRESENT',
+          status: { in: ['PRESENT', 'LATE'] },
           date: { gte: startOfMonth, lte: endOfMonth },
         },
       }),

@@ -35,7 +35,9 @@ class _TeachersManagementPageState extends State<TeachersManagementPage> {
   Future<void> _openForm(TeacherModel? teacher) async {
     await Navigator.push(
       context,
-      MaterialPageRoute(builder: (_) => CreateTeacherPage(editTeacher: teacher)),
+      MaterialPageRoute(
+        builder: (_) => CreateTeacherPage(editTeacher: teacher),
+      ),
     );
     if (mounted) _load();
   }
@@ -66,18 +68,18 @@ class _TeachersManagementPageState extends State<TeachersManagementPage> {
       title: 'حذف المعلم',
       message: halaqaCount > 0
           ? 'سيتم حذف حساب المعلم نهائياً، وسيتم أيضاً حذف '
-              '$halaqaCount من الحلقات المسندة إليه. '
-              'سيبقى الطلاب في النظام دون حلقة.'
+                '$halaqaCount من الحلقات المسندة إليه. '
+                'سيبقى الطلاب في النظام دون حلقة.'
           : 'سيتم حذف حساب المعلم نهائياً. '
-              'لا يمكن التراجع عن هذا الإجراء.',
+                'لا يمكن التراجع عن هذا الإجراء.',
     );
     if (!confirmed) return;
     try {
       await _teacherRepo.deleteTeacher(id);
       if (!mounted) return;
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('تم حذف المعلم بنجاح')),
-      );
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(const SnackBar(content: Text('تم حذف المعلم بنجاح')));
       _load();
     } catch (e) {
       if (!mounted) return;
@@ -130,8 +132,7 @@ class _TeachersManagementPageState extends State<TeachersManagementPage> {
     _filtered = list;
   }
 
-  int get _activeCount =>
-      _teachers.where((t) => t.isActive == true).length;
+  int get _activeCount => _teachers.where((t) => t.isActive == true).length;
 
   @override
   Widget build(BuildContext context) {
@@ -155,8 +156,9 @@ class _TeachersManagementPageState extends State<TeachersManagementPage> {
                         height: 40.w,
                         decoration: BoxDecoration(
                           color: AppColors.surfaceContainer,
-                          borderRadius:
-                              BorderRadius.circular(AppConstants.radiusMd),
+                          borderRadius: BorderRadius.circular(
+                            AppConstants.radiusMd,
+                          ),
                         ),
                         child: const Icon(
                           Icons.menu,
@@ -200,7 +202,7 @@ class _TeachersManagementPageState extends State<TeachersManagementPage> {
                       ),
                     ),
                     Text(
-                      'إدارة وتوجيه الكادر التعليمي في المعهد',
+                      'إدارة وتوجيه المدرسة القرآنية',
                       style: AppTextStyles.bodyMd.copyWith(
                         color: AppColors.onSurfaceVariant,
                       ),
@@ -237,40 +239,42 @@ class _TeachersManagementPageState extends State<TeachersManagementPage> {
               Expanded(
                 child: _isLoading
                     ? const Center(
-                        child:
-                            CircularProgressIndicator(color: AppColors.primary))
+                        child: CircularProgressIndicator(
+                          color: AppColors.primary,
+                        ),
+                      )
                     : _filtered.isEmpty
-                        ? SingleChildScrollView(
-                            physics: const AlwaysScrollableScrollPhysics(),
-                            child: Container(
-                              height: 300.h,
-                              alignment: Alignment.center,
-                              child: Text(
-                                'لا يوجد معلمون',
-                                style: AppTextStyles.bodyMd
-                                    .copyWith(color: AppColors.onSurfaceVariant),
-                              ),
-                            ),
-                          )
-                        : ListView.separated(
-                            physics: const AlwaysScrollableScrollPhysics(),
-                            padding: EdgeInsets.symmetric(horizontal: 16.w),
-                            itemCount: _filtered.length,
-                            separatorBuilder: (_, _) =>
-                                SizedBox(height: 16.h),
-                            itemBuilder: (_, i) => _TeacherCard(
-                              teacher: _filtered[i],
-                              isActive: _filtered[i].isActive,
-                              onEdit: () => _openForm(_filtered[i]),
-                              onDelete: () => _deleteTeacher(
-                                _filtered[i].id,
-                                // findAll returns only _count.halaqas; the
-                                // halaqas relation itself is stripped server-side.
-                                _filtered[i].halaqaCount,
-                              ),
-                              onToggleActive: () => _toggleStatus(_filtered[i]),
+                    ? SingleChildScrollView(
+                        physics: const AlwaysScrollableScrollPhysics(),
+                        child: Container(
+                          height: 300.h,
+                          alignment: Alignment.center,
+                          child: Text(
+                            'لا يوجد معلمون',
+                            style: AppTextStyles.bodyMd.copyWith(
+                              color: AppColors.onSurfaceVariant,
                             ),
                           ),
+                        ),
+                      )
+                    : ListView.separated(
+                        physics: const AlwaysScrollableScrollPhysics(),
+                        padding: EdgeInsets.symmetric(horizontal: 16.w),
+                        itemCount: _filtered.length,
+                        separatorBuilder: (_, _) => SizedBox(height: 16.h),
+                        itemBuilder: (_, i) => _TeacherCard(
+                          teacher: _filtered[i],
+                          isActive: _filtered[i].isActive,
+                          onEdit: () => _openForm(_filtered[i]),
+                          onDelete: () => _deleteTeacher(
+                            _filtered[i].id,
+                            // findAll returns only _count.halaqas; the
+                            // halaqas relation itself is stripped server-side.
+                            _filtered[i].halaqaCount,
+                          ),
+                          onToggleActive: () => _toggleStatus(_filtered[i]),
+                        ),
+                      ),
               ),
             ],
           ),
@@ -323,9 +327,8 @@ class _TeacherCard extends StatelessWidget {
               Container(
                 padding: EdgeInsets.symmetric(horizontal: 10.w, vertical: 4.h),
                 decoration: BoxDecoration(
-                  color:
-                      (isActive ? AppColors.primary : AppColors.outline)
-                          .withValues(alpha: 0.1),
+                  color: (isActive ? AppColors.primary : AppColors.outline)
+                      .withValues(alpha: 0.1),
                   borderRadius: BorderRadius.circular(AppConstants.radiusFull),
                 ),
                 child: Row(
@@ -335,21 +338,17 @@ class _TeacherCard extends StatelessWidget {
                       width: 6.w,
                       height: 6.w,
                       decoration: BoxDecoration(
-                        color: isActive
-                            ? AppColors.primary
-                            : AppColors.outline,
+                        color: isActive ? AppColors.primary : AppColors.outline,
                         shape: BoxShape.circle,
                       ),
                     ),
                     SizedBox(width: 4.w),
-                     Text(
-                       isActive ? 'نشط' : 'في إجازة',
-                       style: AppTextStyles.labelSm.copyWith(
-                         color: isActive
-                             ? AppColors.primary
-                             : AppColors.outline,
-                       ),
-                     ),
+                    Text(
+                      isActive ? 'نشط' : 'في إجازة',
+                      style: AppTextStyles.labelSm.copyWith(
+                        color: isActive ? AppColors.primary : AppColors.outline,
+                      ),
+                    ),
                   ],
                 ),
               ),
@@ -367,7 +366,7 @@ class _TeacherCard extends StatelessWidget {
             ],
           ),
           SizedBox(height: 12.h),
-           Text(
+          Text(
             name,
             style: AppTextStyles.headlineSm.copyWith(
               color: AppColors.onSurface,
@@ -378,8 +377,8 @@ class _TeacherCard extends StatelessWidget {
           Row(
             mainAxisAlignment: MainAxisAlignment.end,
             children: [
-               Text(
-                 phone.isNotEmpty ? phone : '—',
+              Text(
+                phone.isNotEmpty ? phone : '—',
                 style: AppTextStyles.labelMd.copyWith(
                   color: AppColors.onSurfaceVariant,
                 ),
@@ -404,8 +403,8 @@ class _TeacherCard extends StatelessWidget {
                 Expanded(
                   child: Column(
                     children: [
-                       Text(
-                         '$halaqaCount',
+                      Text(
+                        '$halaqaCount',
                         style: AppTextStyles.headlineMd.copyWith(
                           color: AppColors.onSurface,
                         ),
@@ -427,8 +426,8 @@ class _TeacherCard extends StatelessWidget {
                 Expanded(
                   child: Column(
                     children: [
-                       Text(
-                         '$studentCount',
+                      Text(
+                        '$studentCount',
                         style: AppTextStyles.headlineMd.copyWith(
                           color: AppColors.onSurface,
                         ),

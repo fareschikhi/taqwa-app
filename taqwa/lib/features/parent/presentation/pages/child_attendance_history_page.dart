@@ -86,10 +86,6 @@ class _ChildAttendanceHistoryPageState
                 SizedBox(height: 16.h),
                 Row(
                   children: [
-                    const Icon(
-                      Icons.notifications_outlined,
-                      color: AppColors.onSurfaceVariant,
-                    ),
                     const Spacer(),
                     Text(
                       'تقوى',
@@ -124,12 +120,23 @@ class _ChildAttendanceHistoryPageState
                     ),
                   )
                 else ...[
+                  // The boxes report the current month; the timeline under
+                  // them stays the whole record, so the heading says which is
+                  // which rather than leaving a bare percentage to be read as
+                  // an all-time figure.
+                  Text(
+                    'إحصائيات هذا الشهر',
+                    style: AppTextStyles.headlineSm.copyWith(
+                      color: AppColors.onSurface,
+                    ),
+                  ),
+                  SizedBox(height: 12.h),
                   Row(
                     children: [
                       Expanded(
                         child: _StatBox(
                           label: 'حضور',
-                          value: '${_summary?.present ?? 0}',
+                          value: '${_summary?.monthAttended ?? 0}',
                           color: AppColors.primary,
                         ),
                       ),
@@ -137,7 +144,7 @@ class _ChildAttendanceHistoryPageState
                       Expanded(
                         child: _StatBox(
                           label: 'غياب',
-                          value: '${_summary?.absent ?? 0}',
+                          value: '${_summary?.monthAbsent ?? 0}',
                           color: AppColors.error,
                         ),
                       ),
@@ -145,11 +152,21 @@ class _ChildAttendanceHistoryPageState
                       Expanded(
                         child: _StatBox(
                           label: 'نسبة الحضور',
-                          value: '${_summary?.rate ?? 0}%',
+                          value: '${_summary?.monthRate ?? 0}%',
                           color: AppColors.secondary,
                         ),
                       ),
                     ],
+                  ),
+                  SizedBox(height: 8.h),
+                  // A late day sits in the حضور box while the timeline still
+                  // shows it as متأخر, so the rule is spelled out rather than
+                  // left for a parent to work out from counts that look off.
+                  Text(
+                    'أيام التأخر تُحتسب ضمن الحضور.',
+                    style: AppTextStyles.labelSm.copyWith(
+                      color: AppColors.onSurfaceVariant,
+                    ),
                   ),
                   SizedBox(height: 20.h),
                   Text(
@@ -229,10 +246,7 @@ class _ChildAttendanceHistoryPageState
             style: AppTextStyles.labelSm.copyWith(color: AppColors.outline),
           ),
           SizedBox(width: 10.w),
-          Text(
-            label,
-            style: AppTextStyles.labelMdBold.copyWith(color: color),
-          ),
+          Text(label, style: AppTextStyles.labelMdBold.copyWith(color: color)),
         ],
       ),
     );

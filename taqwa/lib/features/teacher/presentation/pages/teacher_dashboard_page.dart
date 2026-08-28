@@ -203,67 +203,6 @@ class _TeacherDashboardPageState extends ConsumerState<TeacherDashboardPage> {
             color: AppColors.onSurfaceVariant,
           ),
         ),
-        // SizedBox(height: 16.h),
-        // Row(
-        //   children: [
-        //     Expanded(
-        //       child: GestureDetector(
-        //         onTap: () {},
-        //         child: Container(
-        //           height: 48.h,
-        //           decoration: BoxDecoration(
-        //             color: AppColors.surfaceContainerLowest,
-        //             borderRadius: BorderRadius.circular(AppConstants.radiusMd),
-        //             border: Border.all(color: AppColors.outlineVariant),
-        //           ),
-        //           child: Row(
-        //             mainAxisAlignment: MainAxisAlignment.center,
-        //             children: [
-        //               const Icon(Icons.add, color: AppColors.primary),
-        //               SizedBox(width: 8.w),
-        //               Text(
-        //                 'سجل جديد',
-        //                 style: AppTextStyles.labelMdBold.copyWith(
-        //                   color: AppColors.primary,
-        //                 ),
-        //               ),
-        //             ],
-        //           ),
-        //         ),
-        //       ),
-        //     ),
-        //     SizedBox(width: 12.w),
-        //     Expanded(
-        //       child: GestureDetector(
-        //         onTap: () {},
-        //         child: Container(
-        //           height: 48.h,
-        //           decoration: BoxDecoration(
-        //             color: AppColors.primary,
-        //             borderRadius: BorderRadius.circular(AppConstants.radiusMd),
-        //           ),
-        //           child: Row(
-        //             mainAxisAlignment: MainAxisAlignment.center,
-        //             children: [
-        //               const Icon(
-        //                 Icons.check_circle,
-        //                 color: AppColors.onPrimary,
-        //               ),
-        //               SizedBox(width: 8.w),
-        //               Text(
-        //                 'تحضير سريع',
-        //                 style: AppTextStyles.labelMdBold.copyWith(
-        //                   color: AppColors.onPrimary,
-        //                 ),
-        //               ),
-        //             ],
-        //           ),
-        //         ),
-        //       ),
-        //     ),
-
-        //   ],
-        // ),
       ],
     );
   }
@@ -271,53 +210,7 @@ class _TeacherDashboardPageState extends ConsumerState<TeacherDashboardPage> {
   Widget _buildBentoGrid() {
     return Column(
       children: [
-        // Card 1: Today's Classes — full width
-        // AppCard(
-        //   padding: EdgeInsets.all(16.w),
-        //   child: Column(
-        //     crossAxisAlignment: CrossAxisAlignment.end,
-        //     children: [
-        //       Row(
-        //         children: [
-        //           GestureDetector(
-        //             onTap: () {},
-        //             child: Text(
-        //               'عرض الكل',
-        //               style: AppTextStyles.labelSm.copyWith(
-        //                 color: AppColors.primary,
-        //               ),
-        //             ),
-        //           ),
-        //           const Spacer(),
-        //           Text(
-        //             'حلقات اليوم',
-        //             style: AppTextStyles.headlineSm.copyWith(
-        //               color: AppColors.onBackground,
-        //             ),
-        //           ),
-        //         ],
-        //       ),
-        //       SizedBox(height: 12.h),
-        //       _ClassItem(
-        //         name: 'حلقة النور',
-        //         time: '04:00 م - 05:30 م',
-        //         studentCount: 12,
-        //         iconColor: AppColors.primaryContainer,
-        //         icon: Icons.menu_book,
-        //       ),
-        //       SizedBox(height: 8.h),
-        //       _ClassItem(
-        //         name: 'حلقة الفرقان',
-        //         time: '06:00 م - 07:30 م',
-        //         studentCount: 8,
-        //         iconColor: AppColors.tertiaryContainer,
-        //         icon: Icons.local_library,
-        //       ),
-        //     ],
-        //   ),
-        // ),
-        // SizedBox(height: 12.h),
-        // Card 2: Attendance Summary — full width, horizontal layout
+        // Attendance summary — full width, horizontal layout
         AppCard(
           padding: EdgeInsets.symmetric(horizontal: 32.w, vertical: 20.h),
           child: Row(
@@ -389,7 +282,7 @@ class _TeacherDashboardPageState extends ConsumerState<TeacherDashboardPage> {
           ),
         ),
         SizedBox(height: 12.h),
-        // Card 3: Students needing review — full width
+        // Students needing review — full width
         AppCard(
           padding: EdgeInsets.all(16.w),
           child: Column(

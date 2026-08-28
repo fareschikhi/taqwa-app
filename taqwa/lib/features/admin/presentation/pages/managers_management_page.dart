@@ -339,8 +339,8 @@ class _ManagerCard extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final isActive = manager.isActive ?? true;
-    // final halaqaName = manager.firstHalaqaName;
-    // final halaqasCount = manager.halaqasCount;
+    final halaqaName = manager.firstHalaqaName;
+    final halaqasCount = manager.halaqasCount;
 
     return Container(
       decoration: BoxDecoration(
@@ -437,65 +437,65 @@ class _ManagerCard extends StatelessWidget {
               ),
             ],
           ),
-          // SizedBox(height: 12.h),
-          // // Info section
-          // Container(
-          //   width: double.infinity,
-          //   padding: EdgeInsets.all(12.w),
-          //   decoration: BoxDecoration(
-          //     color: AppColors.surfaceContainerLow,
-          //     borderRadius: BorderRadius.circular(AppConstants.radiusMd),
-          //   ),
-          //   child: Column(
-          //     children: [
-          //       Row(
-          //         mainAxisAlignment: MainAxisAlignment.spaceBetween,
-          //         children: [
-          //           Text(
-          //             halaqaName,
-          //             style: AppTextStyles.labelMd.copyWith(
-          //               color: AppColors.onSurface,
-          //               fontWeight: FontWeight.w600,
-          //             ),
-          //           ),
-          //           Text(
-          //             'الحلقة المعينة',
-          //             style: AppTextStyles.labelMd
-          //                 .copyWith(color: AppColors.onSurfaceVariant),
-          //           ),
-          //         ],
-          //       ),
-          //       if (halaqasCount > 1) ...[
-          //         SizedBox(height: 6.h),
-          //         Row(
-          //           mainAxisAlignment: MainAxisAlignment.spaceBetween,
-          //           children: [
-          //             Container(
-          //               padding: EdgeInsets.symmetric(
-          //                   horizontal: 8.w, vertical: 2.h),
-          //               decoration: BoxDecoration(
-          //                 color: AppColors.surfaceContainerHigh,
-          //                 borderRadius: BorderRadius.circular(
-          //                     AppConstants.radiusMd),
-          //               ),
-          //               child: Text(
-          //                 '$halaqasCount حلقات',
-          //                 style: AppTextStyles.labelSm.copyWith(
-          //                     color: AppColors.onSurface,
-          //                     fontWeight: FontWeight.w600),
-          //               ),
-          //             ),
-          //             Text(
-          //               'إجمالي الحلقات',
-          //               style: AppTextStyles.labelMd
-          //                   .copyWith(color: AppColors.onSurfaceVariant),
-          //             ),
-          //           ],
-          //         ),
-          //       ],
-          //     ],
-          //   ),
-          // ),
+          SizedBox(height: 12.h),
+          // Info section
+          Container(
+            width: double.infinity,
+            padding: EdgeInsets.all(12.w),
+            decoration: BoxDecoration(
+              color: AppColors.surfaceContainerLow,
+              borderRadius: BorderRadius.circular(AppConstants.radiusMd),
+            ),
+            child: Column(
+              children: [
+                Row(
+                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                  children: [
+                    Text(
+                      halaqaName,
+                      style: AppTextStyles.labelMd.copyWith(
+                        color: AppColors.onSurface,
+                        fontWeight: FontWeight.w600,
+                      ),
+                    ),
+                    Text(
+                      'الحلقة المعينة',
+                      style: AppTextStyles.labelMd
+                          .copyWith(color: AppColors.onSurfaceVariant),
+                    ),
+                  ],
+                ),
+                if (halaqasCount > 1) ...[
+                  SizedBox(height: 6.h),
+                  Row(
+                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                    children: [
+                      Container(
+                        padding: EdgeInsets.symmetric(
+                            horizontal: 8.w, vertical: 2.h),
+                        decoration: BoxDecoration(
+                          color: AppColors.surfaceContainerHigh,
+                          borderRadius: BorderRadius.circular(
+                              AppConstants.radiusMd),
+                        ),
+                        child: Text(
+                          '$halaqasCount حلقات',
+                          style: AppTextStyles.labelSm.copyWith(
+                              color: AppColors.onSurface,
+                              fontWeight: FontWeight.w600),
+                        ),
+                      ),
+                      Text(
+                        'إجمالي الحلقات',
+                        style: AppTextStyles.labelMd
+                            .copyWith(color: AppColors.onSurfaceVariant),
+                      ),
+                    ],
+                  ),
+                ],
+              ],
+            ),
+          ),
           SizedBox(height: 12.h),
           CardActionRow(
             isActive: isActive,
