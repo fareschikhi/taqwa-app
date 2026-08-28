@@ -204,7 +204,7 @@ class _CreateTeacherPageState extends State<CreateTeacherPage> {
                 child: SingleChildScrollView(
                   padding: EdgeInsets.symmetric(horizontal: 16.w),
                   child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.end,
+                    crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
                       SizedBox(height: 24.h),
 
@@ -394,7 +394,7 @@ class _CreateTeacherPageState extends State<CreateTeacherPage> {
     return Container(
       padding: EdgeInsets.symmetric(horizontal: 16.w, vertical: 12.h),
       child: Column(
-        crossAxisAlignment: CrossAxisAlignment.end,
+        crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           Row(
             children: [
@@ -414,7 +414,7 @@ class _CreateTeacherPageState extends State<CreateTeacherPage> {
           ),
           SizedBox(height: 4.h),
           Row(
-            mainAxisAlignment: MainAxisAlignment.end,
+            mainAxisAlignment: MainAxisAlignment.start,
             children: [
               Text(
                 _isEditing ? 'تعديل معلم' : 'إضافة معلم جديد',
@@ -464,7 +464,7 @@ class _SectionHeader extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Row(
-      mainAxisAlignment: MainAxisAlignment.end,
+      mainAxisAlignment: MainAxisAlignment.start,
       children: [
         Text(
           title,

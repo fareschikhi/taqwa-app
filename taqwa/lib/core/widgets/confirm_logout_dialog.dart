@@ -28,7 +28,7 @@ class ConfirmLogoutDialog extends StatelessWidget {
         padding: EdgeInsets.all(24.w),
         child: Column(
           mainAxisSize: MainAxisSize.min,
-          crossAxisAlignment: CrossAxisAlignment.end,
+          crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             Row(
               children: [
@@ -52,7 +52,7 @@ class ConfirmLogoutDialog extends StatelessWidget {
                     style: AppTextStyles.headlineSm.copyWith(
                       color: AppColors.onSurface,
                     ),
-                    textAlign: TextAlign.end,
+                    textAlign: TextAlign.start,
                   ),
                 ),
               ],
@@ -63,7 +63,7 @@ class ConfirmLogoutDialog extends StatelessWidget {
               style: AppTextStyles.bodyMd.copyWith(
                 color: AppColors.onSurfaceVariant,
               ),
-              textAlign: TextAlign.end,
+              textAlign: TextAlign.start,
             ),
             SizedBox(height: 24.h),
             Row(

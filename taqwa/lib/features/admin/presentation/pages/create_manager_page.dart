@@ -200,7 +200,7 @@ class _CreateManagerPageState extends State<CreateManagerPage> {
                 child: SingleChildScrollView(
                   padding: EdgeInsets.symmetric(horizontal: 16.w),
                   child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.end,
+                    crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
                       SizedBox(height: 24.h),
                       // Photo upload
@@ -351,7 +351,7 @@ class _CreateManagerPageState extends State<CreateManagerPage> {
                             'لا توجد حلقات متاحة',
                             style: AppTextStyles.bodyMd.copyWith(
                                 color: AppColors.onSurfaceVariant),
-                            textAlign: TextAlign.right,
+                            textAlign: TextAlign.start,
                           ),
                         )
                       else
@@ -399,7 +399,7 @@ class _CreateManagerPageState extends State<CreateManagerPage> {
                                   ),
                                   Column(
                                     crossAxisAlignment:
-                                        CrossAxisAlignment.end,
+                                        CrossAxisAlignment.start,
                                     children: [
                                       Text(
                                         name,
@@ -485,7 +485,7 @@ class _CreateManagerPageState extends State<CreateManagerPage> {
     return Container(
       padding: EdgeInsets.symmetric(horizontal: 16.w, vertical: 12.h),
       child: Column(
-        crossAxisAlignment: CrossAxisAlignment.end,
+        crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           Row(
             children: [
@@ -505,7 +505,7 @@ class _CreateManagerPageState extends State<CreateManagerPage> {
           ),
           SizedBox(height: 4.h),
           Row(
-            mainAxisAlignment: MainAxisAlignment.end,
+            mainAxisAlignment: MainAxisAlignment.start,
             children: [
               Text(
                 _isEditing ? 'تعديل مدير' : 'إضافة مدير جديد',
@@ -555,7 +555,7 @@ class _SectionHeader extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Row(
-      mainAxisAlignment: MainAxisAlignment.end,
+      mainAxisAlignment: MainAxisAlignment.start,
       children: [
         Text(
           title,
@@ -602,7 +602,7 @@ class _PrivilegeSwitch extends StatelessWidget {
           ),
           Expanded(
             child: Column(
-              crossAxisAlignment: CrossAxisAlignment.end,
+              crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 Text(
                   title,
@@ -616,7 +616,7 @@ class _PrivilegeSwitch extends StatelessWidget {
                   style: AppTextStyles.labelSm.copyWith(
                     color: AppColors.onSurfaceVariant,
                   ),
-                  textAlign: TextAlign.end,
+                  textAlign: TextAlign.start,
                 ),
               ],
             ),

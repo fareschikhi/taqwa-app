@@ -197,7 +197,7 @@ class _StudentFormPageState extends State<StudentFormPage> {
                 child: SingleChildScrollView(
                   padding: EdgeInsets.symmetric(horizontal: 16.w),
                   child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.end,
+                    crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
                       SizedBox(height: 24.h),
                       _buildCard(),
@@ -244,7 +244,7 @@ class _StudentFormPageState extends State<StudentFormPage> {
         ],
       ),
       child: Column(
-        crossAxisAlignment: CrossAxisAlignment.end,
+        crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           AvatarPickerField(
             picked: _pickedImage,
@@ -379,7 +379,7 @@ class _StudentFormPageState extends State<StudentFormPage> {
             style: AppTextStyles.labelMd.copyWith(
               color: AppColors.inputPlaceholder,
             ),
-            textAlign: TextAlign.end,
+            textAlign: TextAlign.start,
           ),
           items: _halaqas
               .map(
@@ -388,7 +388,7 @@ class _StudentFormPageState extends State<StudentFormPage> {
                   child: Text(
                     h.name,
                     style: AppTextStyles.bodyMd,
-                    textAlign: TextAlign.end,
+                    textAlign: TextAlign.start,
                   ),
                 ),
               )

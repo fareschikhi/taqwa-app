@@ -104,12 +104,12 @@ class _HalaqasManagementPageState extends State<HalaqasManagementPage> {
           color: AppColors.primary,
           onRefresh: _load,
           child: Column(
-            crossAxisAlignment: CrossAxisAlignment.end,
+            crossAxisAlignment: CrossAxisAlignment.start,
             children: [
               Padding(
                 padding: EdgeInsets.fromLTRB(16.w, 16.h, 16.w, 0),
                 child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.end,
+                  crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
                     Row(
                       children: [
@@ -265,7 +265,7 @@ class _HalaqaCard extends StatelessWidget {
       ),
       padding: EdgeInsets.all(16.w),
       child: Column(
-        crossAxisAlignment: CrossAxisAlignment.end,
+        crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           Container(
             width: 48.w,
@@ -281,7 +281,7 @@ class _HalaqaCard extends StatelessWidget {
             name,
             style: AppTextStyles.headlineSm
                 .copyWith(color: AppColors.onSurface),
-            textAlign: TextAlign.end,
+            textAlign: TextAlign.start,
             maxLines: 2,
             overflow: TextOverflow.ellipsis,
           ),
@@ -290,7 +290,7 @@ class _HalaqaCard extends StatelessWidget {
             teacherName.isNotEmpty ? teacherName : '—',
             style: AppTextStyles.labelSm
                 .copyWith(color: AppColors.onSurfaceVariant),
-            textAlign: TextAlign.end,
+            textAlign: TextAlign.start,
             maxLines: 1,
             overflow: TextOverflow.ellipsis,
           ),

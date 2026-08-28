@@ -170,7 +170,7 @@ class _ReportsPageState extends State<ReportsPage> {
                     AppCard(
                       padding: EdgeInsets.all(20.w),
                       child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.end,
+                        crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
                           Text(
                             'إتمام الحفظ',
@@ -184,7 +184,7 @@ class _ReportsPageState extends State<ReportsPage> {
                             style: AppTextStyles.labelSm.copyWith(
                               color: AppColors.onSurfaceVariant,
                             ),
-                            textAlign: TextAlign.end,
+                            textAlign: TextAlign.start,
                           ),
                           SizedBox(height: 20.h),
                           Center(child: _DonutChart(percentage: 0.65)),
@@ -212,7 +212,7 @@ class _ReportsPageState extends State<ReportsPage> {
                     AppCard(
                       padding: EdgeInsets.all(20.w),
                       child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.end,
+                        crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
                           Text(
                             'أداء المعلمين',
@@ -361,7 +361,7 @@ class _TeacherPerfRow extends StatelessWidget {
           child: Text(
             name,
             style: AppTextStyles.labelSm.copyWith(color: AppColors.onSurface),
-            textAlign: TextAlign.end,
+            textAlign: TextAlign.start,
           ),
         ),
       ],

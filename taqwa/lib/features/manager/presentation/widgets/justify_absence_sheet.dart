@@ -62,7 +62,7 @@ class _JustifyAbsenceSheetState extends State<JustifyAbsenceSheet> {
     if (!mounted) return;
     ScaffoldMessenger.of(context).showSnackBar(
       SnackBar(
-        content: Text(message, textAlign: TextAlign.right),
+        content: Text(message, textAlign: TextAlign.start),
         backgroundColor: isError ? AppColors.error : AppColors.primary,
       ),
     );
@@ -112,7 +112,7 @@ class _JustifyAbsenceSheetState extends State<JustifyAbsenceSheet> {
         child: SingleChildScrollView(
           child: Column(
             mainAxisSize: MainAxisSize.min,
-            crossAxisAlignment: CrossAxisAlignment.end,
+            crossAxisAlignment: CrossAxisAlignment.start,
             children: [
               Center(
                 child: Container(
@@ -178,7 +178,7 @@ class _JustifyAbsenceSheetState extends State<JustifyAbsenceSheet> {
           ),
           const Spacer(),
           Column(
-            crossAxisAlignment: CrossAxisAlignment.end,
+            crossAxisAlignment: CrossAxisAlignment.start,
             children: [
               Text(
                 item.studentName,

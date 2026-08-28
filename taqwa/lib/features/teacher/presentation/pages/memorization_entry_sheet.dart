@@ -100,7 +100,7 @@ class _MemorizationEntrySheetState extends State<MemorizationEntrySheet> {
         padding: EdgeInsets.fromLTRB(16.w, 12.h, 16.w, 24.h),
         child: Column(
           mainAxisSize: MainAxisSize.min,
-          crossAxisAlignment: CrossAxisAlignment.end,
+          crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             Center(
               child: Container(
@@ -124,7 +124,7 @@ class _MemorizationEntrySheetState extends State<MemorizationEntrySheet> {
             AppCard(
               padding: EdgeInsets.all(16.w),
               child: Column(
-                crossAxisAlignment: CrossAxisAlignment.end,
+                crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
                   Text(
                     'السورة',

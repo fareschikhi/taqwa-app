@@ -130,7 +130,7 @@ class _ManagerParentsPageState extends ConsumerState<ManagerParentsPage> {
           color: AppColors.primary,
           onRefresh: _load,
           child: Column(
-            crossAxisAlignment: CrossAxisAlignment.end,
+            crossAxisAlignment: CrossAxisAlignment.start,
             children: [
               Padding(
                 padding: EdgeInsets.fromLTRB(16.w, 16.h, 16.w, 0),
@@ -149,7 +149,7 @@ class _ManagerParentsPageState extends ConsumerState<ManagerParentsPage> {
               Padding(
                 padding: EdgeInsets.fromLTRB(16.w, 20.h, 16.w, 0),
                 child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.end,
+                  crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
                     Text(
                       'أولياء الأمور',
@@ -314,13 +314,13 @@ class _ParentCard extends StatelessWidget {
             ),
           const Spacer(),
           Column(
-            crossAxisAlignment: CrossAxisAlignment.end,
+            crossAxisAlignment: CrossAxisAlignment.start,
             children: [
               Row(
                 mainAxisSize: MainAxisSize.min,
                 children: [
                   Column(
-                    crossAxisAlignment: CrossAxisAlignment.end,
+                    crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
                       Text(
                         parent.fullName,

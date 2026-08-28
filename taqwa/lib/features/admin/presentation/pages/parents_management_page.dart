@@ -146,12 +146,12 @@ class _ParentsManagementPageState extends State<ParentsManagementPage> {
           color: AppColors.primary,
           onRefresh: _load,
           child: Column(
-            crossAxisAlignment: CrossAxisAlignment.end,
+            crossAxisAlignment: CrossAxisAlignment.start,
             children: [
               Padding(
                 padding: EdgeInsets.fromLTRB(16.w, 16.h, 16.w, 0),
                 child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.end,
+                  crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
                     Row(
                       children: [
@@ -294,17 +294,17 @@ class _ParentCard extends StatelessWidget {
       ),
       padding: EdgeInsets.all(20.w),
       child: Column(
-        crossAxisAlignment: CrossAxisAlignment.end,
+        crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           Row(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
               Expanded(
                 child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.end,
+                  crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
                     Row(
-                      mainAxisAlignment: MainAxisAlignment.end,
+                      mainAxisAlignment: MainAxisAlignment.start,
                       children: [
                         Container(
                           padding: EdgeInsets.symmetric(
@@ -338,12 +338,12 @@ class _ParentCard extends StatelessWidget {
                       style: AppTextStyles.bodyMdBold.copyWith(
                         color: AppColors.onSurface,
                       ),
-                      textAlign: TextAlign.end,
+                      textAlign: TextAlign.start,
                     ),
                     if ((parent.phone ?? '').isNotEmpty) ...[
                       SizedBox(height: 4.h),
                       Row(
-                        mainAxisAlignment: MainAxisAlignment.end,
+                        mainAxisAlignment: MainAxisAlignment.start,
                         children: [
                           Text(
                             parent.phone!,
@@ -362,7 +362,7 @@ class _ParentCard extends StatelessWidget {
                     ],
                     SizedBox(height: 8.h),
                     Row(
-                      mainAxisAlignment: MainAxisAlignment.end,
+                      mainAxisAlignment: MainAxisAlignment.start,
                       children: [
                         Text(
                           '${parent.children.length} طالب مرتبط',

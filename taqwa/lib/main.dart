@@ -39,12 +39,6 @@ class TaqwaApp extends StatelessWidget {
               GlobalCupertinoLocalizations.delegate,
             ],
             supportedLocales: const [Locale('ar'), Locale('en')],
-            builder: (context, widget) {
-              return Directionality(
-                textDirection: TextDirection.ltr,
-                child: widget!,
-              );
-            },
             home: const LoginPage(),
           );
         },

@@ -51,7 +51,7 @@ class LastSessionCard extends StatelessWidget {
     return AppCard(
       padding: EdgeInsets.all(16.w),
       child: Column(
-        crossAxisAlignment: CrossAxisAlignment.end,
+        crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           Row(
             children: [
@@ -70,7 +70,7 @@ class LastSessionCard extends StatelessWidget {
               style: AppTextStyles.bodyMd.copyWith(
                 color: AppColors.onSurfaceVariant,
               ),
-              textAlign: TextAlign.end,
+              textAlign: TextAlign.start,
             )
           else
             ...session.entries.map(_buildEntry),
@@ -91,21 +91,21 @@ class LastSessionCard extends StatelessWidget {
     return Padding(
       padding: EdgeInsets.only(bottom: 4.h),
       child: Column(
-        crossAxisAlignment: CrossAxisAlignment.end,
+        crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           Text(
             amountText,
             style: AppTextStyles.labelMdBold.copyWith(
               color: AppColors.onSurface,
             ),
-            textAlign: TextAlign.end,
+            textAlign: TextAlign.start,
           ),
           Text(
             'سورة ${entry.surahName ?? 'رقم ${entry.surahNumber}'}',
             style: AppTextStyles.labelSm.copyWith(
               color: AppColors.onSurfaceVariant,
             ),
-            textAlign: TextAlign.end,
+            textAlign: TextAlign.start,
           ),
         ],
       ),

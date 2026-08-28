@@ -216,7 +216,7 @@ class _CreateHalaqaPageState extends State<CreateHalaqaPage> {
                   child: SingleChildScrollView(
                     padding: EdgeInsets.symmetric(horizontal: 16.w),
                     child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.end,
+                      crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
                         SizedBox(height: 24.h),
                         // ── Main card ──────────────────────────────────────
@@ -235,7 +235,7 @@ class _CreateHalaqaPageState extends State<CreateHalaqaPage> {
                             ],
                           ),
                           child: Column(
-                            crossAxisAlignment: CrossAxisAlignment.end,
+                            crossAxisAlignment: CrossAxisAlignment.start,
                             children: [
                               _SectionHeader(
                                 icon: Icons.menu_book_outlined,
@@ -326,10 +326,10 @@ class _CreateHalaqaPageState extends State<CreateHalaqaPage> {
                               ],
                             ),
                             child: Column(
-                              crossAxisAlignment: CrossAxisAlignment.end,
+                              crossAxisAlignment: CrossAxisAlignment.start,
                               children: [
                                 Row(
-                                  mainAxisAlignment: MainAxisAlignment.end,
+                                  mainAxisAlignment: MainAxisAlignment.start,
                                   children: [
                                     if (_selectedStudents.isNotEmpty)
                                       Container(
@@ -387,7 +387,7 @@ class _CreateHalaqaPageState extends State<CreateHalaqaPage> {
                                       Expanded(
                                         child: TextField(
                                           controller: _studentSearchController,
-                                          textAlign: TextAlign.right,
+                                          textAlign: TextAlign.start,
                                           textDirection: TextDirection.rtl,
                                           style: AppTextStyles.bodyMd,
                                           onTap: () => setState(
@@ -475,7 +475,7 @@ class _CreateHalaqaPageState extends State<CreateHalaqaPage> {
                                                         .copyWith(
                                                       fontWeight: FontWeight.w600,
                                                     ),
-                                                    textAlign: TextAlign.end,
+                                                    textAlign: TextAlign.start,
                                                   ),
                                                 ),
                                                 SizedBox(width: 10.w),
@@ -629,7 +629,7 @@ class SelectedStudentCard extends StatelessWidget {
                 fontWeight: FontWeight.w600,
                 color: AppColors.onSurface,
               ),
-              textAlign: TextAlign.end,
+              textAlign: TextAlign.start,
               overflow: TextOverflow.ellipsis,
             ),
           ),
@@ -710,7 +710,7 @@ class _SectionHeader extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Row(
-      mainAxisAlignment: MainAxisAlignment.end,
+      mainAxisAlignment: MainAxisAlignment.start,
       children: [
         Text(
           title,

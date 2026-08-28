@@ -341,7 +341,7 @@ class _AttendancePageState extends ConsumerState<AttendancePage> {
     return Padding(
       padding: EdgeInsets.fromLTRB(16.w, 16.h, 16.w, 0),
       child: Column(
-        crossAxisAlignment: CrossAxisAlignment.end,
+        crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           Row(
             children: [
@@ -364,7 +364,7 @@ class _AttendancePageState extends ConsumerState<AttendancePage> {
             children: [
               const Spacer(),
               Column(
-                crossAxisAlignment: CrossAxisAlignment.end,
+                crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
                   Text(
                     'تسجيل الحضور',
@@ -393,7 +393,7 @@ class _AttendancePageState extends ConsumerState<AttendancePage> {
     return Padding(
       padding: EdgeInsets.fromLTRB(16.w, 16.h, 16.w, 8.h),
       child: Column(
-        crossAxisAlignment: CrossAxisAlignment.end,
+        crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           Row(
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
@@ -507,7 +507,7 @@ class _StudentAttendanceTile extends StatelessWidget {
         ],
       ),
       child: Row(
-        mainAxisAlignment: MainAxisAlignment.end,
+        mainAxisAlignment: MainAxisAlignment.start,
         children: [
           Container(
             decoration: BoxDecoration(
@@ -601,7 +601,7 @@ class _StudentAttendanceTile extends StatelessWidget {
               ),
               SizedBox(height: 10.h),
               Row(
-                mainAxisAlignment: MainAxisAlignment.end,
+                mainAxisAlignment: MainAxisAlignment.start,
                 children: [
                   AttendanceChip(
                     label: 'غائب',

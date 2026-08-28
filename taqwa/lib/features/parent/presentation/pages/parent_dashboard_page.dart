@@ -171,7 +171,7 @@ class _ParentDashboardPageState extends ConsumerState<ParentDashboardPage> {
 
   Widget _buildGreeting(String parentName) {
     return Column(
-      crossAxisAlignment: CrossAxisAlignment.end,
+      crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         Text(
           parentName.isNotEmpty ? 'أهلاً، $parentName' : 'أهلاً بك',
@@ -219,7 +219,7 @@ class _ParentDashboardPageState extends ConsumerState<ParentDashboardPage> {
         ),
         padding: EdgeInsets.all(20.w),
         child: Column(
-          crossAxisAlignment: CrossAxisAlignment.end,
+          crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             Row(
               children: [
@@ -241,7 +241,7 @@ class _ParentDashboardPageState extends ConsumerState<ParentDashboardPage> {
                 ),
                 const Spacer(),
                 Column(
-                  crossAxisAlignment: CrossAxisAlignment.end,
+                  crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
                     Text(
                       child.fullName,
@@ -320,7 +320,7 @@ class _ParentDashboardPageState extends ConsumerState<ParentDashboardPage> {
         const <Map<String, dynamic>>[];
 
     return Column(
-      crossAxisAlignment: CrossAxisAlignment.end,
+      crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         Text(
           'آخر حضور',
@@ -339,7 +339,7 @@ class _ParentDashboardPageState extends ConsumerState<ParentDashboardPage> {
 
   Widget _buildTeacherNotes() {
     return Column(
-      crossAxisAlignment: CrossAxisAlignment.end,
+      crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         Text(
           'ملاحظات المعلم',
@@ -375,7 +375,7 @@ class _ParentDashboardPageState extends ConsumerState<ParentDashboardPage> {
               child: AppCard(
                 padding: EdgeInsets.all(16.w),
                 child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.end,
+                  crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
                     Row(
                       children: [
@@ -401,7 +401,7 @@ class _ParentDashboardPageState extends ConsumerState<ParentDashboardPage> {
                         color: AppColors.onSurface,
                         height: 1.6,
                       ),
-                      textAlign: TextAlign.end,
+                      textAlign: TextAlign.start,
                     ),
                   ],
                 ),

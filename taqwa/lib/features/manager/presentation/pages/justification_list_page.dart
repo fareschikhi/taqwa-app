@@ -71,7 +71,7 @@ class _JustificationListPageState extends ConsumerState<JustificationListPage> {
           color: AppColors.primary,
           onRefresh: _loadJustifications,
           child: Column(
-            crossAxisAlignment: CrossAxisAlignment.end,
+            crossAxisAlignment: CrossAxisAlignment.start,
             children: [
               Padding(
                 padding: EdgeInsets.fromLTRB(16.w, 16.h, 16.w, 0),
@@ -90,7 +90,7 @@ class _JustificationListPageState extends ConsumerState<JustificationListPage> {
               Padding(
                 padding: EdgeInsets.fromLTRB(16.w, 20.h, 16.w, 16.h),
                 child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.end,
+                  crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
                     Text(
                       'تبريرات الغياب',
@@ -172,7 +172,7 @@ class _JustificationListPageState extends ConsumerState<JustificationListPage> {
     if (saved && mounted) {
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(
-          content: Text('تم حفظ العذر بنجاح', textAlign: TextAlign.right),
+          content: Text('تم حفظ العذر بنجاح', textAlign: TextAlign.start),
           backgroundColor: AppColors.primary,
         ),
       );
@@ -285,7 +285,7 @@ class _UnjustifiedCard extends StatelessWidget {
                 ),
                 const Spacer(),
                 Column(
-                  crossAxisAlignment: CrossAxisAlignment.end,
+                  crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
                     Text(
                       item.studentName,
@@ -364,7 +364,7 @@ class _JustificationCard extends StatelessWidget {
       ),
       padding: EdgeInsets.all(16.w),
       child: Column(
-        crossAxisAlignment: CrossAxisAlignment.end,
+        crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           Row(
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
@@ -412,7 +412,7 @@ class _JustificationCard extends StatelessWidget {
               borderRadius: BorderRadius.circular(AppConstants.radiusMd),
             ),
             child: Column(
-              crossAxisAlignment: CrossAxisAlignment.end,
+              crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 Row(
                   mainAxisAlignment: MainAxisAlignment.spaceBetween,
@@ -439,7 +439,7 @@ class _JustificationCard extends StatelessWidget {
                     style: AppTextStyles.bodyMd.copyWith(
                       color: AppColors.onSurfaceVariant,
                     ),
-                    textAlign: TextAlign.right,
+                    textAlign: TextAlign.start,
                   ),
                 ],
               ],
