@@ -24,14 +24,16 @@ import '../../../../core/widgets/user_selector_field.dart';
 Map<String, dynamic> buildHalaqaPayload({
   required String name,
   required int teacherId,
-  required String description,
+  required String level,
   required List<int> studentIds,
   required bool isEditing,
 }) {
   return <String, dynamic>{
     'name': name,
     'teacherId': teacherId,
-    if (description.isNotEmpty) 'description': description,
+    // An edit always sends the key so that emptying the field clears the
+    // column; a create with a blank field leaves it out and keeps the NULL.
+    if (isEditing || level.isNotEmpty) 'level': level.isEmpty ? null : level,
     if (!isEditing && studentIds.isNotEmpty) 'studentIds': studentIds,
   };
 }
@@ -51,7 +53,7 @@ class _CreateHalaqaPageState extends State<CreateHalaqaPage> {
   final _teacherRepository = TeacherRepository();
   final _studentRepository = StudentRepository();
   final _nameController = TextEditingController();
-  final _descriptionController = TextEditingController();
+  final _levelController = TextEditingController();
   final _studentSearchController = TextEditingController();
 
   List<TeacherModel> _teachers = [];
@@ -72,7 +74,7 @@ class _CreateHalaqaPageState extends State<CreateHalaqaPage> {
     if (_isEditing) {
       final h = widget.editHalaqa!;
       _nameController.text = h.name;
-      _descriptionController.text = h.description ?? '';
+      _levelController.text = h.level ?? '';
       _selectedTeacherId = h.teacherId;
     }
     _loadTeachers();
@@ -153,7 +155,7 @@ class _CreateHalaqaPageState extends State<CreateHalaqaPage> {
       final data = buildHalaqaPayload(
         name: _nameController.text.trim(),
         teacherId: _selectedTeacherId!,
-        description: _descriptionController.text.trim(),
+        level: _levelController.text.trim(),
         studentIds:
             _selectedStudents.map((s) => s.id).whereType<int>().toList(),
         isEditing: _isEditing,
@@ -188,7 +190,7 @@ class _CreateHalaqaPageState extends State<CreateHalaqaPage> {
   @override
   void dispose() {
     _nameController.dispose();
-    _descriptionController.dispose();
+    _levelController.dispose();
     _studentSearchController.dispose();
     super.dispose();
   }
@@ -254,6 +256,26 @@ class _CreateHalaqaPageState extends State<CreateHalaqaPage> {
                                 },
                                 prefixIcon: const Icon(
                                   Icons.menu_book_outlined,
+                                  color: AppColors.onSurfaceVariant,
+                                ),
+                              ),
+                              SizedBox(height: 16.h),
+                              // Level
+                              _FieldLabel(label: 'المستوى'),
+                              SizedBox(height: 6.h),
+                              AppTextField(
+                                hint: 'مثال: مبتدئ',
+                                controller: _levelController,
+                                validator: (v) {
+                                  // Mirrors the column's VarChar(100), so the
+                                  // admin sees the limit before the request.
+                                  if ((v ?? '').trim().length > 100) {
+                                    return 'المستوى يجب ألا يتجاوز 100 حرف';
+                                  }
+                                  return null;
+                                },
+                                prefixIcon: const Icon(
+                                  Icons.stairs_outlined,
                                   color: AppColors.onSurfaceVariant,
                                 ),
                               ),

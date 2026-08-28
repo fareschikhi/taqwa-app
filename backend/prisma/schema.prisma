@@ -134,7 +134,6 @@ model Student {
 model Halaqa {
   id          Int     @id @default(autoincrement())
   name        String  @db.VarChar(150)
-  description String? @db.Text
   level       String? @db.VarChar(100)
   teacherId   Int
 

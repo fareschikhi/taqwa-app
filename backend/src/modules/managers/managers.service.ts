@@ -44,7 +44,7 @@ export class ManagersService {
         halaqas: {
           include: {
             halaqa: {
-              select: { id: true, name: true, level: true, description: true },
+              select: { id: true, name: true, level: true },
             },
           },
         },

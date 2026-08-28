@@ -7,7 +7,7 @@ void main() {
       final data = buildHalaqaPayload(
         name: 'حلقة النور',
         teacherId: 7,
-        description: 'وصف',
+        level: 'متوسط',
         studentIds: const [1, 2, 3],
         isEditing: true,
       );
@@ -17,32 +17,72 @@ void main() {
       expect(data.containsKey('studentIds'), isFalse);
       expect(data['name'], 'حلقة النور');
       expect(data['teacherId'], 7);
-      expect(data['description'], 'وصف');
+      expect(data['level'], 'متوسط');
     });
 
     test('a create payload carries the picked students', () {
       final data = buildHalaqaPayload(
         name: 'حلقة النور',
         teacherId: 7,
-        description: '',
+        level: '',
         studentIds: const [1, 2, 3],
         isEditing: false,
       );
 
       expect(data['studentIds'], const [1, 2, 3]);
-      expect(data.containsKey('description'), isFalse);
     });
 
     test('a create payload with no picked students omits studentIds', () {
       final data = buildHalaqaPayload(
         name: 'حلقة النور',
         teacherId: 7,
-        description: '',
+        level: '',
         studentIds: const [],
         isEditing: false,
       );
 
       expect(data.containsKey('studentIds'), isFalse);
+    });
+
+    test('a create payload carries the level', () {
+      final data = buildHalaqaPayload(
+        name: 'حلقة النور',
+        teacherId: 7,
+        level: 'مبتدئ',
+        studentIds: const [],
+        isEditing: false,
+      );
+
+      expect(data['level'], 'مبتدئ');
+    });
+
+    test('a create payload with a blank level omits the key', () {
+      final data = buildHalaqaPayload(
+        name: 'حلقة النور',
+        teacherId: 7,
+        level: '',
+        studentIds: const [],
+        isEditing: false,
+      );
+
+      // Leaving the field untouched must not write an empty string over the
+      // column's NULL default.
+      expect(data.containsKey('level'), isFalse);
+    });
+
+    test('an edit payload with a blank level sends null to clear it', () {
+      final data = buildHalaqaPayload(
+        name: 'حلقة النور',
+        teacherId: 7,
+        level: '',
+        studentIds: const [],
+        isEditing: true,
+      );
+
+      // Omitting the key would leave the old level in place forever, so an
+      // emptied field has to travel as an explicit null.
+      expect(data.containsKey('level'), isTrue);
+      expect(data['level'], isNull);
     });
   });
 }

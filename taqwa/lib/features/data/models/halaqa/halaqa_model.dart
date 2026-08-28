@@ -3,7 +3,6 @@ import 'halaqa_student_model.dart';
 class HalaqaModel {
   final int id;
   final String name;
-  final String? description;
   final String? level;
   final int teacherId;
   final String? teacherName;
@@ -21,7 +20,6 @@ class HalaqaModel {
   HalaqaModel({
     required this.id,
     required this.name,
-    this.description,
     this.level,
     required this.teacherId,
     this.teacherName,
@@ -51,7 +49,6 @@ class HalaqaModel {
     return HalaqaModel(
       id: json['id'],
       name: json['name'],
-      description: json['description'],
       level: json['level'],
       teacherId: json['teacherId'],
       teacherName: tName,
@@ -64,7 +61,6 @@ class HalaqaModel {
     return {
       'id': id,
       'name': name,
-      'description': description,
       'level': level,
       'teacherId': teacherId,
     };
