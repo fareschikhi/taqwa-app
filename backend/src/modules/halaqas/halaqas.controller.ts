@@ -24,7 +24,7 @@ export class HalaqasController {
   }
 
   @Get(':id')
-  @Roles(Role.ADMIN, Role.TEACHER, Role.PARENT, Role.STUDENT)
+  @Roles(Role.ADMIN, Role.TEACHER, Role.PARENT)
   findOne(@Param('id', ParseIntPipe) id: number) {
     return this.halaqasService.findOne(id);
   }

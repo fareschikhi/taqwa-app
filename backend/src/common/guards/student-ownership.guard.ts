@@ -6,9 +6,9 @@ import {
 import { PrismaService } from '../../prisma/prisma.service';
 
 /**
- * Restricts a `:id` student-scoped route so PARENT/STUDENT users can only
- * reach their own child/own record. ADMIN, TEACHER and MANAGER pass through
- * unchanged since they legitimately need cross-student access.
+ * Restricts a `:id` student-scoped route so a PARENT only reaches their own
+ * child. ADMIN, TEACHER and MANAGER pass through unchanged since they
+ * legitimately need cross-student access; every other role is denied.
  */
 @Injectable()
 export class StudentOwnershipGuard implements CanActivate {
@@ -19,10 +19,6 @@ export class StudentOwnershipGuard implements CanActivate {
     const user = request.user;
     const studentId = Number(request.params.id);
 
-    if (user.role === 'STUDENT') {
-      return user.student?.id === studentId;
-    }
-
     if (user.role === 'PARENT') {
       const student = await this.prisma.student.findUnique({
         where: { id: studentId },
@@ -31,6 +27,8 @@ export class StudentOwnershipGuard implements CanActivate {
       return !!student && student.parentId === user.parent?.id;
     }
 
-    return true;
+    // Named rather than defaulted to true: @Roles already turns STUDENT away,
+    // and a route that forgets to list its roles should fail closed here.
+    return ['ADMIN', 'TEACHER', 'MANAGER'].includes(user.role);
   }
 }

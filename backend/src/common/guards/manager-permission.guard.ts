@@ -12,7 +12,7 @@ import {
 
 /**
  * Narrows MANAGER access on routes marked with `@RequirePermission(...)`.
- * ADMIN, TEACHER, PARENT and STUDENT pass through untouched — they are already
+ * ADMIN, TEACHER and PARENT pass through untouched — they are already
  * constrained by `@Roles`, and these privileges only ever describe managers.
  * Mirrors the pass-through shape of StudentOwnershipGuard.
  */

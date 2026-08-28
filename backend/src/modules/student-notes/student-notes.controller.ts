@@ -24,7 +24,7 @@ export class StudentNotesController {
   }
 
   @Get('student/:id')
-  @Roles(Role.ADMIN, Role.TEACHER, Role.PARENT, Role.STUDENT)
+  @Roles(Role.ADMIN, Role.TEACHER, Role.PARENT)
   findByStudent(@Param('id', ParseIntPipe) id: number) {
     return this.studentNotesService.findByStudent(id);
   }

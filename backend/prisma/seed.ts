@@ -162,7 +162,8 @@ async function main() {
   const students = [];
   for (const { halaqaId, parentId, ...userData } of studentSeed) {
     const user = await prisma.user.create({
-      data: { ...userData, passwordHash: PASSWORD_HASH, role: Role.STUDENT },
+      // Students hold no password: they are records, not accounts.
+      data: { ...userData, passwordHash: null, role: Role.STUDENT },
     });
     students.push(
       await prisma.student.create({

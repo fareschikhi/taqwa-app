@@ -7,10 +7,6 @@ class StudentPayloadDto {
   final int? parentId;
   final String? avatar;
 
-  /// Initial login password. Optional: the backend stores an empty hash when
-  /// it is omitted, which is how students created without one are handled.
-  final String? password;
-
   const StudentPayloadDto({
     required this.fullName,
     required this.phone,
@@ -19,7 +15,6 @@ class StudentPayloadDto {
     this.halaqaId,
     this.parentId,
     this.avatar,
-    this.password,
   });
 
   Map<String, dynamic> toJson() => {
@@ -30,7 +25,8 @@ class StudentPayloadDto {
     if (halaqaId != null) 'halaqaId': halaqaId,
     if (parentId != null) 'parentId': parentId,
     if (avatar != null && avatar!.isNotEmpty) 'avatar': avatar,
-    if (password != null && password!.isNotEmpty) 'password': password,
+    // No password: a student is a record, not an account, and the backend
+    // rejects a STUDENT login outright.
     'role': 'STUDENT',
   };
 }

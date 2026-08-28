@@ -5,7 +5,6 @@ import {
 } from '@nestjs/common';
 import { PrismaService } from '../../prisma/prisma.service';
 import { CreateStudentDto, UpdateStudentDto } from './dto/student.dto';
-import * as bcrypt from 'bcrypt';
 
 @Injectable()
 export class StudentsService {
@@ -93,17 +92,14 @@ export class StudentsService {
     const phone =
       dto.phone && dto.phone.trim() !== '' ? dto.phone.trim() : undefined;
 
-    const passwordHash =
-      dto.password && dto.password.trim() !== ''
-        ? await bcrypt.hash(dto.password, 10)
-        : '';
-
     try {
       const user = await this.prisma.user.create({
         data: {
           fullName: dto.fullName,
           phone,
-          passwordHash,
+          // A student is a record, not an account: the role classifies the row
+          // while the null hash keeps the login door shut.
+          passwordHash: null,
           role: 'STUDENT',
           avatar: dto.avatar,
           student: {
@@ -152,8 +148,6 @@ export class StudentsService {
     }
 
     if (dto.avatar) userUpdate.avatar = dto.avatar;
-    if (dto.password)
-      userUpdate.passwordHash = await bcrypt.hash(dto.password, 10);
 
     const studentUpdate: any = {};
     if (dto.birthDate) studentUpdate.birthDate = new Date(dto.birthDate);

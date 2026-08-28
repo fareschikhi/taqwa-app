@@ -45,6 +45,11 @@ export class AuthService {
     });
 
     if (!user) throw new UnauthorizedException('بيانات الدخول غير صحيحة');
+    // Students are records in Taqwa, not accounts — no student-facing screen
+    // exists. The message matches the others so a probe cannot tell a student
+    // account apart from a wrong password.
+    if (user.role === 'STUDENT')
+      throw new UnauthorizedException('بيانات الدخول غير صحيحة');
     if (!user.passwordHash)
       throw new UnauthorizedException('بيانات الدخول غير صحيحة');
     const valid = await bcrypt.compare(dto.password, user.passwordHash);

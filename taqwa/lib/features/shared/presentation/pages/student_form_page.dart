@@ -47,7 +47,6 @@ class _StudentFormPageState extends State<StudentFormPage> {
   final _phoneController = TextEditingController();
   final _dobController = TextEditingController();
   final _addressController = TextEditingController();
-  final _passwordController = TextEditingController();
 
   List<HalaqaModel> _halaqas = [];
   List<UserOption> _parents = [];
@@ -85,7 +84,6 @@ class _StudentFormPageState extends State<StudentFormPage> {
     _phoneController.dispose();
     _dobController.dispose();
     _addressController.dispose();
-    _passwordController.dispose();
     super.dispose();
   }
 
@@ -141,7 +139,6 @@ class _StudentFormPageState extends State<StudentFormPage> {
       }
 
       final birthDate = _selectedBirthDate;
-      final password = _passwordController.text.trim();
 
       if (_isEditing) {
         await _repo.updateStudent(widget.student!.id!, {
@@ -152,7 +149,6 @@ class _StudentFormPageState extends State<StudentFormPage> {
           'halaqaId': ?_selectedHalaqaId,
           'parentId': ?_selectedParentId,
           'avatar': ?avatarUrl,
-          if (password.isNotEmpty) 'password': password,
         });
       } else {
         await _repo.createStudent(
@@ -164,7 +160,6 @@ class _StudentFormPageState extends State<StudentFormPage> {
             halaqaId: _selectedHalaqaId,
             parentId: _selectedParentId,
             avatar: avatarUrl,
-            password: password.isNotEmpty ? password : null,
           ),
         );
       }
@@ -306,7 +301,7 @@ class _StudentFormPageState extends State<StudentFormPage> {
           SizedBox(height: 24.h),
           const FormSectionHeader(
             icon: Icons.contact_phone_outlined,
-            title: 'بيانات الاتصال والحساب',
+            title: 'بيانات الاتصال',
           ),
           SizedBox(height: 16.h),
           AppTextField(
@@ -320,22 +315,6 @@ class _StudentFormPageState extends State<StudentFormPage> {
             ),
             validator: (v) =>
                 (v == null || v.trim().isEmpty) ? 'هذا الحقل مطلوب' : null,
-          ),
-          SizedBox(height: 16.h),
-          AppTextField(
-            label: _isEditing
-                ? 'كلمة المرور الجديدة (اتركها فارغة للإبقاء)'
-                : 'كلمة المرور المبدئية (اختياري)',
-            hint: '••••••••',
-            controller: _passwordController,
-            obscureText: true,
-            prefixIcon: const Icon(
-              Icons.lock_outline,
-              color: AppColors.onSurfaceVariant,
-            ),
-            validator: (v) => (v != null && v.trim().isNotEmpty && v.trim().length < 6)
-                ? 'كلمة المرور يجب أن تكون 6 أحرف على الأقل'
-                : null,
           ),
           SizedBox(height: 24.h),
           const FormSectionHeader(

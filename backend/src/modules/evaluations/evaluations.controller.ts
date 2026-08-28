@@ -18,13 +18,13 @@ export class EvaluationsController {
   }
 
   @Get('student/:id')
-  @Roles(Role.ADMIN, Role.TEACHER, Role.PARENT, Role.STUDENT)
+  @Roles(Role.ADMIN, Role.TEACHER, Role.PARENT)
   findByStudent(@Param('id', ParseIntPipe) id: number) {
     return this.evaluationsService.findByStudent(id);
   }
 
   @Get(':id')
-  @Roles(Role.ADMIN, Role.TEACHER, Role.PARENT, Role.STUDENT)
+  @Roles(Role.ADMIN, Role.TEACHER, Role.PARENT)
   findOne(@Param('id', ParseIntPipe) id: number) {
     return this.evaluationsService.findOne(id);
   }

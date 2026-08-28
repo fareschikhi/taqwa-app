@@ -5,7 +5,6 @@ export class CreateStudentDto {
   @IsOptional() @IsString() phone?: string;
   @IsString() address: string;
   @IsDateString() birthDate: string;
-  @IsOptional() @IsString() password?: string;
   @IsOptional() @IsInt() parentId?: number;
   @IsOptional() @IsInt() halaqaId?: number;
   @IsOptional() @IsString() avatar?: string;
@@ -17,7 +16,6 @@ export class UpdateStudentDto {
   @IsOptional() @IsString() phone?: string;
   @IsOptional() @IsString() address?: string;
   @IsOptional() @IsDateString() birthDate?: string;
-  @IsOptional() @IsString() password?: string;
   @IsOptional() @IsInt() parentId?: number;
   @IsOptional() @IsInt() halaqaId?: number;
   @IsOptional() @IsString() avatar?: string;
