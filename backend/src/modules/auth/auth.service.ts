@@ -6,6 +6,7 @@ import {
 import { JwtService } from '@nestjs/jwt';
 import { PrismaService } from '../../prisma/prisma.service';
 import { LoginDto } from './dto/login.dto';
+import { ChangePasswordDto } from './dto/change-password.dto';
 import * as bcrypt from 'bcrypt';
 
 @Injectable()
@@ -73,6 +74,30 @@ export class AuthService {
         manager: user.manager ?? undefined,
       },
     };
+  }
+
+  async changePassword(userId: number, dto: ChangePasswordDto) {
+    const user = await this.prisma.user.findUnique({ where: { id: userId } });
+
+    // A missing user or an empty hash gets the same message as a wrong
+    // password: nothing here should help someone probe an account.
+    if (!user?.passwordHash) {
+      throw new UnauthorizedException('كلمة المرور الحالية غير صحيحة');
+    }
+
+    const valid = await bcrypt.compare(dto.currentPassword, user.passwordHash);
+    if (!valid) {
+      throw new UnauthorizedException('كلمة المرور الحالية غير صحيحة');
+    }
+
+    await this.prisma.user.update({
+      where: { id: userId },
+      data: { passwordHash: await bcrypt.hash(dto.newPassword, 10) },
+    });
+
+    // The token deliberately survives: changing your own password on the
+    // device in your hand is not a request to be logged out of it.
+    return { success: true as const };
   }
 
   async validateUser(userId: number) {

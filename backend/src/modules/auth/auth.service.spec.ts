@@ -69,3 +69,67 @@ describe('AuthService.login', () => {
     expect(result.user.role).toBe('PARENT');
   });
 });
+
+describe('AuthService.changePassword', () => {
+  const makeService = (user: Record<string, unknown> | null) => {
+    const prisma = {
+      user: {
+        findUnique: jest.fn().mockResolvedValue(user),
+        update: jest.fn().mockResolvedValue({ id: 7 }),
+      },
+    };
+    const jwt = { sign: jest.fn() };
+    const service = new AuthService(prisma as any, jwt as unknown as JwtService);
+    return { service, prisma };
+  };
+
+  const active = { id: 7, passwordHash: PASSWORD_HASH };
+
+  it('rejects a wrong current password', async () => {
+    const { service, prisma } = makeService(active);
+
+    await expect(
+      service.changePassword(7, {
+        currentPassword: 'not-it',
+        newPassword: 'newpass1',
+      }),
+    ).rejects.toBeInstanceOf(UnauthorizedException);
+    expect(prisma.user.update).not.toHaveBeenCalled();
+  });
+
+  it('rejects a user holding no password hash', async () => {
+    const { service, prisma } = makeService({ id: 7, passwordHash: null });
+
+    await expect(
+      service.changePassword(7, {
+        currentPassword: PASSWORD,
+        newPassword: 'newpass1',
+      }),
+    ).rejects.toBeInstanceOf(UnauthorizedException);
+    expect(prisma.user.update).not.toHaveBeenCalled();
+  });
+
+  it('stores a hash the new password verifies against', async () => {
+    const { service, prisma } = makeService(active);
+
+    await service.changePassword(7, {
+      currentPassword: PASSWORD,
+      newPassword: 'newpass1',
+    });
+
+    const { data } = prisma.user.update.mock.calls[0][0];
+    expect(await bcrypt.compare('newpass1', data.passwordHash)).toBe(true);
+  });
+
+  it('never stores the new password in the clear', async () => {
+    const { service, prisma } = makeService(active);
+
+    await service.changePassword(7, {
+      currentPassword: PASSWORD,
+      newPassword: 'newpass1',
+    });
+
+    const { data } = prisma.user.update.mock.calls[0][0];
+    expect(data.passwordHash).not.toBe('newpass1');
+  });
+});
