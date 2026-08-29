@@ -165,10 +165,15 @@ class _ChildAttendanceHistoryPageState
                   // row of monthly figures.
                   if ((_summary?.currentStreak ?? 0) > 0) ...[
                     SizedBox(height: 10.h),
-                    _StatBox(
-                      label: 'أيام حضور متتالية',
-                      value: '${_summary?.currentStreak ?? 0}',
-                      color: AppColors.primary,
+                    // Full width: a lone third-width box beside empty space
+                    // reads as a layout accident rather than a figure.
+                    SizedBox(
+                      width: double.infinity,
+                      child: _StatBox(
+                        label: 'أيام حضور متتالية',
+                        value: '${_summary?.currentStreak ?? 0}',
+                        color: AppColors.primary,
+                      ),
                     ),
                   ],
                   SizedBox(height: 8.h),
