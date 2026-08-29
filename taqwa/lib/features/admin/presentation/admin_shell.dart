@@ -15,6 +15,7 @@ import 'pages/managers_management_page.dart';
 import 'pages/parents_management_page.dart';
 import 'pages/reports_page.dart';
 import 'package:taqwa/core/widgets/app_text.dart';
+import 'package:taqwa/features/shared/presentation/pages/profile_page.dart';
 
 class AdminShellScope extends InheritedWidget {
   final int currentIndex;
@@ -58,6 +59,7 @@ class _AdminShellState extends ConsumerState<AdminShell> {
     ManagersManagementPage(),
     ParentsManagementPage(),
     ReportsPage(),
+    ProfilePage(role: 'admin'),
   ];
 
   Future<void> _logout() async {
@@ -134,6 +136,12 @@ class _AdminShellState extends ConsumerState<AdminShell> {
         activeIcon: Icons.bar_chart,
         label: 'التقارير',
         index: 6,
+      ),
+      _NavItemData(
+        icon: Icons.person_outline,
+        activeIcon: Icons.person,
+        label: 'الحساب',
+        index: 7,
       ),
     ];
 

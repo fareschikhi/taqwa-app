@@ -11,6 +11,20 @@ class UserRemoteDatasource {
     return UserModel.fromJson(response.data);
   }
 
+  /// Edits the signed-in user's own account. Only these three fields are
+  /// accepted by the server; role and isActive are stripped there.
+  Future<UserModel> updateMe({
+    required String fullName,
+    required String phone,
+    required String email,
+  }) async {
+    final response = await _dio.patch(
+      '${ApiEndpoints.users}/me',
+      data: {'fullName': fullName, 'phone': phone, 'email': email},
+    );
+    return UserModel.fromJson(response.data);
+  }
+
   Future<void> setActive(int userId, bool isActive) async {
     await _dio.patch('${ApiEndpoints.users}/$userId', data: {'isActive': isActive});
   }

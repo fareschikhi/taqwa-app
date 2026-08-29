@@ -8,6 +8,7 @@ import 'pages/manager_students_page.dart';
 import 'pages/manager_parents_page.dart';
 import 'pages/justification_list_page.dart';
 import 'package:taqwa/core/widgets/app_text.dart';
+import 'package:taqwa/features/shared/presentation/pages/profile_page.dart';
 
 class ManagerShell extends StatefulWidget {
   const ManagerShell({super.key});
@@ -24,6 +25,7 @@ class _ManagerShellState extends State<ManagerShell> {
     ManagerStudentsPage(),
     ManagerParentsPage(),
     JustificationListPage(),
+    ProfilePage(role: 'manager'),
   ];
 
   @override
@@ -55,6 +57,11 @@ class _ManagerShellState extends State<ManagerShell> {
         icon: Icons.rule_outlined,
         activeIcon: Icons.rule,
         label: 'التبريرات',
+      ),
+      _NavItem(
+        icon: Icons.person_outline,
+        activeIcon: Icons.person,
+        label: 'الحساب',
       ),
     ];
 

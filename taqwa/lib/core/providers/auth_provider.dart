@@ -105,6 +105,26 @@ class AuthNotifier extends Notifier<AuthState> {
     }
   }
 
+  /// Saves the signed-in user's own details and keeps both the in-memory
+  /// state and the cached copy in step, so the change shows immediately and
+  /// survives a restart. Throws on failure so the caller can show why.
+  Future<void> updateProfile({
+    required String fullName,
+    required String phone,
+    required String email,
+  }) async {
+    final updated = await _userDatasource.updateMe(
+      fullName: fullName,
+      phone: phone,
+      email: email,
+    );
+    await _storage.write(
+      key: 'cached_user',
+      value: jsonEncode(updated.toJson()),
+    );
+    state = state.copyWith(user: updated);
+  }
+
   Future<void> logout() async {
     await _storage.delete(key: 'jwt_token');
     await _storage.delete(key: 'cached_user');

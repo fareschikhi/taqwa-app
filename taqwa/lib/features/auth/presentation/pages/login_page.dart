@@ -178,12 +178,12 @@ class _LoginPageState extends ConsumerState<LoginPage>
                           ),
                           SizedBox(height: 24.h),
                           AppTextField(
-                            label: 'رقم الهاتف',
-                            hint: '05X XXX XXXX',
+                            label: 'رقم الهاتف أو البريد الإلكتروني',
+                            hint: '05X XXX XXXX أو you@example.com',
                             controller: _phoneController,
-                            keyboardType: TextInputType.phone,
+                            keyboardType: TextInputType.emailAddress,
                             prefixIcon: const Icon(
-                              Icons.phone_outlined,
+                              Icons.person_outline,
                               color: AppColors.onSurfaceVariant,
                             ),
                             validator: (v) => (v == null || v.trim().isEmpty)

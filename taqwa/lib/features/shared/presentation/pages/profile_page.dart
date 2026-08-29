@@ -10,9 +10,38 @@ import '../../../../core/widgets/app_text_field.dart';
 import '../../../../core/providers/auth_provider.dart';
 import 'package:taqwa/core/widgets/app_text.dart';
 import '../widgets/change_password_sheet.dart';
+import 'package:taqwa/features/data/models/user_model.dart';
+import 'package:taqwa/features/data/repositories/auth_repository_impl.dart';
+
+/// Every role that can open the profile needs its own name. A manager used to
+/// fall through to the parent default and be shown as "ولي أمر".
+String roleLabelFor(UserRole role) {
+  switch (role) {
+    case UserRole.admin:
+      return 'مدير النظام';
+    case UserRole.manager:
+      return 'مشرف';
+    case UserRole.teacher:
+      return 'معلم';
+    case UserRole.parent:
+      return 'ولي أمر';
+    case UserRole.student:
+      return 'طالب';
+  }
+}
+
+/// The avatar letter. Taken from the name rather than the role, so two
+/// teachers no longer show the same initial.
+String initialFor(String fullName) {
+  final trimmed = fullName.trim();
+  return trimmed.isEmpty ? '؟' : trimmed.characters.first;
+}
 
 class ProfilePage extends ConsumerStatefulWidget {
   const ProfilePage({super.key, required this.role});
+
+  /// Kept for the callers that already pass it; the details on screen come
+  /// from the signed-in user rather than this string.
   final String role;
 
   @override
@@ -20,31 +49,46 @@ class ProfilePage extends ConsumerStatefulWidget {
 }
 
 class _ProfilePageState extends ConsumerState<ProfilePage> {
-  final _nameController = TextEditingController(text: 'أحمد محمد السالم');
-  final _phoneController = TextEditingController(text: '0501234567');
-  final _emailController = TextEditingController(text: 'ahmed@farqan.edu.sa');
+  final _nameController = TextEditingController();
+  final _phoneController = TextEditingController();
+  final _emailController = TextEditingController();
   bool _editMode = false;
   bool _isSaving = false;
 
-  String get _roleLabel {
-    switch (widget.role) {
-      case 'admin':
-        return 'مدير النظام';
-      case 'teacher':
-        return 'معلم';
-      default:
-        return 'ولي أمر';
-    }
+  /// Set once the controllers have been seeded, so a rebuild while the user is
+  /// typing does not overwrite what they have entered.
+  bool _seeded = false;
+
+  void _seedFrom(UserModel user) {
+    if (_seeded) return;
+    _nameController.text = user.fullName;
+    _phoneController.text = user.phone ?? '';
+    _emailController.text = user.email ?? '';
+    _seeded = true;
   }
 
-  String get _roleIcon {
-    switch (widget.role) {
-      case 'admin':
-        return 'م';
-      case 'teacher':
-        return 'أ';
-      default:
-        return 'خ';
+  Future<void> _save() async {
+    setState(() => _isSaving = true);
+    try {
+      await ref
+          .read(authProvider.notifier)
+          .updateProfile(
+            fullName: _nameController.text.trim(),
+            phone: _phoneController.text.trim(),
+            email: _emailController.text.trim(),
+          );
+      if (!mounted) return;
+      setState(() => _editMode = false);
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: AppText('تم حفظ التغييرات')),
+      );
+    } catch (e) {
+      if (!mounted) return;
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(SnackBar(content: AppText(AuthRepository.errorMessage(e))));
+    } finally {
+      if (mounted) setState(() => _isSaving = false);
     }
   }
 
@@ -66,12 +110,21 @@ class _ProfilePageState extends ConsumerState<ProfilePage> {
 
   @override
   Widget build(BuildContext context) {
+    final user = ref.watch(authProvider).user;
+    if (user == null) {
+      return const Scaffold(
+        backgroundColor: AppColors.background,
+        body: Center(child: CircularProgressIndicator(color: AppColors.primary)),
+      );
+    }
+    _seedFrom(user);
+
     return Scaffold(
       backgroundColor: AppColors.background,
       body: SafeArea(
         child: RefreshIndicator(
           color: AppColors.primary,
-          onRefresh: () async {},
+          onRefresh: () => ref.read(authProvider.notifier).checkAutoLogin(),
           child: SingleChildScrollView(
             physics: const AlwaysScrollableScrollPhysics(),
             child: Column(
@@ -145,7 +198,7 @@ class _ProfilePageState extends ConsumerState<ProfilePage> {
                           ),
                           child: Center(
                             child: AppText(
-                              _roleIcon,
+                              initialFor(user.fullName),
                               style: AppTextStyles.headlineLgMobile.copyWith(
                                 color: AppColors.onPrimary,
                               ),
@@ -192,7 +245,7 @@ class _ProfilePageState extends ConsumerState<ProfilePage> {
                         ),
                       ),
                       child: AppText(
-                        _roleLabel,
+                        roleLabelFor(user.role),
                         style: AppTextStyles.labelMd.copyWith(
                           color: AppColors.onPrimary,
                         ),
@@ -251,17 +304,7 @@ class _ProfilePageState extends ConsumerState<ProfilePage> {
                         variant: AppButtonVariant.gradient,
                         icon: Icons.save_outlined,
                         isLoading: _isSaving,
-                        onPressed: () {
-                          setState(() => _isSaving = true);
-                          Future.delayed(const Duration(seconds: 1), () {
-                            if (mounted) {
-                              setState(() {
-                                _isSaving = false;
-                                _editMode = false;
-                              });
-                            }
-                          });
-                        },
+                        onPressed: _save,
                       ),
                     ],
                     SizedBox(height: 24.h),
