@@ -6,6 +6,8 @@ import '../../../../core/theme/app_colors.dart';
 import '../../../../core/theme/app_text_styles.dart';
 import '../../../../core/constants/app_constants.dart';
 import '../../../../core/utils/attendance_draft.dart';
+import '../../../../core/utils/attendance_queue.dart';
+import '../../../data/local/attendance_queue_store.dart';
 import '../../../../core/widgets/app_button.dart';
 import '../../../../core/widgets/attendance_chip.dart';
 import '../../../../core/widgets/confirm_discard_attendance_dialog.dart';
@@ -40,6 +42,12 @@ class _AttendancePageState extends ConsumerState<AttendancePage> {
   List<TeacherStudentModel> _students = [];
   final _repo = TeacherRepository();
 
+  final _queueStore = AttendanceQueueStore();
+
+  /// Marks the server has not taken yet. Mirrors what is on disk, so the
+  /// banner can render without an await.
+  List<Map<String, dynamic>> _queued = [];
+
   int? get _teacherId => ref.read(authProvider).user?.teacherId;
 
   String get _todayStr {
@@ -65,6 +73,9 @@ class _AttendancePageState extends ConsumerState<AttendancePage> {
       setState(() => _isLoading = false);
       return;
     }
+
+    final stored = await _queueStore.read(tid);
+    if (mounted) setState(() => _queued = stored);
 
     setState(() => _isLoading = true);
     try {
@@ -118,7 +129,9 @@ class _AttendancePageState extends ConsumerState<AttendancePage> {
         _isLoading = false;
       });
     } catch (_) {
+      // Without this an empty screen reads as "this halaqa has no students".
       setState(() => _isLoading = false);
+      _showSnack('تعذّر تحميل قائمة الطلاب', isError: true);
     }
   }
 
@@ -180,7 +193,12 @@ class _AttendancePageState extends ConsumerState<AttendancePage> {
       if (mounted) setState(() => _savedAttendance[studentId] = status);
       return true;
     } catch (_) {
-      _showSnack('فشل حفظ حضور الطالب', isError: true);
+      await _enqueue([
+        {'studentId': studentId, 'date': _todayStr, 'status': apiStatus},
+      ]);
+      _showSnack('لا يوجد اتصال، سيتم حفظ الحضور تلقائياً', isError: true);
+      // Still false: the server has not taken this mark, so the caller must
+      // not open the memorization sheet on top of it.
       return false;
     } finally {
       if (mounted) setState(() => _savingStudentIds.remove(studentId));
@@ -211,7 +229,50 @@ class _AttendancePageState extends ConsumerState<AttendancePage> {
       });
       _showSnack('تم حفظ حضور ${payload.length} طالب', isError: false);
     } catch (_) {
-      _showSnack('فشل حفظ الحضور', isError: true);
+      await _enqueue(payload);
+      // The marks are on disk now, so this is a delay rather than a loss.
+      _showSnack('لا يوجد اتصال، سيتم حفظ الحضور تلقائياً', isError: true);
+    } finally {
+      if (mounted) setState(() => _isSaving = false);
+    }
+  }
+
+  /// Folds records into the stored queue, last write winning per student and
+  /// date, and mirrors the result into state for the banner.
+  Future<void> _enqueue(List<Map<String, dynamic>> records) async {
+    final teacherId = _teacherId;
+    if (teacherId == null) return;
+
+    final merged = mergeQueued(_queued, records);
+    await _queueStore.write(teacherId, merged);
+    if (mounted) setState(() => _queued = merged);
+  }
+
+  /// Sends everything waiting. All-or-nothing: the batch endpoint does not
+  /// report partial success, so a failure leaves the queue for the next try.
+  Future<void> _flushQueue() async {
+    final teacherId = _teacherId;
+    if (teacherId == null || _queued.isEmpty || _isSaving) return;
+
+    final sending = List<Map<String, dynamic>>.from(_queued);
+    setState(() => _isSaving = true);
+    try {
+      await _repo.submitAttendanceBatch(sending);
+      await _queueStore.clear(teacherId);
+      if (!mounted) return;
+      setState(() {
+        _queued = [];
+        for (final record in sending) {
+          final id = record['studentId'] as int;
+          _savedAttendance[id] = attendanceStatusFromApi(
+            record['status'] as String,
+          );
+        }
+      });
+      _showSnack('تم حفظ ${sending.length} حضور مؤجل', isError: false);
+    } catch (_) {
+      // Silent: this runs unprompted on mount and resume, and a teacher who
+      // is still offline does not need telling twice.
     } finally {
       if (mounted) setState(() => _isSaving = false);
     }
