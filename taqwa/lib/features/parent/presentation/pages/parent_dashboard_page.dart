@@ -14,6 +14,7 @@ import '../../../data/repositories/student_repository.dart';
 import '../../../data/models/attendance_summary_model.dart';
 import '../../../data/models/parent/parent_child_model.dart';
 import 'child_details_page.dart';
+import 'package:taqwa/core/widgets/app_text.dart';
 
 class ParentDashboardPage extends ConsumerStatefulWidget {
   const ParentDashboardPage({super.key});
@@ -157,7 +158,7 @@ class _ParentDashboardPageState extends ConsumerState<ParentDashboardPage> {
               ),
             ),
             SizedBox(width: 8.w),
-            Text(
+            AppText(
               'تقوى',
               style: AppTextStyles.headlineMd.copyWith(
                 color: AppColors.primary,
@@ -173,14 +174,14 @@ class _ParentDashboardPageState extends ConsumerState<ParentDashboardPage> {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.end,
       children: [
-        Text(
+        AppText(
           parentName.isNotEmpty ? 'أهلاً، $parentName' : 'أهلاً بك',
           style: AppTextStyles.headlineLgMobile.copyWith(
             color: AppColors.onBackground,
           ),
         ),
         SizedBox(height: 4.h),
-        Text(
+        AppText(
           'تابع تقدم أبنائك في حفظ القرآن الكريم.',
           style: AppTextStyles.bodyMd.copyWith(
             color: AppColors.onSurfaceVariant,
@@ -226,7 +227,7 @@ class _ParentDashboardPageState extends ConsumerState<ParentDashboardPage> {
                 Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    Text(
+                    AppText(
                       'عرض التفاصيل',
                       style: AppTextStyles.labelMd.copyWith(
                         color: AppColors.onPrimary.withValues(alpha: 0.8),
@@ -243,14 +244,14 @@ class _ParentDashboardPageState extends ConsumerState<ParentDashboardPage> {
                 Column(
                   crossAxisAlignment: CrossAxisAlignment.end,
                   children: [
-                    Text(
+                    AppText(
                       child.fullName,
                       style: AppTextStyles.headlineSm.copyWith(
                         color: AppColors.onPrimary,
                       ),
                     ),
                     SizedBox(height: 4.h),
-                    Text(
+                    AppText(
                       child.halaqaName ?? 'غير مسجل في حلقة',
                       style: AppTextStyles.labelSm.copyWith(
                         color: AppColors.onPrimary.withValues(alpha: 0.8),
@@ -263,7 +264,7 @@ class _ParentDashboardPageState extends ConsumerState<ParentDashboardPage> {
                   avatarUrl: child.avatar,
                   size: 56.w,
                   backgroundColor: AppColors.onPrimary.withValues(alpha: 0.2),
-                  fallback: Text(
+                  fallback: AppText(
                     child.fullName.isNotEmpty ? child.fullName[0] : '؟',
                     style: AppTextStyles.headlineMd.copyWith(
                       color: AppColors.onPrimary,
@@ -322,7 +323,7 @@ class _ParentDashboardPageState extends ConsumerState<ParentDashboardPage> {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.end,
       children: [
-        Text(
+        AppText(
           'آخر حضور',
           style: AppTextStyles.headlineSm.copyWith(color: AppColors.onSurface),
         ),
@@ -341,7 +342,7 @@ class _ParentDashboardPageState extends ConsumerState<ParentDashboardPage> {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.end,
       children: [
-        Text(
+        AppText(
           'ملاحظات المعلم',
           style: AppTextStyles.headlineSm.copyWith(color: AppColors.onSurface),
         ),
@@ -349,7 +350,7 @@ class _ParentDashboardPageState extends ConsumerState<ParentDashboardPage> {
         if (_notes.isEmpty)
           Padding(
             padding: EdgeInsets.symmetric(vertical: 16.h),
-            child: Text(
+            child: AppText(
               'لا توجد ملاحظات بعد',
               style: AppTextStyles.bodyMd.copyWith(
                 color: AppColors.onSurfaceVariant,
@@ -379,14 +380,14 @@ class _ParentDashboardPageState extends ConsumerState<ParentDashboardPage> {
                   children: [
                     Row(
                       children: [
-                        Text(
+                        AppText(
                           displayDate,
                           style: AppTextStyles.labelSm.copyWith(
                             color: AppColors.outline,
                           ),
                         ),
                         const Spacer(),
-                        Text(
+                        AppText(
                           (teacherName['fullName'] as String?) ?? '',
                           style: AppTextStyles.labelMdBold.copyWith(
                             color: AppColors.primary,
@@ -395,7 +396,7 @@ class _ParentDashboardPageState extends ConsumerState<ParentDashboardPage> {
                       ],
                     ),
                     SizedBox(height: 8.h),
-                    Text(
+                    AppText(
                       (n['note'] as String?) ?? '',
                       style: AppTextStyles.bodyMd.copyWith(
                         color: AppColors.onSurface,
@@ -420,14 +421,14 @@ class _StatChip extends StatelessWidget {
   @override
   Widget build(BuildContext context) => Column(
     children: [
-      Text(
+      AppText(
         value,
         style: AppTextStyles.headlineSm.copyWith(
           color: AppColors.onPrimary,
           fontWeight: FontWeight.w700,
         ),
       ),
-      Text(
+      AppText(
         label,
         style: AppTextStyles.labelSm.copyWith(
           color: AppColors.onPrimary.withValues(alpha: 0.8),

@@ -12,6 +12,7 @@ import '../../../data/models/parent/parent_payload_dto.dart';
 import '../../../data/repositories/parent_repository.dart';
 import '../widgets/avatar_picker_field.dart';
 import '../widgets/form_section.dart';
+import 'package:taqwa/core/widgets/app_text.dart';
 
 /// Create or edit a parent account. Shared by the admin and the manager
 /// sections — both roles hit the same POST/PATCH /parents routes, so they get
@@ -100,7 +101,7 @@ class _ParentFormPageState extends State<ParentFormPage> {
       if (!mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
-          content: Text(
+          content: AppText(
             _isEditing
                 ? 'تم تحديث بيانات ولي الأمر'
                 : 'تم إضافة ولي الأمر بنجاح',
@@ -112,7 +113,7 @@ class _ParentFormPageState extends State<ParentFormPage> {
       if (!mounted) return;
       ScaffoldMessenger.of(
         context,
-      ).showSnackBar(SnackBar(content: Text(ParentRepository.errorMessage(e))));
+      ).showSnackBar(SnackBar(content: AppText(ParentRepository.errorMessage(e))));
     } finally {
       if (mounted) setState(() => _isLoading = false);
     }
@@ -265,7 +266,7 @@ class _ParentFormPageState extends State<ParentFormPage> {
           SizedBox(height: 4.h),
           Align(
             alignment: AlignmentDirectional.centerEnd,
-            child: Text(
+            child: AppText(
               'سيتمكن ولي الأمر من تغييرها لاحقاً.',
               style: AppTextStyles.labelSm.copyWith(
                 color: AppColors.onSurfaceVariant,
@@ -293,7 +294,7 @@ class _ParentFormPageState extends State<ParentFormPage> {
             size: 22.w,
           ),
           SizedBox(width: 8.w),
-          Text(
+          AppText(
             _isEditing ? 'تعديل ولي أمر' : 'إضافة ولي أمر جديد',
             style: AppTextStyles.labelMd.copyWith(color: AppColors.primary),
           ),

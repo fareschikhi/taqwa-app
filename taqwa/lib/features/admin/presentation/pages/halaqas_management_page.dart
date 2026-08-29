@@ -10,6 +10,7 @@ import 'package:taqwa/features/data/models/halaqa/halaqa_model.dart';
 import 'package:taqwa/core/widgets/card_action_row.dart';
 import 'create_halaqa_page.dart';
 import '../admin_shell.dart';
+import 'package:taqwa/core/widgets/app_text.dart';
 
 class HalaqasManagementPage extends StatefulWidget {
   const HalaqasManagementPage({super.key});
@@ -46,13 +47,13 @@ class _HalaqasManagementPageState extends State<HalaqasManagementPage> {
       await _halaqaRepo.deleteHalaqa(id);
       if (!mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('تم حذف الحلقة بنجاح')),
+        const SnackBar(content: AppText('تم حذف الحلقة بنجاح')),
       );
       _load();
     } catch (e) {
       if (!mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text(HalaqaRepository.errorMessage(e))),
+        SnackBar(content: AppText(HalaqaRepository.errorMessage(e))),
       );
     }
   }
@@ -130,7 +131,7 @@ class _HalaqasManagementPageState extends State<HalaqasManagementPage> {
                           ),
                         ),
                         const Spacer(),
-                        Text(
+                        AppText(
                           'تقوى',
                           style: AppTextStyles.headlineMd.copyWith(
                             color: AppColors.primary,
@@ -139,13 +140,13 @@ class _HalaqasManagementPageState extends State<HalaqasManagementPage> {
                       ],
                     ),
                     SizedBox(height: 16.h),
-                    Text(
+                    AppText(
                       'إدارة الحلقات',
                       style: AppTextStyles.headlineLgMobile.copyWith(
                         color: AppColors.onSurface,
                       ),
                     ),
-                    Text(
+                    AppText(
                       'عرض الحلقات وحالاتها والمعلمين المسندين.',
                       style: AppTextStyles.bodyMd.copyWith(
                         color: AppColors.onSurfaceVariant,
@@ -172,7 +173,7 @@ class _HalaqasManagementPageState extends State<HalaqasManagementPage> {
                             child: Container(
                               height: 300.h,
                               alignment: Alignment.center,
-                              child: Text(
+                              child: AppText(
                                 'لا توجد حلقات',
                                 style: AppTextStyles.bodyMd
                                     .copyWith(color: AppColors.onSurfaceVariant),
@@ -206,7 +207,7 @@ class _HalaqasManagementPageState extends State<HalaqasManagementPage> {
         onPressed: () => _openForm(null),
         backgroundColor: AppColors.primary,
         icon: const Icon(Icons.add, color: AppColors.onPrimary),
-        label: Text(
+        label: AppText(
           'حلقة جديدة',
           style: AppTextStyles.labelMd.copyWith(color: AppColors.onPrimary),
         ),
@@ -277,7 +278,7 @@ class _HalaqaCard extends StatelessWidget {
             child: Icon(icon, color: AppColors.onPrimary, size: 26.w),
           ),
           SizedBox(height: 12.h),
-          Text(
+          AppText(
             name,
             style: AppTextStyles.headlineSm
                 .copyWith(color: AppColors.onSurface),
@@ -286,7 +287,7 @@ class _HalaqaCard extends StatelessWidget {
             overflow: TextOverflow.ellipsis,
           ),
           SizedBox(height: 4.h),
-          Text(
+          AppText(
             teacherName.isNotEmpty ? teacherName : '—',
             style: AppTextStyles.labelSm
                 .copyWith(color: AppColors.onSurfaceVariant),
@@ -306,14 +307,14 @@ class _HalaqaCard extends StatelessWidget {
                   borderRadius:
                       BorderRadius.circular(AppConstants.radiusFull),
                 ),
-                child: Text(
+                child: AppText(
                   level.isNotEmpty ? level : '—',
                   style: AppTextStyles.labelSm.copyWith(color: levelColor),
                 ),
               ),
               Row(
                 children: [
-                  Text(
+                  AppText(
                     '$studentCount',
                     style: AppTextStyles.labelMdBold
                         .copyWith(color: AppColors.onSurface),

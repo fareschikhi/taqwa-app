@@ -14,6 +14,7 @@ import 'pages/teachers_management_page.dart';
 import 'pages/managers_management_page.dart';
 import 'pages/parents_management_page.dart';
 import 'pages/reports_page.dart';
+import 'package:taqwa/core/widgets/app_text.dart';
 
 class AdminShellScope extends InheritedWidget {
   final int currentIndex;
@@ -167,14 +168,14 @@ class _AdminShellState extends ConsumerState<AdminShell> {
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
-                        Text(
+                        AppText(
                           'تقوى',
                           style: AppTextStyles.headlineMd.copyWith(
                             color: AppColors.primary,
                             fontWeight: FontWeight.bold,
                           ),
                         ),
-                        Text(
+                        AppText(
                           'لوحة التحكم - الإدارة',
                           style: AppTextStyles.labelSm.copyWith(
                             color: AppColors.onSurfaceVariant,
@@ -227,7 +228,7 @@ class _AdminShellState extends ConsumerState<AdminShell> {
                             size: 22.w,
                           ),
                           SizedBox(width: 14.w),
-                          Text(
+                          AppText(
                             item.label,
                             style: AppTextStyles.labelMd.copyWith(
                               color: isActive
@@ -267,7 +268,7 @@ class _AdminShellState extends ConsumerState<AdminShell> {
                         size: 22.w,
                       ),
                       SizedBox(width: 14.w),
-                      Text(
+                      AppText(
                         'تسجيل الخروج',
                         style: AppTextStyles.labelMd.copyWith(
                           color: AppColors.error,

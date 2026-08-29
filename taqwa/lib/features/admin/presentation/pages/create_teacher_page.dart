@@ -11,6 +11,7 @@ import 'package:taqwa/features/data/models/teacher/teacher_payload_dto.dart';
 import 'package:taqwa/features/data/models/teacher/teacher_model.dart';
 import 'package:taqwa/features/data/services/image_upload_service.dart';
 import '../../../data/repositories/teacher_repository.dart';
+import 'package:taqwa/core/widgets/app_text.dart';
 
 class CreateTeacherPage extends StatefulWidget {
   /// Pass [editTeacher] to pre-fill the form for editing an existing teacher.
@@ -81,7 +82,7 @@ class _CreateTeacherPageState extends State<CreateTeacherPage> {
                 Icons.photo_library,
                 color: AppColors.primary,
               ),
-              title: Text('اختيار من المعرض', style: AppTextStyles.bodyMd),
+              title: AppText('اختيار من المعرض', style: AppTextStyles.bodyMd),
               onTap: () async {
                 Navigator.pop(ctx);
                 final img = await _picker.pickImage(
@@ -95,7 +96,7 @@ class _CreateTeacherPageState extends State<CreateTeacherPage> {
             ),
             ListTile(
               leading: const Icon(Icons.camera_alt, color: AppColors.primary),
-              title: Text('التقاط صورة بالكاميرا', style: AppTextStyles.bodyMd),
+              title: AppText('التقاط صورة بالكاميرا', style: AppTextStyles.bodyMd),
               onTap: () async {
                 Navigator.pop(ctx);
                 final img = await _picker.pickImage(
@@ -162,7 +163,7 @@ class _CreateTeacherPageState extends State<CreateTeacherPage> {
 
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
-          content: Text(
+          content: AppText(
             _isEditing ? 'تم تحديث بيانات المعلم' : 'تم إضافة المعلم بنجاح',
           ),
         ),
@@ -172,7 +173,7 @@ class _CreateTeacherPageState extends State<CreateTeacherPage> {
     } catch (e) {
       if (!mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text(TeacherRepository.errorMessage(e))),
+        SnackBar(content: AppText(TeacherRepository.errorMessage(e))),
       );
     } finally {
       if (mounted) setState(() => _isLoading = false);
@@ -255,13 +256,13 @@ class _CreateTeacherPageState extends State<CreateTeacherPage> {
                               ),
                             ),
                             SizedBox(height: 8.h),
-                            Text(
+                            AppText(
                               'الصورة الشخصية',
                               style: AppTextStyles.labelMd.copyWith(
                                 color: AppColors.onSurface,
                               ),
                             ),
-                            Text(
+                            AppText(
                               _selectedImage != null
                                   ? 'تم اختيار صورة'
                                   : 'PNG أو JPG (الحد الأقصى 2MB)',
@@ -404,7 +405,7 @@ class _CreateTeacherPageState extends State<CreateTeacherPage> {
                 color: AppColors.onSurface,
               ),
               const Spacer(),
-              Text(
+              AppText(
                 'تقوى',
                 style: AppTextStyles.headlineMd.copyWith(
                   color: AppColors.primary,
@@ -416,7 +417,7 @@ class _CreateTeacherPageState extends State<CreateTeacherPage> {
           Row(
             mainAxisAlignment: MainAxisAlignment.end,
             children: [
-              Text(
+              AppText(
                 _isEditing ? 'تعديل معلم' : 'إضافة معلم جديد',
                 style: AppTextStyles.labelSm.copyWith(
                   color: AppColors.onSurfaceVariant,
@@ -427,7 +428,7 @@ class _CreateTeacherPageState extends State<CreateTeacherPage> {
                 size: 16,
                 color: AppColors.onSurfaceVariant,
               ),
-              Text(
+              AppText(
                 'إدارة المعلمين',
                 style: AppTextStyles.labelSm.copyWith(
                   color: AppColors.onSurfaceVariant,
@@ -436,13 +437,13 @@ class _CreateTeacherPageState extends State<CreateTeacherPage> {
             ],
           ),
           SizedBox(height: 8.h),
-          Text(
+          AppText(
             _isEditing ? 'تعديل بيانات المعلم' : 'إضافة معلم جديد',
             style: AppTextStyles.headlineLgMobile.copyWith(
               color: AppColors.onSurface,
             ),
           ),
-          Text(
+          AppText(
             _isEditing
                 ? 'قم بتحديث بيانات المعلم.'
                 : 'قم بإدخال بيانات المعلم الجديد لإضافته إلى النظام.',
@@ -466,7 +467,7 @@ class _SectionHeader extends StatelessWidget {
     return Row(
       mainAxisAlignment: MainAxisAlignment.end,
       children: [
-        Text(
+        AppText(
           title,
           style: AppTextStyles.headlineSm.copyWith(color: AppColors.primary),
         ),

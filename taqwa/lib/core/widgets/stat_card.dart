@@ -4,6 +4,7 @@ import '../theme/app_colors.dart';
 import '../theme/app_text_styles.dart';
 import '../theme/app_shadows.dart';
 import '../constants/app_constants.dart';
+import 'package:taqwa/core/widgets/app_text.dart';
 
 /// KPI / Statistics card matching admin dashboard design
 class StatCard extends StatefulWidget {
@@ -105,7 +106,7 @@ class _StatCardState extends State<StatCard> {
                             ),
                           ),
                           // Value
-                          Text(
+                          AppText(
                             widget.value,
                             style: AppTextStyles.headlineMd.copyWith(
                               color: valueColor,
@@ -145,7 +146,7 @@ class _StatCardState extends State<StatCard> {
                                         : AppColors.error,
                                   ),
                                   SizedBox(width: 2.w),
-                                  Text(
+                                  AppText(
                                     widget.trend!,
                                     style: AppTextStyles.caption.copyWith(
                                       color: widget.trendPositive == true
@@ -159,7 +160,7 @@ class _StatCardState extends State<StatCard> {
                           else
                             const SizedBox.shrink(),
                           // Label
-                          Text(
+                          AppText(
                             widget.label,
                             style: AppTextStyles.labelSm.copyWith(
                               color: AppColors.onSurfaceVariant,

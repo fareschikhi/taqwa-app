@@ -9,6 +9,7 @@ import '../../../../core/widgets/avatar_widget.dart';
 import '../../../../core/providers/selected_child_provider.dart';
 import '../../../data/repositories/student_repository.dart';
 import '../../../data/models/parent/parent_child_model.dart';
+import 'package:taqwa/core/widgets/app_text.dart';
 
 class ChildDetailsPage extends ConsumerStatefulWidget {
   const ChildDetailsPage({super.key});
@@ -166,7 +167,7 @@ class _ChildDetailsPageState extends ConsumerState<ChildDetailsPage> {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.end,
         children: [
-          Text(
+          AppText(
             'تقدم الحفظ',
             style: AppTextStyles.headlineSm.copyWith(
               color: AppColors.onSurface,
@@ -222,7 +223,7 @@ class _ChildDetailsPageState extends ConsumerState<ChildDetailsPage> {
                 ),
               ),
               const Spacer(),
-              Text(
+              AppText(
                 'ملف الطالب',
                 style: AppTextStyles.headlineMd.copyWith(
                   color: AppColors.onPrimary,
@@ -238,13 +239,13 @@ class _ChildDetailsPageState extends ConsumerState<ChildDetailsPage> {
               Column(
                 crossAxisAlignment: CrossAxisAlignment.end,
                 children: [
-                  Text(
+                  AppText(
                     child.fullName,
                     style: AppTextStyles.headlineSm.copyWith(
                       color: AppColors.onPrimary,
                     ),
                   ),
-                  Text(
+                  AppText(
                     (halaqa?['name'] as String?) ?? 'غير مسجل في حلقة',
                     style: AppTextStyles.labelMd.copyWith(
                       color: AppColors.onPrimary.withValues(alpha: 0.8),
@@ -257,7 +258,7 @@ class _ChildDetailsPageState extends ConsumerState<ChildDetailsPage> {
                 avatarUrl: child.avatar,
                 size: 64.w,
                 backgroundColor: AppColors.onPrimary.withValues(alpha: 0.2),
-                fallback: Text(
+                fallback: AppText(
                   child.fullName.isNotEmpty ? child.fullName[0] : '؟',
                   style: AppTextStyles.headlineLgMobile.copyWith(
                     color: AppColors.onPrimary,
@@ -302,7 +303,7 @@ class _InfoBox extends StatelessWidget {
           Row(
             mainAxisAlignment: MainAxisAlignment.end,
             children: [
-              Text(
+              AppText(
                 label,
                 style: AppTextStyles.labelSm.copyWith(
                   color: AppColors.onSurfaceVariant,
@@ -313,7 +314,7 @@ class _InfoBox extends StatelessWidget {
             ],
           ),
           SizedBox(height: 6.h),
-          Text(
+          AppText(
             value,
             style: AppTextStyles.labelMdBold.copyWith(
               color: AppColors.onSurface,
@@ -347,12 +348,12 @@ class _CountRow extends StatelessWidget {
             color: color.withValues(alpha: 0.1),
             borderRadius: BorderRadius.circular(AppConstants.radiusFull),
           ),
-          child: Text(
+          child: AppText(
             '$count',
             style: AppTextStyles.labelMdBold.copyWith(color: color),
           ),
         ),
-        Text(
+        AppText(
           label,
           style: AppTextStyles.labelMd.copyWith(color: AppColors.onSurface),
         ),

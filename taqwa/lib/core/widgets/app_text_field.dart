@@ -3,6 +3,7 @@ import 'package:flutter_screenutil/flutter_screenutil.dart';
 import '../theme/app_colors.dart';
 import '../theme/app_text_styles.dart';
 import '../constants/app_constants.dart';
+import 'package:taqwa/core/widgets/app_text.dart';
 
 class AppTextField extends StatefulWidget {
   const AppTextField({
@@ -76,7 +77,7 @@ class _AppTextFieldState extends State<AppTextField> {
       mainAxisSize: MainAxisSize.min,
       children: [
         if (widget.label != null) ...[
-          Text(
+          AppText(
             widget.label!,
             style: AppTextStyles.labelMd.copyWith(
               color: AppColors.onSurfaceVariant,

@@ -11,6 +11,7 @@ import '../../../../features/data/repositories/absence_justification_repository.
 import '../../../../features/data/models/absence_justification_model.dart';
 import '../../../../features/data/models/unjustified_attendance_model.dart';
 import '../widgets/justify_absence_sheet.dart';
+import 'package:taqwa/core/widgets/app_text.dart';
 
 class JustificationListPage extends ConsumerStatefulWidget {
   const JustificationListPage({super.key});
@@ -78,7 +79,7 @@ class _JustificationListPageState extends ConsumerState<JustificationListPage> {
                 child: Row(
                   children: [
                     const Spacer(),
-                    Text(
+                    AppText(
                       'تقوى',
                       style: AppTextStyles.headlineMd.copyWith(
                         color: AppColors.primary,
@@ -92,13 +93,13 @@ class _JustificationListPageState extends ConsumerState<JustificationListPage> {
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.end,
                   children: [
-                    Text(
+                    AppText(
                       'تبريرات الغياب',
                       style: AppTextStyles.headlineLgMobile.copyWith(
                         color: AppColors.onSurface,
                       ),
                     ),
-                    Text(
+                    AppText(
                       'سجل تبريرات الغياب للطلاب',
                       style: AppTextStyles.bodyMd.copyWith(
                         color: AppColors.onSurfaceVariant,
@@ -172,7 +173,7 @@ class _JustificationListPageState extends ConsumerState<JustificationListPage> {
     if (saved && mounted) {
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(
-          content: Text('تم حفظ العذر بنجاح', textAlign: TextAlign.right),
+          content: AppText('تم حفظ العذر بنجاح', textAlign: TextAlign.right),
           backgroundColor: AppColors.primary,
         ),
       );
@@ -199,7 +200,7 @@ class _JustificationListPageState extends ConsumerState<JustificationListPage> {
             ),
           ),
           SizedBox(height: 16.h),
-          Text(
+          AppText(
             showingPending
                 ? 'لا توجد غيابات بانتظار التبرير'
                 : 'لا توجد تبريرات بعد',
@@ -208,7 +209,7 @@ class _JustificationListPageState extends ConsumerState<JustificationListPage> {
             ),
           ),
           SizedBox(height: 8.h),
-          Text(
+          AppText(
             showingPending
                 ? 'كل حالات الغياب والتأخر لدى طلابك مبررة'
                 : 'ستظهر هنا تبريرات الغياب التي تضيفها',
@@ -278,7 +279,7 @@ class _UnjustifiedCard extends StatelessWidget {
                     color: statusBg,
                     borderRadius: BorderRadius.circular(AppConstants.radiusMd),
                   ),
-                  child: Text(
+                  child: AppText(
                     item.statusLabel,
                     style: AppTextStyles.labelSm.copyWith(color: statusFg),
                   ),
@@ -287,14 +288,14 @@ class _UnjustifiedCard extends StatelessWidget {
                 Column(
                   crossAxisAlignment: CrossAxisAlignment.end,
                   children: [
-                    Text(
+                    AppText(
                       item.studentName,
                       style: AppTextStyles.headlineSm.copyWith(
                         color: AppColors.onSurface,
                       ),
                     ),
                     SizedBox(height: 2.h),
-                    Text(
+                    AppText(
                       item.formattedDate,
                       style: AppTextStyles.labelMd.copyWith(
                         color: AppColors.onSurfaceVariant,
@@ -306,7 +307,7 @@ class _UnjustifiedCard extends StatelessWidget {
                 AvatarWidget(
                   avatarUrl: item.studentAvatar,
                   size: 44.w,
-                  fallback: Text(
+                  fallback: AppText(
                     initial,
                     style: AppTextStyles.headlineSm.copyWith(
                       color: AppColors.onPrimaryContainer,
@@ -375,14 +376,14 @@ class _JustificationCard extends StatelessWidget {
                   color: bgColor,
                   borderRadius: BorderRadius.circular(AppConstants.radiusMd),
                 ),
-                child: Text(
+                child: AppText(
                   item.reasonLabel,
                   style: AppTextStyles.labelSm.copyWith(color: fgColor),
                 ),
               ),
               Row(
                 children: [
-                  Text(
+                  AppText(
                     item.studentName,
                     style: AppTextStyles.headlineSm.copyWith(
                       color: AppColors.onSurface,
@@ -392,7 +393,7 @@ class _JustificationCard extends StatelessWidget {
                   AvatarWidget(
                     avatarUrl: item.studentAvatar,
                     size: 44.w,
-                    fallback: Text(
+                    fallback: AppText(
                       item.studentName.isNotEmpty ? item.studentName[0] : '؟',
                       style: AppTextStyles.headlineSm.copyWith(
                         color: AppColors.onPrimaryContainer,
@@ -417,14 +418,14 @@ class _JustificationCard extends StatelessWidget {
                 Row(
                   mainAxisAlignment: MainAxisAlignment.spaceBetween,
                   children: [
-                    Text(
+                    AppText(
                       formattedDate,
                       style: AppTextStyles.labelMd.copyWith(
                         color: AppColors.onSurface,
                         fontWeight: FontWeight.w600,
                       ),
                     ),
-                    Text(
+                    AppText(
                       'تاريخ الغياب',
                       style: AppTextStyles.labelMd.copyWith(
                         color: AppColors.onSurfaceVariant,
@@ -434,7 +435,7 @@ class _JustificationCard extends StatelessWidget {
                 ),
                 if (item.notes != null && item.notes!.isNotEmpty) ...[
                   SizedBox(height: 6.h),
-                  Text(
+                  AppText(
                     item.notes!,
                     style: AppTextStyles.bodyMd.copyWith(
                       color: AppColors.onSurfaceVariant,

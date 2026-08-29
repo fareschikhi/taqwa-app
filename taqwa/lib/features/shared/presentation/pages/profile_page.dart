@@ -8,6 +8,7 @@ import '../../../../core/constants/app_constants.dart';
 import '../../../../core/widgets/app_button.dart';
 import '../../../../core/widgets/app_text_field.dart';
 import '../../../../core/providers/auth_provider.dart';
+import 'package:taqwa/core/widgets/app_text.dart';
 
 class ProfilePage extends ConsumerStatefulWidget {
   const ProfilePage({super.key, required this.role});
@@ -107,7 +108,7 @@ class _ProfilePageState extends ConsumerState<ProfilePage> {
                                   size: 16.w,
                                 ),
                                 SizedBox(width: 4.w),
-                                Text(
+                                AppText(
                                   _editMode ? 'إلغاء' : 'تعديل',
                                   style: AppTextStyles.labelSm.copyWith(
                                     color: AppColors.onPrimary,
@@ -118,7 +119,7 @@ class _ProfilePageState extends ConsumerState<ProfilePage> {
                           ),
                         ),
                         const Spacer(),
-                        Text(
+                        AppText(
                           'الحساب',
                           style: AppTextStyles.headlineMd.copyWith(
                             color: AppColors.onPrimary,
@@ -142,7 +143,7 @@ class _ProfilePageState extends ConsumerState<ProfilePage> {
                             ),
                           ),
                           child: Center(
-                            child: Text(
+                            child: AppText(
                               _roleIcon,
                               style: AppTextStyles.headlineLgMobile.copyWith(
                                 color: AppColors.onPrimary,
@@ -171,7 +172,7 @@ class _ProfilePageState extends ConsumerState<ProfilePage> {
                       ],
                     ),
                     SizedBox(height: 12.h),
-                    Text(
+                    AppText(
                       _nameController.text,
                       style: AppTextStyles.headlineSm.copyWith(
                         color: AppColors.onPrimary,
@@ -189,7 +190,7 @@ class _ProfilePageState extends ConsumerState<ProfilePage> {
                           AppConstants.radiusFull,
                         ),
                       ),
-                      child: Text(
+                      child: AppText(
                         _roleLabel,
                         style: AppTextStyles.labelMd.copyWith(
                           color: AppColors.onPrimary,
@@ -298,7 +299,7 @@ class _SectionHeader extends StatelessWidget {
   Widget build(BuildContext context) => Row(
     mainAxisAlignment: MainAxisAlignment.end,
     children: [
-      Text(
+      AppText(
         title,
         style: AppTextStyles.headlineSm.copyWith(color: AppColors.primary),
       ),
@@ -329,7 +330,7 @@ class _SettingsTile extends StatelessWidget {
           children: [
             const Icon(Icons.chevron_left, color: AppColors.onSurfaceVariant),
             const Spacer(),
-            Text(
+            AppText(
               title,
               style: AppTextStyles.bodyMd.copyWith(color: AppColors.onSurface),
             ),

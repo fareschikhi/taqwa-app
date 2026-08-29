@@ -6,6 +6,7 @@ import 'package:taqwa/core/theme/app_colors.dart';
 import 'package:taqwa/core/theme/app_text_styles.dart';
 import 'package:taqwa/core/utils/last_session.dart';
 import 'package:taqwa/core/widgets/app_card.dart';
+import 'package:taqwa/core/widgets/app_text.dart';
 
 /// The last day the child was marked, and what they recited on it.
 ///
@@ -25,7 +26,7 @@ class LastSessionCard extends StatelessWidget {
         padding: EdgeInsets.all(16.w),
         child: Align(
           alignment: Alignment.centerRight,
-          child: Text(
+          child: AppText(
             'لا يوجد سجل حضور بعد',
             style: AppTextStyles.bodyMd.copyWith(
               color: AppColors.onSurfaceVariant,
@@ -55,7 +56,7 @@ class LastSessionCard extends StatelessWidget {
         children: [
           Row(
             children: [
-              Text(
+              AppText(
                 dateText,
                 style: AppTextStyles.labelMd.copyWith(color: AppColors.outline),
               ),
@@ -65,7 +66,7 @@ class LastSessionCard extends StatelessWidget {
           ),
           SizedBox(height: 12.h),
           if (session.entries.isEmpty)
-            Text(
+            AppText(
               'لم يُسجل حفظ في هذا اليوم',
               style: AppTextStyles.bodyMd.copyWith(
                 color: AppColors.onSurfaceVariant,
@@ -93,14 +94,14 @@ class LastSessionCard extends StatelessWidget {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.end,
         children: [
-          Text(
+          AppText(
             amountText,
             style: AppTextStyles.labelMdBold.copyWith(
               color: AppColors.onSurface,
             ),
             textAlign: TextAlign.end,
           ),
-          Text(
+          AppText(
             'سورة ${entry.surahName ?? 'رقم ${entry.surahNumber}'}',
             style: AppTextStyles.labelSm.copyWith(
               color: AppColors.onSurfaceVariant,
@@ -137,7 +138,7 @@ class _StatusPill extends StatelessWidget {
         children: [
           Icon(icon, size: 14.w, color: color),
           SizedBox(width: 4.w),
-          Text(
+          AppText(
             label,
             style: AppTextStyles.labelSm.copyWith(
               color: color,

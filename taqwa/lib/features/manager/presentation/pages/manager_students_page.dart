@@ -14,6 +14,7 @@ import '../../../../features/data/models/student/student_model.dart';
 import '../../../../features/data/repositories/student_repository.dart';
 import '../../../../features/data/repositories/manager_repository.dart';
 import '../../../shared/presentation/pages/student_form_page.dart';
+import 'package:taqwa/core/widgets/app_text.dart';
 
 class ManagerStudentsPage extends ConsumerStatefulWidget {
   const ManagerStudentsPage({super.key});
@@ -65,12 +66,12 @@ class _ManagerStudentsPageState extends ConsumerState<ManagerStudentsPage> {
       if (!mounted) return;
       ScaffoldMessenger.of(
         context,
-      ).showSnackBar(const SnackBar(content: Text('تم حذف الطالب بنجاح')));
+      ).showSnackBar(const SnackBar(content: AppText('تم حذف الطالب بنجاح')));
       _loadStudents();
     } catch (e) {
       if (!mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text(StudentRepository.errorMessage(e))),
+        SnackBar(content: AppText(StudentRepository.errorMessage(e))),
       );
     }
   }
@@ -158,7 +159,7 @@ class _ManagerStudentsPageState extends ConsumerState<ManagerStudentsPage> {
                 child: Row(
                   children: [
                     const Spacer(),
-                    Text(
+                    AppText(
                       'تقوى',
                       style: AppTextStyles.headlineMd.copyWith(
                         color: AppColors.primary,
@@ -172,13 +173,13 @@ class _ManagerStudentsPageState extends ConsumerState<ManagerStudentsPage> {
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.end,
                   children: [
-                    Text(
+                    AppText(
                       'إدارة الطلاب',
                       style: AppTextStyles.headlineLgMobile.copyWith(
                         color: AppColors.onSurface,
                       ),
                     ),
-                    Text(
+                    AppText(
                       'متابعة طلاب حلقاتك المسندة',
                       style: AppTextStyles.bodyMd.copyWith(
                         color: AppColors.onSurfaceVariant,
@@ -230,7 +231,7 @@ class _ManagerStudentsPageState extends ConsumerState<ManagerStudentsPage> {
                         child: Container(
                           height: 300.h,
                           alignment: Alignment.center,
-                          child: Text(
+                          child: AppText(
                             'لا يوجد طلاب',
                             style: AppTextStyles.bodyMd.copyWith(
                               color: AppColors.onSurfaceVariant,
@@ -366,7 +367,7 @@ class _StudentCard extends StatelessWidget {
             children: [
               Row(
                 children: [
-                  Text(
+                  AppText(
                     fullName,
                     style: AppTextStyles.headlineSm.copyWith(
                       color: AppColors.onSurface,
@@ -392,7 +393,7 @@ class _StudentCard extends StatelessWidget {
               if (phone.isNotEmpty)
                 Row(
                   children: [
-                    Text(
+                    AppText(
                       phone,
                       style: AppTextStyles.labelMd.copyWith(
                         color: AppColors.onSurfaceVariant,
@@ -420,7 +421,7 @@ class _StudentCard extends StatelessWidget {
                         AppConstants.radiusMd,
                       ),
                     ),
-                    child: Text(
+                    child: AppText(
                       '$attendanceCount حضور',
                       style: AppTextStyles.labelSm.copyWith(
                         color: AppColors.onSurfaceVariant,
@@ -454,7 +455,7 @@ class _StudentCard extends StatelessWidget {
                           ),
                         ),
                         SizedBox(width: 4.w),
-                        Text(
+                        AppText(
                           isActive ? 'نشط' : 'غير نشط',
                           style: AppTextStyles.labelSm.copyWith(
                             color: isActive
@@ -468,7 +469,7 @@ class _StudentCard extends StatelessWidget {
                 ],
               ),
               SizedBox(height: 4.h),
-              Text(
+              AppText(
                 halaqaName,
                 style: AppTextStyles.labelSm.copyWith(
                   color: AppColors.onSurfaceVariant,
@@ -516,7 +517,7 @@ class _FilterChipGroup extends StatelessWidget {
                       : AppColors.outlineVariant,
                 ),
               ),
-              child: Text(
+              child: AppText(
                 e.value,
                 style: AppTextStyles.labelMd.copyWith(
                   color: isSelected

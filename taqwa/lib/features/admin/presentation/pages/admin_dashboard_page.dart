@@ -13,6 +13,7 @@ import 'package:taqwa/features/data/repositories/teacher_repository.dart';
 import 'package:taqwa/features/data/repositories/halaqa_repository.dart';
 import 'package:taqwa/features/data/repositories/manager_repository.dart';
 import '../admin_shell.dart';
+import 'package:taqwa/core/widgets/app_text.dart';
 
 class AdminDashboardPage extends ConsumerStatefulWidget {
   const AdminDashboardPage({super.key});
@@ -176,7 +177,7 @@ class _AdminDashboardPageState extends ConsumerState<AdminDashboardPage> {
               ),
             ),
             SizedBox(width: 8.w),
-            Text(
+            AppText(
               'تقوى',
               style: AppTextStyles.headlineMd.copyWith(
                 color: AppColors.primary,
@@ -193,14 +194,14 @@ class _AdminDashboardPageState extends ConsumerState<AdminDashboardPage> {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.end,
       children: [
-        Text(
+        AppText(
           'مرحباً بك، $name',
           style: AppTextStyles.headlineLgMobile.copyWith(
             color: AppColors.primary,
           ),
         ),
         SizedBox(height: 4.h),
-        Text(
+        AppText(
           'إليك نظرة عامة على أداء المدرسة القرآنية اليوم.',
           style: AppTextStyles.bodyMd.copyWith(
             color: AppColors.onSurfaceVariant,
@@ -289,7 +290,7 @@ class _AdminDashboardPageState extends ConsumerState<AdminDashboardPage> {
                   color: AppColors.secondaryContainer.withValues(alpha: 0.4),
                   borderRadius: BorderRadius.circular(AppConstants.radiusFull),
                 ),
-                child: Text(
+                child: AppText(
                   'هذا الأسبوع',
                   style: AppTextStyles.labelSm.copyWith(
                     color: AppColors.secondary,
@@ -297,7 +298,7 @@ class _AdminDashboardPageState extends ConsumerState<AdminDashboardPage> {
                 ),
               ),
               const Spacer(),
-              Text(
+              AppText(
                 'نسب الحضور',
                 style: AppTextStyles.headlineSm.copyWith(
                   color: AppColors.onSurface,
@@ -310,7 +311,7 @@ class _AdminDashboardPageState extends ConsumerState<AdminDashboardPage> {
             Padding(
               padding: EdgeInsets.symmetric(vertical: 32.h),
               child: Center(
-                child: Text(
+                child: AppText(
                   _isLoading ? 'جارٍ التحميل...' : 'لا يوجد سجل حضور هذا الأسبوع',
                   style: AppTextStyles.bodyMd.copyWith(
                     color: AppColors.onSurfaceVariant,
@@ -349,7 +350,7 @@ class _AttendanceBarChart extends StatelessWidget {
           children: days
               .map(
                 (day) => Expanded(
-                  child: Text(
+                  child: AppText(
                     day.label,
                     style: AppTextStyles.caption.copyWith(
                       color: AppColors.outline,
@@ -370,7 +371,7 @@ class _AttendanceBarChart extends StatelessWidget {
       padding: EdgeInsets.symmetric(horizontal: 4.w),
       child: Column(
         children: [
-          Text(
+          AppText(
             rate == null ? '—' : '$rate%',
             style: AppTextStyles.caption.copyWith(
               color: rate == null ? AppColors.outline : AppColors.primary,

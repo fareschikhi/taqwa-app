@@ -3,6 +3,7 @@ import 'package:flutter_screenutil/flutter_screenutil.dart';
 import '../theme/app_colors.dart';
 import '../theme/app_text_styles.dart';
 import '../constants/app_constants.dart';
+import 'package:taqwa/core/widgets/app_text.dart';
 
 /// Reusable confirmation dialog for destructive delete actions.
 class ConfirmDeleteDialog extends StatelessWidget {
@@ -58,7 +59,7 @@ class ConfirmDeleteDialog extends StatelessWidget {
                 ),
                 const Spacer(),
                 Flexible(
-                  child: Text(
+                  child: AppText(
                     title,
                     style: AppTextStyles.headlineSm.copyWith(
                       color: AppColors.onSurface,
@@ -69,7 +70,7 @@ class ConfirmDeleteDialog extends StatelessWidget {
               ],
             ),
             SizedBox(height: 12.h),
-            Text(
+            AppText(
               message,
               style: AppTextStyles.bodyMd.copyWith(
                 color: AppColors.onSurfaceVariant,
@@ -92,7 +93,7 @@ class ConfirmDeleteDialog extends StatelessWidget {
                         ),
                       ),
                     ),
-                    child: Text(
+                    child: AppText(
                       'إغلاق',
                       style: AppTextStyles.button.copyWith(
                         color: AppColors.onSurfaceVariant,
@@ -114,7 +115,7 @@ class ConfirmDeleteDialog extends StatelessWidget {
                         ),
                       ),
                     ),
-                    child: Text(
+                    child: AppText(
                       'حذف',
                       style: AppTextStyles.button.copyWith(
                         color: AppColors.onError,

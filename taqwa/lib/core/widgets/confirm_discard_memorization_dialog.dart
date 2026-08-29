@@ -3,6 +3,7 @@ import 'package:flutter_screenutil/flutter_screenutil.dart';
 import '../theme/app_colors.dart';
 import '../theme/app_text_styles.dart';
 import '../constants/app_constants.dart';
+import 'package:taqwa/core/widgets/app_text.dart';
 
 /// Warns the teacher that marking a student absent discards the memorization
 /// already recorded for that student today.
@@ -65,7 +66,7 @@ class ConfirmDiscardMemorizationDialog extends StatelessWidget {
                   ),
                   const Spacer(),
                   Flexible(
-                    child: Text(
+                    child: AppText(
                       'حذف تسميع اليوم؟',
                       style: AppTextStyles.headlineSm.copyWith(
                         color: AppColors.onSurface,
@@ -76,7 +77,7 @@ class ConfirmDiscardMemorizationDialog extends StatelessWidget {
                 ],
               ),
               SizedBox(height: 12.h),
-              Text(
+              AppText(
                 'تم تسجيل تسميع لـ $studentName اليوم. تحديده كغائب سيحذف هذا '
                 'التسجيل نهائياً.',
                 style: AppTextStyles.bodyMd.copyWith(
@@ -100,7 +101,7 @@ class ConfirmDiscardMemorizationDialog extends StatelessWidget {
                           ),
                         ),
                       ),
-                      child: Text(
+                      child: AppText(
                         'إلغاء',
                         style: AppTextStyles.button.copyWith(
                           color: AppColors.onSurfaceVariant,
@@ -122,7 +123,7 @@ class ConfirmDiscardMemorizationDialog extends StatelessWidget {
                           ),
                         ),
                       ),
-                      child: Text(
+                      child: AppText(
                         'تحديد كغائب',
                         style: AppTextStyles.button.copyWith(
                           color: AppColors.onError,

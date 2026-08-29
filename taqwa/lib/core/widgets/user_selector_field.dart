@@ -4,6 +4,7 @@ import '../theme/app_colors.dart';
 import '../theme/app_text_styles.dart';
 import '../constants/app_constants.dart';
 import 'avatar_widget.dart';
+import 'package:taqwa/core/widgets/app_text.dart';
 
 /// A person that can be picked in a [UserSelectorField].
 ///
@@ -108,7 +109,7 @@ class _UserSelectorFieldState extends State<UserSelectorField> {
     return AvatarWidget(
       avatarUrl: option.avatar,
       size: size,
-      fallback: Text(
+      fallback: AppText(
         initial,
         style: AppTextStyles.labelMd.copyWith(
           color: AppColors.onPrimaryContainer,
@@ -124,7 +125,7 @@ class _UserSelectorFieldState extends State<UserSelectorField> {
       mainAxisSize: MainAxisSize.min,
       children: [
         if (widget.label != null) ...[
-          Text(
+          AppText(
             widget.label!,
             style: AppTextStyles.labelMd.copyWith(
               color: AppColors.onSurfaceVariant,
@@ -166,7 +167,7 @@ class _UserSelectorFieldState extends State<UserSelectorField> {
               size: 22.w,
             ),
             Expanded(
-              child: Text(
+              child: AppText(
                 selected?.fullName ?? widget.hint,
                 textAlign: TextAlign.right,
                 overflow: TextOverflow.ellipsis,
@@ -248,7 +249,7 @@ class _UserSelectorFieldState extends State<UserSelectorField> {
             child: results.isEmpty
                 ? Padding(
                     padding: EdgeInsets.symmetric(vertical: 20.h),
-                    child: Text(
+                    child: AppText(
                       widget.emptyText,
                       style: AppTextStyles.labelMd.copyWith(
                         color: AppColors.onSurfaceVariant,
@@ -288,7 +289,7 @@ class _UserSelectorFieldState extends State<UserSelectorField> {
         child: Row(
           children: [
             Expanded(
-              child: Text(
+              child: AppText(
                 option.fullName,
                 textAlign: TextAlign.right,
                 overflow: TextOverflow.ellipsis,

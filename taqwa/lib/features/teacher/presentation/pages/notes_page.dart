@@ -10,6 +10,7 @@ import '../../../../core/providers/auth_provider.dart';
 import '../../../data/repositories/teacher_repository.dart';
 import '../../../data/models/teacher_student_model.dart';
 import '../../../data/models/student_note_model.dart';
+import 'package:taqwa/core/widgets/app_text.dart';
 
 class NotesPage extends ConsumerStatefulWidget {
   const NotesPage({super.key});
@@ -124,7 +125,7 @@ class _NotesPageState extends ConsumerState<NotesPage> {
                   mainAxisSize: MainAxisSize.min,
                   crossAxisAlignment: CrossAxisAlignment.end,
                   children: [
-                    Text(
+                    AppText(
                       'اختر الطالب',
                       style: AppTextStyles.headlineSm.copyWith(
                         color: AppColors.primary,
@@ -185,7 +186,7 @@ class _NotesPageState extends ConsumerState<NotesPage> {
                       child: filtered.isEmpty
                           ? Padding(
                               padding: EdgeInsets.symmetric(vertical: 24.h),
-                              child: Text(
+                              child: AppText(
                                 'لا يوجد طلاب مطابقون',
                                 style: AppTextStyles.bodyMd.copyWith(
                                   color: AppColors.onSurfaceVariant,
@@ -202,7 +203,7 @@ class _NotesPageState extends ConsumerState<NotesPage> {
                               itemBuilder: (_, i) {
                                 final s = filtered[i];
                                 return ListTile(
-                                  title: Text(
+                                  title: AppText(
                                     s.fullName,
                                     style: AppTextStyles.bodyMd,
                                     textAlign: TextAlign.end,
@@ -263,7 +264,7 @@ class _NotesPageState extends ConsumerState<NotesPage> {
                                 color: AppColors.onSurfaceVariant,
                               ),
                               const Spacer(),
-                              Text(
+                              AppText(
                                 'تقوى',
                                 style: AppTextStyles.headlineMd.copyWith(
                                   color: AppColors.primary,
@@ -309,7 +310,7 @@ class _NotesPageState extends ConsumerState<NotesPage> {
                         child: Column(
                           crossAxisAlignment: CrossAxisAlignment.end,
                           children: [
-                            Text(
+                            AppText(
                               'ملاحظة جديدة',
                               style: AppTextStyles.headlineSm.copyWith(
                                 color: AppColors.primary,
@@ -340,7 +341,7 @@ class _NotesPageState extends ConsumerState<NotesPage> {
                                       color: AppColors.primary,
                                     ),
                                     Expanded(
-                                      child: Text(
+                                      child: AppText(
                                         _selectedStudent?.fullName ??
                                             'اختر الطالب...',
                                         style: AppTextStyles.labelMd.copyWith(
@@ -433,7 +434,7 @@ class _NotesPageState extends ConsumerState<NotesPage> {
                               child: Container(
                                 height: 300.h,
                                 alignment: Alignment.center,
-                                child: Text(
+                                child: AppText(
                                   'لا توجد ملاحظات بعد',
                                   style: AppTextStyles.bodyMd.copyWith(
                                     color: AppColors.onSurfaceVariant,
@@ -513,14 +514,14 @@ class _NoteCard extends StatelessWidget {
             ),
             child: Row(
               children: [
-                Text(
+                AppText(
                   displayDate,
                   style: AppTextStyles.labelSm.copyWith(
                     color: AppColors.onSurfaceVariant,
                   ),
                 ),
                 const Spacer(),
-                Text(
+                AppText(
                   note.studentName ?? '',
                   style: AppTextStyles.labelMdBold.copyWith(
                     color: AppColors.onSurface,
@@ -535,7 +536,7 @@ class _NoteCard extends StatelessWidget {
                     shape: BoxShape.circle,
                   ),
                   child: Center(
-                    child: Text(
+                    child: AppText(
                       initial,
                       style: AppTextStyles.labelMdBold.copyWith(
                         color: AppColors.onPrimaryContainer,
@@ -552,7 +553,7 @@ class _NoteCard extends StatelessWidget {
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.end,
               children: [
-                Text(
+                AppText(
                   note.note,
                   style: AppTextStyles.bodyMd.copyWith(
                     color: AppColors.onSurface,
@@ -583,7 +584,7 @@ class _NoteCard extends StatelessWidget {
                             size: 18,
                           ),
                           SizedBox(width: 4.w),
-                          Text(
+                          AppText(
                             'حذف',
                             style: AppTextStyles.labelSm.copyWith(
                               color: AppColors.error,

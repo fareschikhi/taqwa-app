@@ -9,6 +9,7 @@ import '../../../../core/enums/memorization_type.dart';
 import '../../../../core/providers/selected_child_provider.dart';
 import '../../../../core/utils/memorization_history.dart';
 import '../../../data/repositories/student_repository.dart';
+import 'package:taqwa/core/widgets/app_text.dart';
 
 class ChildProgressPage extends ConsumerStatefulWidget {
   const ChildProgressPage({super.key});
@@ -96,7 +97,7 @@ class _ChildProgressPageState extends ConsumerState<ChildProgressPage> {
                     Row(
                       children: [
                         const Spacer(),
-                        Text(
+                        AppText(
                           'تقوى',
                           style: AppTextStyles.headlineMd.copyWith(
                             color: AppColors.primary,
@@ -105,13 +106,13 @@ class _ChildProgressPageState extends ConsumerState<ChildProgressPage> {
                       ],
                     ),
                     SizedBox(height: 16.h),
-                    Text(
+                    AppText(
                       'تقدم المدرسة القرآنية',
                       style: AppTextStyles.headlineLgMobile.copyWith(
                         color: AppColors.onSurface,
                       ),
                     ),
-                    Text(
+                    AppText(
                       'تتبع رحلة ${child.fullName} في حفظ القرآن الكريم.',
                       style: AppTextStyles.bodyMd.copyWith(
                         color: AppColors.onSurfaceVariant,
@@ -144,14 +145,14 @@ class _ChildProgressPageState extends ConsumerState<ChildProgressPage> {
                               child: Column(
                                 crossAxisAlignment: CrossAxisAlignment.start,
                                 children: [
-                                  Text(
+                                  AppText(
                                     '$totalPagesDone',
                                     style: AppTextStyles.headlineLg.copyWith(
                                       color: AppColors.onPrimary,
                                       fontWeight: FontWeight.w700,
                                     ),
                                   ),
-                                  Text(
+                                  AppText(
                                     'صفحة منجزة',
                                     style: AppTextStyles.labelMd.copyWith(
                                       color: AppColors.onPrimary.withValues(
@@ -160,7 +161,7 @@ class _ChildProgressPageState extends ConsumerState<ChildProgressPage> {
                                     ),
                                   ),
                                   SizedBox(height: 4.h),
-                                  Text(
+                                  AppText(
                                     '$totalSurahs سورة تم تناولها',
                                     style: AppTextStyles.labelSm.copyWith(
                                       color: AppColors.onPrimary.withValues(
@@ -221,7 +222,7 @@ class _ChildProgressPageState extends ConsumerState<ChildProgressPage> {
                       SizedBox(height: 20.h),
                       Row(
                         children: [
-                          Text(
+                          AppText(
                             'سجل الحفظ والمراجعة',
                             style: AppTextStyles.headlineSm.copyWith(
                               color: AppColors.onSurface,
@@ -231,7 +232,7 @@ class _ChildProgressPageState extends ConsumerState<ChildProgressPage> {
                           // Say the list is trimmed, so an older entry that is
                           // missing does not read as lost data.
                           if (_history.length > kRecentMemorizationLimit)
-                            Text(
+                            AppText(
                               'آخر $kRecentMemorizationLimit إدخالات',
                               style: AppTextStyles.labelSm.copyWith(
                                 color: AppColors.onSurfaceVariant,
@@ -243,7 +244,7 @@ class _ChildProgressPageState extends ConsumerState<ChildProgressPage> {
                       if (_history.isEmpty)
                         Padding(
                           padding: EdgeInsets.symmetric(vertical: 16.h),
-                          child: Text(
+                          child: AppText(
                             'لا يوجد سجل حفظ بعد',
                             style: AppTextStyles.bodyMd.copyWith(
                               color: AppColors.onSurfaceVariant,
@@ -294,7 +295,7 @@ class _ChildProgressPageState extends ConsumerState<ChildProgressPage> {
               color: AppColors.primary.withValues(alpha: 0.1),
               borderRadius: BorderRadius.circular(AppConstants.radiusFull),
             ),
-            child: Text(
+            child: AppText(
               typeLabel,
               style: AppTextStyles.labelMd.copyWith(color: AppColors.primary),
             ),
@@ -303,7 +304,7 @@ class _ChildProgressPageState extends ConsumerState<ChildProgressPage> {
           Column(
             crossAxisAlignment: CrossAxisAlignment.end,
             children: [
-              Text(
+              AppText(
                 surahLabel,
                 style: AppTextStyles.bodyMdBold.copyWith(
                   color: AppColors.onSurface,
@@ -312,7 +313,7 @@ class _ChildProgressPageState extends ConsumerState<ChildProgressPage> {
               SizedBox(height: 4.h),
               Row(
                 children: [
-                  Text(
+                  AppText(
                     dateStr,
                     style: AppTextStyles.labelSm.copyWith(
                       color: AppColors.onSurfaceVariant,
@@ -330,7 +331,7 @@ class _ChildProgressPageState extends ConsumerState<ChildProgressPage> {
                         AppConstants.radiusFull,
                       ),
                     ),
-                    child: Text(
+                    child: AppText(
                       '${entry['amountDone']} ${type.unitLabel}',
                       style: AppTextStyles.labelMd.copyWith(
                         color: AppColors.onSurface,
@@ -367,7 +368,7 @@ class _MiniStat extends StatelessWidget {
       ),
       child: Column(
         children: [
-          Text(
+          AppText(
             value,
             style: AppTextStyles.headlineSm.copyWith(
               color: color,
@@ -375,7 +376,7 @@ class _MiniStat extends StatelessWidget {
             ),
           ),
           SizedBox(height: 4.h),
-          Text(
+          AppText(
             label,
             style: AppTextStyles.labelSm.copyWith(
               color: AppColors.onSurfaceVariant,

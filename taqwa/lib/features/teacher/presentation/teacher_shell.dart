@@ -9,6 +9,7 @@ import 'pages/student_list_page.dart';
 import 'pages/attendance_page.dart';
 import 'pages/notes_page.dart';
 import '../../shared/presentation/pages/profile_page.dart';
+import 'package:taqwa/core/widgets/app_text.dart';
 
 class TeacherShell extends StatefulWidget {
   const TeacherShell({super.key});
@@ -122,7 +123,7 @@ class _TeacherShellState extends State<TeacherShell> {
                         size: 22.w,
                       ),
                       SizedBox(height: 4.h),
-                      Text(
+                      AppText(
                         item.label,
                         style: AppTextStyles.labelSm.copyWith(
                           color: isActive

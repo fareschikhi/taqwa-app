@@ -3,6 +3,7 @@ import 'package:flutter_screenutil/flutter_screenutil.dart';
 import '../theme/app_colors.dart';
 import '../theme/app_text_styles.dart';
 import '../constants/app_constants.dart';
+import 'package:taqwa/core/widgets/app_text.dart';
 
 enum AppButtonVariant { primary, secondary, tertiary, gradient }
 
@@ -113,11 +114,11 @@ class AppButton extends StatelessWidget {
         children: [
           Icon(icon, size: 20.w),
           SizedBox(width: 8.w),
-          Text(label, style: AppTextStyles.button),
+          AppText(label, style: AppTextStyles.button),
         ],
       );
     }
-    return Text(label, style: AppTextStyles.button);
+    return AppText(label, style: AppTextStyles.button);
   }
 }
 
@@ -179,7 +180,7 @@ class _GradientButton extends StatelessWidget {
                           Icon(icon, size: 20.w, color: AppColors.onPrimary),
                           SizedBox(width: 8.w),
                         ],
-                        Text(
+                        AppText(
                           label,
                           style: AppTextStyles.button.copyWith(
                             color: AppColors.onPrimary,

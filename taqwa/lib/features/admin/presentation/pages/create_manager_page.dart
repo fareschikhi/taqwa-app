@@ -12,6 +12,7 @@ import 'package:taqwa/features/data/models/halaqa/halaqa_model.dart';
 import '../../../../features/data/repositories/manager_repository.dart';
 import '../../../../features/data/repositories/halaqa_repository.dart';
 import '../../../../features/data/models/manager_model.dart';
+import 'package:taqwa/core/widgets/app_text.dart';
 
 class CreateManagerPage extends StatefulWidget {
   /// Pass [editManager] to pre-fill the form for editing an existing manager.
@@ -75,7 +76,7 @@ class _CreateManagerPageState extends State<CreateManagerPage> {
                 Icons.photo_library,
                 color: AppColors.primary,
               ),
-              title: Text('اختيار من المعرض', style: AppTextStyles.bodyMd),
+              title: AppText('اختيار من المعرض', style: AppTextStyles.bodyMd),
               onTap: () async {
                 Navigator.pop(ctx);
                 final img = await _picker.pickImage(
@@ -89,7 +90,7 @@ class _CreateManagerPageState extends State<CreateManagerPage> {
             ),
             ListTile(
               leading: const Icon(Icons.camera_alt, color: AppColors.primary),
-              title: Text('التقاط صورة بالكاميرا', style: AppTextStyles.bodyMd),
+              title: AppText('التقاط صورة بالكاميرا', style: AppTextStyles.bodyMd),
               onTap: () async {
                 Navigator.pop(ctx);
                 final img = await _picker.pickImage(
@@ -151,7 +152,7 @@ class _CreateManagerPageState extends State<CreateManagerPage> {
       if (!mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
-          content: Text(
+          content: AppText(
             _isEditing ? 'تم تحديث بيانات المدير' : 'تم إضافة المدير بنجاح',
           ),
         ),
@@ -170,7 +171,7 @@ class _CreateManagerPageState extends State<CreateManagerPage> {
     } catch (e) {
       if (!mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text(ManagerRepository.errorMessage(e))),
+        SnackBar(content: AppText(ManagerRepository.errorMessage(e))),
       );
     } finally {
       if (mounted) setState(() => _isLoading = false);
@@ -257,13 +258,13 @@ class _CreateManagerPageState extends State<CreateManagerPage> {
                               ),
                             ),
                             SizedBox(height: 8.h),
-                            Text(
+                            AppText(
                               'الصورة الشخصية',
                               style: AppTextStyles.labelMd.copyWith(
                                 color: AppColors.onSurface,
                               ),
                             ),
-                            Text(
+                            AppText(
                               _selectedImage != null
                                   ? 'تم اختيار صورة'
                                   : 'انقر لاختيار صورة (Cloudinary)',
@@ -347,7 +348,7 @@ class _CreateManagerPageState extends State<CreateManagerPage> {
                       if (_allHalaqas.isEmpty)
                         Padding(
                           padding: EdgeInsets.symmetric(vertical: 8.h),
-                          child: Text(
+                          child: AppText(
                             'لا توجد حلقات متاحة',
                             style: AppTextStyles.bodyMd.copyWith(
                                 color: AppColors.onSurfaceVariant),
@@ -401,7 +402,7 @@ class _CreateManagerPageState extends State<CreateManagerPage> {
                                     crossAxisAlignment:
                                         CrossAxisAlignment.end,
                                     children: [
-                                      Text(
+                                      AppText(
                                         name,
                                         style: AppTextStyles.bodyMd.copyWith(
                                           color: AppColors.onSurface,
@@ -411,7 +412,7 @@ class _CreateManagerPageState extends State<CreateManagerPage> {
                                         ),
                                       ),
                                       if (level.isNotEmpty)
-                                        Text(
+                                        AppText(
                                           level,
                                           style: AppTextStyles.labelSm
                                               .copyWith(
@@ -495,7 +496,7 @@ class _CreateManagerPageState extends State<CreateManagerPage> {
                 color: AppColors.onSurface,
               ),
               const Spacer(),
-              Text(
+              AppText(
                 'تقوى',
                 style: AppTextStyles.headlineMd.copyWith(
                   color: AppColors.primary,
@@ -507,7 +508,7 @@ class _CreateManagerPageState extends State<CreateManagerPage> {
           Row(
             mainAxisAlignment: MainAxisAlignment.end,
             children: [
-              Text(
+              AppText(
                 _isEditing ? 'تعديل مدير' : 'إضافة مدير جديد',
                 style: AppTextStyles.labelSm.copyWith(
                   color: AppColors.onSurfaceVariant,
@@ -518,7 +519,7 @@ class _CreateManagerPageState extends State<CreateManagerPage> {
                 size: 16,
                 color: AppColors.onSurfaceVariant,
               ),
-              Text(
+              AppText(
                 'إدارة المديرين',
                 style: AppTextStyles.labelSm.copyWith(
                   color: AppColors.onSurfaceVariant,
@@ -527,13 +528,13 @@ class _CreateManagerPageState extends State<CreateManagerPage> {
             ],
           ),
           SizedBox(height: 8.h),
-          Text(
+          AppText(
             _isEditing ? 'تعديل بيانات المدير' : 'إضافة مدير جديد',
             style: AppTextStyles.headlineLgMobile.copyWith(
               color: AppColors.onSurface,
             ),
           ),
-          Text(
+          AppText(
             _isEditing
                 ? 'قم بتحديث بيانات المدير.'
                 : 'قم بإدخال بيانات المدير الجديد لإضافته إلى النظام.',
@@ -557,7 +558,7 @@ class _SectionHeader extends StatelessWidget {
     return Row(
       mainAxisAlignment: MainAxisAlignment.end,
       children: [
-        Text(
+        AppText(
           title,
           style: AppTextStyles.headlineSm.copyWith(color: AppColors.primary),
         ),
@@ -604,14 +605,14 @@ class _PrivilegeSwitch extends StatelessWidget {
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.end,
               children: [
-                Text(
+                AppText(
                   title,
                   style: AppTextStyles.bodyMd.copyWith(
                     color: AppColors.onSurface,
                     fontWeight: value ? FontWeight.w600 : FontWeight.w400,
                   ),
                 ),
-                Text(
+                AppText(
                   subtitle,
                   style: AppTextStyles.labelSm.copyWith(
                     color: AppColors.onSurfaceVariant,

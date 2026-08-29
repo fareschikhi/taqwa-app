@@ -7,6 +7,7 @@ import 'pages/manager_dashboard_page.dart';
 import 'pages/manager_students_page.dart';
 import 'pages/manager_parents_page.dart';
 import 'pages/justification_list_page.dart';
+import 'package:taqwa/core/widgets/app_text.dart';
 
 class ManagerShell extends StatefulWidget {
   const ManagerShell({super.key});
@@ -105,7 +106,7 @@ class _ManagerShellState extends State<ManagerShell> {
                         size: 22.w,
                       ),
                       SizedBox(height: 4.h),
-                      Text(
+                      AppText(
                         item.label,
                         style: AppTextStyles.labelSm.copyWith(
                           color: isActive

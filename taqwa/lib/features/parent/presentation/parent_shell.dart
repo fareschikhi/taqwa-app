@@ -11,6 +11,7 @@ import 'pages/parent_dashboard_page.dart';
 import 'pages/child_progress_page.dart';
 import 'pages/child_attendance_history_page.dart';
 import '../../shared/presentation/pages/profile_page.dart';
+import 'package:taqwa/core/widgets/app_text.dart';
 
 class ParentShell extends ConsumerStatefulWidget {
   const ParentShell({super.key});
@@ -57,7 +58,7 @@ class _ParentShellState extends ConsumerState<ParentShell> {
           child: Center(
             child: Padding(
               padding: EdgeInsets.symmetric(horizontal: 24.w),
-              child: Text(
+              child: AppText(
                 childState.errorMessage ?? 'لا يوجد أبناء مسجلون على هذا الحساب',
                 style: AppTextStyles.bodyMd.copyWith(
                   color: AppColors.onSurfaceVariant,
@@ -122,7 +123,7 @@ class _ParentShellState extends ConsumerState<ParentShell> {
                       AvatarWidget(
                         avatarUrl: child.avatar,
                         size: 28.w,
-                        fallback: Text(
+                        fallback: AppText(
                           child.fullName.isNotEmpty ? child.fullName[0] : '؟',
                           style: AppTextStyles.labelSm.copyWith(
                             color: AppColors.onPrimaryContainer,
@@ -130,7 +131,7 @@ class _ParentShellState extends ConsumerState<ParentShell> {
                         ),
                       ),
                       SizedBox(width: 6.w),
-                      Text(
+                      AppText(
                         child.fullName,
                         style: AppTextStyles.labelMd.copyWith(
                           color: isSelected
@@ -217,7 +218,7 @@ class _ParentShellState extends ConsumerState<ParentShell> {
                         size: 22.w,
                       ),
                       SizedBox(height: 4.h),
-                      Text(
+                      AppText(
                         item.label,
                         style: AppTextStyles.labelSm.copyWith(
                           color: isActive

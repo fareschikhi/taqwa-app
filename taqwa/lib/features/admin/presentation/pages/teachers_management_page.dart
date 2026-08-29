@@ -14,6 +14,7 @@ import 'package:taqwa/core/widgets/confirm_status_dialog.dart';
 import 'package:taqwa/features/data/repositories/user_repository.dart';
 import 'create_teacher_page.dart';
 import '../admin_shell.dart';
+import 'package:taqwa/core/widgets/app_text.dart';
 
 class TeachersManagementPage extends StatefulWidget {
   const TeachersManagementPage({super.key});
@@ -56,7 +57,7 @@ class _TeachersManagementPageState extends State<TeachersManagementPage> {
     } catch (e) {
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text(TeacherRepository.errorMessage(e))),
+          SnackBar(content: AppText(TeacherRepository.errorMessage(e))),
         );
       }
     }
@@ -79,12 +80,12 @@ class _TeachersManagementPageState extends State<TeachersManagementPage> {
       if (!mounted) return;
       ScaffoldMessenger.of(
         context,
-      ).showSnackBar(const SnackBar(content: Text('تم حذف المعلم بنجاح')));
+      ).showSnackBar(const SnackBar(content: AppText('تم حذف المعلم بنجاح')));
       _load();
     } catch (e) {
       if (!mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text(TeacherRepository.errorMessage(e))),
+        SnackBar(content: AppText(TeacherRepository.errorMessage(e))),
       );
     }
   }
@@ -181,7 +182,7 @@ class _TeachersManagementPageState extends State<TeachersManagementPage> {
                       ),
                     ),
                     SizedBox(width: 8.w),
-                    Text(
+                    AppText(
                       'تقوى',
                       style: AppTextStyles.headlineMd.copyWith(
                         color: AppColors.primary,
@@ -195,13 +196,13 @@ class _TeachersManagementPageState extends State<TeachersManagementPage> {
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.end,
                   children: [
-                    Text(
+                    AppText(
                       'إدارة المعلمين',
                       style: AppTextStyles.headlineLgMobile.copyWith(
                         color: AppColors.onSurface,
                       ),
                     ),
-                    Text(
+                    AppText(
                       'إدارة وتوجيه المدرسة القرآنية',
                       style: AppTextStyles.bodyMd.copyWith(
                         color: AppColors.onSurfaceVariant,
@@ -249,7 +250,7 @@ class _TeachersManagementPageState extends State<TeachersManagementPage> {
                         child: Container(
                           height: 300.h,
                           alignment: Alignment.center,
-                          child: Text(
+                          child: AppText(
                             'لا يوجد معلمون',
                             style: AppTextStyles.bodyMd.copyWith(
                               color: AppColors.onSurfaceVariant,
@@ -343,7 +344,7 @@ class _TeacherCard extends StatelessWidget {
                       ),
                     ),
                     SizedBox(width: 4.w),
-                    Text(
+                    AppText(
                       isActive ? 'نشط' : 'في إجازة',
                       style: AppTextStyles.labelSm.copyWith(
                         color: isActive ? AppColors.primary : AppColors.outline,
@@ -356,7 +357,7 @@ class _TeacherCard extends StatelessWidget {
               AvatarWidget(
                 avatarUrl: teacher.avatar,
                 size: AppConstants.avatarXl,
-                fallback: Text(
+                fallback: AppText(
                   name.isNotEmpty ? name[0] : '؟',
                   style: AppTextStyles.headlineMd.copyWith(
                     color: AppColors.onPrimaryContainer,
@@ -366,7 +367,7 @@ class _TeacherCard extends StatelessWidget {
             ],
           ),
           SizedBox(height: 12.h),
-          Text(
+          AppText(
             name,
             style: AppTextStyles.headlineSm.copyWith(
               color: AppColors.onSurface,
@@ -377,7 +378,7 @@ class _TeacherCard extends StatelessWidget {
           Row(
             mainAxisAlignment: MainAxisAlignment.end,
             children: [
-              Text(
+              AppText(
                 phone.isNotEmpty ? phone : '—',
                 style: AppTextStyles.labelMd.copyWith(
                   color: AppColors.onSurfaceVariant,
@@ -403,13 +404,13 @@ class _TeacherCard extends StatelessWidget {
                 Expanded(
                   child: Column(
                     children: [
-                      Text(
+                      AppText(
                         '$halaqaCount',
                         style: AppTextStyles.headlineMd.copyWith(
                           color: AppColors.onSurface,
                         ),
                       ),
-                      Text(
+                      AppText(
                         'حلقات مكلف بها',
                         style: AppTextStyles.labelSm.copyWith(
                           color: AppColors.onSurfaceVariant,
@@ -426,13 +427,13 @@ class _TeacherCard extends StatelessWidget {
                 Expanded(
                   child: Column(
                     children: [
-                      Text(
+                      AppText(
                         '$studentCount',
                         style: AppTextStyles.headlineMd.copyWith(
                           color: AppColors.onSurface,
                         ),
                       ),
-                      Text(
+                      AppText(
                         'إجمالي الطلاب',
                         style: AppTextStyles.labelSm.copyWith(
                           color: AppColors.onSurfaceVariant,

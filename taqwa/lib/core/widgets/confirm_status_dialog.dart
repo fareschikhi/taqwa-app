@@ -3,6 +3,7 @@ import 'package:flutter_screenutil/flutter_screenutil.dart';
 import '../theme/app_colors.dart';
 import '../theme/app_text_styles.dart';
 import '../constants/app_constants.dart';
+import 'package:taqwa/core/widgets/app_text.dart';
 
 /// Confirmation dialog for switching a user account between active and
 /// inactive, shared by the admin management cards.
@@ -83,7 +84,7 @@ class ConfirmStatusDialog extends StatelessWidget {
                 ),
                 const Spacer(),
                 Flexible(
-                  child: Text(
+                  child: AppText(
                     title,
                     style: AppTextStyles.headlineSm.copyWith(
                       color: AppColors.onSurface,
@@ -94,7 +95,7 @@ class ConfirmStatusDialog extends StatelessWidget {
               ],
             ),
             SizedBox(height: 12.h),
-            Text(
+            AppText(
               message,
               style: AppTextStyles.bodyMd.copyWith(
                 color: AppColors.onSurfaceVariant,
@@ -117,7 +118,7 @@ class ConfirmStatusDialog extends StatelessWidget {
                         ),
                       ),
                     ),
-                    child: Text(
+                    child: AppText(
                       'إغلاق',
                       style: AppTextStyles.button.copyWith(
                         color: AppColors.onSurfaceVariant,
@@ -139,7 +140,7 @@ class ConfirmStatusDialog extends StatelessWidget {
                         ),
                       ),
                     ),
-                    child: Text(
+                    child: AppText(
                       confirmLabel,
                       style: AppTextStyles.button.copyWith(color: onAccent),
                     ),

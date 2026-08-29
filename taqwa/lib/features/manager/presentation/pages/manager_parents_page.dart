@@ -12,6 +12,7 @@ import '../../../../core/widgets/confirm_delete_dialog.dart';
 import '../../../../features/data/models/parent/parent_model.dart';
 import '../../../../features/data/repositories/parent_repository.dart';
 import '../../../shared/presentation/pages/parent_form_page.dart';
+import 'package:taqwa/core/widgets/app_text.dart';
 
 class ManagerParentsPage extends ConsumerStatefulWidget {
   const ManagerParentsPage({super.key});
@@ -61,7 +62,7 @@ class _ManagerParentsPageState extends ConsumerState<ManagerParentsPage> {
       if (mounted) {
         setState(() => _isLoading = false);
         ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text(ParentRepository.errorMessage(e))),
+          SnackBar(content: AppText(ParentRepository.errorMessage(e))),
         );
       }
     }
@@ -106,13 +107,13 @@ class _ManagerParentsPageState extends ConsumerState<ManagerParentsPage> {
       if (!mounted) return;
       ScaffoldMessenger.of(
         context,
-      ).showSnackBar(const SnackBar(content: Text('تم حذف ولي الأمر بنجاح')));
+      ).showSnackBar(const SnackBar(content: AppText('تم حذف ولي الأمر بنجاح')));
       _load();
     } catch (e) {
       if (!mounted) return;
       ScaffoldMessenger.of(
         context,
-      ).showSnackBar(SnackBar(content: Text(ParentRepository.errorMessage(e))));
+      ).showSnackBar(SnackBar(content: AppText(ParentRepository.errorMessage(e))));
     }
   }
 
@@ -137,7 +138,7 @@ class _ManagerParentsPageState extends ConsumerState<ManagerParentsPage> {
                 child: Row(
                   children: [
                     const Spacer(),
-                    Text(
+                    AppText(
                       'تقوى',
                       style: AppTextStyles.headlineMd.copyWith(
                         color: AppColors.primary,
@@ -151,13 +152,13 @@ class _ManagerParentsPageState extends ConsumerState<ManagerParentsPage> {
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.end,
                   children: [
-                    Text(
+                    AppText(
                       'أولياء الأمور',
                       style: AppTextStyles.headlineLgMobile.copyWith(
                         color: AppColors.onSurface,
                       ),
                     ),
-                    Text(
+                    AppText(
                       'إدارة أولياء أمور طلاب حلقاتك',
                       style: AppTextStyles.bodyMd.copyWith(
                         color: AppColors.onSurfaceVariant,
@@ -199,7 +200,7 @@ class _ManagerParentsPageState extends ConsumerState<ManagerParentsPage> {
                     ? Center(
                         child: Padding(
                           padding: EdgeInsets.all(24.w),
-                          child: Text(
+                          child: AppText(
                             'ليس لديك صلاحية لعرض أولياء الأمور',
                             style: AppTextStyles.bodyMd.copyWith(
                               color: AppColors.onSurfaceVariant,
@@ -220,7 +221,7 @@ class _ManagerParentsPageState extends ConsumerState<ManagerParentsPage> {
                         child: Container(
                           height: 300.h,
                           alignment: Alignment.center,
-                          child: Text(
+                          child: AppText(
                             'لا يوجد أولياء أمور',
                             style: AppTextStyles.bodyMd.copyWith(
                               color: AppColors.onSurfaceVariant,
@@ -322,14 +323,14 @@ class _ParentCard extends StatelessWidget {
                   Column(
                     crossAxisAlignment: CrossAxisAlignment.end,
                     children: [
-                      Text(
+                      AppText(
                         parent.fullName,
                         style: AppTextStyles.headlineSm.copyWith(
                           color: AppColors.onSurface,
                         ),
                       ),
                       if ((parent.phone ?? '').isNotEmpty)
-                        Text(
+                        AppText(
                           parent.phone!,
                           style: AppTextStyles.labelMd.copyWith(
                             color: AppColors.onSurfaceVariant,
@@ -342,7 +343,7 @@ class _ParentCard extends StatelessWidget {
                     avatarUrl: parent.avatar,
                     size: 44.w,
                     backgroundColor: AppColors.tertiaryContainer,
-                    fallback: Text(
+                    fallback: AppText(
                       parent.fullName.isNotEmpty ? parent.fullName[0] : '؟',
                       style: AppTextStyles.headlineSm.copyWith(
                         color: AppColors.onTertiaryContainer,
@@ -359,7 +360,7 @@ class _ParentCard extends StatelessWidget {
                       .withValues(alpha: 0.1),
                   borderRadius: BorderRadius.circular(AppConstants.radiusMd),
                 ),
-                child: Text(
+                child: AppText(
                   isActive ? 'نشط' : 'غير نشط',
                   style: AppTextStyles.labelSm.copyWith(
                     color: isActive ? AppColors.primary : AppColors.outline,

@@ -8,6 +8,7 @@ import '../../../../core/widgets/avatar_widget.dart';
 import '../../../../features/data/models/unjustified_attendance_model.dart';
 import '../../../../features/data/repositories/absence_justification_repository.dart';
 import 'justification_reason_fields.dart';
+import 'package:taqwa/core/widgets/app_text.dart';
 
 /// Bottom sheet for justifying one already-identified absence.
 ///
@@ -62,7 +63,7 @@ class _JustifyAbsenceSheetState extends State<JustifyAbsenceSheet> {
     if (!mounted) return;
     ScaffoldMessenger.of(context).showSnackBar(
       SnackBar(
-        content: Text(message, textAlign: TextAlign.right),
+        content: AppText(message, textAlign: TextAlign.right),
         backgroundColor: isError ? AppColors.error : AppColors.primary,
       ),
     );
@@ -171,7 +172,7 @@ class _JustifyAbsenceSheetState extends State<JustifyAbsenceSheet> {
               color: statusBg,
               borderRadius: BorderRadius.circular(AppConstants.radiusMd),
             ),
-            child: Text(
+            child: AppText(
               item.statusLabel,
               style: AppTextStyles.labelSm.copyWith(color: statusFg),
             ),
@@ -180,14 +181,14 @@ class _JustifyAbsenceSheetState extends State<JustifyAbsenceSheet> {
           Column(
             crossAxisAlignment: CrossAxisAlignment.end,
             children: [
-              Text(
+              AppText(
                 item.studentName,
                 style: AppTextStyles.headlineSm.copyWith(
                   color: AppColors.onSurface,
                 ),
               ),
               SizedBox(height: 2.h),
-              Text(
+              AppText(
                 item.formattedDate,
                 style: AppTextStyles.labelMd.copyWith(
                   color: AppColors.onSurfaceVariant,
@@ -199,7 +200,7 @@ class _JustifyAbsenceSheetState extends State<JustifyAbsenceSheet> {
           AvatarWidget(
             avatarUrl: item.studentAvatar,
             size: 44.w,
-            fallback: Text(
+            fallback: AppText(
               initial,
               style: AppTextStyles.headlineSm.copyWith(
                 color: AppColors.onPrimaryContainer,

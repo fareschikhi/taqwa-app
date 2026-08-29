@@ -3,6 +3,7 @@ import 'package:flutter_screenutil/flutter_screenutil.dart';
 import '../theme/app_colors.dart';
 import '../theme/app_text_styles.dart';
 import '../constants/app_constants.dart';
+import 'package:taqwa/core/widgets/app_text.dart';
 
 enum AttendanceStatus { present, absent, late, unset }
 
@@ -70,7 +71,7 @@ class AttendanceChip extends StatelessWidget {
               Icon(leadIcon, color: textColor, size: 16.w),
               SizedBox(width: 4.w),
             ],
-            Text(
+            AppText(
               label,
               style: AppTextStyles.labelMdBold.copyWith(color: textColor),
             ),

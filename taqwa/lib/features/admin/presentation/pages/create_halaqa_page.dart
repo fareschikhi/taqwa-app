@@ -12,6 +12,7 @@ import '../../../../core/constants/app_constants.dart';
 import '../../../../core/widgets/app_button.dart';
 import '../../../../core/widgets/app_text_field.dart';
 import '../../../../core/widgets/user_selector_field.dart';
+import 'package:taqwa/core/widgets/app_text.dart';
 
 /// Builds the body sent to create or update a halaqa.
 ///
@@ -144,7 +145,7 @@ class _CreateHalaqaPageState extends State<CreateHalaqaPage> {
 
     if (_selectedTeacherId == null) {
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('يرجى اختيار المعلم')),
+        const SnackBar(content: AppText('يرجى اختيار المعلم')),
       );
       return;
     }
@@ -171,7 +172,7 @@ class _CreateHalaqaPageState extends State<CreateHalaqaPage> {
 
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
-          content: Text(
+          content: AppText(
             _isEditing ? 'تم تحديث بيانات الحلقة' : 'تم إضافة الحلقة بنجاح',
           ),
         ),
@@ -180,7 +181,7 @@ class _CreateHalaqaPageState extends State<CreateHalaqaPage> {
     } catch (e) {
       if (!mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text(HalaqaRepository.errorMessage(e))),
+        SnackBar(content: AppText(HalaqaRepository.errorMessage(e))),
       );
     } finally {
       if (mounted) setState(() => _isLoading = false);
@@ -341,7 +342,7 @@ class _CreateHalaqaPageState extends State<CreateHalaqaPage> {
                                           borderRadius: BorderRadius.circular(
                                               AppConstants.radiusFull),
                                         ),
-                                        child: Text(
+                                        child: AppText(
                                           '${_selectedStudents.length} طلاب',
                                           style:
                                               AppTextStyles.labelSm.copyWith(
@@ -361,7 +362,7 @@ class _CreateHalaqaPageState extends State<CreateHalaqaPage> {
                                 SizedBox(height: 4.h),
                                 Align(
                                   alignment: AlignmentDirectional.centerEnd,
-                                  child: Text(
+                                  child: AppText(
                                     'ابحث عن طالب وأضفه إلى الحلقة',
                                     style: AppTextStyles.labelSm.copyWith(
                                       color: AppColors.onSurfaceVariant,
@@ -469,7 +470,7 @@ class _CreateHalaqaPageState extends State<CreateHalaqaPage> {
                                             child: Row(
                                               children: [
                                                 Expanded(
-                                                  child: Text(
+                                                  child: AppText(
                                                     s.fullName,
                                                     style: AppTextStyles.bodyMd
                                                         .copyWith(
@@ -506,7 +507,7 @@ class _CreateHalaqaPageState extends State<CreateHalaqaPage> {
                                       border: Border.all(
                                           color: AppColors.outlineVariant),
                                     ),
-                                    child: Text(
+                                    child: AppText(
                                       'لا يوجد طلاب مطابقون',
                                       style: AppTextStyles.labelMd.copyWith(
                                         color: AppColors.onSurfaceVariant,
@@ -571,7 +572,7 @@ class _CreateHalaqaPageState extends State<CreateHalaqaPage> {
           const Spacer(),
           Icon(Icons.home, color: AppColors.primary, size: 22.w),
           SizedBox(width: 8.w),
-          Text(
+          AppText(
             'تقوى',
             style: AppTextStyles.labelMd.copyWith(color: AppColors.primary),
           ),
@@ -623,7 +624,7 @@ class SelectedStudentCard extends StatelessWidget {
           const Spacer(),
           // Name
           Flexible(
-            child: Text(
+            child: AppText(
               student.fullName,
               style: AppTextStyles.bodyMd.copyWith(
                 fontWeight: FontWeight.w600,
@@ -676,7 +677,7 @@ class StudentAvatar extends StatelessWidget {
     return CircleAvatar(
       radius: size / 2,
       backgroundColor: AppColors.primary.withValues(alpha: 0.15),
-      child: Text(
+      child: AppText(
         initials,
         style: AppTextStyles.labelSm.copyWith(
           color: AppColors.primary,
@@ -695,7 +696,7 @@ class _FieldLabel extends StatelessWidget {
   final String label;
 
   @override
-  Widget build(BuildContext context) => Text(
+  Widget build(BuildContext context) => AppText(
         label,
         style:
             AppTextStyles.labelMd.copyWith(color: AppColors.onSurfaceVariant),
@@ -712,7 +713,7 @@ class _SectionHeader extends StatelessWidget {
     return Row(
       mainAxisAlignment: MainAxisAlignment.end,
       children: [
-        Text(
+        AppText(
           title,
           style: AppTextStyles.headlineSm.copyWith(color: AppColors.primary),
         ),

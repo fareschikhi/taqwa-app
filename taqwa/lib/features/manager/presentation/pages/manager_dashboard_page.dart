@@ -10,6 +10,7 @@ import '../../../auth/presentation/pages/login_page.dart';
 import 'package:taqwa/features/data/repositories/manager_repository.dart';
 import 'package:taqwa/features/data/repositories/absence_justification_repository.dart';
 import '../widgets/justification_form_card.dart';
+import 'package:taqwa/core/widgets/app_text.dart';
 
 class ManagerDashboardPage extends ConsumerStatefulWidget {
   const ManagerDashboardPage({super.key});
@@ -149,7 +150,7 @@ class _ManagerDashboardPageState extends ConsumerState<ManagerDashboardPage> {
             tooltip: 'تسجيل الخروج',
           ),
           const Spacer(),
-          Text(
+          AppText(
             'تقوى',
             style: AppTextStyles.headlineMd.copyWith(color: AppColors.primary),
           ),
@@ -196,7 +197,7 @@ class _ManagerDashboardPageState extends ConsumerState<ManagerDashboardPage> {
           Column(
             crossAxisAlignment: CrossAxisAlignment.end,
             children: [
-              Text(
+              AppText(
                 'مرحباً بك، $name',
                 style: AppTextStyles.headlineLgMobile.copyWith(
                   color: AppColors.onPrimary,
@@ -204,7 +205,7 @@ class _ManagerDashboardPageState extends ConsumerState<ManagerDashboardPage> {
                 textAlign: TextAlign.right,
               ),
               SizedBox(height: 4.h),
-              Text(
+              AppText(
                 'إليك نظرة عامة على نشاط المدرسة القرآنية اليوم',
                 style: AppTextStyles.bodyMd.copyWith(
                   color: AppColors.onPrimary.withValues(alpha: 0.9),
@@ -283,7 +284,7 @@ class _ManagerDashboardPageState extends ConsumerState<ManagerDashboardPage> {
           Row(
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
-              Text(
+              AppText(
                 data.value,
                 style: AppTextStyles.headlineMd.copyWith(
                   color: data.isAlert ? AppColors.error : AppColors.primary,
@@ -299,7 +300,7 @@ class _ManagerDashboardPageState extends ConsumerState<ManagerDashboardPage> {
               ),
             ],
           ),
-          Text(
+          AppText(
             data.label,
             style: AppTextStyles.labelMd.copyWith(
               color: data.isAlert

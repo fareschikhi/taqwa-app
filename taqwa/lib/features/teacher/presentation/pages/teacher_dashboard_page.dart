@@ -11,6 +11,7 @@ import '../../../data/repositories/teacher_repository.dart';
 import '../../../data/models/attendance_summary_model.dart';
 import '../../../data/models/revision_needed_model.dart';
 import '../../../data/models/memorization_progress_summary_model.dart';
+import 'package:taqwa/core/widgets/app_text.dart';
 
 class TeacherDashboardPage extends ConsumerStatefulWidget {
   const TeacherDashboardPage({super.key});
@@ -102,7 +103,7 @@ class _TeacherDashboardPageState extends ConsumerState<TeacherDashboardPage> {
                     child: Column(
                       mainAxisSize: MainAxisSize.min,
                       children: [
-                        Text(
+                        AppText(
                           _error!,
                           style: AppTextStyles.bodyMd.copyWith(
                             color: AppColors.error,
@@ -111,7 +112,7 @@ class _TeacherDashboardPageState extends ConsumerState<TeacherDashboardPage> {
                         SizedBox(height: 12.h),
                         ElevatedButton(
                           onPressed: _loadData,
-                          child: const Text('إعادة المحاولة'),
+                          child: const AppText('إعادة المحاولة'),
                         ),
                       ],
                     ),
@@ -173,7 +174,7 @@ class _TeacherDashboardPageState extends ConsumerState<TeacherDashboardPage> {
               ),
             ),
             const Spacer(),
-            Text(
+            AppText(
               'تقوى',
               style: AppTextStyles.headlineMd.copyWith(
                 color: AppColors.primary,
@@ -190,14 +191,14 @@ class _TeacherDashboardPageState extends ConsumerState<TeacherDashboardPage> {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.end,
       children: [
-        Text(
+        AppText(
           greeting,
           style: AppTextStyles.headlineLgMobile.copyWith(
             color: AppColors.onBackground,
           ),
         ),
         SizedBox(height: 4.h),
-        Text(
+        AppText(
           'يوم مبارك للتعليم والمراجعة.',
           style: AppTextStyles.bodyMd.copyWith(
             color: AppColors.onSurfaceVariant,
@@ -229,7 +230,7 @@ class _TeacherDashboardPageState extends ConsumerState<TeacherDashboardPage> {
               Column(
                 crossAxisAlignment: CrossAxisAlignment.center,
                 children: [
-                  Text(
+                  AppText(
                     'ملخص الحضور',
                     style: AppTextStyles.labelMdBold.copyWith(
                       color: AppColors.onBackground,
@@ -240,7 +241,7 @@ class _TeacherDashboardPageState extends ConsumerState<TeacherDashboardPage> {
                     children: [
                       Column(
                         children: [
-                          Text(
+                          AppText(
                             '${_attendanceSummary?.present ?? 0}',
                             style: AppTextStyles.bodyLg.copyWith(
                               fontWeight: FontWeight.w700,
@@ -248,7 +249,7 @@ class _TeacherDashboardPageState extends ConsumerState<TeacherDashboardPage> {
                             ),
                           ),
                           SizedBox(width: 48.w),
-                          Text(
+                          AppText(
                             'حاضر',
                             style: AppTextStyles.labelSm.copyWith(
                               color: AppColors.onSurfaceVariant,
@@ -258,14 +259,14 @@ class _TeacherDashboardPageState extends ConsumerState<TeacherDashboardPage> {
                       ),
                       Column(
                         children: [
-                          Text(
+                          AppText(
                             '${_attendanceSummary?.absent ?? 0}',
                             style: AppTextStyles.bodyLg.copyWith(
                               fontWeight: FontWeight.w700,
                               color: AppColors.error,
                             ),
                           ),
-                          Text(
+                          AppText(
                             'غائب',
                             style: AppTextStyles.labelSm.copyWith(
                               color: AppColors.onSurfaceVariant,
@@ -288,7 +289,7 @@ class _TeacherDashboardPageState extends ConsumerState<TeacherDashboardPage> {
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.end,
             children: [
-              Text(
+              AppText(
                 'طلاب يحتاجون مراجعة',
                 style: AppTextStyles.headlineSm.copyWith(
                   color: AppColors.onBackground,
@@ -296,7 +297,7 @@ class _TeacherDashboardPageState extends ConsumerState<TeacherDashboardPage> {
               ),
               SizedBox(height: 12.h),
               if (_revisionNeeded.isEmpty)
-                Text(
+                AppText(
                   'جميع الطلاب بخير 🎉',
                   style: AppTextStyles.bodyMd.copyWith(
                     color: AppColors.onSurfaceVariant,
@@ -344,7 +345,7 @@ class _TeacherDashboardPageState extends ConsumerState<TeacherDashboardPage> {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.end,
         children: [
-          Text(
+          AppText(
             'تقدم الحفظ ',
             style: AppTextStyles.headlineSm.copyWith(
               color: AppColors.onBackground,
@@ -407,14 +408,14 @@ class _ReviewStudentRow extends StatelessWidget {
         Column(
           crossAxisAlignment: CrossAxisAlignment.end,
           children: [
-            Text(
+            AppText(
               name,
               style: AppTextStyles.bodyMd.copyWith(
                 fontWeight: FontWeight.w500,
                 color: AppColors.onBackground,
               ),
             ),
-            Text(
+            AppText(
               issue,
               style: AppTextStyles.labelSm.copyWith(color: AppColors.error),
             ),
@@ -426,7 +427,7 @@ class _ReviewStudentRow extends StatelessWidget {
           height: 36.w,
           decoration: BoxDecoration(color: bgColor, shape: BoxShape.circle),
           child: Center(
-            child: Text(
+            child: AppText(
               initial,
               style: AppTextStyles.bodyMdBold.copyWith(
                 color: AppColors.onPrimaryContainer,
@@ -457,14 +458,14 @@ class _ProgressBarRow extends StatelessWidget {
         Row(
           mainAxisAlignment: MainAxisAlignment.spaceBetween,
           children: [
-            Text(
+            AppText(
               '${(percentage * 100).round()}%',
               style: AppTextStyles.labelMdBold.copyWith(
                 color: color,
                 fontWeight: FontWeight.w700,
               ),
             ),
-            Text(
+            AppText(
               label,
               style: AppTextStyles.labelMd.copyWith(
                 color: AppColors.onBackground,

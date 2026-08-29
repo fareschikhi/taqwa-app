@@ -4,6 +4,7 @@ import '../../../../core/theme/app_colors.dart';
 import '../../../../core/theme/app_text_styles.dart';
 import '../../../../core/constants/app_constants.dart';
 import '../../../../core/widgets/app_text_field.dart';
+import 'package:taqwa/core/widgets/app_text.dart';
 
 /// The reason type dropdown plus its detail text field, shared by every place
 /// a justification can be written.
@@ -63,7 +64,7 @@ class JustificationReasonFields extends StatelessWidget {
       crossAxisAlignment: CrossAxisAlignment.end,
       mainAxisSize: MainAxisSize.min,
       children: [
-        Text(
+        AppText(
           'نوع العذر *',
           style: AppTextStyles.labelMd.copyWith(
             color: AppColors.onSurfaceVariant,
@@ -95,7 +96,7 @@ class JustificationReasonFields extends StatelessWidget {
                   .map(
                     (e) => DropdownMenuItem(
                       value: e.key,
-                      child: Text(e.value, textAlign: TextAlign.right),
+                      child: AppText(e.value, textAlign: TextAlign.right),
                     ),
                   )
                   .toList(),

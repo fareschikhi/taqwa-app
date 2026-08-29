@@ -10,6 +10,7 @@ import '../../../../core/providers/auth_provider.dart';
 import '../../../data/repositories/teacher_repository.dart';
 import '../../../data/models/teacher_student_model.dart';
 import 'student_details_page.dart';
+import 'package:taqwa/core/widgets/app_text.dart';
 
 class StudentListPage extends ConsumerStatefulWidget {
   const StudentListPage({super.key});
@@ -133,7 +134,7 @@ class _StudentListPageState extends ConsumerState<StudentListPage> {
                         color: AppColors.onSurfaceVariant,
                       ),
                       const Spacer(),
-                      Text(
+                      AppText(
                         'تقوى',
                         style: AppTextStyles.headlineMd.copyWith(
                           color: AppColors.primary,
@@ -142,13 +143,13 @@ class _StudentListPageState extends ConsumerState<StudentListPage> {
                     ],
                   ),
                   SizedBox(height: 16.h),
-                  Text(
+                  AppText(
                     'طلابي',
                     style: AppTextStyles.headlineLgMobile.copyWith(
                       color: AppColors.onSurface,
                     ),
                   ),
-                  Text(
+                  AppText(
                     'متابعة تقدم وأداء طلابك.',
                     style: AppTextStyles.bodyMd.copyWith(
                       color: AppColors.onSurfaceVariant,
@@ -192,7 +193,7 @@ class _StudentListPageState extends ConsumerState<StudentListPage> {
                               child: Container(
                                 height: 300.h,
                                 alignment: Alignment.center,
-                                child: Text(
+                                child: AppText(
                                   'لا يوجد طلاب',
                                   style: AppTextStyles.bodyMd.copyWith(
                                     color: AppColors.onSurfaceVariant,
@@ -274,7 +275,7 @@ class _StudentListTile extends StatelessWidget {
           Column(
             crossAxisAlignment: CrossAxisAlignment.end,
             children: [
-              Text(
+              AppText(
                 student.fullName,
                 style: AppTextStyles.bodyMdBold.copyWith(
                   color: AppColors.onSurface,
@@ -290,7 +291,7 @@ class _StudentListTile extends StatelessWidget {
                           .withValues(alpha: 0.1),
                   borderRadius: BorderRadius.circular(AppConstants.radiusFull),
                 ),
-                child: Text(
+                child: AppText(
                   student.isActive ? 'نشط' : 'غير نشط',
                   style: AppTextStyles.labelSm.copyWith(
                     color: student.isActive
@@ -305,7 +306,7 @@ class _StudentListTile extends StatelessWidget {
           AvatarWidget(
             avatarUrl: student.avatar,
             size: 44.w,
-            fallback: Text(
+            fallback: AppText(
               initial,
               style: AppTextStyles.headlineSm.copyWith(
                 color: AppColors.onPrimaryContainer,
@@ -333,7 +334,7 @@ class _PercRow extends StatelessWidget {
     return Row(
       mainAxisSize: MainAxisSize.min,
       children: [
-        Text(
+        AppText(
           '${(percent * 100).round()}%',
           style: AppTextStyles.labelSm.copyWith(
             color: color,
@@ -341,7 +342,7 @@ class _PercRow extends StatelessWidget {
           ),
         ),
         SizedBox(width: 4.w),
-        Text(
+        AppText(
           label,
           style: AppTextStyles.caption.copyWith(
             color: AppColors.onSurfaceVariant,

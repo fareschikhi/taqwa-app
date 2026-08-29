@@ -5,6 +5,7 @@ import '../../../../core/theme/app_text_styles.dart';
 import '../../../../core/constants/app_constants.dart';
 import '../../../../core/widgets/app_card.dart';
 import '../../../../core/widgets/progress_card.dart';
+import 'package:taqwa/core/widgets/app_text.dart';
 
 class StudentDetailsPage extends StatefulWidget {
   const StudentDetailsPage({super.key, required this.student});
@@ -67,7 +68,7 @@ class _StudentDetailsPageState extends State<StudentDetailsPage> {
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.end,
                       children: [
-                        Text(
+                        AppText(
                           'المهمة الحالية',
                           style: AppTextStyles.headlineSm.copyWith(
                             color: AppColors.onSurface,
@@ -80,14 +81,14 @@ class _StudentDetailsPageState extends State<StudentDetailsPage> {
                               child: Column(
                                 crossAxisAlignment: CrossAxisAlignment.end,
                                 children: [
-                                  Text(
+                                  AppText(
                                     'حفظ سورة البقرة',
                                     style: AppTextStyles.bodyMdBold.copyWith(
                                       color: AppColors.onSurface,
                                     ),
                                   ),
                                   SizedBox(height: 4.h),
-                                  Text(
+                                  AppText(
                                     'من الآية 100 إلى الآية 150',
                                     style: AppTextStyles.labelSm.copyWith(
                                       color: AppColors.onSurfaceVariant,
@@ -111,7 +112,7 @@ class _StudentDetailsPageState extends State<StudentDetailsPage> {
                                   SizedBox(height: 4.h),
                                   Align(
                                     alignment: AlignmentDirectional.centerStart,
-                                    child: Text(
+                                    child: AppText(
                                       '65%',
                                       style: AppTextStyles.labelMdBold.copyWith(
                                         color: AppColors.primary,
@@ -140,7 +141,7 @@ class _StudentDetailsPageState extends State<StudentDetailsPage> {
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.end,
                       children: [
-                        Text(
+                        AppText(
                           'سجل الحفظ والمراجعة',
                           style: AppTextStyles.headlineSm.copyWith(
                             color: AppColors.onSurface,
@@ -196,7 +197,7 @@ class _StudentDetailsPageState extends State<StudentDetailsPage> {
                 ),
               ),
               const Spacer(),
-              Text(
+              AppText(
                 'ملف الطالب',
                 style: AppTextStyles.headlineMd.copyWith(
                   color: AppColors.onPrimary,
@@ -222,7 +223,7 @@ class _StudentDetailsPageState extends State<StudentDetailsPage> {
                         AppConstants.radiusFull,
                       ),
                     ),
-                    child: Text(
+                    child: AppText(
                       'مبتدئ - المستوى 3',
                       style: AppTextStyles.labelSm.copyWith(
                         color: AppColors.onPrimary,
@@ -230,13 +231,13 @@ class _StudentDetailsPageState extends State<StudentDetailsPage> {
                     ),
                   ),
                   SizedBox(height: 4.h),
-                  Text(
+                  AppText(
                     'حلقة النور',
                     style: AppTextStyles.labelMd.copyWith(
                       color: AppColors.onPrimary.withValues(alpha: 0.8),
                     ),
                   ),
-                  Text(
+                  AppText(
                     'المعلم: أ. أحمد',
                     style: AppTextStyles.labelMd.copyWith(
                       color: AppColors.onPrimary.withValues(alpha: 0.8),
@@ -260,7 +261,7 @@ class _StudentDetailsPageState extends State<StudentDetailsPage> {
                       ),
                     ),
                     child: Center(
-                      child: Text(
+                      child: AppText(
                         'ع',
                         style: AppTextStyles.headlineLgMobile.copyWith(
                           color: AppColors.onPrimary,
@@ -269,7 +270,7 @@ class _StudentDetailsPageState extends State<StudentDetailsPage> {
                     ),
                   ),
                   SizedBox(height: 8.h),
-                  Text(
+                  AppText(
                     widget.student,
                     style: AppTextStyles.headlineSm.copyWith(
                       color: AppColors.onPrimary,
@@ -305,7 +306,7 @@ class _StatBox extends StatelessWidget {
       ),
       child: Column(
         children: [
-          Text(
+          AppText(
             value,
             style: AppTextStyles.headlineSm.copyWith(
               color: color,
@@ -313,7 +314,7 @@ class _StatBox extends StatelessWidget {
             ),
           ),
           SizedBox(height: 4.h),
-          Text(
+          AppText(
             label,
             style: AppTextStyles.labelSm.copyWith(
               color: AppColors.onSurfaceVariant,
@@ -348,7 +349,7 @@ class _RecordItem extends StatelessWidget {
               color: AppColors.primary.withValues(alpha: 0.1),
               borderRadius: BorderRadius.circular(AppConstants.radiusFull),
             ),
-            child: Text(
+            child: AppText(
               score,
               style: AppTextStyles.labelSm.copyWith(color: AppColors.primary),
             ),
@@ -357,7 +358,7 @@ class _RecordItem extends StatelessWidget {
           Column(
             crossAxisAlignment: CrossAxisAlignment.end,
             children: [
-              Text(
+              AppText(
                 surah,
                 style: AppTextStyles.labelMdBold.copyWith(
                   color: AppColors.onSurface,
@@ -366,7 +367,7 @@ class _RecordItem extends StatelessWidget {
               SizedBox(height: 2.h),
               Row(
                 children: [
-                  Text(
+                  AppText(
                     date,
                     style: AppTextStyles.caption.copyWith(
                       color: AppColors.outline,
@@ -384,7 +385,7 @@ class _RecordItem extends StatelessWidget {
                         AppConstants.radiusFull,
                       ),
                     ),
-                    child: Text(
+                    child: AppText(
                       type,
                       style: AppTextStyles.caption.copyWith(
                         color: AppColors.onSurfaceVariant,

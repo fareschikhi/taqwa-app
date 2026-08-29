@@ -7,6 +7,7 @@ import '../../../../core/constants/app_constants.dart';
 import '../../../../core/providers/selected_child_provider.dart';
 import '../../../data/repositories/student_repository.dart';
 import '../../../data/models/attendance_summary_model.dart';
+import 'package:taqwa/core/widgets/app_text.dart';
 
 class ChildAttendanceHistoryPage extends ConsumerStatefulWidget {
   const ChildAttendanceHistoryPage({super.key});
@@ -87,7 +88,7 @@ class _ChildAttendanceHistoryPageState
                 Row(
                   children: [
                     const Spacer(),
-                    Text(
+                    AppText(
                       'تقوى',
                       style: AppTextStyles.headlineMd.copyWith(
                         color: AppColors.primary,
@@ -96,14 +97,14 @@ class _ChildAttendanceHistoryPageState
                   ],
                 ),
                 SizedBox(height: 16.h),
-                Text(
+                AppText(
                   'سجل الحضور التفصيلي',
                   style: AppTextStyles.headlineLgMobile.copyWith(
                     color: AppColors.onSurface,
                   ),
                 ),
                 SizedBox(height: 4.h),
-                Text(
+                AppText(
                   'سجلات حضور ${child.fullName} وغيابه.',
                   style: AppTextStyles.bodyMd.copyWith(
                     color: AppColors.onSurfaceVariant,
@@ -124,7 +125,7 @@ class _ChildAttendanceHistoryPageState
                   // them stays the whole record, so the heading says which is
                   // which rather than leaving a bare percentage to be read as
                   // an all-time figure.
-                  Text(
+                  AppText(
                     'إحصائيات هذا الشهر',
                     style: AppTextStyles.headlineSm.copyWith(
                       color: AppColors.onSurface,
@@ -162,14 +163,14 @@ class _ChildAttendanceHistoryPageState
                   // A late day sits in the حضور box while the timeline still
                   // shows it as متأخر, so the rule is spelled out rather than
                   // left for a parent to work out from counts that look off.
-                  Text(
+                  AppText(
                     'أيام التأخر تُحتسب ضمن الحضور.',
                     style: AppTextStyles.labelSm.copyWith(
                       color: AppColors.onSurfaceVariant,
                     ),
                   ),
                   SizedBox(height: 20.h),
-                  Text(
+                  AppText(
                     'السجل الزمني',
                     style: AppTextStyles.headlineSm.copyWith(
                       color: AppColors.onSurface,
@@ -179,7 +180,7 @@ class _ChildAttendanceHistoryPageState
                   if (_history.isEmpty)
                     Padding(
                       padding: EdgeInsets.symmetric(vertical: 16.h),
-                      child: Text(
+                      child: AppText(
                         'لا يوجد سجل حضور بعد',
                         style: AppTextStyles.bodyMd.copyWith(
                           color: AppColors.onSurfaceVariant,
@@ -241,12 +242,12 @@ class _ChildAttendanceHistoryPageState
             child: Icon(icon, color: color, size: 16.w),
           ),
           const Spacer(),
-          Text(
+          AppText(
             dateStr,
             style: AppTextStyles.labelSm.copyWith(color: AppColors.outline),
           ),
           SizedBox(width: 10.w),
-          Text(label, style: AppTextStyles.labelMdBold.copyWith(color: color)),
+          AppText(label, style: AppTextStyles.labelMdBold.copyWith(color: color)),
         ],
       ),
     );
@@ -273,7 +274,7 @@ class _StatBox extends StatelessWidget {
       ),
       child: Column(
         children: [
-          Text(
+          AppText(
             value,
             style: AppTextStyles.headlineSm.copyWith(
               color: color,
@@ -281,7 +282,7 @@ class _StatBox extends StatelessWidget {
             ),
           ),
           SizedBox(height: 4.h),
-          Text(
+          AppText(
             label,
             style: AppTextStyles.caption.copyWith(
               color: AppColors.onSurfaceVariant,

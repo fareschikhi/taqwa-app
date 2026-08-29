@@ -9,6 +9,7 @@ import '../../../../core/widgets/app_text_field.dart';
 import '../../../../core/widgets/user_selector_field.dart';
 import '../../../../features/data/repositories/absence_justification_repository.dart';
 import 'justification_reason_fields.dart';
+import 'package:taqwa/core/widgets/app_text.dart';
 
 /// Inline form that lets a manager justify a student's absence or lateness.
 ///
@@ -67,7 +68,7 @@ class _JustificationFormCardState extends State<JustificationFormCard> {
     if (!mounted) return;
     ScaffoldMessenger.of(context).showSnackBar(
       SnackBar(
-        content: Text(message, textAlign: TextAlign.right),
+        content: AppText(message, textAlign: TextAlign.right),
         backgroundColor: isError ? AppColors.error : AppColors.primary,
       ),
     );
@@ -254,14 +255,14 @@ class _JustificationFormCardState extends State<JustificationFormCard> {
         Column(
           crossAxisAlignment: CrossAxisAlignment.end,
           children: [
-            Text(
+            AppText(
               'تبرير غياب',
               style: AppTextStyles.headlineSm.copyWith(
                 color: AppColors.onSurface,
               ),
             ),
             SizedBox(height: 2.h),
-            Text(
+            AppText(
               'تسجيل عذر غياب أو تأخر لطالب',
               style: AppTextStyles.labelSm.copyWith(
                 color: AppColors.onSurfaceVariant,

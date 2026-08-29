@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
 import '../theme/app_colors.dart';
 import '../theme/app_text_styles.dart';
+import 'package:taqwa/core/widgets/app_text.dart';
 
 /// Circular progress widget
 class CircularProgressWidget extends StatelessWidget {
@@ -51,7 +52,7 @@ class CircularProgressWidget extends StatelessWidget {
               Column(
                 mainAxisSize: MainAxisSize.min,
                 children: [
-                  Text(
+                  AppText(
                     centerText ?? '${(percentage * 100).round()}%',
                     style: AppTextStyles.headlineMd.copyWith(
                       color: color0,
@@ -64,7 +65,7 @@ class CircularProgressWidget extends StatelessWidget {
           ),
         ),
         SizedBox(height: 8.h),
-        Text(
+        AppText(
           label,
           style: AppTextStyles.labelSm.copyWith(
             color: AppColors.onSurfaceVariant,

@@ -11,6 +11,7 @@ import '../../../../core/widgets/app_card.dart';
 import '../../../../core/widgets/app_button.dart';
 import '../../../data/models/teacher_student_model.dart';
 import '../../../data/repositories/teacher_repository.dart';
+import 'package:taqwa/core/widgets/app_text.dart';
 
 class MemorizationEntrySheet extends StatefulWidget {
   const MemorizationEntrySheet({super.key, required this.student});
@@ -43,7 +44,7 @@ class _MemorizationEntrySheetState extends State<MemorizationEntrySheet> {
     if (_selectedSurah == null || _selectedType == null) {
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
-          content: Text(
+          content: AppText(
             'يرجى تحديد السورة ونوع المراجعة',
             style: AppTextStyles.labelMd.copyWith(color: AppColors.onPrimary),
             textDirection: TextDirection.rtl,
@@ -69,7 +70,7 @@ class _MemorizationEntrySheetState extends State<MemorizationEntrySheet> {
         setState(() => _isSaving = false);
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
-            content: Text(
+            content: AppText(
               _errorMessage(e),
               style: AppTextStyles.labelMd.copyWith(color: AppColors.onPrimary),
               textDirection: TextDirection.rtl,
@@ -113,7 +114,7 @@ class _MemorizationEntrySheetState extends State<MemorizationEntrySheet> {
               ),
             ),
             SizedBox(height: 12.h),
-            Text(
+            AppText(
               widget.student.fullName,
               style: AppTextStyles.headlineMd.copyWith(
                 color: AppColors.onSurface,
@@ -126,7 +127,7 @@ class _MemorizationEntrySheetState extends State<MemorizationEntrySheet> {
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.end,
                 children: [
-                  Text(
+                  AppText(
                     'السورة',
                     style: AppTextStyles.labelMd.copyWith(
                       color: AppColors.onSurfaceVariant,
@@ -146,7 +147,7 @@ class _MemorizationEntrySheetState extends State<MemorizationEntrySheet> {
                       child: DropdownButton<int>(
                         value: _selectedSurah,
                         isExpanded: true,
-                        hint: Text(
+                        hint: AppText(
                           'اختر السورة...',
                           style: AppTextStyles.labelMd.copyWith(
                             color: AppColors.inputPlaceholder,
@@ -156,7 +157,7 @@ class _MemorizationEntrySheetState extends State<MemorizationEntrySheet> {
                             .map(
                               (s) => DropdownMenuItem(
                                 value: s.number,
-                                child: Text(s.name),
+                                child: AppText(s.name),
                               ),
                             )
                             .toList(),
@@ -166,7 +167,7 @@ class _MemorizationEntrySheetState extends State<MemorizationEntrySheet> {
                   ),
                   SizedBox(height: 12.h),
 
-                  Text(
+                  AppText(
                     'نوع العرض',
                     style: AppTextStyles.labelMd.copyWith(
                       color: AppColors.onSurfaceVariant,
@@ -190,7 +191,7 @@ class _MemorizationEntrySheetState extends State<MemorizationEntrySheet> {
                   ),
                   SizedBox(height: 12.h),
 
-                  Text(
+                  AppText(
                     // Revision is counted in hizbs, memorization in pages.
                     _selectedType?.amountLabel ?? 'العدد',
                     style: AppTextStyles.labelMd.copyWith(
@@ -220,7 +221,7 @@ class _MemorizationEntrySheetState extends State<MemorizationEntrySheet> {
                           color: AppColors.primary,
                         ),
                         Expanded(
-                          child: Text(
+                          child: AppText(
                             _selectedType == null ? '—' : '$_amount',
                             textAlign: TextAlign.center,
                             style: AppTextStyles.bodyMdBold,

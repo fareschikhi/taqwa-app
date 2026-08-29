@@ -5,6 +5,7 @@ import 'package:image_picker/image_picker.dart';
 import '../../../../core/theme/app_colors.dart';
 import '../../../../core/theme/app_text_styles.dart';
 import '../../../../core/constants/app_constants.dart';
+import 'package:taqwa/core/widgets/app_text.dart';
 
 /// Circular avatar the user taps to pick a photo from the gallery or camera.
 ///
@@ -48,12 +49,12 @@ class AvatarPickerField extends StatelessWidget {
                 Icons.photo_library,
                 color: AppColors.primary,
               ),
-              title: Text('اختيار من المعرض', style: AppTextStyles.bodyMd),
+              title: AppText('اختيار من المعرض', style: AppTextStyles.bodyMd),
               onTap: () => Navigator.pop(ctx, ImageSource.gallery),
             ),
             ListTile(
               leading: const Icon(Icons.camera_alt, color: AppColors.primary),
-              title: Text('التقاط صورة بالكاميرا', style: AppTextStyles.bodyMd),
+              title: AppText('التقاط صورة بالكاميرا', style: AppTextStyles.bodyMd),
               onTap: () => Navigator.pop(ctx, ImageSource.camera),
             ),
           ],
@@ -130,13 +131,13 @@ class AvatarPickerField extends StatelessWidget {
           padding: EdgeInsets.only(top: 8.h),
           child: Column(
             children: [
-              Text(
+              AppText(
                 label,
                 style: AppTextStyles.labelMd.copyWith(
                   color: AppColors.onSurface,
                 ),
               ),
-              Text(
+              AppText(
                 picked != null ? 'تم اختيار صورة' : emptyHint,
                 style: AppTextStyles.labelSm.copyWith(
                   color: picked != null

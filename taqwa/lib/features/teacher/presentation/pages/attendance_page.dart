@@ -14,6 +14,7 @@ import '../../../../core/widgets/avatar_widget.dart';
 import '../../../../core/providers/auth_provider.dart';
 import '../../../data/repositories/teacher_repository.dart';
 import '../../../data/models/teacher_student_model.dart';
+import 'package:taqwa/core/widgets/app_text.dart';
 
 class AttendancePage extends ConsumerStatefulWidget {
   const AttendancePage({super.key});
@@ -125,7 +126,7 @@ class _AttendancePageState extends ConsumerState<AttendancePage> {
     if (!mounted) return;
     ScaffoldMessenger.of(context).showSnackBar(
       SnackBar(
-        content: Text(
+        content: AppText(
           message,
           style: AppTextStyles.labelMd.copyWith(color: AppColors.onPrimary),
           textDirection: TextDirection.rtl,
@@ -288,7 +289,7 @@ class _AttendancePageState extends ConsumerState<AttendancePage> {
                                 child: Container(
                                   height: 300.h,
                                   alignment: Alignment.center,
-                                  child: Text(
+                                  child: AppText(
                                     'لا يوجد طلاب مسجلون',
                                     style: AppTextStyles.bodyMd.copyWith(
                                       color: AppColors.onSurfaceVariant,
@@ -350,7 +351,7 @@ class _AttendancePageState extends ConsumerState<AttendancePage> {
                 color: AppColors.onSurfaceVariant,
               ),
               const Spacer(),
-              Text(
+              AppText(
                 'تقوى',
                 style: AppTextStyles.headlineMd.copyWith(
                   color: AppColors.primary,
@@ -366,13 +367,13 @@ class _AttendancePageState extends ConsumerState<AttendancePage> {
               Column(
                 crossAxisAlignment: CrossAxisAlignment.end,
                 children: [
-                  Text(
+                  AppText(
                     'تسجيل الحضور',
                     style: AppTextStyles.headlineLgMobile.copyWith(
                       color: AppColors.onSurface,
                     ),
                   ),
-                  Text(
+                  AppText(
                     ' ${DateTime.now().day}/${DateTime.now().month}',
                     style: AppTextStyles.bodyMd.copyWith(
                       color: AppColors.onSurfaceVariant,
@@ -398,13 +399,13 @@ class _AttendancePageState extends ConsumerState<AttendancePage> {
           Row(
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
-              Text(
+              AppText(
                 '$_checkedCount / $total',
                 style: AppTextStyles.headlineMd.copyWith(
                   color: AppColors.primary,
                 ),
               ),
-              Text(
+              AppText(
                 _checkedCount < total
                     ? 'غير محدد $uncheckedCount'
                     : 'تم تحديد الكل',
@@ -559,7 +560,7 @@ class _StudentAttendanceTile extends StatelessWidget {
                       ],
                     ),
                     SizedBox(height: 2.h),
-                    Text(
+                    AppText(
                       'عرض',
                       style: AppTextStyles.labelSm.copyWith(
                         color: memorizationAccent,
@@ -591,7 +592,7 @@ class _StudentAttendanceTile extends StatelessWidget {
                     ),
                     SizedBox(width: 6.w),
                   ],
-                  Text(
+                  AppText(
                     name,
                     style: AppTextStyles.bodyMdBold.copyWith(
                       color: AppColors.onSurface,
@@ -630,7 +631,7 @@ class _StudentAttendanceTile extends StatelessWidget {
             avatarUrl: avatarUrl,
             size: 64.w,
             backgroundColor: AppColors.surfaceContainerHigh,
-            fallback: Text(
+            fallback: AppText(
               '$index',
               style: AppTextStyles.labelMd.copyWith(
                 color: AppColors.onSurfaceVariant,

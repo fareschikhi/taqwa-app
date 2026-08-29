@@ -12,6 +12,7 @@ import '../../../../features/data/repositories/manager_repository.dart';
 import '../../../../features/data/models/manager_model.dart';
 import 'create_manager_page.dart';
 import '../admin_shell.dart';
+import 'package:taqwa/core/widgets/app_text.dart';
 
 class ManagersManagementPage extends StatefulWidget {
   const ManagersManagementPage({super.key});
@@ -54,7 +55,7 @@ class _ManagersManagementPageState extends State<ManagersManagementPage> {
       if (mounted) {
         setState(() => _isLoading = false);
         ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text(ManagerRepository.errorMessage(e))),
+          SnackBar(content: AppText(ManagerRepository.errorMessage(e))),
         );
       }
     }
@@ -89,13 +90,13 @@ class _ManagersManagementPageState extends State<ManagersManagementPage> {
       await _repo.deleteManager(m.id!);
       if (!mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('تم حذف المدير بنجاح')),
+        const SnackBar(content: AppText('تم حذف المدير بنجاح')),
       );
       _load();
     } catch (e) {
       if (!mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text(ManagerRepository.errorMessage(e))),
+        SnackBar(content: AppText(ManagerRepository.errorMessage(e))),
       );
     }
   }
@@ -115,7 +116,7 @@ class _ManagersManagementPageState extends State<ManagersManagementPage> {
     } catch (e) {
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text(ManagerRepository.errorMessage(e))),
+          SnackBar(content: AppText(ManagerRepository.errorMessage(e))),
         );
       }
     }
@@ -225,7 +226,7 @@ class _ManagersManagementPageState extends State<ManagersManagementPage> {
         ).then((_) => _load()),
         backgroundColor: AppColors.primary,
         icon: const Icon(Icons.add, color: AppColors.onPrimary),
-        label: Text(
+        label: AppText(
           'إضافة مدير',
           style: AppTextStyles.labelMd.copyWith(color: AppColors.onPrimary),
         ),
@@ -257,7 +258,7 @@ class _ManagersManagementPageState extends State<ManagersManagementPage> {
                 ),
               ),
               const Spacer(),
-              Text(
+              AppText(
                 'تقوى',
                 style: AppTextStyles.headlineMd.copyWith(
                   color: AppColors.primary,
@@ -266,13 +267,13 @@ class _ManagersManagementPageState extends State<ManagersManagementPage> {
             ],
           ),
           SizedBox(height: 4.h),
-          Text(
+          AppText(
             'الإدارة',
             style: AppTextStyles.headlineLgMobile.copyWith(
               color: AppColors.onSurface,
             ),
           ),
-          Text(
+          AppText(
             'تنظيم ومتابعة المديرين.',
             style: AppTextStyles.bodyMd.copyWith(
               color: AppColors.onSurfaceVariant,
@@ -302,14 +303,14 @@ class _ManagersManagementPageState extends State<ManagersManagementPage> {
             ),
           ),
           SizedBox(height: 16.h),
-          Text(
+          AppText(
             'لا يوجد مديرون',
             style: AppTextStyles.headlineSm.copyWith(
               color: AppColors.onSurface,
             ),
           ),
           SizedBox(height: 8.h),
-          Text(
+          AppText(
             'اضغط "إضافة مدير" لإضافة أول مدير',
             style: AppTextStyles.bodyMd.copyWith(
               color: AppColors.onSurfaceVariant,
@@ -373,7 +374,7 @@ class _ManagerCard extends StatelessWidget {
                       : AppColors.surfaceVariant,
                   borderRadius: BorderRadius.circular(AppConstants.radiusMd),
                 ),
-                child: Text(
+                child: AppText(
                   isActive ? 'نشط' : 'غير نشط',
                   style: AppTextStyles.labelSm.copyWith(
                     color: isActive
@@ -389,7 +390,7 @@ class _ManagerCard extends StatelessWidget {
                   Column(
                     crossAxisAlignment: CrossAxisAlignment.end,
                     children: [
-                      Text(
+                      AppText(
                         manager.fullName,
                         style: AppTextStyles.headlineSm.copyWith(
                           color: AppColors.onSurface,
@@ -398,7 +399,7 @@ class _ManagerCard extends StatelessWidget {
                       if (manager.phone != null)
                         Row(
                           children: [
-                            Text(
+                            AppText(
                               manager.phone!,
                               style: AppTextStyles.labelSm.copyWith(
                                 color: AppColors.onSurfaceVariant,
@@ -424,7 +425,7 @@ class _ManagerCard extends StatelessWidget {
                     backgroundColor: isActive
                         ? AppColors.primaryContainer
                         : AppColors.surfaceContainerHigh,
-                    fallback: Text(
+                    fallback: AppText(
                       manager.fullName.isNotEmpty ? manager.fullName[0] : '؟',
                       style: AppTextStyles.headlineSm.copyWith(
                         color: isActive
@@ -451,14 +452,14 @@ class _ManagerCard extends StatelessWidget {
                 Row(
                   mainAxisAlignment: MainAxisAlignment.spaceBetween,
                   children: [
-                    Text(
+                    AppText(
                       halaqaName,
                       style: AppTextStyles.labelMd.copyWith(
                         color: AppColors.onSurface,
                         fontWeight: FontWeight.w600,
                       ),
                     ),
-                    Text(
+                    AppText(
                       'الحلقة المعينة',
                       style: AppTextStyles.labelMd
                           .copyWith(color: AppColors.onSurfaceVariant),
@@ -478,14 +479,14 @@ class _ManagerCard extends StatelessWidget {
                           borderRadius: BorderRadius.circular(
                               AppConstants.radiusMd),
                         ),
-                        child: Text(
+                        child: AppText(
                           '$halaqasCount حلقات',
                           style: AppTextStyles.labelSm.copyWith(
                               color: AppColors.onSurface,
                               fontWeight: FontWeight.w600),
                         ),
                       ),
-                      Text(
+                      AppText(
                         'إجمالي الحلقات',
                         style: AppTextStyles.labelMd
                             .copyWith(color: AppColors.onSurfaceVariant),
@@ -546,11 +547,8 @@ class _FilterChips extends StatelessWidget {
                       : AppColors.outlineVariant,
                 ),
               ),
-              child: Text(
+              child: AppText(
                 e.value,
-                // Mixed Arabic and digits, in an LTR tree — see the same note
-                // on FilterChipGroup in core/widgets/search_bar_widget.dart.
-                textDirection: TextDirection.rtl,
                 style: AppTextStyles.labelMd.copyWith(
                   color: isSelected
                       ? AppColors.onPrimaryContainer

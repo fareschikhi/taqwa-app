@@ -17,6 +17,7 @@ import 'package:taqwa/core/widgets/card_action_row.dart';
 import 'package:taqwa/core/widgets/confirm_status_dialog.dart';
 import 'package:taqwa/core/widgets/halaqa_group_section.dart';
 import 'package:taqwa/features/data/repositories/user_repository.dart';
+import 'package:taqwa/core/widgets/app_text.dart';
 
 class StudentsManagementPage extends StatefulWidget {
   const StudentsManagementPage({super.key});
@@ -65,13 +66,13 @@ class _StudentsManagementPageState extends State<StudentsManagementPage> {
       await _studentRepo.deleteStudent(id);
       if (!mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('تم حذف الطالب بنجاح')),
+        const SnackBar(content: AppText('تم حذف الطالب بنجاح')),
       );
       _load();
     } catch (e) {
       if (!mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text(StudentRepository.errorMessage(e))),
+        SnackBar(content: AppText(StudentRepository.errorMessage(e))),
       );
     }
   }
@@ -97,7 +98,7 @@ class _StudentsManagementPageState extends State<StudentsManagementPage> {
     } catch (e) {
       if (!mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text(StudentRepository.errorMessage(e))),
+        SnackBar(content: AppText(StudentRepository.errorMessage(e))),
       );
     }
   }
@@ -210,7 +211,7 @@ class _StudentsManagementPageState extends State<StudentsManagementPage> {
                           ),
                         ),
                         SizedBox(width: 8.w),
-                        Text(
+                        AppText(
                           'تقوى',
                           style: AppTextStyles.headlineMd.copyWith(
                             color: AppColors.primary,
@@ -219,13 +220,13 @@ class _StudentsManagementPageState extends State<StudentsManagementPage> {
                       ],
                     ),
                     SizedBox(height: 16.h),
-                    Text(
+                    AppText(
                       'قائمة الطلاب',
                       style: AppTextStyles.headlineLgMobile.copyWith(
                         color: AppColors.onSurface,
                       ),
                     ),
-                    Text(
+                    AppText(
                       'إدارة متابعة حفظ الطلاب وحضورهم.',
                       style: AppTextStyles.bodyMd.copyWith(
                         color: AppColors.onSurfaceVariant,
@@ -259,7 +260,7 @@ class _StudentsManagementPageState extends State<StudentsManagementPage> {
                             child: Container(
                               height: 300.h,
                               alignment: Alignment.center,
-                              child: Text(
+                              child: AppText(
                                 'لا يوجد طلاب',
                                 style: AppTextStyles.bodyMd
                                     .copyWith(color: AppColors.onSurfaceVariant),
@@ -368,7 +369,7 @@ class _StudentCard extends StatelessWidget {
                       : AppColors.surfaceVariant,
                   borderRadius: BorderRadius.circular(AppConstants.radiusMd),
                 ),
-                child: Text(
+                child: AppText(
                   isActive ? 'نشط' : 'غير نشط',
                   style: AppTextStyles.labelSm.copyWith(
                     color: isActive ? AppColors.primary : AppColors.outline,
@@ -379,7 +380,7 @@ class _StudentCard extends StatelessWidget {
               Column(
                 crossAxisAlignment: CrossAxisAlignment.end,
                 children: [
-                  Text(
+                  AppText(
                     fullName,
                     style: AppTextStyles.bodyMdBold.copyWith(
                       color: AppColors.onSurface,
@@ -395,7 +396,7 @@ class _StudentCard extends StatelessWidget {
                       borderRadius:
                           BorderRadius.circular(AppConstants.radiusFull),
                     ),
-                    child: Text(
+                    child: AppText(
                       halaqaName,
                       style: AppTextStyles.labelSm.copyWith(
                         color: AppColors.secondary,
@@ -410,7 +411,7 @@ class _StudentCard extends StatelessWidget {
                     (student['avatar'] as String?) ??
                     (user['avatar'] as String?),
                 size: 44.w,
-                fallback: Text(
+                fallback: AppText(
                   fullName.isNotEmpty ? fullName[0] : '؟',
                   style: AppTextStyles.headlineSm.copyWith(
                     color: AppColors.onPrimaryContainer,
@@ -460,11 +461,11 @@ class _InfoCell extends StatelessWidget {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.end,
         children: [
-          Text(label,
+          AppText(label,
               style: AppTextStyles.labelSm
                   .copyWith(color: AppColors.onSurfaceVariant)),
           SizedBox(height: 2.h),
-          Text(value,
+          AppText(value,
               style: AppTextStyles.labelMdBold
                   .copyWith(color: AppColors.onSurface)),
         ],

@@ -3,6 +3,7 @@ import 'package:flutter_screenutil/flutter_screenutil.dart';
 import '../theme/app_colors.dart';
 import '../theme/app_text_styles.dart';
 import '../constants/app_constants.dart';
+import 'package:taqwa/core/widgets/app_text.dart';
 
 class SearchBarWidget extends StatelessWidget {
   const SearchBarWidget({
@@ -36,7 +37,7 @@ class SearchBarWidget extends StatelessWidget {
                 color: AppColors.surfaceContainerLow,
                 borderRadius: BorderRadius.circular(AppConstants.radiusMd),
               ),
-              child: Text(
+              child: AppText(
                 'بحث',
                 style: AppTextStyles.labelSm.copyWith(
                   color: AppColors.onSurfaceVariant,
@@ -138,13 +139,8 @@ class _FilterChipGroupState extends State<FilterChipGroup> {
                         : AppColors.outlineVariant,
                   ),
                 ),
-                child: Text(
+                child: AppText(
                   widget.filters[i],
-                  // A label like 'الكل (9)' mixes Arabic with neutral
-                  // characters, which resolve against the paragraph's base
-                  // direction. The app tree is LTR, so the label declares its
-                  // own direction or the count lands on the wrong side.
-                  textDirection: TextDirection.rtl,
                   style: AppTextStyles.labelMd.copyWith(
                     color: isSelected
                         ? AppColors.onPrimary

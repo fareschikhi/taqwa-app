@@ -14,6 +14,7 @@ import '../../../../features/data/repositories/parent_repository.dart';
 import 'package:taqwa/features/data/repositories/user_repository.dart';
 import '../../../shared/presentation/pages/parent_form_page.dart';
 import '../admin_shell.dart';
+import 'package:taqwa/core/widgets/app_text.dart';
 
 class ParentsManagementPage extends StatefulWidget {
   const ParentsManagementPage({super.key});
@@ -57,7 +58,7 @@ class _ParentsManagementPageState extends State<ParentsManagementPage> {
       if (mounted) {
         setState(() => _isLoading = false);
         ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text(ParentRepository.errorMessage(e))),
+          SnackBar(content: AppText(ParentRepository.errorMessage(e))),
         );
       }
     }
@@ -100,13 +101,13 @@ class _ParentsManagementPageState extends State<ParentsManagementPage> {
       await _repo.deleteParent(id);
       if (!mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('تم حذف ولي الأمر بنجاح')),
+        const SnackBar(content: AppText('تم حذف ولي الأمر بنجاح')),
       );
       _load();
     } catch (e) {
       if (!mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text(ParentRepository.errorMessage(e))),
+        SnackBar(content: AppText(ParentRepository.errorMessage(e))),
       );
     }
   }
@@ -128,7 +129,7 @@ class _ParentsManagementPageState extends State<ParentsManagementPage> {
     } catch (e) {
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text(ParentRepository.errorMessage(e))),
+          SnackBar(content: AppText(ParentRepository.errorMessage(e))),
         );
       }
     }
@@ -172,7 +173,7 @@ class _ParentsManagementPageState extends State<ParentsManagementPage> {
                           ),
                         ),
                         const Spacer(),
-                        Text(
+                        AppText(
                           'تقوى',
                           style: AppTextStyles.headlineMd.copyWith(
                             color: AppColors.primary,
@@ -181,13 +182,13 @@ class _ParentsManagementPageState extends State<ParentsManagementPage> {
                       ],
                     ),
                     SizedBox(height: 16.h),
-                    Text(
+                    AppText(
                       'أولياء الأمور',
                       style: AppTextStyles.headlineLgMobile.copyWith(
                         color: AppColors.onSurface,
                       ),
                     ),
-                    Text(
+                    AppText(
                       'متابعة التواصل مع أولياء أمور الطلاب.',
                       style: AppTextStyles.bodyMd.copyWith(
                         color: AppColors.onSurfaceVariant,
@@ -234,7 +235,7 @@ class _ParentsManagementPageState extends State<ParentsManagementPage> {
                             child: Container(
                               height: 300.h,
                               alignment: Alignment.center,
-                              child: Text(
+                              child: AppText(
                                 'لا يوجد أولياء أمور',
                                 style: AppTextStyles.bodyMd
                                     .copyWith(color: AppColors.onSurfaceVariant),
@@ -321,7 +322,7 @@ class _ParentCard extends StatelessWidget {
                               AppConstants.radiusFull,
                             ),
                           ),
-                          child: Text(
+                          child: AppText(
                             isActive ? 'نشط' : 'غير نشط',
                             style: AppTextStyles.labelSm.copyWith(
                               color: isActive
@@ -333,7 +334,7 @@ class _ParentCard extends StatelessWidget {
                       ],
                     ),
                     SizedBox(height: 8.h),
-                    Text(
+                    AppText(
                       parent.fullName,
                       style: AppTextStyles.bodyMdBold.copyWith(
                         color: AppColors.onSurface,
@@ -345,7 +346,7 @@ class _ParentCard extends StatelessWidget {
                       Row(
                         mainAxisAlignment: MainAxisAlignment.end,
                         children: [
-                          Text(
+                          AppText(
                             parent.phone!,
                             style: AppTextStyles.labelSm.copyWith(
                               color: AppColors.onSurfaceVariant,
@@ -364,7 +365,7 @@ class _ParentCard extends StatelessWidget {
                     Row(
                       mainAxisAlignment: MainAxisAlignment.end,
                       children: [
-                        Text(
+                        AppText(
                           '${parent.children.length} طالب مرتبط',
                           style: AppTextStyles.labelSm.copyWith(
                             color: AppColors.primary,
@@ -386,7 +387,7 @@ class _ParentCard extends StatelessWidget {
                 avatarUrl: parent.avatar,
                 size: 52.w,
                 backgroundColor: AppColors.tertiaryContainer,
-                fallback: Text(
+                fallback: AppText(
                   parent.fullName.isNotEmpty ? parent.fullName[0] : '؟',
                   style: AppTextStyles.headlineSm.copyWith(
                     color: AppColors.onTertiaryContainer,

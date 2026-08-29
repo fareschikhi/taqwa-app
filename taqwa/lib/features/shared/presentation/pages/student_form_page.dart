@@ -16,6 +16,7 @@ import '../../../data/repositories/parent_repository.dart';
 import '../../../data/repositories/student_repository.dart';
 import '../widgets/avatar_picker_field.dart';
 import '../widgets/form_section.dart';
+import 'package:taqwa/core/widgets/app_text.dart';
 
 /// Create or edit a student. Shared by the admin and the manager sections —
 /// both roles hit the same POST/PATCH /students routes, so they get the same
@@ -167,7 +168,7 @@ class _StudentFormPageState extends State<StudentFormPage> {
       if (!mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
-          content: Text(
+          content: AppText(
             _isEditing ? 'تم تحديث بيانات الطالب' : 'تم إضافة الطالب بنجاح',
           ),
         ),
@@ -177,7 +178,7 @@ class _StudentFormPageState extends State<StudentFormPage> {
       if (!mounted) return;
       ScaffoldMessenger.of(
         context,
-      ).showSnackBar(SnackBar(content: Text(StudentRepository.errorMessage(e))));
+      ).showSnackBar(SnackBar(content: AppText(StudentRepository.errorMessage(e))));
     } finally {
       if (mounted) setState(() => _isLoading = false);
     }
@@ -374,7 +375,7 @@ class _StudentFormPageState extends State<StudentFormPage> {
           value: hasSelected ? _selectedHalaqaId : null,
           isExpanded: true,
           icon: const Icon(Icons.arrow_drop_down, color: AppColors.primary),
-          hint: Text(
+          hint: AppText(
             _halaqas.isEmpty ? 'لا توجد حلقات متاحة' : 'اختر الحلقة (اختياري)',
             style: AppTextStyles.labelMd.copyWith(
               color: AppColors.inputPlaceholder,
@@ -385,7 +386,7 @@ class _StudentFormPageState extends State<StudentFormPage> {
               .map(
                 (h) => DropdownMenuItem<int>(
                   value: h.id,
-                  child: Text(
+                  child: AppText(
                     h.name,
                     style: AppTextStyles.bodyMd,
                     textAlign: TextAlign.end,
@@ -415,7 +416,7 @@ class _StudentFormPageState extends State<StudentFormPage> {
             size: 22.w,
           ),
           SizedBox(width: 8.w),
-          Text(
+          AppText(
             _isEditing ? 'تعديل بيانات الطالب' : 'إضافة طالب جديد',
             style: AppTextStyles.labelMd.copyWith(color: AppColors.primary),
           ),

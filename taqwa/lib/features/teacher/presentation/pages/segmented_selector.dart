@@ -3,6 +3,7 @@ import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:taqwa/core/constants/app_constants.dart';
 import 'package:taqwa/core/theme/app_colors.dart';
 import 'package:taqwa/core/theme/app_text_styles.dart';
+import 'package:taqwa/core/widgets/app_text.dart';
 
 class SegmentOption<T> {
   const SegmentOption({required this.value, required this.label});
@@ -47,7 +48,7 @@ class SegmentedSelector<T> extends StatelessWidget {
                     width: isSelected ? 1.5 : 1,
                   ),
                 ),
-                child: Text(
+                child: AppText(
                   opt.label,
                   style: AppTextStyles.labelMd.copyWith(
                     color: isSelected

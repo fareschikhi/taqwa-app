@@ -3,6 +3,7 @@ import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:taqwa/core/theme/app_colors.dart';
 import 'package:taqwa/core/theme/app_text_styles.dart';
 import 'package:taqwa/core/constants/app_constants.dart';
+import 'package:taqwa/core/widgets/app_text.dart';
 
 /// Shared row of card actions: an optional active/inactive toggle, a delete
 /// button, and an outlined edit button. Used across the admin management
@@ -93,7 +94,7 @@ class CardActionRow extends StatelessWidget {
                     color: AppColors.secondary,
                   ),
                   SizedBox(width: 4.w),
-                  Text(
+                  AppText(
                     'تعديل',
                     style: AppTextStyles.labelMd.copyWith(
                       color: AppColors.secondary,

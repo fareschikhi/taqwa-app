@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
 import '../../../../core/theme/app_colors.dart';
 import '../../../../core/theme/app_text_styles.dart';
+import 'package:taqwa/core/widgets/app_text.dart';
 
 /// Right-aligned icon + title that opens a group of related form fields.
 class FormSectionHeader extends StatelessWidget {
@@ -15,7 +16,7 @@ class FormSectionHeader extends StatelessWidget {
     return Row(
       mainAxisAlignment: MainAxisAlignment.end,
       children: [
-        Text(
+        AppText(
           title,
           style: AppTextStyles.headlineSm.copyWith(color: AppColors.primary),
         ),
@@ -34,7 +35,7 @@ class FormFieldLabel extends StatelessWidget {
   final String label;
 
   @override
-  Widget build(BuildContext context) => Text(
+  Widget build(BuildContext context) => AppText(
     label,
     style: AppTextStyles.labelMd.copyWith(color: AppColors.onSurfaceVariant),
   );

@@ -6,6 +6,7 @@ import '../../../../core/constants/app_constants.dart';
 import '../../../../core/widgets/stat_card.dart';
 import '../../../../core/widgets/app_card.dart';
 import '../admin_shell.dart';
+import 'package:taqwa/core/widgets/app_text.dart';
 
 class ReportsPage extends StatefulWidget {
   const ReportsPage({super.key});
@@ -55,7 +56,7 @@ class _ReportsPageState extends State<ReportsPage> {
                           ),
                         ),
                         const Spacer(),
-                        Text(
+                        AppText(
                           'التقارير والإحصاءات',
                           style: AppTextStyles.headlineLgMobile.copyWith(
                             color: AppColors.onSurface,
@@ -66,7 +67,7 @@ class _ReportsPageState extends State<ReportsPage> {
                     SizedBox(height: 4.h),
                     Align(
                       alignment: AlignmentDirectional.centerEnd,
-                      child: Text(
+                      child: AppText(
                         'تتبع أداء المدرسة القرآنية بشكل دوري',
                         style: AppTextStyles.bodyMd.copyWith(
                           color: AppColors.onSurfaceVariant,
@@ -104,7 +105,7 @@ class _ReportsPageState extends State<ReportsPage> {
                                         : AppColors.outlineVariant,
                                   ),
                                 ),
-                                child: Text(
+                                child: AppText(
                                   _periods[i],
                                   style: AppTextStyles.labelMd.copyWith(
                                     color: selected
@@ -172,14 +173,14 @@ class _ReportsPageState extends State<ReportsPage> {
                       child: Column(
                         crossAxisAlignment: CrossAxisAlignment.end,
                         children: [
-                          Text(
+                          AppText(
                             'إتمام الحفظ',
                             style: AppTextStyles.headlineSm.copyWith(
                               color: AppColors.onSurface,
                             ),
                           ),
                           SizedBox(height: 4.h),
-                          Text(
+                          AppText(
                             'نسبة الطلاب الذين أتموا أهداف الحفظ هذا الشهر',
                             style: AppTextStyles.labelSm.copyWith(
                               color: AppColors.onSurfaceVariant,
@@ -214,7 +215,7 @@ class _ReportsPageState extends State<ReportsPage> {
                       child: Column(
                         crossAxisAlignment: CrossAxisAlignment.end,
                         children: [
-                          Text(
+                          AppText(
                             'أداء المعلمين',
                             style: AppTextStyles.headlineSm.copyWith(
                               color: AppColors.onSurface,
@@ -274,14 +275,14 @@ class _DonutChart extends StatelessWidget {
           Column(
             mainAxisSize: MainAxisSize.min,
             children: [
-              Text(
+              AppText(
                 '${(percentage * 100).round()}%',
                 style: AppTextStyles.headlineMd.copyWith(
                   color: AppColors.primary,
                   fontWeight: FontWeight.w700,
                 ),
               ),
-              Text(
+              AppText(
                 'إتمام',
                 style: AppTextStyles.labelSm.copyWith(
                   color: AppColors.onSurfaceVariant,
@@ -309,9 +310,9 @@ class _LegendItem extends StatelessWidget {
     return Row(
       mainAxisSize: MainAxisSize.min,
       children: [
-        Text(value, style: AppTextStyles.labelMdBold.copyWith(color: color)),
+        AppText(value, style: AppTextStyles.labelMdBold.copyWith(color: color)),
         SizedBox(width: 4.w),
-        Text(
+        AppText(
           label,
           style: AppTextStyles.labelSm.copyWith(
             color: AppColors.onSurfaceVariant,
@@ -339,7 +340,7 @@ class _TeacherPerfRow extends StatelessWidget {
     final barColor = color ?? AppColors.primary;
     return Row(
       children: [
-        Text(
+        AppText(
           '${(score * 100).round()}%',
           style: AppTextStyles.labelMdBold.copyWith(color: barColor),
         ),
@@ -358,7 +359,7 @@ class _TeacherPerfRow extends StatelessWidget {
         SizedBox(width: 8.w),
         SizedBox(
           width: 80.w,
-          child: Text(
+          child: AppText(
             name,
             style: AppTextStyles.labelSm.copyWith(color: AppColors.onSurface),
             textAlign: TextAlign.end,

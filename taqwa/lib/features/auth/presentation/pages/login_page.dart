@@ -12,6 +12,7 @@ import '../../../admin/presentation/admin_shell.dart';
 import '../../../teacher/presentation/teacher_shell.dart';
 import '../../../parent/presentation/parent_shell.dart';
 import '../../../manager/presentation/manager_shell.dart';
+import 'package:taqwa/core/widgets/app_text.dart';
 
 class LoginPage extends ConsumerStatefulWidget {
   const LoginPage({super.key});
@@ -81,7 +82,7 @@ class _LoginPageState extends ConsumerState<LoginPage>
       ).pushReplacement(MaterialPageRoute(builder: (_) => dest));
     } else {
       final msg = ref.read(authProvider).errorMessage ?? 'حدث خطأ، حاول مجدداً';
-      ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(msg)));
+      ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: AppText(msg)));
     }
   }
 
@@ -126,7 +127,7 @@ class _LoginPageState extends ConsumerState<LoginPage>
                       ),
                     ),
                     SizedBox(height: 24.h),
-                    Text(
+                    AppText(
                       'تقوى',
                       style: AppTextStyles.displayLg.copyWith(
                         color: AppColors.primary,
@@ -134,7 +135,7 @@ class _LoginPageState extends ConsumerState<LoginPage>
                       ),
                     ),
                     SizedBox(height: 4.h),
-                    Text(
+                    AppText(
                       'منصة إدارة طلاب القرآن الكريم',
                       style: AppTextStyles.bodyMd.copyWith(
                         color: AppColors.onSurfaceVariant,
@@ -161,14 +162,14 @@ class _LoginPageState extends ConsumerState<LoginPage>
                       child: Column(
                         crossAxisAlignment: CrossAxisAlignment.end,
                         children: [
-                          Text(
+                          AppText(
                             'تسجيل الدخول',
                             style: AppTextStyles.headlineMd.copyWith(
                               color: AppColors.onSurface,
                             ),
                           ),
                           SizedBox(height: 4.h),
-                          Text(
+                          AppText(
                             'أدخل بياناتك للوصول إلى حسابك',
                             style: AppTextStyles.bodyMd.copyWith(
                               color: AppColors.onSurfaceVariant,
@@ -208,7 +209,7 @@ class _LoginPageState extends ConsumerState<LoginPage>
                             alignment: AlignmentDirectional.centerStart,
                             child: TextButton(
                               onPressed: () {},
-                              child: Text(
+                              child: AppText(
                                 'نسيت كلمة المرور؟',
                                 style: AppTextStyles.labelMd.copyWith(
                                   color: AppColors.secondary,

@@ -3,6 +3,7 @@ import 'package:flutter_screenutil/flutter_screenutil.dart';
 import '../theme/app_colors.dart';
 import '../theme/app_text_styles.dart';
 import '../constants/app_constants.dart';
+import 'package:taqwa/core/widgets/app_text.dart';
 
 /// Reusable confirmation dialog shown before ending the current session.
 class ConfirmLogoutDialog extends StatelessWidget {
@@ -47,7 +48,7 @@ class ConfirmLogoutDialog extends StatelessWidget {
                 ),
                 const Spacer(),
                 Flexible(
-                  child: Text(
+                  child: AppText(
                     'تسجيل الخروج',
                     style: AppTextStyles.headlineSm.copyWith(
                       color: AppColors.onSurface,
@@ -58,7 +59,7 @@ class ConfirmLogoutDialog extends StatelessWidget {
               ],
             ),
             SizedBox(height: 12.h),
-            Text(
+            AppText(
               'هل تريد تسجيل الخروج من حسابك؟',
               style: AppTextStyles.bodyMd.copyWith(
                 color: AppColors.onSurfaceVariant,
@@ -81,7 +82,7 @@ class ConfirmLogoutDialog extends StatelessWidget {
                         ),
                       ),
                     ),
-                    child: Text(
+                    child: AppText(
                       'إلغاء',
                       style: AppTextStyles.button.copyWith(
                         color: AppColors.onSurfaceVariant,
@@ -103,7 +104,7 @@ class ConfirmLogoutDialog extends StatelessWidget {
                         ),
                       ),
                     ),
-                    child: Text(
+                    child: AppText(
                       'خروج',
                       style: AppTextStyles.button.copyWith(
                         color: AppColors.onError,

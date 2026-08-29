@@ -3,6 +3,7 @@ import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:taqwa/core/constants/app_constants.dart';
 import 'package:taqwa/core/theme/app_colors.dart';
 import 'package:taqwa/core/theme/app_text_styles.dart';
+import 'package:taqwa/core/widgets/app_text.dart';
 
 /// Arabic reads a count differently at one, two, and past ten, so the header
 /// label is built rather than interpolated.
@@ -61,7 +62,7 @@ class HalaqaGroupSection extends StatelessWidget {
                   color: AppColors.onSurfaceVariant,
                 ),
                 const Spacer(),
-                Text(
+                AppText(
                   studentCountLabel(count),
                   style: AppTextStyles.labelSm.copyWith(
                     color: AppColors.onSurfaceVariant,
@@ -69,7 +70,7 @@ class HalaqaGroupSection extends StatelessWidget {
                 ),
                 SizedBox(width: 8.w),
                 Flexible(
-                  child: Text(
+                  child: AppText(
                     title,
                     textAlign: TextAlign.end,
                     overflow: TextOverflow.ellipsis,

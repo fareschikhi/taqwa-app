@@ -3,6 +3,7 @@ import 'package:flutter_screenutil/flutter_screenutil.dart';
 import '../theme/app_colors.dart';
 import '../theme/app_text_styles.dart';
 import '../constants/app_constants.dart';
+import 'package:taqwa/core/widgets/app_text.dart';
 
 /// Warns the teacher that leaving the attendance screen drops chips that were
 /// never saved.
@@ -61,7 +62,7 @@ class ConfirmDiscardAttendanceDialog extends StatelessWidget {
                   ),
                   const Spacer(),
                   Flexible(
-                    child: Text(
+                    child: AppText(
                       'حضور غير محفوظ',
                       style: AppTextStyles.headlineSm.copyWith(
                         color: AppColors.onSurface,
@@ -72,7 +73,7 @@ class ConfirmDiscardAttendanceDialog extends StatelessWidget {
                 ],
               ),
               SizedBox(height: 12.h),
-              Text(
+              AppText(
                 'لديك $pendingCount طالب لم يتم حفظ حضورهم. الخروج الآن '
                 'سيتجاهل هذه التغييرات.',
                 style: AppTextStyles.bodyMd.copyWith(
@@ -96,7 +97,7 @@ class ConfirmDiscardAttendanceDialog extends StatelessWidget {
                           ),
                         ),
                       ),
-                      child: Text(
+                      child: AppText(
                         'البقاء',
                         style: AppTextStyles.button.copyWith(
                           color: AppColors.onSurfaceVariant,
@@ -118,7 +119,7 @@ class ConfirmDiscardAttendanceDialog extends StatelessWidget {
                           ),
                         ),
                       ),
-                      child: Text(
+                      child: AppText(
                         'خروج بدون حفظ',
                         style: AppTextStyles.button.copyWith(
                           color: AppColors.onError,
