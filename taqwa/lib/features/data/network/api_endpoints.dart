@@ -17,6 +17,7 @@ class ApiEndpoints {
     defaultValue: 'https://taqwa-api-txbq.onrender.com/api',
   );
   static const String login = '/auth/login';
+  static const String changePassword = '/auth/password';
   static const String users = '/users';
   static const String teachers = '/teachers';
   static const String students = '/students';

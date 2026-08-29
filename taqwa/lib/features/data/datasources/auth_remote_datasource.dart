@@ -17,4 +17,17 @@ class AuthRemoteDatasource {
     );
     return AuthResponseModel.fromJson(response.data);
   }
+
+  Future<void> changePassword({
+    required String currentPassword,
+    required String newPassword,
+  }) async {
+    await _dio.patch(
+      ApiEndpoints.changePassword,
+      data: {
+        'currentPassword': currentPassword,
+        'newPassword': newPassword,
+      },
+    );
+  }
 }

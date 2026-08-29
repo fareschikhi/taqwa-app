@@ -1,4 +1,6 @@
+import 'package:dio/dio.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:taqwa/features/data/repositories/auth_repository_impl.dart';
 import 'package:taqwa/features/data/models/auth_response_model.dart';
 import 'package:taqwa/features/data/models/user_model.dart';
 
@@ -30,6 +32,38 @@ void main() {
       expect(model.user.managerId, 1);
       expect(model.user.canManageAccounts, isTrue);
       expect(model.user.canDeleteAccounts, isFalse);
+    });
+  });
+
+  group('AuthRepository.errorMessage', () {
+    DioException withBody(dynamic body) => DioException(
+      requestOptions: RequestOptions(path: '/auth/password'),
+      response: Response(
+        requestOptions: RequestOptions(path: '/auth/password'),
+        data: body,
+      ),
+    );
+
+    test('passes the server message through', () {
+      expect(
+        AuthRepository.errorMessage(
+          withBody({'message': 'كلمة المرور الحالية غير صحيحة'}),
+        ),
+        'كلمة المرور الحالية غير صحيحة',
+      );
+    });
+
+    test('takes the first of a validation list', () {
+      expect(
+        AuthRepository.errorMessage(
+          withBody({'message': ['newPassword must be longer']}),
+        ),
+        'newPassword must be longer',
+      );
+    });
+
+    test('falls back for anything else', () {
+      expect(AuthRepository.errorMessage(Exception('boom')), 'حدث خطأ غير متوقع');
     });
   });
 }

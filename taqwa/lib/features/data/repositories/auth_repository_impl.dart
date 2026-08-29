@@ -1,5 +1,6 @@
 import 'dart:convert';
 
+import 'package:dio/dio.dart';
 import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 import '../datasources/auth_remote_datasource.dart';
 import '../models/auth_response_model.dart';
@@ -29,5 +30,26 @@ class AuthRepository {
       value: jsonEncode(result.user.toJson()),
     );
     return result;
+  }
+
+  /// The token is intentionally left in place: the backend does not invalidate
+  /// it, so the user stays signed in on the device they just used.
+  Future<void> changePassword({
+    required String currentPassword,
+    required String newPassword,
+  }) {
+    return _datasource.changePassword(
+      currentPassword: currentPassword,
+      newPassword: newPassword,
+    );
+  }
+
+  static String errorMessage(Object e) {
+    if (e is DioException) {
+      final msg = e.response?.data?['message'];
+      if (msg is List) return msg.first;
+      if (msg is String) return msg;
+    }
+    return 'حدث خطأ غير متوقع';
   }
 }
