@@ -9,6 +9,7 @@ import '../../../../core/widgets/app_button.dart';
 import '../../../../core/widgets/app_text_field.dart';
 import '../../../../core/providers/auth_provider.dart';
 import 'package:taqwa/core/widgets/app_text.dart';
+import '../widgets/change_password_sheet.dart';
 
 class ProfilePage extends ConsumerStatefulWidget {
   const ProfilePage({super.key, required this.role});
@@ -267,7 +268,7 @@ class _ProfilePageState extends ConsumerState<ProfilePage> {
                     _SettingsTile(
                       icon: Icons.lock_outline,
                       title: 'تغيير كلمة المرور',
-                      onTap: () {},
+                      onTap: () => ChangePasswordSheet.show(context),
                     ),
                     SizedBox(height: 24.h),
                     // Logout
