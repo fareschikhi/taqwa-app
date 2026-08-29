@@ -30,12 +30,13 @@ String roleLabelFor(UserRole role) {
   }
 }
 
-/// Changing account details is an administrator's job. Everyone else sees
-/// their own record but cannot alter it — an admin edits them through the
-/// management pages, which already have a form for every role.
+/// Changing an account is an administrator's job — details and password
+/// alike. Everyone else sees their own record but cannot alter any of it; an
+/// admin edits them through the management pages, which already carry a form
+/// with those fields for every role.
 ///
-/// This does not cover passwords: any role may change its own through
-/// PATCH /auth/password, which verifies the current one.
+/// This is what the login screen's forgot-password dialog already promises:
+/// contact the school administration.
 bool canEditProfile(UserRole role) => role == UserRole.admin;
 
 /// The avatar letter. Taken from the name rather than the role, so two
@@ -317,12 +318,14 @@ class _ProfilePageState extends ConsumerState<ProfilePage> {
                       ),
                     ],
                     SizedBox(height: 24.h),
-                    _SettingsTile(
-                      icon: Icons.lock_outline,
-                      title: 'تغيير كلمة المرور',
-                      onTap: () => ChangePasswordSheet.show(context),
-                    ),
-                    SizedBox(height: 24.h),
+                    if (canEditProfile(user.role)) ...[
+                      _SettingsTile(
+                        icon: Icons.lock_outline,
+                        title: 'تغيير كلمة المرور',
+                        onTap: () => ChangePasswordSheet.show(context),
+                      ),
+                      SizedBox(height: 24.h),
+                    ],
                     // Logout
                     AppButton(
                       label: 'تسجيل الخروج',

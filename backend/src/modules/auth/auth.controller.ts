@@ -2,7 +2,10 @@ import { Body, Controller, Patch, Post, UseGuards } from '@nestjs/common';
 import { AuthService } from './auth.service';
 import { LoginDto } from './dto/login.dto';
 import { ChangePasswordDto } from './dto/change-password.dto';
+import { Role } from '@prisma/client';
 import { JwtAuthGuard } from '../../common/guards/jwt-auth.guard';
+import { RolesGuard } from '../../common/guards/roles.guard';
+import { Roles } from '../../common/decorators/roles.decorator';
 import { CurrentUser } from '../../common/decorators/current-user.decorator';
 
 @Controller('auth')
@@ -14,10 +17,13 @@ export class AuthController {
     return this.authService.login(dto);
   }
 
-  // No @Roles: every signed-in role may change its own password, and the id
-  // comes from the token rather than the URL, so there is nothing to own.
+  // ADMIN-only, like the rest of the account changes: an administrator sets
+  // everybody else's password through the per-role forms, which is also what
+  // the login screen's forgot-password dialog tells users to expect. The id
+  // still comes from the token, so this only ever changes the admin's own.
   @Patch('password')
-  @UseGuards(JwtAuthGuard)
+  @Roles(Role.ADMIN)
+  @UseGuards(JwtAuthGuard, RolesGuard)
   changePassword(@CurrentUser() user: any, @Body() dto: ChangePasswordDto) {
     return this.authService.changePassword(user.id, dto);
   }
