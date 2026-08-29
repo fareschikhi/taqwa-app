@@ -1,15 +1,57 @@
 import { Injectable, NotFoundException } from '@nestjs/common';
 import { PrismaService } from '../../prisma/prisma.service';
 import { CreateStudentNoteDto, UpdateStudentNoteDto } from './dto/student-note.dto';
+import { NotificationsService } from '../notifications/notifications.service';
+import { notePreview } from './note-preview';
 
 @Injectable()
 export class StudentNotesService {
-  constructor(private prisma: PrismaService) {}
+  constructor(
+    private prisma: PrismaService,
+    private notifications: NotificationsService,
+  ) {}
 
   private readonly include = {
     student: { include: { user: { select: { fullName: true, avatar: true } } } },
     teacher: { include: { user: { select: { fullName: true } } } },
   };
+
+  /**
+   * Tells the student's parent that a note was written. Writing the note is
+   * the whole event, so unlike attendance there is no prior state to compare
+   * against — every created note announces itself once.
+   *
+   * The body carries a preview rather than the note in full: the parent reads
+   * the whole thing on their dashboard, and a body short enough for a list row
+   * is also short enough for the lock screen once this delivers over push.
+   */
+  private async notifyParent(studentId: number, note: string) {
+    // Runs after the note is written, and its failures are swallowed: a
+    // notification that does not send must not cost the note that prompted it.
+    try {
+      const student = await this.prisma.student.findUnique({
+        where: { id: studentId },
+        select: {
+          parentId: true,
+          user: { select: { fullName: true } },
+          parent: { select: { userId: true } },
+        },
+      });
+      const parentUserId = student?.parent?.userId;
+      if (!parentUserId) return;
+
+      // A parent may have several children, and a note's text will not
+      // reliably name the one it is about.
+      const name = student?.user?.fullName ?? '';
+      await this.notifications.create({
+        userId: parentUserId,
+        title: 'ملاحظة من المعلم',
+        body: `${name}: ${notePreview(note)}`,
+      });
+    } catch (_) {
+      // Deliberately silent — see above.
+    }
+  }
 
   async create(dto: CreateStudentNoteDto) {
     const note = await this.prisma.studentNote.create({
@@ -20,6 +62,7 @@ export class StudentNotesService {
       },
       include: this.include,
     });
+    await this.notifyParent(dto.studentId, dto.note);
     return note;
   }
 
