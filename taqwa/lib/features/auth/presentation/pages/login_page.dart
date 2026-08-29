@@ -13,6 +13,7 @@ import '../../../teacher/presentation/teacher_shell.dart';
 import '../../../parent/presentation/parent_shell.dart';
 import '../../../manager/presentation/manager_shell.dart';
 import 'package:taqwa/core/widgets/app_text.dart';
+import 'package:taqwa/core/widgets/forgot_password_dialog.dart';
 
 class LoginPage extends ConsumerStatefulWidget {
   const LoginPage({super.key});
@@ -208,7 +209,8 @@ class _LoginPageState extends ConsumerState<LoginPage>
                           Align(
                             alignment: AlignmentDirectional.centerStart,
                             child: TextButton(
-                              onPressed: () {},
+                              onPressed: () =>
+                                  ForgotPasswordDialog.show(context),
                               child: AppText(
                                 'نسيت كلمة المرور؟',
                                 style: AppTextStyles.labelMd.copyWith(
