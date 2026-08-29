@@ -1,6 +1,10 @@
-import { Injectable, NotFoundException } from '@nestjs/common';
+import {
+  ConflictException,
+  Injectable,
+  NotFoundException,
+} from '@nestjs/common';
 import { PrismaService } from '../../prisma/prisma.service';
-import { CreateUserDto, UpdateUserDto } from './dto/user.dto';
+import { CreateUserDto, UpdateMeDto, UpdateUserDto } from './dto/user.dto';
 import * as bcrypt from 'bcrypt';
 
 @Injectable()
@@ -49,6 +53,47 @@ export class UsersService {
       data: { ...dto, passwordHash: hash, password: undefined } as any,
       select: { id: true, fullName: true, email: true, role: true, createdAt: true },
     });
+  }
+
+  /// A user editing their own account. Phone and email are unique columns and
+  /// phone is the login identifier, so a value already held by somebody else
+  /// is refused before anything is written.
+  async updateMe(userId: number, dto: UpdateMeDto) {
+    const data: {
+      fullName?: string;
+      phone?: string | null;
+      email?: string | null;
+    } = {};
+
+    if (dto.fullName !== undefined) data.fullName = dto.fullName.trim();
+
+    for (const field of ['phone', 'email'] as const) {
+      const raw = dto[field];
+      if (raw === undefined) continue;
+
+      const value = raw.trim();
+      if (value === '') {
+        // Nothing to collide with, so no lookup.
+        data[field] = null;
+        continue;
+      }
+
+      const taken = await this.prisma.user.findFirst({
+        where: { [field]: value, NOT: { id: userId } },
+        select: { id: true },
+      });
+      if (taken) {
+        throw new ConflictException(
+          field === 'phone'
+            ? 'رقم الهاتف مستخدم بالفعل'
+            : 'البريد الإلكتروني مستخدم بالفعل',
+        );
+      }
+      data[field] = value;
+    }
+
+    await this.prisma.user.update({ where: { id: userId }, data });
+    return this.findOne(userId);
   }
 
   async update(id: number, dto: UpdateUserDto) {
