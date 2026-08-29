@@ -1,13 +1,37 @@
 import { Injectable, NotFoundException } from '@nestjs/common';
 import { PrismaService } from '../../prisma/prisma.service';
 import { CreateNotificationDto, UpdateNotificationDto } from './dto/notification.dto';
+import { PushService } from '../push/push.service';
 
 @Injectable()
 export class NotificationsService {
-  constructor(private prisma: PrismaService) {}
+  constructor(
+    private prisma: PrismaService,
+    private push: PushService,
+  ) {}
 
+  /**
+   * Writes the notification and delivers it.
+   *
+   * Every producer reaches a parent through this one method, so delivery
+   * belongs here rather than in each of them: attendance and student notes
+   * both push without either knowing that push exists, and so does whatever
+   * announces itself next.
+   */
   async create(dto: CreateNotificationDto) {
-    return this.prisma.notification.create({ data: dto });
+    const notification = await this.prisma.notification.create({ data: dto });
+
+    // The row is the record and the push is best-effort delivery of it. A
+    // parent whose phone could not be reached still finds it in the app, so a
+    // failed send must not cost the notification — the same rule the
+    // producers already apply to the record that prompted them.
+    try {
+      await this.push.sendToUser(dto.userId, dto.title, dto.body);
+    } catch (_) {
+      // Deliberately silent — see above.
+    }
+
+    return notification;
   }
 
   async findAllForUser(userId: number) {
