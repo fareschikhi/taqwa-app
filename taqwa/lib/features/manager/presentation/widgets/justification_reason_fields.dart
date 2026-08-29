@@ -60,7 +60,7 @@ class JustificationReasonFields extends StatelessWidget {
     final isOther = reasonType == 'OTHER';
 
     return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
+      crossAxisAlignment: CrossAxisAlignment.end,
       mainAxisSize: MainAxisSize.min,
       children: [
         Text(
@@ -95,7 +95,7 @@ class JustificationReasonFields extends StatelessWidget {
                   .map(
                     (e) => DropdownMenuItem(
                       value: e.key,
-                      child: Text(e.value, textAlign: TextAlign.start),
+                      child: Text(e.value, textAlign: TextAlign.right),
                     ),
                   )
                   .toList(),

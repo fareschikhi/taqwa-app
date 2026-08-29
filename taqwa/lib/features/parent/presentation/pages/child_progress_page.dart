@@ -301,7 +301,7 @@ class _ChildProgressPageState extends ConsumerState<ChildProgressPage> {
           ),
           const Spacer(),
           Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
+            crossAxisAlignment: CrossAxisAlignment.end,
             children: [
               Text(
                 surahLabel,

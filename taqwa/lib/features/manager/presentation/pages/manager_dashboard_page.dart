@@ -194,14 +194,14 @@ class _ManagerDashboardPageState extends ConsumerState<ManagerDashboardPage> {
             ),
           ),
           Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
+            crossAxisAlignment: CrossAxisAlignment.end,
             children: [
               Text(
                 'مرحباً بك، $name',
                 style: AppTextStyles.headlineLgMobile.copyWith(
                   color: AppColors.onPrimary,
                 ),
-                textAlign: TextAlign.start,
+                textAlign: TextAlign.right,
               ),
               SizedBox(height: 4.h),
               Text(
@@ -209,7 +209,7 @@ class _ManagerDashboardPageState extends ConsumerState<ManagerDashboardPage> {
                 style: AppTextStyles.bodyMd.copyWith(
                   color: AppColors.onPrimary.withValues(alpha: 0.9),
                 ),
-                textAlign: TextAlign.start,
+                textAlign: TextAlign.right,
               ),
             ],
           ),
@@ -277,7 +277,7 @@ class _ManagerDashboardPageState extends ConsumerState<ManagerDashboardPage> {
         ],
       ),
       child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
+        crossAxisAlignment: CrossAxisAlignment.end,
         mainAxisAlignment: MainAxisAlignment.spaceBetween,
         children: [
           Row(
@@ -306,7 +306,7 @@ class _ManagerDashboardPageState extends ConsumerState<ManagerDashboardPage> {
                   ? AppColors.error
                   : AppColors.onSurfaceVariant,
             ),
-            textAlign: TextAlign.start,
+            textAlign: TextAlign.right,
           ),
         ],
       ),

@@ -191,7 +191,7 @@ class _AdminDashboardPageState extends ConsumerState<AdminDashboardPage> {
 
   Widget _buildGreeting(String name) {
     return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
+      crossAxisAlignment: CrossAxisAlignment.end,
       children: [
         Text(
           'مرحباً بك، $name',
@@ -279,7 +279,7 @@ class _AdminDashboardPageState extends ConsumerState<AdminDashboardPage> {
     return AppCard(
       padding: EdgeInsets.all(20.w),
       child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
+        crossAxisAlignment: CrossAxisAlignment.end,
         children: [
           Row(
             children: [
@@ -337,7 +337,7 @@ class _AttendanceBarChart extends StatelessWidget {
       children: [
         Expanded(
           child: Row(
-            crossAxisAlignment: CrossAxisAlignment.start,
+            crossAxisAlignment: CrossAxisAlignment.end,
             children: days.map((day) => Expanded(child: _bar(day))).toList(),
           ),
         ),

@@ -39,7 +39,7 @@ class ConfirmDeleteDialog extends StatelessWidget {
         padding: EdgeInsets.all(24.w),
         child: Column(
           mainAxisSize: MainAxisSize.min,
-          crossAxisAlignment: CrossAxisAlignment.start,
+          crossAxisAlignment: CrossAxisAlignment.end,
           children: [
             Row(
               children: [
@@ -63,7 +63,7 @@ class ConfirmDeleteDialog extends StatelessWidget {
                     style: AppTextStyles.headlineSm.copyWith(
                       color: AppColors.onSurface,
                     ),
-                    textAlign: TextAlign.start,
+                    textAlign: TextAlign.end,
                   ),
                 ),
               ],
@@ -74,7 +74,7 @@ class ConfirmDeleteDialog extends StatelessWidget {
               style: AppTextStyles.bodyMd.copyWith(
                 color: AppColors.onSurfaceVariant,
               ),
-              textAlign: TextAlign.start,
+              textAlign: TextAlign.end,
             ),
             SizedBox(height: 24.h),
             Row(

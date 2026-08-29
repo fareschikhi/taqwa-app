@@ -188,7 +188,7 @@ class _TeacherDashboardPageState extends ConsumerState<TeacherDashboardPage> {
   Widget _buildGreeting(String? name) {
     final greeting = name != null ? 'مرحباً بك، أ. $name' : 'مرحباً بك';
     return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
+      crossAxisAlignment: CrossAxisAlignment.end,
       children: [
         Text(
           greeting,
@@ -286,7 +286,7 @@ class _TeacherDashboardPageState extends ConsumerState<TeacherDashboardPage> {
         AppCard(
           padding: EdgeInsets.all(16.w),
           child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
+            crossAxisAlignment: CrossAxisAlignment.end,
             children: [
               Text(
                 'طلاب يحتاجون مراجعة',
@@ -342,7 +342,7 @@ class _TeacherDashboardPageState extends ConsumerState<TeacherDashboardPage> {
     return AppCard(
       padding: EdgeInsets.all(20.w),
       child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
+        crossAxisAlignment: CrossAxisAlignment.end,
         children: [
           Text(
             'تقدم الحفظ ',
@@ -405,7 +405,7 @@ class _ReviewStudentRow extends StatelessWidget {
         ),
         const Spacer(),
         Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
+          crossAxisAlignment: CrossAxisAlignment.end,
           children: [
             Text(
               name,
@@ -452,7 +452,7 @@ class _ProgressBarRow extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
+      crossAxisAlignment: CrossAxisAlignment.end,
       children: [
         Row(
           mainAxisAlignment: MainAxisAlignment.spaceBetween,

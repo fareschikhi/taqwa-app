@@ -170,12 +170,12 @@ class _StudentsManagementPageState extends State<StudentsManagementPage> {
           color: AppColors.primary,
           onRefresh: _load,
           child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
+            crossAxisAlignment: CrossAxisAlignment.end,
             children: [
               Padding(
                 padding: EdgeInsets.fromLTRB(16.w, 16.h, 16.w, 0),
                 child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
+                  crossAxisAlignment: CrossAxisAlignment.end,
                   children: [
                     Row(
                       children: [
@@ -356,7 +356,7 @@ class _StudentCard extends StatelessWidget {
       ),
       padding: EdgeInsets.all(16.w),
       child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
+        crossAxisAlignment: CrossAxisAlignment.end,
         children: [
           Row(
             children: [
@@ -377,7 +377,7 @@ class _StudentCard extends StatelessWidget {
               ),
               const Spacer(),
               Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
+                crossAxisAlignment: CrossAxisAlignment.end,
                 children: [
                   Text(
                     fullName,
@@ -458,7 +458,7 @@ class _InfoCell extends StatelessWidget {
         borderRadius: BorderRadius.circular(AppConstants.radiusMd),
       ),
       child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
+        crossAxisAlignment: CrossAxisAlignment.end,
         children: [
           Text(label,
               style: AppTextStyles.labelSm

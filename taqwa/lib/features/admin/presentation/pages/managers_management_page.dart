@@ -133,7 +133,7 @@ class _ManagersManagementPageState extends State<ManagersManagementPage> {
           color: AppColors.primary,
           onRefresh: _load,
           child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
+            crossAxisAlignment: CrossAxisAlignment.end,
             children: [
               _buildHeader(context),
               SizedBox(height: 16.h),
@@ -237,7 +237,7 @@ class _ManagersManagementPageState extends State<ManagersManagementPage> {
     return Padding(
       padding: EdgeInsets.fromLTRB(16.w, 16.h, 16.w, 0),
       child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
+        crossAxisAlignment: CrossAxisAlignment.end,
         children: [
           Row(
             children: [
@@ -357,7 +357,7 @@ class _ManagerCard extends StatelessWidget {
       ),
       padding: EdgeInsets.all(16.w),
       child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
+        crossAxisAlignment: CrossAxisAlignment.end,
         children: [
           // Header row: avatar + name + status badge
           Row(
@@ -387,7 +387,7 @@ class _ManagerCard extends StatelessWidget {
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
                   Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
+                    crossAxisAlignment: CrossAxisAlignment.end,
                     children: [
                       Text(
                         manager.fullName,

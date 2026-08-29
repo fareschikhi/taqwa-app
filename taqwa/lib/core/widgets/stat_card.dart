@@ -81,7 +81,7 @@ class _StatCardState extends State<StatCard> {
                 Padding(
                   padding: EdgeInsets.all(16.w),
                   child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
+                    crossAxisAlignment: CrossAxisAlignment.end,
                     mainAxisAlignment: MainAxisAlignment.spaceBetween,
                     children: [
                       Row(

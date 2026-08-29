@@ -72,7 +72,7 @@ class _AppTextFieldState extends State<AppTextField> {
   @override
   Widget build(BuildContext context) {
     return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
+      crossAxisAlignment: CrossAxisAlignment.end,
       mainAxisSize: MainAxisSize.min,
       children: [
         if (widget.label != null) ...[
@@ -113,7 +113,7 @@ class _AppTextFieldState extends State<AppTextField> {
             focusNode: _focusNode,
             textInputAction: widget.textInputAction,
             autofocus: widget.autofocus,
-            textAlign: TextAlign.start,
+            textAlign: TextAlign.right,
             textDirection: TextDirection.rtl,
             style: AppTextStyles.bodyMd.copyWith(color: AppColors.onSurface),
             decoration: InputDecoration(

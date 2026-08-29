@@ -143,7 +143,7 @@ class _TeachersManagementPageState extends State<TeachersManagementPage> {
           color: AppColors.primary,
           onRefresh: _load,
           child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
+            crossAxisAlignment: CrossAxisAlignment.end,
             children: [
               Padding(
                 padding: EdgeInsets.fromLTRB(16.w, 16.h, 16.w, 0),
@@ -193,7 +193,7 @@ class _TeachersManagementPageState extends State<TeachersManagementPage> {
               Padding(
                 padding: EdgeInsets.fromLTRB(16.w, 20.h, 16.w, 0),
                 child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
+                  crossAxisAlignment: CrossAxisAlignment.end,
                   children: [
                     Text(
                       'إدارة المعلمين',
@@ -320,7 +320,7 @@ class _TeacherCard extends StatelessWidget {
       ),
       padding: EdgeInsets.all(20.w),
       child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
+        crossAxisAlignment: CrossAxisAlignment.end,
         children: [
           Row(
             children: [
@@ -371,11 +371,11 @@ class _TeacherCard extends StatelessWidget {
             style: AppTextStyles.headlineSm.copyWith(
               color: AppColors.onSurface,
             ),
-            textAlign: TextAlign.start,
+            textAlign: TextAlign.end,
           ),
           SizedBox(height: 4.h),
           Row(
-            mainAxisAlignment: MainAxisAlignment.start,
+            mainAxisAlignment: MainAxisAlignment.end,
             children: [
               Text(
                 phone.isNotEmpty ? phone : '—',

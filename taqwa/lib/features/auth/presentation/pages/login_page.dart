@@ -159,7 +159,7 @@ class _LoginPageState extends ConsumerState<LoginPage>
                         ],
                       ),
                       child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
+                        crossAxisAlignment: CrossAxisAlignment.end,
                         children: [
                           Text(
                             'تسجيل الدخول',

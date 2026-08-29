@@ -67,7 +67,7 @@ class _JustificationFormCardState extends State<JustificationFormCard> {
     if (!mounted) return;
     ScaffoldMessenger.of(context).showSnackBar(
       SnackBar(
-        content: Text(message, textAlign: TextAlign.start),
+        content: Text(message, textAlign: TextAlign.right),
         backgroundColor: isError ? AppColors.error : AppColors.primary,
       ),
     );
@@ -190,7 +190,7 @@ class _JustificationFormCardState extends State<JustificationFormCard> {
         ],
       ),
       child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
+        crossAxisAlignment: CrossAxisAlignment.end,
         children: [
           _buildHeader(),
           SizedBox(height: 20.h),
@@ -252,7 +252,7 @@ class _JustificationFormCardState extends State<JustificationFormCard> {
           ),
         ),
         Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
+          crossAxisAlignment: CrossAxisAlignment.end,
           children: [
             Text(
               'تبرير غياب',

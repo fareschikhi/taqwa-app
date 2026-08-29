@@ -164,7 +164,7 @@ class _ChildDetailsPageState extends ConsumerState<ChildDetailsPage> {
     return AppCard(
       padding: EdgeInsets.all(16.w),
       child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
+        crossAxisAlignment: CrossAxisAlignment.end,
         children: [
           Text(
             'تقدم الحفظ',
@@ -210,7 +210,7 @@ class _ChildDetailsPageState extends ConsumerState<ChildDetailsPage> {
       padding: EdgeInsets.all(16.w),
       decoration: const BoxDecoration(gradient: AppColors.brandGradient),
       child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
+        crossAxisAlignment: CrossAxisAlignment.end,
         children: [
           Row(
             children: [
@@ -232,11 +232,11 @@ class _ChildDetailsPageState extends ConsumerState<ChildDetailsPage> {
           ),
           SizedBox(height: 16.h),
           Row(
-            crossAxisAlignment: CrossAxisAlignment.start,
+            crossAxisAlignment: CrossAxisAlignment.end,
             children: [
               const Spacer(),
               Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
+                crossAxisAlignment: CrossAxisAlignment.end,
                 children: [
                   Text(
                     child.fullName,
@@ -297,10 +297,10 @@ class _InfoBox extends StatelessWidget {
         ],
       ),
       child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
+        crossAxisAlignment: CrossAxisAlignment.end,
         children: [
           Row(
-            mainAxisAlignment: MainAxisAlignment.start,
+            mainAxisAlignment: MainAxisAlignment.end,
             children: [
               Text(
                 label,
@@ -318,7 +318,7 @@ class _InfoBox extends StatelessWidget {
             style: AppTextStyles.labelMdBold.copyWith(
               color: AppColors.onSurface,
             ),
-            textAlign: TextAlign.start,
+            textAlign: TextAlign.end,
           ),
         ],
       ),

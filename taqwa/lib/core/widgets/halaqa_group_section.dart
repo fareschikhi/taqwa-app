@@ -41,7 +41,7 @@ class HalaqaGroupSection extends StatelessWidget {
     final accent = isUnassigned ? AppColors.outline : AppColors.primary;
 
     return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
+      crossAxisAlignment: CrossAxisAlignment.end,
       children: [
         GestureDetector(
           behavior: HitTestBehavior.opaque,
@@ -71,7 +71,7 @@ class HalaqaGroupSection extends StatelessWidget {
                 Flexible(
                   child: Text(
                     title,
-                    textAlign: TextAlign.start,
+                    textAlign: TextAlign.end,
                     overflow: TextOverflow.ellipsis,
                     style: AppTextStyles.bodyMdBold.copyWith(color: accent),
                   ),

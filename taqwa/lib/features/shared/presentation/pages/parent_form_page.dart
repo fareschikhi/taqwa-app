@@ -132,7 +132,7 @@ class _ParentFormPageState extends State<ParentFormPage> {
                 child: SingleChildScrollView(
                   padding: EdgeInsets.symmetric(horizontal: 16.w),
                   child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
+                    crossAxisAlignment: CrossAxisAlignment.end,
                     children: [
                       SizedBox(height: 24.h),
                       _buildCard(),
@@ -179,7 +179,7 @@ class _ParentFormPageState extends State<ParentFormPage> {
         ],
       ),
       child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
+        crossAxisAlignment: CrossAxisAlignment.end,
         children: [
           AvatarPickerField(
             picked: _pickedImage,

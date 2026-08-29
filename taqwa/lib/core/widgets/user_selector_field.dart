@@ -120,7 +120,7 @@ class _UserSelectorFieldState extends State<UserSelectorField> {
   @override
   Widget build(BuildContext context) {
     return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
+      crossAxisAlignment: CrossAxisAlignment.end,
       mainAxisSize: MainAxisSize.min,
       children: [
         if (widget.label != null) ...[
@@ -168,7 +168,7 @@ class _UserSelectorFieldState extends State<UserSelectorField> {
             Expanded(
               child: Text(
                 selected?.fullName ?? widget.hint,
-                textAlign: TextAlign.start,
+                textAlign: TextAlign.right,
                 overflow: TextOverflow.ellipsis,
                 style: AppTextStyles.bodyMd.copyWith(
                   color: selected == null
@@ -202,7 +202,7 @@ class _UserSelectorFieldState extends State<UserSelectorField> {
           TextField(
             controller: _searchController,
             autofocus: true,
-            textAlign: TextAlign.start,
+            textAlign: TextAlign.right,
             textDirection: TextDirection.rtl,
             onChanged: (_) => setState(() {}),
             style: AppTextStyles.bodyMd.copyWith(color: AppColors.onSurface),
@@ -290,7 +290,7 @@ class _UserSelectorFieldState extends State<UserSelectorField> {
             Expanded(
               child: Text(
                 option.fullName,
-                textAlign: TextAlign.start,
+                textAlign: TextAlign.right,
                 overflow: TextOverflow.ellipsis,
                 style: AppTextStyles.bodyMd.copyWith(
                   color: isSelected

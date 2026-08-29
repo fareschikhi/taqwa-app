@@ -65,7 +65,7 @@ class _StudentDetailsPageState extends State<StudentDetailsPage> {
                   AppCard(
                     padding: EdgeInsets.all(16.w),
                     child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
+                      crossAxisAlignment: CrossAxisAlignment.end,
                       children: [
                         Text(
                           'المهمة الحالية',
@@ -78,7 +78,7 @@ class _StudentDetailsPageState extends State<StudentDetailsPage> {
                           children: [
                             Expanded(
                               child: Column(
-                                crossAxisAlignment: CrossAxisAlignment.start,
+                                crossAxisAlignment: CrossAxisAlignment.end,
                                 children: [
                                   Text(
                                     'حفظ سورة البقرة',
@@ -138,7 +138,7 @@ class _StudentDetailsPageState extends State<StudentDetailsPage> {
                   AppCard(
                     padding: EdgeInsets.all(16.w),
                     child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
+                      crossAxisAlignment: CrossAxisAlignment.end,
                       children: [
                         Text(
                           'سجل الحفظ والمراجعة',
@@ -184,7 +184,7 @@ class _StudentDetailsPageState extends State<StudentDetailsPage> {
       padding: EdgeInsets.all(16.w),
       decoration: const BoxDecoration(gradient: AppColors.brandGradient),
       child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
+        crossAxisAlignment: CrossAxisAlignment.end,
         children: [
           Row(
             children: [
@@ -206,7 +206,7 @@ class _StudentDetailsPageState extends State<StudentDetailsPage> {
           ),
           SizedBox(height: 16.h),
           Row(
-            crossAxisAlignment: CrossAxisAlignment.start,
+            crossAxisAlignment: CrossAxisAlignment.end,
             children: [
               Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
@@ -246,7 +246,7 @@ class _StudentDetailsPageState extends State<StudentDetailsPage> {
               ),
               const Spacer(),
               Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
+                crossAxisAlignment: CrossAxisAlignment.end,
                 children: [
                   Container(
                     width: 64.w,
@@ -355,7 +355,7 @@ class _RecordItem extends StatelessWidget {
           ),
           const Spacer(),
           Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
+            crossAxisAlignment: CrossAxisAlignment.end,
             children: [
               Text(
                 surah,

@@ -150,7 +150,7 @@ class _ManagerStudentsPageState extends ConsumerState<ManagerStudentsPage> {
           color: AppColors.primary,
           onRefresh: _loadStudents,
           child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
+            crossAxisAlignment: CrossAxisAlignment.end,
             children: [
               // Header
               Padding(
@@ -170,7 +170,7 @@ class _ManagerStudentsPageState extends ConsumerState<ManagerStudentsPage> {
               Padding(
                 padding: EdgeInsets.fromLTRB(16.w, 20.h, 16.w, 0),
                 child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
+                  crossAxisAlignment: CrossAxisAlignment.end,
                   children: [
                     Text(
                       'إدارة الطلاب',
@@ -362,7 +362,7 @@ class _StudentCard extends StatelessWidget {
           ),
           const Spacer(),
           Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
+            crossAxisAlignment: CrossAxisAlignment.end,
             children: [
               Row(
                 children: [

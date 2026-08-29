@@ -122,7 +122,7 @@ class _NotesPageState extends ConsumerState<NotesPage> {
                 ),
                 child: Column(
                   mainAxisSize: MainAxisSize.min,
-                  crossAxisAlignment: CrossAxisAlignment.start,
+                  crossAxisAlignment: CrossAxisAlignment.end,
                   children: [
                     Text(
                       'اختر الطالب',
@@ -133,7 +133,7 @@ class _NotesPageState extends ConsumerState<NotesPage> {
                     SizedBox(height: 12.h),
                     TextField(
                       autofocus: true,
-                      textAlign: TextAlign.start,
+                      textAlign: TextAlign.right,
                       textDirection: TextDirection.rtl,
                       style: AppTextStyles.bodyMd,
                       onChanged: (v) => setSheetState(() => query = v),
@@ -205,7 +205,7 @@ class _NotesPageState extends ConsumerState<NotesPage> {
                                   title: Text(
                                     s.fullName,
                                     style: AppTextStyles.bodyMd,
-                                    textAlign: TextAlign.start,
+                                    textAlign: TextAlign.end,
                                   ),
                                   onTap: () => Navigator.pop(ctx, s),
                                 );
@@ -248,13 +248,13 @@ class _NotesPageState extends ConsumerState<NotesPage> {
                 color: AppColors.primary,
                 onRefresh: _loadData,
                 child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
+                  crossAxisAlignment: CrossAxisAlignment.end,
                   children: [
                     // Header
                     Padding(
                       padding: EdgeInsets.fromLTRB(16.w, 16.h, 16.w, 0),
                       child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
+                        crossAxisAlignment: CrossAxisAlignment.end,
                         children: [
                           Row(
                             children: [
@@ -307,7 +307,7 @@ class _NotesPageState extends ConsumerState<NotesPage> {
                           ],
                         ),
                         child: Column(
-                          crossAxisAlignment: CrossAxisAlignment.start,
+                          crossAxisAlignment: CrossAxisAlignment.end,
                           children: [
                             Text(
                               'ملاحظة جديدة',
@@ -348,7 +348,7 @@ class _NotesPageState extends ConsumerState<NotesPage> {
                                               ? AppColors.onSurface
                                               : AppColors.inputPlaceholder,
                                         ),
-                                        textAlign: TextAlign.start,
+                                        textAlign: TextAlign.end,
                                       ),
                                     ),
                                   ],
@@ -359,7 +359,7 @@ class _NotesPageState extends ConsumerState<NotesPage> {
                             TextField(
                               controller: _noteController,
                               maxLines: 3,
-                              textAlign: TextAlign.start,
+                              textAlign: TextAlign.right,
                               textDirection: TextDirection.rtl,
                               style: AppTextStyles.bodyMd,
                               decoration: InputDecoration(
@@ -499,7 +499,7 @@ class _NoteCard extends StatelessWidget {
         ],
       ),
       child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
+        crossAxisAlignment: CrossAxisAlignment.end,
         children: [
           // Header
           Container(
@@ -550,7 +550,7 @@ class _NoteCard extends StatelessWidget {
           Padding(
             padding: EdgeInsets.all(16.w),
             child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
+              crossAxisAlignment: CrossAxisAlignment.end,
               children: [
                 Text(
                   note.note,
@@ -558,11 +558,11 @@ class _NoteCard extends StatelessWidget {
                     color: AppColors.onSurface,
                     height: 1.7,
                   ),
-                  textAlign: TextAlign.start,
+                  textAlign: TextAlign.end,
                 ),
                 SizedBox(height: 12.h),
                 Row(
-                  mainAxisAlignment: MainAxisAlignment.end,
+                  mainAxisAlignment: MainAxisAlignment.start,
                   children: [
                     GestureDetector(
                       onTap: () async {

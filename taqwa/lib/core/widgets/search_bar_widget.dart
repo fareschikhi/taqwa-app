@@ -49,7 +49,7 @@ class SearchBarWidget extends StatelessWidget {
               controller: controller,
               onChanged: onChanged,
               onSubmitted: onSubmitted,
-              textAlign: TextAlign.start,
+              textAlign: TextAlign.right,
               textDirection: TextDirection.rtl,
               style: AppTextStyles.bodyMd.copyWith(color: AppColors.onSurface),
               decoration: InputDecoration(
