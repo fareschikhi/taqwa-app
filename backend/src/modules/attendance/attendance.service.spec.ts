@@ -358,7 +358,12 @@ describe('AttendanceService.getWeeklyAttendanceRates', () => {
 
     await service.getWeeklyAttendanceRates();
 
-    const { where } = prisma.attendance.groupBy.mock.calls[0][0] as any;
+    // The mock takes no declared parameters, so Jest records each call as a
+    // zero-length tuple; the cast is what lets the recorded argument be read.
+    const calls = prisma.attendance.groupBy.mock.calls as unknown as Array<
+      [any]
+    >;
+    const { where } = calls[0][0];
     const sunday = sundayOf(new Date());
     expect(where.date.gte.getTime()).toBe(sunday.getTime());
     expect(where.date.lte.getTime()).toBe(sunday.getTime() + 4 * DAY_MS);
