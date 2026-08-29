@@ -35,9 +35,14 @@ export class UsersController {
 
   // Declared above @Patch(':id') for the same reason @Get('me') sits above
   // @Get(':id'): otherwise Nest matches "me" as the id and ParseIntPipe 400s.
-  // No @Roles — every signed-in role may edit its own account, and the id
-  // comes from the token rather than the URL.
+  //
+  // ADMIN-only: changing account details is an administrator's job, and an
+  // admin edits everyone else through the per-role forms. This route exists
+  // because there is no admins-management page, so it is the only way an
+  // admin can correct their own record. Passwords are separate — any role
+  // changes its own through PATCH /auth/password.
   @Patch('me')
+  @Roles(Role.ADMIN)
   updateMe(@CurrentUser() user: any, @Body() dto: UpdateMeDto) {
     return this.usersService.updateMe(user.id, dto);
   }

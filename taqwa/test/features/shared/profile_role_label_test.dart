@@ -31,4 +31,14 @@ void main() {
       expect(initialFor('   '), '؟');
     });
   });
+
+  group('canEditProfile', () {
+    test('only an admin may change profile details', () {
+      expect(canEditProfile(UserRole.admin), isTrue);
+      expect(canEditProfile(UserRole.manager), isFalse);
+      expect(canEditProfile(UserRole.teacher), isFalse);
+      expect(canEditProfile(UserRole.parent), isFalse);
+      expect(canEditProfile(UserRole.student), isFalse);
+    });
+  });
 }

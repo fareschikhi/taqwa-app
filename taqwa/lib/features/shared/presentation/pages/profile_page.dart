@@ -30,6 +30,14 @@ String roleLabelFor(UserRole role) {
   }
 }
 
+/// Changing account details is an administrator's job. Everyone else sees
+/// their own record but cannot alter it — an admin edits them through the
+/// management pages, which already have a form for every role.
+///
+/// This does not cover passwords: any role may change its own through
+/// PATCH /auth/password, which verifies the current one.
+bool canEditProfile(UserRole role) => role == UserRole.admin;
+
 /// The avatar letter. Taken from the name rather than the role, so two
 /// teachers no longer show the same initial.
 String initialFor(String fullName) {
@@ -140,6 +148,7 @@ class _ProfilePageState extends ConsumerState<ProfilePage> {
                   children: [
                     Row(
                       children: [
+                        if (canEditProfile(user.role))
                         GestureDetector(
                           onTap: () => setState(() => _editMode = !_editMode),
                           child: Container(
