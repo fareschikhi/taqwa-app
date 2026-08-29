@@ -61,5 +61,30 @@ void main() {
       expect(model.monthRate, 0);
       expect(model.monthAttended, 0);
     });
+
+    test('reads the current streak', () {
+      final model = AttendanceSummaryModel.fromJson({
+        'present': 6,
+        'absent': 3,
+        'rate': 70,
+        'month': 8,
+        'currentStreak': 4,
+      });
+
+      expect(model.currentStreak, 4);
+    });
+
+    // The field was added after the app shipped, so a server that predates it
+    // must still parse rather than throw.
+    test('a response without a streak reads as zero', () {
+      final model = AttendanceSummaryModel.fromJson({
+        'present': 6,
+        'absent': 3,
+        'rate': 70,
+        'month': 8,
+      });
+
+      expect(model.currentStreak, 0);
+    });
   });
 }

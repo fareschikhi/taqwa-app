@@ -159,6 +159,18 @@ class _ChildAttendanceHistoryPageState
                       ),
                     ],
                   ),
+                  // Its own line rather than a fourth box: four across a phone
+                  // squeezes every label. The streak also spans the whole
+                  // record, not just this month, so it does not belong in a
+                  // row of monthly figures.
+                  if ((_summary?.currentStreak ?? 0) > 0) ...[
+                    SizedBox(height: 10.h),
+                    _StatBox(
+                      label: 'أيام حضور متتالية',
+                      value: '${_summary?.currentStreak ?? 0}',
+                      color: AppColors.primary,
+                    ),
+                  ],
                   SizedBox(height: 8.h),
                   // A late day sits in the حضور box while the timeline still
                   // shows it as متأخر, so the rule is spelled out rather than

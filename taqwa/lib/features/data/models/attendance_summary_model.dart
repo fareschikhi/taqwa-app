@@ -18,6 +18,12 @@ class AttendanceSummaryModel {
   /// arrival, so it counts towards this the same way a punctual day does.
   final int monthRate;
 
+  /// Days attended in a row, counting back from the most recent record. A late
+  /// day continues it, matching [rate]. These are attendance records rather
+  /// than calendar days: a halaqa carries no schedule, so a day nobody was
+  /// marked on is not a broken streak.
+  final int currentStreak;
+
   const AttendanceSummaryModel({
     required this.present,
     required this.absent,
@@ -27,6 +33,7 @@ class AttendanceSummaryModel {
     this.monthAbsent = 0,
     this.monthLate = 0,
     this.monthRate = 0,
+    this.currentStreak = 0,
   });
 
   /// Days the student showed up for this month — on time or late. The rate is
@@ -43,5 +50,7 @@ class AttendanceSummaryModel {
         monthAbsent: (json['monthAbsent'] as num?)?.toInt() ?? 0,
         monthLate: (json['monthLate'] as num?)?.toInt() ?? 0,
         monthRate: (json['monthRate'] as num?)?.toInt() ?? 0,
+        // Older servers do not send it; zero reads as 'no streak yet'.
+        currentStreak: (json['currentStreak'] as num?)?.toInt() ?? 0,
       );
 }
