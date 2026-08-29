@@ -12,6 +12,8 @@ import 'pages/child_progress_page.dart';
 import 'pages/child_attendance_history_page.dart';
 import '../../shared/presentation/pages/profile_page.dart';
 import 'package:taqwa/core/widgets/app_text.dart';
+import 'package:taqwa/features/data/repositories/notification_repository.dart';
+import 'pages/notifications_page.dart';
 
 class ParentShell extends ConsumerStatefulWidget {
   const ParentShell({super.key});
@@ -23,19 +25,35 @@ class ParentShell extends ConsumerStatefulWidget {
 class _ParentShellState extends ConsumerState<ParentShell> {
   int _currentIndex = 0;
 
-  final List<Widget> _pages = const [
-    ParentDashboardPage(),
-    ChildProgressPage(),
-    ChildAttendanceHistoryPage(),
-    ProfilePage(role: 'parent'),
-  ];
+  /// Not const: the notifications page takes a callback so the badge can be
+  /// refreshed after one is read.
+  late final List<Widget> _pages;
+
+  int _unread = 0;
 
   @override
   void initState() {
     super.initState();
-    WidgetsBinding.instance.addPostFrameCallback(
-      (_) => ref.read(selectedChildProvider.notifier).load(),
-    );
+    _pages = [
+      const ParentDashboardPage(),
+      const ChildProgressPage(),
+      const ChildAttendanceHistoryPage(),
+      NotificationsPage(onChanged: _loadUnread),
+      const ProfilePage(role: 'parent'),
+    ];
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      ref.read(selectedChildProvider.notifier).load();
+      _loadUnread();
+    });
+  }
+
+  Future<void> _loadUnread() async {
+    try {
+      final count = await NotificationRepository().unreadCount();
+      if (mounted) setState(() => _unread = count);
+    } catch (_) {
+      // The badge is a nicety; a failure must not break the shell.
+    }
   }
 
   @override
@@ -170,6 +188,11 @@ class _ParentShellState extends ConsumerState<ParentShell> {
         label: 'الحضور',
       ),
       _NavItem(
+        icon: Icons.notifications_outlined,
+        activeIcon: Icons.notifications,
+        label: 'الإشعارات',
+      ),
+      _NavItem(
         icon: Icons.person_outline,
         activeIcon: Icons.person,
         label: 'الحساب',
@@ -210,12 +233,42 @@ class _ParentShellState extends ConsumerState<ParentShell> {
                   child: Column(
                     mainAxisSize: MainAxisSize.min,
                     children: [
-                      Icon(
-                        isActive ? item.activeIcon : item.icon,
-                        color: isActive
-                            ? AppColors.onPrimaryContainer
-                            : AppColors.onSurfaceVariant,
-                        size: 22.w,
+                      Stack(
+                        clipBehavior: Clip.none,
+                        children: [
+                          Icon(
+                            isActive ? item.activeIcon : item.icon,
+                            color: isActive
+                                ? AppColors.onPrimaryContainer
+                                : AppColors.onSurfaceVariant,
+                            size: 22.w,
+                          ),
+                          // Index 3 is الإشعارات; the pages list and the nav
+                          // items are kept in the same order.
+                          if (i == 3 && _unread > 0)
+                            Positioned(
+                              top: -4,
+                              left: -4,
+                              child: Container(
+                                padding: EdgeInsets.symmetric(
+                                  horizontal: 5.w,
+                                  vertical: 1.h,
+                                ),
+                                decoration: BoxDecoration(
+                                  color: AppColors.error,
+                                  borderRadius: BorderRadius.circular(
+                                    AppConstants.radiusFull,
+                                  ),
+                                ),
+                                child: AppText(
+                                  '$_unread',
+                                  style: AppTextStyles.labelSm.copyWith(
+                                    color: AppColors.onPrimary,
+                                  ),
+                                ),
+                              ),
+                            ),
+                        ],
                       ),
                       SizedBox(height: 4.h),
                       AppText(
