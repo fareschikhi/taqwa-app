@@ -324,9 +324,12 @@ class _AttendancePageState extends ConsumerState<AttendancePage>
         _queued = [];
         for (final record in sending) {
           final id = record['studentId'] as int;
-          _savedAttendance[id] = attendanceStatusFromApi(
-            record['status'] as String,
-          );
+          final status = attendanceStatusFromApi(record['status'] as String);
+          _savedAttendance[id] = status;
+          // The chips too: a flush on mount runs after the roster loaded
+          // without these rows, so without this the teacher sees an empty
+          // board and marks the halaqa a second time.
+          _attendance[id] = status;
         }
       });
       _showSnack('تم حفظ ${sending.length} حضور مؤجل', isError: false);
