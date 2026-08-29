@@ -25,7 +25,8 @@ class AttendancePage extends ConsumerStatefulWidget {
   ConsumerState<AttendancePage> createState() => _AttendancePageState();
 }
 
-class _AttendancePageState extends ConsumerState<AttendancePage> {
+class _AttendancePageState extends ConsumerState<AttendancePage>
+    with WidgetsBindingObserver {
   /// What the chips show. The teacher marks the whole halaqa here and it is
   /// written in one batch, so a tap costs nothing and stays undoable.
   final Map<int, AttendanceStatus> _attendance = {}; // studentId -> status
@@ -64,7 +65,22 @@ class _AttendancePageState extends ConsumerState<AttendancePage> {
   @override
   void initState() {
     super.initState();
+    WidgetsBinding.instance.addObserver(this);
     WidgetsBinding.instance.addPostFrameCallback((_) => _loadData());
+  }
+
+  @override
+  void dispose() {
+    WidgetsBinding.instance.removeObserver(this);
+    super.dispose();
+  }
+
+  /// TeacherShell keeps its pages in an IndexedStack, so initState fires once
+  /// per launch rather than per tab switch. This covers the teacher who
+  /// backgrounds the app until signal returns.
+  @override
+  void didChangeAppLifecycleState(AppLifecycleState state) {
+    if (state == AppLifecycleState.resumed) _flushQueue();
   }
 
   Future<void> _loadData() async {
@@ -128,6 +144,9 @@ class _AttendancePageState extends ConsumerState<AttendancePage> {
         }
         _isLoading = false;
       });
+      // Runs after the roster is on screen, so a teacher who reopens the app
+      // with signal sees held marks go out without touching anything.
+      await _flushQueue();
     } catch (_) {
       // Without this an empty screen reads as "this halaqa has no students".
       setState(() => _isLoading = false);
@@ -191,6 +210,7 @@ class _AttendancePageState extends ConsumerState<AttendancePage> {
         status: apiStatus,
       );
       if (mounted) setState(() => _savedAttendance[studentId] = status);
+      await _flushQueue();
       return true;
     } catch (_) {
       await _enqueue([
@@ -228,6 +248,8 @@ class _AttendancePageState extends ConsumerState<AttendancePage> {
         }
       });
       _showSnack('تم حفظ حضور ${payload.length} طالب', isError: false);
+      // The connection is evidently back, so drain anything held earlier.
+      await _flushQueue();
     } catch (_) {
       await _enqueue(payload);
       // The marks are on disk now, so this is a delay rather than a loss.
@@ -235,6 +257,44 @@ class _AttendancePageState extends ConsumerState<AttendancePage> {
     } finally {
       if (mounted) setState(() => _isSaving = false);
     }
+  }
+
+  /// Shown only while marks are waiting, so a working connection costs the
+  /// teacher no screen space.
+  Widget _buildPendingBanner() {
+    return Container(
+      margin: EdgeInsets.fromLTRB(16.w, 12.h, 16.w, 0),
+      padding: EdgeInsets.symmetric(horizontal: 14.w, vertical: 10.h),
+      decoration: BoxDecoration(
+        color: AppColors.surfaceContainerLow,
+        borderRadius: BorderRadius.circular(AppConstants.radiusMd),
+        border: Border.all(color: AppColors.outlineVariant),
+      ),
+      child: Row(
+        children: [
+          GestureDetector(
+            onTap: _isSaving ? null : _flushQueue,
+            child: AppText(
+              'إعادة المحاولة',
+              style: AppTextStyles.labelMd.copyWith(color: AppColors.primary),
+            ),
+          ),
+          const Spacer(),
+          Icon(
+            Icons.cloud_off_outlined,
+            size: 18.w,
+            color: AppColors.onSurfaceVariant,
+          ),
+          SizedBox(width: 8.w),
+          AppText(
+            '${_queued.length} حضور بانتظار الحفظ',
+            style: AppTextStyles.labelMd.copyWith(
+              color: AppColors.onSurfaceVariant,
+            ),
+          ),
+        ],
+      ),
+    );
   }
 
   /// Folds records into the stored queue, last write winning per student and
@@ -343,6 +403,7 @@ class _AttendancePageState extends ConsumerState<AttendancePage> {
                     children: [
                       _buildHeader(),
                       _buildProgress(),
+                      if (_queued.isNotEmpty) _buildPendingBanner(),
                       Expanded(
                         child: _students.isEmpty
                             ? SingleChildScrollView(
