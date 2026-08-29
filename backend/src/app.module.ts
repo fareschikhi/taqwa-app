@@ -17,6 +17,7 @@ import { ManagersModule } from './modules/managers/managers.module';
 import { AbsenceJustificationModule } from './modules/absence-justification/absence-justification.module';
 import { StudentNotesModule } from './modules/student-notes/student-notes.module';
 import { UploadsModule } from './modules/uploads/uploads.module';
+import { DevicesModule } from './modules/devices/devices.module';
 
 @Module({
   imports: [
@@ -38,6 +39,7 @@ import { UploadsModule } from './modules/uploads/uploads.module';
     AbsenceJustificationModule,
     StudentNotesModule,
     UploadsModule,
+    DevicesModule,
   ],
   controllers: [AppController],
   providers: [AppService],
