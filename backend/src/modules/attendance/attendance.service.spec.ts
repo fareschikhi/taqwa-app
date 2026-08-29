@@ -1,10 +1,18 @@
 import { AttendanceStatus } from '@prisma/client';
 import { AttendanceService } from './attendance.service';
 
+/// Most of these tests predate notifications and do not exercise them, so they
+/// take a stub rather than repeating the second constructor argument.
+const svc = (prisma: unknown) =>
+  new AttendanceService(prisma as any, { create: jest.fn() } as any);
+
 describe('AttendanceService memorization cleanup', () => {
   const makePrisma = () => {
     const tx = {
       attendance: {
+        // The service reads the prior status before writing, so a mock without
+        // this throws before it reaches the behaviour under test.
+        findUnique: jest.fn().mockResolvedValue(null),
         upsert: jest
           .fn()
           .mockImplementation(({ create }) => Promise.resolve({ id: 1, ...create })),
@@ -32,7 +40,7 @@ describe('AttendanceService memorization cleanup', () => {
 
   it('deletes that date\'s memorization when a student is marked absent', async () => {
     const prisma = makePrisma();
-    const service = new AttendanceService(prisma as any);
+    const service = svc(prisma as any);
 
     await service.create(dto(AttendanceStatus.ABSENT));
 
@@ -43,7 +51,7 @@ describe('AttendanceService memorization cleanup', () => {
 
   it('deletes in the same transaction as the attendance write', async () => {
     const prisma = makePrisma();
-    const service = new AttendanceService(prisma as any);
+    const service = svc(prisma as any);
 
     await service.create(dto(AttendanceStatus.ABSENT));
 
@@ -52,7 +60,7 @@ describe('AttendanceService memorization cleanup', () => {
 
   it('keeps memorization when the student is marked present', async () => {
     const prisma = makePrisma();
-    const service = new AttendanceService(prisma as any);
+    const service = svc(prisma as any);
 
     await service.create(dto(AttendanceStatus.PRESENT));
 
@@ -61,7 +69,7 @@ describe('AttendanceService memorization cleanup', () => {
 
   it('keeps memorization when the student is marked late', async () => {
     const prisma = makePrisma();
-    const service = new AttendanceService(prisma as any);
+    const service = svc(prisma as any);
 
     await service.create(dto(AttendanceStatus.LATE));
 
@@ -73,7 +81,7 @@ describe('AttendanceService memorization cleanup', () => {
   // single-record route would leave recitation standing for a batched absence.
   it('cleans up each absent student in a batch, and only those', async () => {
     const prisma = makePrisma();
-    const service = new AttendanceService(prisma as any);
+    const service = svc(prisma as any);
 
     await service.createBatch({
       records: [
@@ -97,7 +105,7 @@ describe('AttendanceService memorization cleanup', () => {
 
   it('batches the whole save into one transaction', async () => {
     const prisma = makePrisma();
-    const service = new AttendanceService(prisma as any);
+    const service = svc(prisma as any);
 
     await service.createBatch({
       records: [
@@ -113,7 +121,7 @@ describe('AttendanceService memorization cleanup', () => {
 
   it('also cleans up when a PATCH flips an existing row to absent', async () => {
     const prisma = makePrisma();
-    const service = new AttendanceService(prisma as any);
+    const service = svc(prisma as any);
 
     await service.update(1, { status: AttendanceStatus.ABSENT });
 
@@ -164,7 +172,7 @@ describe('AttendanceService.getStudentAttendanceSummary', () => {
   };
 
   it('keeps the all-time breakdown the history page reads', async () => {
-    const service = new AttendanceService(makePrisma(counts) as any);
+    const service = svc(makePrisma(counts) as any);
 
     const summary = await service.getStudentAttendanceSummary(7);
 
@@ -179,7 +187,7 @@ describe('AttendanceService.getStudentAttendanceSummary', () => {
   });
 
   it('reports this month separately from all time', async () => {
-    const service = new AttendanceService(makePrisma(counts) as any);
+    const service = svc(makePrisma(counts) as any);
 
     const summary = await service.getStudentAttendanceSummary(7);
 
@@ -192,7 +200,7 @@ describe('AttendanceService.getStudentAttendanceSummary', () => {
 
   it('scopes the month counts to a UTC window over the current month', async () => {
     const prisma = makePrisma(counts);
-    const service = new AttendanceService(prisma as any);
+    const service = svc(prisma as any);
 
     await service.getStudentAttendanceSummary(7);
 
@@ -213,7 +221,7 @@ describe('AttendanceService.getStudentAttendanceSummary', () => {
   });
 
   it('reports a month with no attendance as zero rather than dividing by it', async () => {
-    const service = new AttendanceService(
+    const service = svc(
       makePrisma({
         ...counts,
         monthPresent: 0,
@@ -231,7 +239,7 @@ describe('AttendanceService.getStudentAttendanceSummary', () => {
     // Turning up late is turning up. A month of nothing but late arrivals is
     // full attendance, and one absence among them is the only thing that
     // pulls the figure down.
-    const service = new AttendanceService(
+    const service = svc(
       makePrisma({
         present: 0,
         absent: 0,
@@ -249,7 +257,7 @@ describe('AttendanceService.getStudentAttendanceSummary', () => {
   });
 
   it('holds only absences against the month rate', async () => {
-    const service = new AttendanceService(
+    const service = svc(
       makePrisma({
         present: 1,
         absent: 1,
@@ -295,7 +303,7 @@ describe('AttendanceService.getWeeklyAttendanceRates', () => {
   };
 
   it('reports the five school days of the week, Sunday first', async () => {
-    const service = new AttendanceService(makePrisma([]) as any);
+    const service = svc(makePrisma([]) as any);
 
     const week = await service.getWeeklyAttendanceRates();
 
@@ -308,7 +316,7 @@ describe('AttendanceService.getWeeklyAttendanceRates', () => {
   });
 
   it('counts late arrivals as attendance, the same as everywhere else', async () => {
-    const service = new AttendanceService(
+    const service = svc(
       makePrisma([
         [0, 'PRESENT', 6],
         [0, 'LATE', 2],
@@ -325,7 +333,7 @@ describe('AttendanceService.getWeeklyAttendanceRates', () => {
   it('leaves an unmarked day null instead of calling it 0%', async () => {
     // A day with no register taken is not a day everyone missed, and a 0% bar
     // on the dashboard would read as exactly that.
-    const service = new AttendanceService(
+    const service = svc(
       makePrisma([[1, 'PRESENT', 4]]) as any,
     );
 
@@ -337,7 +345,7 @@ describe('AttendanceService.getWeeklyAttendanceRates', () => {
   });
 
   it('keeps each day separate rather than pooling the week', async () => {
-    const service = new AttendanceService(
+    const service = svc(
       makePrisma([
         [0, 'PRESENT', 1],
         [0, 'ABSENT', 3],
@@ -354,7 +362,7 @@ describe('AttendanceService.getWeeklyAttendanceRates', () => {
 
   it('asks the database only for that week', async () => {
     const prisma = makePrisma([]);
-    const service = new AttendanceService(prisma as any);
+    const service = svc(prisma as any);
 
     await service.getWeeklyAttendanceRates();
 
@@ -367,5 +375,129 @@ describe('AttendanceService.getWeeklyAttendanceRates', () => {
     const sunday = sundayOf(new Date());
     expect(where.date.gte.getTime()).toBe(sunday.getTime());
     expect(where.date.lte.getTime()).toBe(sunday.getTime() + 4 * DAY_MS);
+  });
+});
+
+describe('AttendanceService notifications', () => {
+  // The three write paths are upserts wrapped in a transaction. The mock runs
+  // the callback with a client whose findUnique reports what the row held
+  // before, which is what tells a real change from a re-save.
+  const makePrisma = (opts: {
+    previous?: string | null;
+    parentUserId?: number | null;
+  }) => {
+    const tx = {
+      attendance: {
+        findUnique: jest
+          .fn()
+          .mockResolvedValue(
+            opts.previous == null ? null : { status: opts.previous },
+          ),
+        upsert: jest.fn().mockResolvedValue({ id: 1 }),
+      },
+      memorizationProgress: { deleteMany: jest.fn() },
+    };
+    return {
+      $transaction: jest.fn((cb: any) => cb(tx)),
+      student: {
+        findUnique: jest.fn().mockResolvedValue(
+          opts.parentUserId == null
+            ? { parentId: null, user: { fullName: 'Bilal' } }
+            : {
+                parentId: 1,
+                user: { fullName: 'Bilal' },
+                parent: { userId: opts.parentUserId },
+              },
+        ),
+      },
+      tx,
+    };
+  };
+
+  const makeService = (prisma: any, notifications: any) =>
+    new AttendanceService(prisma as any, notifications as any);
+
+  const notificationsMock = () => ({ create: jest.fn().mockResolvedValue({}) });
+
+  it('notifies the parent when a student becomes absent', async () => {
+    const prisma = makePrisma({ previous: 'PRESENT', parentUserId: 9 });
+    const notifications = notificationsMock();
+    const service = makeService(prisma, notifications);
+
+    await service.upsert(2, '2026-08-29', AttendanceStatus.ABSENT);
+
+    expect(notifications.create).toHaveBeenCalledWith({
+      userId: 9,
+      title: 'غياب',
+      body: 'تم تسجيل غياب Bilal اليوم',
+    });
+  });
+
+  it('uses the late wording for a late arrival', async () => {
+    const prisma = makePrisma({ previous: 'PRESENT', parentUserId: 9 });
+    const notifications = notificationsMock();
+    const service = makeService(prisma, notifications);
+
+    await service.upsert(2, '2026-08-29', AttendanceStatus.LATE);
+
+    expect(notifications.create).toHaveBeenCalledWith({
+      userId: 9,
+      title: 'تأخر',
+      body: 'تم تسجيل تأخر Bilal اليوم',
+    });
+  });
+
+  it('notifies on a brand new row', async () => {
+    const prisma = makePrisma({ previous: null, parentUserId: 9 });
+    const notifications = notificationsMock();
+    const service = makeService(prisma, notifications);
+
+    await service.upsert(2, '2026-08-29', AttendanceStatus.ABSENT);
+
+    expect(notifications.create).toHaveBeenCalledTimes(1);
+  });
+
+  it('says nothing when the status did not change', async () => {
+    const prisma = makePrisma({ previous: 'ABSENT', parentUserId: 9 });
+    const notifications = notificationsMock();
+    const service = makeService(prisma, notifications);
+
+    await service.upsert(2, '2026-08-29', AttendanceStatus.ABSENT);
+
+    expect(notifications.create).not.toHaveBeenCalled();
+  });
+
+  it('says nothing when a student turns up', async () => {
+    const prisma = makePrisma({ previous: 'ABSENT', parentUserId: 9 });
+    const notifications = notificationsMock();
+    const service = makeService(prisma, notifications);
+
+    await service.upsert(2, '2026-08-29', AttendanceStatus.PRESENT);
+
+    expect(notifications.create).not.toHaveBeenCalled();
+  });
+
+  it('skips a student with no parent', async () => {
+    const prisma = makePrisma({ previous: 'PRESENT', parentUserId: null });
+    const notifications = notificationsMock();
+    const service = makeService(prisma, notifications);
+
+    await service.upsert(2, '2026-08-29', AttendanceStatus.ABSENT);
+
+    expect(notifications.create).not.toHaveBeenCalled();
+  });
+
+  it('keeps the attendance record when notifying fails', async () => {
+    const prisma = makePrisma({ previous: 'PRESENT', parentUserId: 9 });
+    const notifications = {
+      create: jest.fn().mockRejectedValue(new Error('down')),
+    };
+    const service = makeService(prisma, notifications);
+
+    // The write is already committed, so this must resolve rather than throw.
+    await expect(
+      service.upsert(2, '2026-08-29', AttendanceStatus.ABSENT),
+    ).resolves.toBeDefined();
+    expect(prisma.tx.attendance.upsert).toHaveBeenCalled();
   });
 });

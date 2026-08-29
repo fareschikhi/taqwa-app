@@ -6,10 +6,14 @@ import {
   UpdateAttendanceDto,
 } from './dto/attendance.dto';
 import { AttendanceStatus, Prisma } from '@prisma/client';
+import { NotificationsService } from '../notifications/notifications.service';
 
 @Injectable()
 export class AttendanceService {
-  constructor(private prisma: PrismaService) {}
+  constructor(
+    private prisma: PrismaService,
+    private notifications: NotificationsService,
+  ) {}
 
   // A student who was absent cannot have recited that day. Attendance is the
   // authority when the two disagree — the teacher is correcting the record —
@@ -27,10 +31,66 @@ export class AttendanceService {
     await tx.memorizationProgress.deleteMany({ where: { studentId, date } });
   }
 
+  /// What a single write changed, so the notifier can tell a real transition
+  /// from a re-save. `previous` is null when the row is new, which counts as
+  /// a change: the first time a student is marked absent is exactly when the
+  /// parent should hear about it.
+  private async notifyParents(
+    transitions: Array<{
+      studentId: number;
+      status: AttendanceStatus;
+      previous: AttendanceStatus | null;
+    }>,
+  ) {
+    // Runs after the transaction commits, so a write that rolled back never
+    // notifies. Failures are swallowed: a notification that does not send must
+    // not cost the attendance record that prompted it.
+    try {
+      for (const t of transitions) {
+        const announces =
+          t.status === AttendanceStatus.ABSENT ||
+          t.status === AttendanceStatus.LATE;
+        if (!announces || t.status === t.previous) continue;
+
+        const student = await this.prisma.student.findUnique({
+          where: { id: t.studentId },
+          select: {
+            parentId: true,
+            user: { select: { fullName: true } },
+            parent: { select: { userId: true } },
+          },
+        });
+        const parentUserId = student?.parent?.userId;
+        if (!parentUserId) continue;
+
+        const name = student?.user?.fullName ?? '';
+        await this.notifications.create(
+          t.status === AttendanceStatus.ABSENT
+            ? {
+                userId: parentUserId,
+                title: 'غياب',
+                body: `تم تسجيل غياب ${name} اليوم`,
+              }
+            : {
+                userId: parentUserId,
+                title: 'تأخر',
+                body: `تم تسجيل تأخر ${name} اليوم`,
+              },
+        );
+      }
+    } catch (_) {
+      // Deliberately silent — see above.
+    }
+  }
+
   async create(dto: CreateAttendanceDto) {
     const date = new Date(dto.date);
-    return this.prisma.$transaction(async (tx) => {
-      const record = await tx.attendance.upsert({
+    const { record, previous } = await this.prisma.$transaction(async (tx) => {
+      const before = await tx.attendance.findUnique({
+        where: { studentId_date: { studentId: dto.studentId, date } },
+        select: { status: true },
+      });
+      const written = await tx.attendance.upsert({
         where: { studentId_date: { studentId: dto.studentId, date } },
         update: { status: dto.status, notes: dto.notes },
         create: {
@@ -41,16 +101,31 @@ export class AttendanceService {
         },
       });
       await this.clearMemorizationIfAbsent(tx, dto.studentId, date, dto.status);
-      return record;
+      return { record: written, previous: before?.status ?? null };
     });
+
+    await this.notifyParents([
+      { studentId: dto.studentId, status: dto.status, previous },
+    ]);
+    return record;
   }
 
   async createBatch(dto: CreateBatchAttendanceDto) {
+    const transitions: Array<{
+      studentId: number;
+      status: AttendanceStatus;
+      previous: AttendanceStatus | null;
+    }> = [];
+
     const records = await this.prisma.$transaction(async (tx) => {
       const written: Array<Awaited<ReturnType<typeof tx.attendance.upsert>>> =
         [];
       for (const r of dto.records) {
         const date = new Date(r.date);
+        const before = await tx.attendance.findUnique({
+          where: { studentId_date: { studentId: r.studentId, date } },
+          select: { status: true },
+        });
         written.push(
           await tx.attendance.upsert({
             where: { studentId_date: { studentId: r.studentId, date } },
@@ -63,24 +138,38 @@ export class AttendanceService {
             },
           }),
         );
+        transitions.push({
+          studentId: r.studentId,
+          status: r.status,
+          previous: before?.status ?? null,
+        });
         await this.clearMemorizationIfAbsent(tx, r.studentId, date, r.status);
       }
       return written;
     });
+
+    await this.notifyParents(transitions);
     return { count: records.length, records };
   }
 
   async upsert(studentId: number, date: string, status: AttendanceStatus) {
     const day = new Date(date);
-    return this.prisma.$transaction(async (tx) => {
-      const record = await tx.attendance.upsert({
+    const { record, previous } = await this.prisma.$transaction(async (tx) => {
+      const before = await tx.attendance.findUnique({
+        where: { studentId_date: { studentId, date: day } },
+        select: { status: true },
+      });
+      const written = await tx.attendance.upsert({
         where: { studentId_date: { studentId, date: day } },
         update: { status },
         create: { studentId, date: day, status },
       });
       await this.clearMemorizationIfAbsent(tx, studentId, day, status);
-      return record;
+      return { record: written, previous: before?.status ?? null };
     });
+
+    await this.notifyParents([{ studentId, status, previous }]);
+    return record;
   }
 
   async findByStudent(studentId: number) {
