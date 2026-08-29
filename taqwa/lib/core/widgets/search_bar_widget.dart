@@ -140,6 +140,11 @@ class _FilterChipGroupState extends State<FilterChipGroup> {
                 ),
                 child: Text(
                   widget.filters[i],
+                  // A label like 'الكل (9)' mixes Arabic with neutral
+                  // characters, which resolve against the paragraph's base
+                  // direction. The app tree is LTR, so the label declares its
+                  // own direction or the count lands on the wrong side.
+                  textDirection: TextDirection.rtl,
                   style: AppTextStyles.labelMd.copyWith(
                     color: isSelected
                         ? AppColors.onPrimary

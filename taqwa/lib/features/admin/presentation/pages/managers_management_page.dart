@@ -548,6 +548,9 @@ class _FilterChips extends StatelessWidget {
               ),
               child: Text(
                 e.value,
+                // Mixed Arabic and digits, in an LTR tree — see the same note
+                // on FilterChipGroup in core/widgets/search_bar_widget.dart.
+                textDirection: TextDirection.rtl,
                 style: AppTextStyles.labelMd.copyWith(
                   color: isSelected
                       ? AppColors.onPrimaryContainer
