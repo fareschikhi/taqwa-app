@@ -14,7 +14,10 @@ export class JwtStrategy extends PassportStrategy(Strategy) {
     });
   }
 
-  async validate(payload: { sub: number; role: string }) {
-    return this.authService.validateUser(payload.sub);
+  async validate(payload: { sub: number; role: string; exp: number }) {
+    const user = await this.authService.validateUser(payload.sub);
+    // `exp` is present at runtime whenever signOptions sets expiresIn; the
+    // TokenRefreshInterceptor needs it to decide whether to re-sign.
+    return user ? { ...user, tokenExp: payload.exp } : null;
   }
 }

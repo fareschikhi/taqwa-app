@@ -1,6 +1,8 @@
 import { Module } from '@nestjs/common';
+import { APP_INTERCEPTOR } from '@nestjs/core';
 import { JwtModule, JwtSignOptions } from '@nestjs/jwt';
 import { PassportModule } from '@nestjs/passport';
+import { TokenRefreshInterceptor } from '../../common/interceptors/token-refresh.interceptor';
 import { AuthController } from './auth.controller';
 import { AuthService } from './auth.service';
 import { JwtStrategy } from './jwt.strategy';
@@ -25,7 +27,13 @@ import { requireEnv } from '../../common/config/env';
     }),
   ],
   controllers: [AuthController],
-  providers: [AuthService, JwtStrategy],
+  // Registered here rather than in app.module so JwtService resolves from the
+  // module that configures it.
+  providers: [
+    AuthService,
+    JwtStrategy,
+    { provide: APP_INTERCEPTOR, useClass: TokenRefreshInterceptor },
+  ],
   exports: [AuthService],
 })
 export class AuthModule {}
