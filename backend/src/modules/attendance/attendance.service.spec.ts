@@ -159,6 +159,9 @@ describe('AttendanceService.getStudentAttendanceSummary', () => {
         }
         return Promise.resolve(rows.present + rows.absent + rows.late);
       }),
+      // The summary also walks the records for the streak; these tests are
+      // about the counts, so there is nothing to walk.
+      findMany: jest.fn().mockResolvedValue([]),
     },
   });
 
@@ -499,5 +502,60 @@ describe('AttendanceService notifications', () => {
       service.upsert(2, '2026-08-29', AttendanceStatus.ABSENT),
     ).resolves.toBeDefined();
     expect(prisma.tx.attendance.upsert).toHaveBeenCalled();
+  });
+});
+
+describe('AttendanceService attendance streak', () => {
+  /// The streak is the run of attended days ending at the most recent record.
+  /// LATE continues it: the same rule the rate already applies, so the two
+  /// figures on the parent's screen cannot disagree about the same week.
+  const makePrisma = (statuses: string[]) => ({
+    attendance: {
+      count: jest.fn().mockResolvedValue(0),
+      // Newest first, which is the order the streak walks.
+      findMany: jest
+        .fn()
+        .mockResolvedValue(statuses.map((status) => ({ status }))),
+    },
+  });
+
+  const streakOf = async (statuses: string[]) => {
+    const service = svc(makePrisma(statuses));
+    const summary = await service.getStudentAttendanceSummary(7);
+    return summary.currentStreak;
+  };
+
+  it('counts an unbroken run of attendance', async () => {
+    expect(await streakOf(['PRESENT', 'PRESENT', 'PRESENT'])).toBe(3);
+  });
+
+  it('stops at the first absence', async () => {
+    expect(await streakOf(['PRESENT', 'PRESENT', 'ABSENT', 'PRESENT'])).toBe(2);
+  });
+
+  it('keeps counting through a late arrival', async () => {
+    expect(await streakOf(['PRESENT', 'LATE', 'PRESENT'])).toBe(3);
+  });
+
+  it('counts only the most recent run, not the longest', async () => {
+    // Four in a row earlier does not help a student absent yesterday.
+    expect(
+      await streakOf(['ABSENT', 'PRESENT', 'PRESENT', 'PRESENT', 'PRESENT']),
+    ).toBe(0);
+  });
+
+  it('is zero for a student with no attendance at all', async () => {
+    expect(await streakOf([])).toBe(0);
+  });
+
+  it('reads the records newest first', async () => {
+    const prisma = makePrisma(['PRESENT']);
+    const service = svc(prisma);
+
+    await service.getStudentAttendanceSummary(7);
+
+    const { orderBy, where } = prisma.attendance.findMany.mock.calls[0][0];
+    expect(where).toEqual({ studentId: 7 });
+    expect(orderBy).toEqual({ date: 'desc' });
   });
 });

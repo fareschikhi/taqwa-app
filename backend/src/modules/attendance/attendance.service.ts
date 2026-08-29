@@ -219,8 +219,16 @@ export class AttendanceService {
     );
     const inMonth = { gte: startOfMonth, lte: endOfMonth };
 
-    const [present, absent, late, total, monthPresent, monthAbsent, monthLate] =
-      await Promise.all([
+    const [
+      present,
+      absent,
+      late,
+      total,
+      monthPresent,
+      monthAbsent,
+      monthLate,
+      recent,
+    ] = await Promise.all([
         this.prisma.attendance.count({
           where: { studentId, status: 'PRESENT' },
         }),
@@ -236,7 +244,26 @@ export class AttendanceService {
         this.prisma.attendance.count({
           where: { studentId, status: 'LATE', date: inMonth },
         }),
+        // Newest first: the streak is the run ending at the latest record.
+        this.prisma.attendance.findMany({
+          where: { studentId },
+          orderBy: { date: 'desc' },
+          select: { status: true },
+        }),
       ]);
+
+    // Days attended in a row, counting back from the most recent record. LATE
+    // continues it for the same reason it counts towards the rate — a student
+    // who turned up late still turned up — so the streak and the rate on the
+    // same screen cannot disagree about the same week.
+    //
+    // These are attendance rows, not calendar days: Halaqa carries no
+    // schedule, so the server cannot tell a day off from a day missed.
+    let currentStreak = 0;
+    for (const record of recent) {
+      if (record.status === 'ABSENT') break;
+      currentStreak++;
+    }
 
     // A student who turned up late still turned up: LATE counts as attendance,
     // never as an absence. It sits on the numerator of both rates so the
@@ -261,6 +288,8 @@ export class AttendanceService {
       monthLate,
       monthRate:
         monthTotal > 0 ? Math.round((monthAttended / monthTotal) * 100) : 0,
+
+      currentStreak,
     };
   }
 
