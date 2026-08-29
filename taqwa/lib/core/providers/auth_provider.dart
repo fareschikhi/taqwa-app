@@ -1,9 +1,12 @@
+import 'dart:async';
 import 'dart:convert';
 import 'package:dio/dio.dart';
+import 'package:firebase_messaging/firebase_messaging.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 import 'package:taqwa/features/data/models/user_model.dart';
 import 'package:taqwa/features/data/repositories/auth_repository_impl.dart';
+import 'package:taqwa/features/data/repositories/device_repository.dart';
 import 'package:taqwa/features/data/datasources/user_remote_datasource.dart';
 
 class AuthState {
@@ -38,6 +41,31 @@ class AuthNotifier extends Notifier<AuthState> {
   final FlutterSecureStorage _storage = const FlutterSecureStorage();
   final AuthRepository _authRepository = AuthRepository();
   final UserRemoteDatasource _userDatasource = UserRemoteDatasource();
+  final DeviceRepository _deviceRepository = DeviceRepository();
+
+  /// Asks for notification permission and hands the device's token to the API,
+  /// so notifications written for this user can be pushed to this phone.
+  ///
+  /// Android 13 and up treat notifications as a runtime permission, so this is
+  /// a real prompt the parent can refuse. Refusing costs them only the tray
+  /// notification — the notifications tab reads the same rows either way.
+  Future<void> _registerDevice() async {
+    try {
+      final messaging = FirebaseMessaging.instance;
+      await messaging.requestPermission();
+
+      final token = await messaging.getToken();
+      if (token != null) await _deviceRepository.register(token);
+
+      // FCM rotates tokens on its own schedule, and a stale one simply stops
+      // being delivered to. Without this the phone goes quiet weeks later
+      // with nothing in the logs to say why.
+      messaging.onTokenRefresh.listen(_deviceRepository.register);
+    } catch (_) {
+      // Push is an enhancement to a feature that already works. Failing to
+      // arrange it must not fail the sign-in that triggered it.
+    }
+  }
 
   @override
   AuthState build() {
@@ -61,6 +89,11 @@ class AuthNotifier extends Notifier<AuthState> {
           isAuthenticated: true,
           isLoading: false,
         );
+
+        // A returning user never passes through login(), and their token
+        // still has to be current. Not awaited: the permission prompt must
+        // not hold up the screen behind it.
+        unawaited(_registerDevice());
 
         // Fetch fresh profile in the background
         final freshUser = await _userDatasource.me();
@@ -89,6 +122,11 @@ class AuthNotifier extends Notifier<AuthState> {
         isAuthenticated: true,
         isLoading: false,
       );
+
+      // Not awaited: the permission prompt would otherwise sit in front of a
+      // login that has already succeeded.
+      unawaited(_registerDevice());
+
       return true;
     } on DioException catch (e) {
       state = state.copyWith(
@@ -126,6 +164,16 @@ class AuthNotifier extends Notifier<AuthState> {
   }
 
   Future<void> logout() async {
+    // Released before the token goes, since the request needs it. A shared
+    // phone would otherwise keep delivering this parent's notifications to
+    // whoever signs in next.
+    try {
+      final token = await FirebaseMessaging.instance.getToken();
+      if (token != null) await _deviceRepository.unregister(token);
+    } catch (_) {
+      // Signing out must succeed even with no network.
+    }
+
     await _storage.delete(key: 'jwt_token');
     await _storage.delete(key: 'cached_user');
     ref.invalidateSelf();

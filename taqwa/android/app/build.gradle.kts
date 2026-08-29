@@ -3,6 +3,7 @@ plugins {
     id("kotlin-android")
     // The Flutter Gradle Plugin must be applied after the Android and Kotlin Gradle plugins.
     id("dev.flutter.flutter-gradle-plugin")
+    id("com.google.gms.google-services")
 }
 
 android {
@@ -20,8 +21,14 @@ android {
     }
 
     defaultConfig {
-        // TODO: Specify your own unique Application ID (https://developer.android.com/studio/build/application-id.html).
-        applicationId = "com.example.taqwa"
+        // The identity Google Play and Firebase know this app by. It is
+        // matched against `package_name` in google-services.json, and cannot
+        // be changed once the app is registered with either.
+        //
+        // `namespace` above is a separate thing — it names the generated R
+        // class and must keep tracking the Kotlin source directory, which is
+        // still com/example/taqwa.
+        applicationId = "com.taqwa.app"
         // You can update the following values to match your application needs.
         // For more information, see: https://flutter.dev/to/review-gradle-config.
         minSdk = flutter.minSdkVersion

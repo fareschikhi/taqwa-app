@@ -1,3 +1,5 @@
+import 'package:firebase_core/firebase_core.dart';
+import 'package:firebase_messaging/firebase_messaging.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_localizations/flutter_localizations.dart';
@@ -6,8 +8,25 @@ import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'core/theme/app_theme.dart';
 import 'features/auth/presentation/pages/login_page.dart';
 
-void main() {
+/// Runs in its own isolate when a message arrives with the app closed, so it
+/// shares nothing with the running app and has to initialise Firebase itself.
+///
+/// Android draws the tray notification from the message payload without any
+/// help from here. This exists so the isolate has a valid entry point, and is
+/// where anything that must happen on delivery rather than on tap would go.
+@pragma('vm:entry-point')
+Future<void> _onBackgroundMessage(RemoteMessage message) async {
+  await Firebase.initializeApp();
+}
+
+void main() async {
   WidgetsFlutterBinding.ensureInitialized();
+
+  // No generated options file: the google-services Gradle plugin puts the
+  // project's identity into the Android build, and this reads it from there.
+  await Firebase.initializeApp();
+  FirebaseMessaging.onBackgroundMessage(_onBackgroundMessage);
+
   SystemChrome.setSystemUIOverlayStyle(
     const SystemUiOverlayStyle(
       statusBarColor: Colors.transparent,

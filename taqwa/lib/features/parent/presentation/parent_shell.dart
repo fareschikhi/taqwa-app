@@ -1,3 +1,5 @@
+import 'dart:async';
+import 'package:firebase_messaging/firebase_messaging.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
@@ -31,6 +33,9 @@ class _ParentShellState extends ConsumerState<ParentShell> {
 
   int _unread = 0;
 
+  StreamSubscription<RemoteMessage>? _onMessage;
+  StreamSubscription<RemoteMessage>? _onMessageOpened;
+
   @override
   void initState() {
     super.initState();
@@ -45,6 +50,26 @@ class _ParentShellState extends ConsumerState<ParentShell> {
       ref.read(selectedChildProvider.notifier).load();
       _loadUnread();
     });
+
+    // Android shows nothing in the tray while the app is in the foreground,
+    // by design. Refreshing the badge is the honest equivalent: the parent is
+    // already looking at the screen the notification would have sent them to.
+    _onMessage = FirebaseMessaging.onMessage.listen((_) => _loadUnread());
+
+    // Tapping a notification that opened the app from the background lands on
+    // the tab rather than wherever they last were.
+    _onMessageOpened = FirebaseMessaging.onMessageOpenedApp.listen((_) {
+      if (!mounted) return;
+      setState(() => _currentIndex = 3);
+      _loadUnread();
+    });
+  }
+
+  @override
+  void dispose() {
+    _onMessage?.cancel();
+    _onMessageOpened?.cancel();
+    super.dispose();
   }
 
   Future<void> _loadUnread() async {
