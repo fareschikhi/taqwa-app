@@ -11,8 +11,18 @@ import 'package:taqwa/features/data/repositories/auth_repository_impl.dart';
 /// Lets the signed-in user replace their own password. The current password is
 /// required because the backend verifies it — this sheet cannot reset a
 /// forgotten one, which is an administrator's job.
+typedef ChangePasswordAction =
+    Future<void> Function({
+      required String currentPassword,
+      required String newPassword,
+    });
+
 class ChangePasswordSheet extends StatefulWidget {
-  const ChangePasswordSheet({super.key});
+  const ChangePasswordSheet({super.key, this.onSubmit});
+
+  /// Defaults to the repository. Injected in tests so a failure can be
+  /// exercised without a server.
+  final ChangePasswordAction? onSubmit;
 
   /// Returns true only when the password was actually changed.
   static Future<bool> show(BuildContext context) async {
@@ -47,6 +57,10 @@ class _ChangePasswordSheetState extends State<ChangePasswordSheet> {
   final _confirmController = TextEditingController();
   bool _isSaving = false;
 
+  /// Rendered inside the sheet: a failure leaves the sheet open, and a
+  /// SnackBar would be drawn underneath it where nobody can see it.
+  String? _error;
+
   @override
   void dispose() {
     _currentController.dispose();
@@ -57,22 +71,25 @@ class _ChangePasswordSheetState extends State<ChangePasswordSheet> {
 
   Future<void> _submit() async {
     if (!_formKey.currentState!.validate()) return;
-    setState(() => _isSaving = true);
+    setState(() {
+      _isSaving = true;
+      _error = null;
+    });
     try {
-      await _repo.changePassword(
+      final submit = widget.onSubmit ?? _repo.changePassword;
+      await submit(
         currentPassword: _currentController.text,
         newPassword: _newController.text,
       );
       if (!mounted) return;
+      // The sheet closes first, so this SnackBar lands on the page behind it.
       Navigator.pop(context, true);
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(content: AppText('تم تغيير كلمة المرور بنجاح')),
       );
     } catch (e) {
       if (!mounted) return;
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: AppText(AuthRepository.errorMessage(e))),
-      );
+      setState(() => _error = AuthRepository.errorMessage(e));
     } finally {
       if (mounted) setState(() => _isSaving = false);
     }
@@ -126,6 +143,15 @@ class _ChangePasswordSheetState extends State<ChangePasswordSheet> {
                 validator: (v) =>
                     ChangePasswordSheet.validateConfirm(v, _newController.text),
               ),
+              if (_error != null) ...[
+                SizedBox(height: 12.h),
+                AppText(
+                  _error!,
+                  style: AppTextStyles.labelMd.copyWith(
+                    color: AppColors.error,
+                  ),
+                ),
+              ],
               SizedBox(height: 20.h),
               AppButton(
                 label: 'حفظ',
