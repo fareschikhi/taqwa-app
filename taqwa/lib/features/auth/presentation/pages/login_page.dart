@@ -12,6 +12,7 @@ import '../../../admin/presentation/admin_shell.dart';
 import '../../../teacher/presentation/teacher_shell.dart';
 import '../../../parent/presentation/parent_shell.dart';
 import '../../../manager/presentation/manager_shell.dart';
+import '../../../adult_student/presentation/adult_student_shell.dart';
 import 'package:taqwa/core/widgets/app_text.dart';
 import 'package:taqwa/core/widgets/forgot_password_dialog.dart';
 
@@ -76,6 +77,7 @@ class _LoginPageState extends ConsumerState<LoginPage>
         UserRole.admin => const AdminShell(),
         UserRole.teacher => const TeacherShell(),
         UserRole.manager => const ManagerShell(),
+        UserRole.adultStudent => const AdultStudentShell(),
         _ => const ParentShell(),
       };
       Navigator.of(
