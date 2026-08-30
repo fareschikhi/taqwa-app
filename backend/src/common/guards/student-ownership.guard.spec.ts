@@ -51,16 +51,26 @@ describe('StudentOwnershipGuard', () => {
     },
   );
 
+  // `user.student.id` is a claim carried on the token, not the database row
+  // the guard is supposed to trust — so it is set here to a third value that
+  // matches neither the requested route id nor the actor's own id. A guard
+  // that compared `studentId === user.student?.id` instead of the DB row's
+  // `userId` would see 21 !== 999 and wrongly deny, so only the correct,
+  // database-sourced comparison can pass this test.
   it('allows an ADULT_STUDENT reading his own record', async () => {
     const guard = guardFor({ userId: 11 });
-    const user = { role: 'ADULT_STUDENT', id: 11, student: { id: 21 } };
+    const user = { role: 'ADULT_STUDENT', id: 11, student: { id: 999 } };
 
     await expect(guard.canActivate(contextFor(user, 21))).resolves.toBe(true);
   });
 
+  // Here the claimed `student.id` is deliberately set to match the route id
+  // being requested — the exact shape of the attack this guard exists to
+  // stop. A guard trusting that claim would wrongly allow; only comparing the
+  // database row's `userId` against the actor's own id correctly denies.
   it('denies an ADULT_STUDENT reading another student\'s record', async () => {
     const guard = guardFor({ userId: 99 });
-    const user = { role: 'ADULT_STUDENT', id: 11, student: { id: 21 } };
+    const user = { role: 'ADULT_STUDENT', id: 11, student: { id: 22 } };
 
     await expect(guard.canActivate(contextFor(user, 22))).resolves.toBe(false);
   });
