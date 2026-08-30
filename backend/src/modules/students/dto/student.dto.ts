@@ -12,6 +12,7 @@ export class CreateStudentDto {
 
 export class UpdateStudentDto {
   @IsOptional() @IsString() fullName?: string;
+  @IsOptional() @IsString() currentRating?: string;
   @IsOptional() @IsString() email?: string;
   @IsOptional() @IsString() phone?: string;
   @IsOptional() @IsString() address?: string;

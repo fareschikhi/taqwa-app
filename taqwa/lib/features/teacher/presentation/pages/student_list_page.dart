@@ -223,7 +223,7 @@ class _StudentListPageState extends ConsumerState<StudentListPage> {
                                     context,
                                     MaterialPageRoute(
                                       builder: (_) => StudentDetailsPage(
-                                        student: student.fullName,
+                                        student: student,
                                       ),
                                     ),
                                   ),

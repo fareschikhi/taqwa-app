@@ -114,6 +114,9 @@ model Student {
   enrollmentDate DateTime  @default(now())
   parentId      Int?
   finishedMemo   Boolean   @default(false)
+  // Free text rather than an enum: teachers word the overall rating however
+  // they like ("ممتاز", "جيد جداً", "يحتاج مراجعة"), so the set is not fixed.
+  currentRating  String?
 
   user        User                   @relation(fields: [userId], references: [id], onDelete: Cascade)
   parent      Parent?                @relation(fields: [parentId], references: [id], onDelete: SetNull)

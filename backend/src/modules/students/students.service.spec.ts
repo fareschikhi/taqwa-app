@@ -92,4 +92,41 @@ describe('StudentsService.update', () => {
 
     expect(prisma.user.update).not.toHaveBeenCalled();
   });
+
+  // The overall rating is free text the teacher writes on the student profile,
+  // so it belongs on the student row rather than the user account.
+  it('persists a free-text currentRating on the student row', async () => {
+    const prisma = makePrisma();
+    const service = new StudentsService(prisma as any);
+
+    await service.update(7, { currentRating: 'ممتاز' });
+
+    expect(prisma.student.update.mock.calls[0][0].data).toEqual({
+      currentRating: 'ممتاز',
+    });
+  });
+
+  // Clearing the box is how a teacher retracts a rating, so an empty string has
+  // to reach the database instead of being skipped as falsy.
+  it('clears the rating when given an empty string', async () => {
+    const prisma = makePrisma();
+    const service = new StudentsService(prisma as any);
+
+    await service.update(7, { currentRating: '' });
+
+    expect(prisma.student.update.mock.calls[0][0].data).toEqual({
+      currentRating: '',
+    });
+  });
+
+  it('leaves the rating untouched when the field is absent', async () => {
+    const prisma = makePrisma();
+    const service = new StudentsService(prisma as any);
+
+    await service.update(7, { address: 'Algiers' });
+
+    expect(prisma.student.update.mock.calls[0][0].data).toEqual({
+      address: 'Algiers',
+    });
+  });
 });

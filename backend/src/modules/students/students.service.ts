@@ -154,6 +154,10 @@ export class StudentsService {
     if (dto.address !== undefined) studentUpdate.address = dto.address;
     if (dto.parentId !== undefined) studentUpdate.parentId = dto.parentId;
     if (dto.halaqaId !== undefined) studentUpdate.halaqaId = dto.halaqaId;
+    // Compared against undefined, not truthiness: '' is how a teacher retracts
+    // a rating, and a falsy check would silently drop that.
+    if (dto.currentRating !== undefined)
+      studentUpdate.currentRating = dto.currentRating;
 
     try {
       if (Object.keys(userUpdate).length > 0) {
