@@ -50,6 +50,44 @@ describe('AuthService.login', () => {
     expect(jwt.sign).not.toHaveBeenCalled();
   });
 
+  it('signs in an ADULT_STUDENT with valid credentials', async () => {
+    const service = makeService({
+      id: 11,
+      fullName: 'Yacine Belkacem',
+      phone: '4100',
+      role: 'ADULT_STUDENT',
+      passwordHash: PASSWORD_HASH,
+      student: { id: 21 },
+    });
+
+    const result = await service.login({
+      phone: '4100',
+      password: PASSWORD,
+    } as any);
+
+    expect(result.accessToken).toBe('signed.jwt.token');
+  });
+
+  // The whole adult-student feature hangs off this id reaching the client:
+  // it is how the app knows which student record to show him.
+  it('returns the adult student their own student id', async () => {
+    const service = makeService({
+      id: 11,
+      fullName: 'Yacine Belkacem',
+      phone: '4100',
+      role: 'ADULT_STUDENT',
+      passwordHash: PASSWORD_HASH,
+      student: { id: 21 },
+    });
+
+    const result = await service.login({
+      phone: '4100',
+      password: PASSWORD,
+    } as any);
+
+    expect(result.user.student).toEqual({ id: 21 });
+  });
+
   it('still signs in a PARENT with valid credentials', async () => {
     const service = makeService({
       id: 9,
