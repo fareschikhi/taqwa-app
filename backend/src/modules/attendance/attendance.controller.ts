@@ -21,12 +21,12 @@ export class AttendanceController {
   createBatch(@Body() dto: CreateBatchAttendanceDto) { return this.attendanceService.createBatch(dto); }
 
   @Get('student/:id')
-  @Roles(Role.ADMIN, Role.TEACHER, Role.PARENT, Role.MANAGER)
+  @Roles(Role.ADMIN, Role.TEACHER, Role.PARENT, Role.MANAGER, Role.ADULT_STUDENT)
   @UseGuards(StudentOwnershipGuard)
   findByStudent(@Param('id', ParseIntPipe) id: number) { return this.attendanceService.findByStudent(id); }
 
   @Get('student/:id/summary')
-  @Roles(Role.ADMIN, Role.TEACHER, Role.PARENT, Role.MANAGER)
+  @Roles(Role.ADMIN, Role.TEACHER, Role.PARENT, Role.MANAGER, Role.ADULT_STUDENT)
   @UseGuards(StudentOwnershipGuard)
   getSummary(@Param('id', ParseIntPipe) id: number) { return this.attendanceService.getStudentAttendanceSummary(id); }
 

@@ -47,14 +47,14 @@ export class StudentsController {
   }
 
   @Get(':id')
-  @Roles(Role.ADMIN, Role.TEACHER, Role.PARENT, Role.MANAGER)
+  @Roles(Role.ADMIN, Role.TEACHER, Role.PARENT, Role.MANAGER, Role.ADULT_STUDENT)
   @UseGuards(StudentOwnershipGuard)
   findOne(@Param('id', ParseIntPipe) id: number) {
     return this.studentsService.findOne(id);
   }
 
   @Get(':id/profile')
-  @Roles(Role.ADMIN, Role.TEACHER, Role.PARENT, Role.MANAGER)
+  @Roles(Role.ADMIN, Role.TEACHER, Role.PARENT, Role.MANAGER, Role.ADULT_STUDENT)
   @UseGuards(StudentOwnershipGuard)
   getProfile(@Param('id', ParseIntPipe) id: number) {
     return this.studentsService.getStudentProfile(id);

@@ -7,8 +7,9 @@ import { PrismaService } from '../../prisma/prisma.service';
 
 /**
  * Restricts a `:id` student-scoped route so a PARENT only reaches their own
- * child. ADMIN, TEACHER and MANAGER pass through unchanged since they
- * legitimately need cross-student access; every other role is denied.
+ * child and an ADULT_STUDENT only reaches his own record. ADMIN, TEACHER and
+ * MANAGER pass through unchanged since they legitimately need cross-student
+ * access; every other role is denied.
  */
 @Injectable()
 export class StudentOwnershipGuard implements CanActivate {
@@ -25,6 +26,17 @@ export class StudentOwnershipGuard implements CanActivate {
         select: { parentId: true },
       });
       return !!student && student.parentId === user.parent?.id;
+    }
+
+    // An adult student is his own guardian. The comparison is against the
+    // student row's userId rather than the id in his token, so a token
+    // carrying someone else's student id still cannot read their record.
+    if (user.role === 'ADULT_STUDENT') {
+      const student = await this.prisma.student.findUnique({
+        where: { id: studentId },
+        select: { userId: true },
+      });
+      return !!student && student.userId === user.id;
     }
 
     // Named rather than defaulted to true: @Roles already turns STUDENT away,

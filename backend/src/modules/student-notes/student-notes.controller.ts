@@ -2,6 +2,7 @@ import { Body, Controller, Delete, Get, Param, ParseIntPipe, Patch, Post, UseGua
 import { Role } from '@prisma/client';
 import { JwtAuthGuard } from '../../common/guards/jwt-auth.guard';
 import { RolesGuard } from '../../common/guards/roles.guard';
+import { StudentOwnershipGuard } from '../../common/guards/student-ownership.guard';
 import { Roles } from '../../common/decorators/roles.decorator';
 import { StudentNotesService } from './student-notes.service';
 import { CreateStudentNoteDto, UpdateStudentNoteDto } from './dto/student-note.dto';
@@ -24,7 +25,8 @@ export class StudentNotesController {
   }
 
   @Get('student/:id')
-  @Roles(Role.ADMIN, Role.TEACHER, Role.PARENT)
+  @Roles(Role.ADMIN, Role.TEACHER, Role.PARENT, Role.ADULT_STUDENT)
+  @UseGuards(StudentOwnershipGuard)
   findByStudent(@Param('id', ParseIntPipe) id: number) {
     return this.studentNotesService.findByStudent(id);
   }
