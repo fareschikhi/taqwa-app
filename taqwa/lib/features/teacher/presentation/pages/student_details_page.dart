@@ -5,8 +5,15 @@ import '../../../../core/theme/app_text_styles.dart';
 import '../../../../core/constants/app_constants.dart';
 import '../../../../core/constants/surahs.dart';
 import '../../../../core/enums/memorization_type.dart';
+import '../../../../core/utils/fine_balance.dart';
+import '../../../../core/widgets/app_button.dart';
 import '../../../../core/widgets/app_card.dart';
+import '../../../../core/widgets/app_text_field.dart';
 import '../../../../core/widgets/avatar_widget.dart';
+import '../../../../core/widgets/fine_balance_card.dart';
+import '../../../data/models/fine/fine_summary_model.dart';
+import '../../../data/repositories/fine_repository.dart';
+import '../../../data/repositories/halaqa_repository.dart';
 import '../../../data/repositories/student_repository.dart';
 import '../../../data/models/teacher_student_model.dart';
 import 'package:taqwa/core/widgets/app_text.dart';
@@ -21,11 +28,19 @@ class StudentDetailsPage extends StatefulWidget {
 
 class _StudentDetailsPageState extends State<StudentDetailsPage> {
   final _repo = StudentRepository();
+  final _halaqaRepo = HalaqaRepository();
+  final _fineRepo = FineRepository();
 
   bool _isLoading = true;
   String? _error;
   Map<String, dynamic>? _profile;
   Map<String, dynamic>? _progress;
+
+  // `GET /students/:id/profile` nests only `name`, `level` and the teacher
+  // for the halaqa — not `isAdult` — so whether this student can carry a fine
+  // is resolved from a second call rather than read off the profile.
+  bool _isAdultStudent = false;
+  FineSummaryModel? _fineSummary;
 
   @override
   void initState() {
@@ -49,12 +64,35 @@ class _StudentDetailsPageState extends State<StudentDetailsPage> {
         _progress = results[1];
         _isLoading = false;
       });
+      // Runs after the profile is on screen: a halaqa lookup failing (or a
+      // student with no halaqa at all) must not blank a page that already
+      // loaded — the fines section simply stays off.
+      await _loadFines();
     } catch (e) {
       if (!mounted) return;
       setState(() {
         _error = StudentRepository.errorMessage(e);
         _isLoading = false;
       });
+    }
+  }
+
+  Future<void> _loadFines() async {
+    final halaqaId = widget.student.halaqaId;
+    if (halaqaId == null) return;
+    try {
+      final halaqa = await _halaqaRepo.getHalaqa(halaqaId);
+      if (!mounted || !halaqa.isAdult) return;
+      final summary = await _fineRepo.forStudent(widget.student.id);
+      if (!mounted) return;
+      setState(() {
+        _isAdultStudent = true;
+        _fineSummary = summary;
+      });
+    } catch (_) {
+      // A child never accrues a fine, and an unreachable halaqa reads the
+      // same way here: no fines section rather than an error banner over a
+      // page whose other sections loaded fine.
     }
   }
 
@@ -197,6 +235,10 @@ class _StudentDetailsPageState extends State<StudentDetailsPage> {
                     delegate: SliverChildListDelegate([
                       SizedBox(height: 20.h),
                       _buildStatsRow(),
+                      if (_isAdultStudent && _fineSummary != null) ...[
+                        SizedBox(height: 16.h),
+                        _buildFinesSection(),
+                      ],
                       SizedBox(height: 20.h),
                       _buildLastSessionCard(),
                       SizedBox(height: 16.h),
@@ -253,6 +295,77 @@ class _StudentDetailsPageState extends State<StudentDetailsPage> {
         ],
       ),
     );
+  }
+
+  /// The balance card an adult student sees on his own dashboard, reused
+  /// here rather than rebuilt, plus the two actions only a teacher gets:
+  /// charging him for something outside the automatic attendance charges, or
+  /// reducing what he owes because he paid or it was forgiven.
+  Widget _buildFinesSection() {
+    final summary = _fineSummary;
+    if (summary == null) return const SizedBox.shrink();
+
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.stretch,
+      children: [
+        FineBalanceCard(summary: summary),
+        SizedBox(height: 12.h),
+        Row(
+          children: [
+            Expanded(
+              child: AppButton(
+                label: 'إضافة رسوم',
+                variant: AppButtonVariant.secondary,
+                icon: Icons.add_circle_outline,
+                onPressed: () => _showFineAdjustDialog('CHARGE'),
+              ),
+            ),
+            SizedBox(width: 12.w),
+            Expanded(
+              child: AppButton(
+                label: 'خصم',
+                variant: AppButtonVariant.secondary,
+                icon: Icons.remove_circle_outline,
+                onPressed: () => _showFineAdjustDialog('REDUCTION'),
+              ),
+            ),
+          ],
+        ),
+      ],
+    );
+  }
+
+  /// Opens the amount/reason dialog for a charge or a reduction, validates it
+  /// client-side with the same rule the server enforces, submits it, then
+  /// reloads the summary so the balance on screen is the balance on the
+  /// server rather than a locally-guessed one.
+  Future<void> _showFineAdjustDialog(String kind) async {
+    final balance = displayedBalance(_fineSummary?.balance ?? 0);
+    final result = await showDialog<_FineAdjustResult>(
+      context: context,
+      builder: (_) => _FineAdjustDialog(kind: kind, balance: balance),
+    );
+    if (result == null) return;
+
+    try {
+      await _fineRepo.adjust(
+        studentId: widget.student.id,
+        kind: kind,
+        amount: result.amount,
+        reason: result.reason,
+      );
+      if (!mounted) return;
+      await _loadFines();
+    } catch (e) {
+      if (!mounted) return;
+      // The server is the final authority on the floor: a balance that moved
+      // under the teacher between opening the dialog and submitting it comes
+      // back as a 400 with its own Arabic message, which belongs on screen
+      // as-is rather than behind a generic failure.
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text(FineRepository.errorMessage(e))),
+      );
+    }
   }
 
   /// There is no assignment model behind a "current task", so this reports the
@@ -617,6 +730,140 @@ class _RecordItem extends StatelessWidget {
               color: AppColors.primary,
               shape: BoxShape.circle,
             ),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+/// What [_FineAdjustDialog] returns when the teacher confirms. Kept as its
+/// own type rather than a plain int so a cancelled dialog (`null`) can never
+/// be confused with a submitted amount of zero.
+class _FineAdjustResult {
+  const _FineAdjustResult({required this.amount, this.reason});
+  final int amount;
+  final String? reason;
+}
+
+/// Amount-and-reason dialog behind both fine actions. A charge and a
+/// reduction share one form because the only real difference between them is
+/// the title, the accent colour, and which side of [fineAdjustError]'s floor
+/// applies — the validation itself is the same pure check the server
+/// enforces, run here before the round trip rather than after it.
+class _FineAdjustDialog extends StatefulWidget {
+  const _FineAdjustDialog({required this.kind, required this.balance});
+
+  /// `'CHARGE'` or `'REDUCTION'` — passed straight through to the repository.
+  final String kind;
+
+  /// The balance as it was when the dialog opened. A reduction cannot exceed
+  /// it; a fresher value only exists after the server has already answered,
+  /// which is why the server check downstream still has the final say.
+  final int balance;
+
+  @override
+  State<_FineAdjustDialog> createState() => _FineAdjustDialogState();
+}
+
+class _FineAdjustDialogState extends State<_FineAdjustDialog> {
+  final _amountController = TextEditingController();
+  final _reasonController = TextEditingController();
+  String? _errorText;
+
+  bool get _isCharge => widget.kind == 'CHARGE';
+
+  @override
+  void dispose() {
+    _amountController.dispose();
+    _reasonController.dispose();
+    super.dispose();
+  }
+
+  void _submit() {
+    // A teacher can type anything into this field on a phone keyboard, so a
+    // failed parse has to land as the same validation message as any other
+    // bad amount rather than throwing.
+    final amount = int.tryParse(_amountController.text.trim());
+    final error = amount == null
+        ? 'أدخل مبلغاً أكبر من صفر'
+        : fineAdjustError(
+            amount: amount,
+            kind: widget.kind,
+            balance: widget.balance,
+          );
+    if (error != null) {
+      setState(() => _errorText = error);
+      return;
+    }
+    final reason = _reasonController.text.trim();
+    Navigator.pop(
+      context,
+      _FineAdjustResult(
+        amount: amount!,
+        reason: reason.isEmpty ? null : reason,
+      ),
+    );
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final accent = _isCharge ? AppColors.error : AppColors.primary;
+    final title = _isCharge ? 'إضافة رسوم' : 'خصم من الرصيد';
+
+    return Directionality(
+      textDirection: TextDirection.rtl,
+      child: AlertDialog(
+        backgroundColor: AppColors.surface,
+        title: AppText(
+          title,
+          style: AppTextStyles.headlineSm.copyWith(
+            color: AppColors.onSurface,
+          ),
+        ),
+        content: SingleChildScrollView(
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.end,
+            children: [
+              AppTextField(
+                label: 'المبلغ (دج)',
+                controller: _amountController,
+                keyboardType: TextInputType.number,
+                autofocus: true,
+              ),
+              SizedBox(height: 12.h),
+              AppTextField(
+                label: 'السبب (اختياري)',
+                controller: _reasonController,
+                maxLines: 2,
+              ),
+              if (_errorText != null) ...[
+                SizedBox(height: 8.h),
+                AppText(
+                  _errorText!,
+                  style: AppTextStyles.labelSm.copyWith(
+                    color: AppColors.error,
+                  ),
+                  textAlign: TextAlign.end,
+                ),
+              ],
+            ],
+          ),
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(context),
+            child: AppText(
+              'إلغاء',
+              style: AppTextStyles.button.copyWith(
+                color: AppColors.onSurfaceVariant,
+              ),
+            ),
+          ),
+          TextButton(
+            onPressed: _submit,
+            child: AppText('حفظ', style: AppTextStyles.button.copyWith(color: accent)),
           ),
         ],
       ),

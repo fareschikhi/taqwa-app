@@ -4,9 +4,13 @@ import 'package:flutter_screenutil/flutter_screenutil.dart';
 import '../../../../core/theme/app_colors.dart';
 import '../../../../core/theme/app_text_styles.dart';
 import '../../../../core/constants/app_constants.dart';
+import '../../../../core/utils/fine_balance.dart';
 import '../../../../core/widgets/search_bar_widget.dart';
 import '../../../../core/widgets/avatar_widget.dart';
 import '../../../../core/providers/auth_provider.dart';
+import '../../../data/models/halaqa/halaqa_model.dart';
+import '../../../data/repositories/fine_repository.dart';
+import '../../../data/repositories/halaqa_repository.dart';
 import '../../../data/repositories/teacher_repository.dart';
 import '../../../data/models/teacher_student_model.dart';
 import 'student_details_page.dart';
@@ -23,6 +27,8 @@ class _StudentListPageState extends ConsumerState<StudentListPage> {
   int _filterIndex = 0;
   final _searchController = TextEditingController();
   final _repo = TeacherRepository();
+  final _halaqaRepo = HalaqaRepository();
+  final _fineRepo = FineRepository();
   final _scrollController = ScrollController();
 
   List<TeacherStudentModel> _students = [];
@@ -30,6 +36,20 @@ class _StudentListPageState extends ConsumerState<StudentListPage> {
   bool _hasMore = true;
   int _currentPage = 1;
   static const _limit = 20;
+
+  // Each student's own halaqa, resolved once so the roster can tell an
+  // adult student from a child one — `GET /students` nests only `id`, `name`
+  // and `level` for the halaqa, not `isAdult`.
+  final Map<int, HalaqaModel> _studentHalaqa = {};
+
+  // Balances already fetched, keyed by student id — `GET /fines/halaqa/:id`
+  // answers for a whole halaqa at once, so this fills in as each adult
+  // halaqa on the roster is resolved rather than one call per student.
+  final Map<int, int> _balances = {};
+  final Set<int> _fetchedFineHalaqas = {};
+
+  bool _isAdultStudent(int studentId) =>
+      _studentHalaqa[studentId]?.isAdult ?? false;
 
   int? get _teacherId => ref.read(authProvider).user?.teacherId;
 
@@ -42,10 +62,67 @@ class _StudentListPageState extends ConsumerState<StudentListPage> {
   @override
   void initState() {
     super.initState();
-    WidgetsBinding.instance.addPostFrameCallback(
-      (_) => _loadStudents(reset: true),
-    );
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      _loadStudents(reset: true);
+      _loadHalaqas();
+    });
     _scrollController.addListener(_onScroll);
+  }
+
+  Map<int, HalaqaModel> _halaqasById = {};
+
+  /// Fetched once — a teacher's halaqas do not change while he browses his
+  /// roster — so every page of students can resolve `isAdult` against the
+  /// same map instead of a lookup per page.
+  Future<void> _loadHalaqas() async {
+    try {
+      final halaqas = await _halaqaRepo.getAllHalaqas();
+      if (!mounted) return;
+      _halaqasById = {for (final h in halaqas) h.id: h};
+      _resolveStudentHalaqas();
+      await _loadFineBalances();
+    } catch (_) {
+      // A balance chip is a nice-to-have next to the roster itself; failing
+      // to resolve which halaqas are adults' just leaves the chips off.
+    }
+  }
+
+  /// Matches each loaded student to his halaqa so [_isAdultStudent] has an
+  /// answer. Safe to re-run after every page of students arrives — it only
+  /// ever adds entries, and a student already resolved is skipped.
+  void _resolveStudentHalaqas() {
+    if (_halaqasById.isEmpty) return;
+    setState(() {
+      for (final s in _students) {
+        if (_studentHalaqa.containsKey(s.id)) continue;
+        final halaqa = s.halaqaId == null ? null : _halaqasById[s.halaqaId];
+        if (halaqa != null) _studentHalaqa[s.id] = halaqa;
+      }
+    });
+  }
+
+  /// Pulls the balance for every adult halaqa represented on the roster that
+  /// has not been fetched yet. `GET /fines/halaqa/:id` answers for a whole
+  /// halaqa in one call, so this fetches per halaqa rather than per student.
+  Future<void> _loadFineBalances() async {
+    final halaqaIds = _students
+        .map((s) => s.halaqaId)
+        .whereType<int>()
+        .where((id) => _halaqasById[id]?.isAdult ?? false)
+        .where((id) => !_fetchedFineHalaqas.contains(id))
+        .toSet();
+    for (final id in halaqaIds) {
+      _fetchedFineHalaqas.add(id);
+      try {
+        final balances = await _fineRepo.forHalaqa(id);
+        if (!mounted) return;
+        setState(() => _balances.addAll(balances));
+      } catch (_) {
+        // One halaqa's balances failing to load must not stall the rest of
+        // the roster — a retry can pick it up on the next refresh.
+        _fetchedFineHalaqas.remove(id);
+      }
+    }
   }
 
   void _onScroll() {
@@ -94,6 +171,11 @@ class _StudentListPageState extends ConsumerState<StudentListPage> {
         _hasMore = result.data.length == _limit;
         _isLoading = false;
       });
+      // The halaqas may already be cached from a previous load; a fresh page
+      // of students still needs matching against them and their balances
+      // fetched, so both run again rather than only from `_loadHalaqas`.
+      _resolveStudentHalaqas();
+      await _loadFineBalances();
     } catch (_) {
       setState(() {
         _isLoading = false;
@@ -227,7 +309,16 @@ class _StudentListPageState extends ConsumerState<StudentListPage> {
                                       ),
                                     ),
                                   ),
-                                  child: _StudentListTile(student: student),
+                                  child: _StudentListTile(
+                                    student: student,
+                                    // Null both when he is a child (never
+                                    // fined) and when his halaqa's balance
+                                    // has not resolved yet — either way, no
+                                    // chip is the honest answer.
+                                    balance: _isAdultStudent(student.id)
+                                        ? _balances[student.id]
+                                        : null,
+                                  ),
                                 );
                               },
                             ),
@@ -241,8 +332,9 @@ class _StudentListPageState extends ConsumerState<StudentListPage> {
 }
 
 class _StudentListTile extends StatelessWidget {
-  const _StudentListTile({required this.student});
+  const _StudentListTile({required this.student, this.balance});
   final TeacherStudentModel student;
+  final int? balance;
 
   @override
   Widget build(BuildContext context) {
@@ -300,6 +392,10 @@ class _StudentListTile extends StatelessWidget {
                   ),
                 ),
               ),
+              if (balance != null) ...[
+                SizedBox(height: 6.h),
+                _FineBalanceChip(balance: balance!),
+              ],
             ],
           ),
           SizedBox(width: 12.w),
@@ -349,6 +445,33 @@ class _PercRow extends StatelessWidget {
           ),
         ),
       ],
+    );
+  }
+}
+
+/// What an adult student owes, on his card in the roster. Only rendered for
+/// an adult student whose halaqa balance has already resolved — a child
+/// never accrues a fine, so his card never gets one of these at all.
+class _FineBalanceChip extends StatelessWidget {
+  const _FineBalanceChip({required this.balance});
+  final int balance;
+
+  @override
+  Widget build(BuildContext context) {
+    final displayed = displayedBalance(balance);
+    final cleared = displayed == 0;
+    final color = cleared ? AppColors.primary : AppColors.error;
+
+    return Container(
+      padding: EdgeInsets.symmetric(horizontal: 8.w, vertical: 2.h),
+      decoration: BoxDecoration(
+        color: color.withValues(alpha: 0.1),
+        borderRadius: BorderRadius.circular(AppConstants.radiusFull),
+      ),
+      child: AppText(
+        formatFine(displayed),
+        style: AppTextStyles.labelMd.copyWith(color: color),
+      ),
     );
   }
 }
