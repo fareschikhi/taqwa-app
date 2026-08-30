@@ -20,6 +20,7 @@ enum Role {
   TEACHER
   PARENT
   STUDENT
+  ADULT_STUDENT
   MANAGER
 }
 
@@ -39,6 +40,18 @@ enum JustificationReasonType {
   ILLNESS
   OCCASION
   OTHER
+}
+
+enum FineKind {
+  CHARGE
+  REDUCTION
+}
+
+enum FineSource {
+  ABSENCE
+  LATE
+  MISSED_MEMORIZATION
+  MANUAL
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
@@ -63,6 +76,7 @@ model User {
   manager       Manager?
   notifications Notification[]
   deviceTokens  DeviceToken[]
+  finesCreated  FineEntry[]
 
   @@index([role])
   @@index([isActive])
@@ -126,6 +140,7 @@ model Student {
   evaluations    Evaluation[]
   notes          StudentNote[]
   justifications AbsenceJustification[]
+  fines          FineEntry[]
 
   @@index([parentId])
   @@map("students")
@@ -140,6 +155,14 @@ model Halaqa {
   name        String  @db.VarChar(150)
   level       String? @db.VarChar(100)
   teacherId   Int
+
+  // An adults' halaqa runs on fines. The flag is stored rather than derived
+  // from whether the rates are set, so a half-filled rate set can never make
+  // "is this an adults' halaqa" ambiguous for the screens that ask.
+  isAdult               Boolean @default(false)
+  absenceFee            Int     @default(0)
+  lateFee               Int     @default(0)
+  missedMemorizationFee Int     @default(0)
 
   teacher  Teacher         @relation(fields: [teacherId], references: [id], onDelete: Cascade)
   students Student[]
@@ -158,6 +181,11 @@ model Attendance {
   studentId Int
   date      DateTime         @db.Date
   status    AttendanceStatus
+
+  // The teacher's own mark, not something inferred from the ledger: if she
+  // later forgives the fine, the day was still a day he did not memorize.
+  missedMemorization Boolean @default(false)
+
   notes     String?          @db.Text
   createdAt DateTime         @default(now())
 
@@ -336,4 +364,36 @@ model AbsenceJustification {
   @@index([managerId])
   @@index([attendanceId])
   @@map("absence_justifications")
+}
+
+// One row per charge or reduction against an adult student. The balance is the
+// sum of these rather than a stored column, which would drift the first time a
+// write path forgot to update it.
+//
+// Attendance writes are upserts — the teacher's sheet re-saves the same day on
+// every tap — so an auto-charge is keyed by the day and reason it follows from
+// and the unique index makes the second save a no-op. Manual entries leave
+// `date` null, which MySQL treats as always distinct, so they never collide.
+model FineEntry {
+  id          Int        @id @default(autoincrement())
+  studentId   Int
+  kind        FineKind
+  amount      Int
+  // Null on auto-charges, where `source` already says why. Required on manual
+  // entries, which have nothing else to explain them.
+  reason      String?    @db.VarChar(300)
+  source      FineSource
+  date        DateTime?  @db.Date
+  createdById Int
+  createdAt   DateTime   @default(now())
+
+  student Student @relation(fields: [studentId], references: [id], onDelete: Cascade)
+  // Restrict, not Cascade: deleting a teacher's account must not silently
+  // erase what her students were charged.
+  createdBy User @relation(fields: [createdById], references: [id], onDelete: Restrict)
+
+  @@unique([studentId, date, source])
+  @@index([studentId])
+  @@index([createdById])
+  @@map("fine_entries")
 }
