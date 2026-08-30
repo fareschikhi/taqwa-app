@@ -119,13 +119,15 @@ class TeacherRepository {
 
   // ─── Memorization ─────────────────────────────────────────────────────────────────
 
-  Future<void> submitMemorization({
+  /// Returns the row the server created, so the caller can show what is now
+  /// on file without refetching the day.
+  Future<Map<String, dynamic>> submitMemorization({
     required int studentId,
     required int surahNumber,
     required int amountDone,
     required String memorizationType,
   }) async {
-    await _ds.submitMemorization(
+    return _ds.submitMemorization(
       studentId: studentId,
       surahNumber: surahNumber,
       amountDone: amountDone,

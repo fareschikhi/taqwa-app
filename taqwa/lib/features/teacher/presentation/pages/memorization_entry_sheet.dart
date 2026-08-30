@@ -58,13 +58,13 @@ class _MemorizationEntrySheetState extends State<MemorizationEntrySheet> {
 
     setState(() => _isSaving = true);
     try {
-      await _repo.submitMemorization(
+      final created = await _repo.submitMemorization(
         studentId: widget.student.id,
         surahNumber: _selectedSurah!,
         amountDone: _amount,
         memorizationType: _selectedType!.apiValue,
       );
-      if (mounted) Navigator.pop(context, true);
+      if (mounted) Navigator.pop(context, created);
     } catch (e) {
       if (mounted) {
         setState(() => _isSaving = false);

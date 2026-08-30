@@ -12,6 +12,8 @@ import '../../../../core/widgets/app_button.dart';
 import '../../../../core/widgets/attendance_chip.dart';
 import '../../../../core/widgets/confirm_discard_attendance_dialog.dart';
 import '../../../../core/widgets/confirm_discard_memorization_dialog.dart';
+import '../../../../core/widgets/confirm_duplicate_memorization_dialog.dart';
+import '../../../../core/utils/memorization_duplicates.dart';
 import '../../../../core/widgets/avatar_widget.dart';
 import '../../../../core/providers/auth_provider.dart';
 import '../../../data/repositories/teacher_repository.dart';
@@ -36,6 +38,10 @@ class _AttendancePageState extends ConsumerState<AttendancePage>
   final Map<int, AttendanceStatus> _savedAttendance = {};
 
   final Set<int> _memorizedStudentIds = {};
+
+  // What is already on file for today, per student. The ids alone would say
+  // that a repeat is happening; the rows let the warning name the work.
+  final Map<int, List<Map<String, dynamic>>> _todayMemorization = {};
   bool _isLoading = true;
   bool _isSaving = false;
   final Set<int> _savingStudentIds = {};
@@ -113,11 +119,7 @@ class _AttendancePageState extends ConsumerState<AttendancePage>
         if (sId != null && st != null) existingMap[sId] = st;
       }
 
-      final memorizedIds =
-          memorizationRecords // NEW
-              .map((r) => (r['studentId'] as num?)?.toInt())
-              .whereType<int>()
-              .toSet();
+      final memorizedByStudent = memorizationByStudent(memorizationRecords);
 
       // Pull-to-refresh runs on a screen the teacher may have half-marked, and
       // an unsaved chip exists nowhere else. Refreshing therefore updates what
@@ -128,7 +130,10 @@ class _AttendancePageState extends ConsumerState<AttendancePage>
         _students = studentList;
         _memorizedStudentIds
           ..clear()
-          ..addAll(memorizedIds); // NEW
+          ..addAll(memorizedByStudent.keys);
+        _todayMemorization
+          ..clear()
+          ..addAll(memorizedByStudent);
         _savedAttendance.clear();
         for (final s in studentList) {
           final existing = attendanceStatusFromApi(existingMap[s.id]);
@@ -183,14 +188,30 @@ class _AttendancePageState extends ConsumerState<AttendancePage>
     }
 
     if (!mounted) return;
-    final saved = await showModalBottomSheet<bool>(
+    // Entries accumulate rather than replace, so a second one for the same day
+    // is added silently. That is ordinary for حفظ followed by مراجعة and a
+    // mistake for a teacher who forgot, so it is confirmed rather than blocked.
+    final alreadyToday = _todayMemorization[student.id] ?? const [];
+    if (alreadyToday.isNotEmpty) {
+      final proceed = await ConfirmDuplicateMemorizationDialog.show(
+        context,
+        studentName: student.fullName,
+        existing: alreadyToday.map(memorizationSummary).toList(),
+      );
+      if (!proceed || !mounted) return;
+    }
+
+    final created = await showModalBottomSheet<Map<String, dynamic>>(
       context: context,
       isScrollControlled: true,
       backgroundColor: Colors.transparent,
       builder: (_) => MemorizationEntrySheet(student: student),
     );
-    if (saved == true) {
-      setState(() => _memorizedStudentIds.add(student.id));
+    if (created != null) {
+      setState(() {
+        _memorizedStudentIds.add(student.id);
+        _todayMemorization.putIfAbsent(student.id, () => []).add(created);
+      });
     }
   }
 
@@ -363,6 +384,7 @@ class _AttendancePageState extends ConsumerState<AttendancePage>
       _attendance[student.id] = tapped;
       if (tapped == AttendanceStatus.absent) {
         _memorizedStudentIds.remove(student.id);
+        _todayMemorization.remove(student.id);
       }
     });
   }
