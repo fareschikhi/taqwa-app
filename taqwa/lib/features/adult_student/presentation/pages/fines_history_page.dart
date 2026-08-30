@@ -78,7 +78,7 @@ class FinesHistoryPage extends StatelessWidget {
     final isCharge = entry.kind == 'CHARGE';
     final sign = isCharge ? '+' : '-';
     final color = isCharge ? AppColors.error : AppColors.primary;
-    final date = entry.createdAt;
+    final date = entry.displayDate;
     final dateText =
         '${date.day.toString().padLeft(2, '0')}/'
         '${date.month.toString().padLeft(2, '0')}/${date.year}';

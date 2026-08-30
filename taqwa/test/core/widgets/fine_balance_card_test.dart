@@ -24,6 +24,7 @@ FineEntryModel _entry({
     reason: reason,
     source: source,
     createdAt: DateTime.utc(2026, 8, 7),
+    date: null,
   );
 }
 
