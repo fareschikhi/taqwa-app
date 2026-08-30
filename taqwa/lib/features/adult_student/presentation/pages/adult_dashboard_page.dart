@@ -60,7 +60,9 @@ class _AdultDashboardPageState extends ConsumerState<AdultDashboardPage> {
         _studentRepo.getAttendanceSummary(studentId),
         _studentRepo.getMemorizationProgress(studentId),
         _studentRepo.getAttendanceHistory(studentId),
-        _studentRepo.getProfile(studentId),
+        // If the profile fetch fails, return an empty map so the dashboard still
+        // loads with balance and attendance; notes will be empty, not missing.
+        _studentRepo.getProfile(studentId).catchError((_) => <String, dynamic>{}),
         _fineRepo.forStudent(studentId),
       ]);
       final profile = results[3] as Map<String, dynamic>;

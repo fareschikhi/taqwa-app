@@ -99,4 +99,21 @@ void main() {
 
     expect(find.text('ملاحظات المعلم'), findsOneWidget);
   });
+
+  testWidgets(
+    'when profile fetch fails, shows empty state without crashing',
+    (tester) async {
+      // When the profile fetch fails in _load(), getProfile().catchError()
+      // returns an empty map, so _notes is empty. The dashboard loads its balance
+      // and attendance while the notes section renders the empty state.
+      await tester.pumpWidget(
+        _host(const TeacherNotesSection(notes: [])),
+      );
+      await tester.pumpAndSettle();
+
+      // The section renders its heading and empty-state text, not blank or error.
+      expect(find.text('ملاحظات المعلم'), findsOneWidget);
+      expect(find.text('لا توجد ملاحظات بعد'), findsOneWidget);
+    },
+  );
 }
