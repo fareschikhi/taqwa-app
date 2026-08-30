@@ -7,6 +7,7 @@ import 'package:taqwa/core/providers/selected_student_provider.dart';
 import 'package:taqwa/core/theme/app_colors.dart';
 import 'package:taqwa/core/theme/app_text_styles.dart';
 import 'package:taqwa/core/utils/last_session.dart';
+import 'package:taqwa/core/widgets/app_card.dart';
 import 'package:taqwa/core/widgets/app_text.dart';
 import 'package:taqwa/core/widgets/fine_balance_card.dart';
 import 'package:taqwa/core/widgets/last_session_card.dart';
@@ -37,6 +38,7 @@ class _AdultDashboardPageState extends ConsumerState<AdultDashboardPage> {
   AttendanceSummaryModel? _attendance;
   Map<String, dynamic>? _progress;
   List<Map<String, dynamic>> _attendanceHistory = [];
+  List<Map<String, dynamic>> _notes = [];
   FineSummaryModel? _fines;
 
   @override
@@ -58,14 +60,18 @@ class _AdultDashboardPageState extends ConsumerState<AdultDashboardPage> {
         _studentRepo.getAttendanceSummary(studentId),
         _studentRepo.getMemorizationProgress(studentId),
         _studentRepo.getAttendanceHistory(studentId),
+        _studentRepo.getProfile(studentId),
         _fineRepo.forStudent(studentId),
       ]);
+      final profile = results[3] as Map<String, dynamic>;
+      final rawNotes = (profile['notes'] as List?) ?? [];
       if (mounted) {
         setState(() {
           _attendance = results[0] as AttendanceSummaryModel;
           _progress = results[1] as Map<String, dynamic>;
           _attendanceHistory = results[2] as List<Map<String, dynamic>>;
-          _fines = results[3] as FineSummaryModel;
+          _notes = rawNotes.cast<Map<String, dynamic>>();
+          _fines = results[4] as FineSummaryModel;
           _isLoading = false;
         });
       }
@@ -124,6 +130,8 @@ class _AdultDashboardPageState extends ConsumerState<AdultDashboardPage> {
                       _buildSummary(),
                       SizedBox(height: 20.h),
                       _buildLastSession(),
+                      SizedBox(height: 20.h),
+                      _buildTeacherNotes(),
                     ],
                     SizedBox(height: 32.h),
                   ]),
@@ -266,6 +274,91 @@ class _AdultDashboardPageState extends ConsumerState<AdultDashboardPage> {
             memorization: records,
           ),
         ),
+      ],
+    );
+  }
+
+  Widget _buildTeacherNotes() {
+    return TeacherNotesSection(notes: _notes);
+  }
+}
+
+class TeacherNotesSection extends StatelessWidget {
+  const TeacherNotesSection({super.key, required this.notes});
+  final List<Map<String, dynamic>> notes;
+
+  @override
+  Widget build(BuildContext context) {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.end,
+      children: [
+        AppText(
+          'ملاحظات المعلم',
+          style: AppTextStyles.headlineSm.copyWith(color: AppColors.onSurface),
+        ),
+        SizedBox(height: 12.h),
+        if (notes.isEmpty)
+          Padding(
+            padding: EdgeInsets.symmetric(vertical: 16.h),
+            child: AppText(
+              'لا توجد ملاحظات بعد',
+              style: AppTextStyles.bodyMd.copyWith(
+                color: AppColors.onSurfaceVariant,
+              ),
+            ),
+          )
+        else
+          ...notes.map((n) {
+            String displayDate = '';
+            try {
+              final dt = DateTime.parse(n['createdAt'] as String);
+              displayDate = '${dt.day}/${dt.month}/${dt.year}';
+            } catch (_) {
+              displayDate = (n['createdAt'] ?? '').toString();
+            }
+            final teacherName =
+                (n['teacher'] as Map<String, dynamic>?)?['user']
+                    as Map<String, dynamic>? ??
+                {};
+
+            return Padding(
+              padding: EdgeInsets.only(bottom: 8.h),
+              child: AppCard(
+                padding: EdgeInsets.all(16.w),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.end,
+                  children: [
+                    Row(
+                      children: [
+                        AppText(
+                          displayDate,
+                          style: AppTextStyles.labelSm.copyWith(
+                            color: AppColors.outline,
+                          ),
+                        ),
+                        const Spacer(),
+                        AppText(
+                          (teacherName['fullName'] as String?) ?? '',
+                          style: AppTextStyles.labelMdBold.copyWith(
+                            color: AppColors.primary,
+                          ),
+                        ),
+                      ],
+                    ),
+                    SizedBox(height: 8.h),
+                    AppText(
+                      (n['note'] as String?) ?? '',
+                      style: AppTextStyles.bodyMd.copyWith(
+                        color: AppColors.onSurface,
+                        height: 1.6,
+                      ),
+                      textAlign: TextAlign.end,
+                    ),
+                  ],
+                ),
+              ),
+            );
+          }),
       ],
     );
   }
