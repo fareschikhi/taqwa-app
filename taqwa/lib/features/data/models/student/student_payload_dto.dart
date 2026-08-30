@@ -7,6 +7,15 @@ class StudentPayloadDto {
   final int? parentId;
   final String? avatar;
 
+  /// An adult student is his own guardian: he logs in with [password] and has
+  /// no parent. A child student is the reverse — a record with no login,
+  /// tied to a parent. The backend derives the actual role from [isAdult]
+  /// alone (`CreateStudentDto` has no `role` field), so [toJson] must keep
+  /// [password] and [parentId] in lockstep with it rather than sending a key
+  /// the backend would either ignore or reject.
+  final bool isAdult;
+  final String? password;
+
   const StudentPayloadDto({
     required this.fullName,
     required this.phone,
@@ -15,6 +24,8 @@ class StudentPayloadDto {
     this.halaqaId,
     this.parentId,
     this.avatar,
+    this.isAdult = false,
+    this.password,
   });
 
   Map<String, dynamic> toJson() => {
@@ -23,10 +34,13 @@ class StudentPayloadDto {
     'birthDate': birthDate,
     'address': address,
     if (halaqaId != null) 'halaqaId': halaqaId,
-    if (parentId != null) 'parentId': parentId,
     if (avatar != null && avatar!.isNotEmpty) 'avatar': avatar,
-    // No password: a student is a record, not an account, and the backend
-    // rejects a STUDENT login outright.
-    'role': 'STUDENT',
+    'isAdult': isAdult,
+    // A child never logs in, so a password on his record would be exactly
+    // the kind of lie the old hardcoded 'role' key used to tell; an adult
+    // has no parent by construction, so his record carries none either.
+    if (isAdult && password != null && password!.isNotEmpty)
+      'password': password,
+    if (!isAdult && parentId != null) 'parentId': parentId,
   };
 }

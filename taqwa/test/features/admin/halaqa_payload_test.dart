@@ -84,5 +84,61 @@ void main() {
       expect(data.containsKey('level'), isTrue);
       expect(data['level'], isNull);
     });
+
+    test('carries the fine rates for an adults halaqa', () {
+      final data = buildHalaqaPayload(
+        name: 'حلقة الكبار',
+        teacherId: 1,
+        level: '',
+        studentIds: const [],
+        isEditing: false,
+        isAdult: true,
+        absenceFee: 50,
+        lateFee: 20,
+        missedMemorizationFee: 30,
+      );
+
+      expect(data['isAdult'], true);
+      expect(data['absenceFee'], 50);
+      expect(data['lateFee'], 20);
+      expect(data['missedMemorizationFee'], 30);
+    });
+
+    // A rate of 0 is a real setting — a halaqa that fines absence but not
+    // lateness — so it must survive the payload rather than being treated
+    // as "no value".
+    test('keeps a zero rate for an adults halaqa', () {
+      final data = buildHalaqaPayload(
+        name: 'حلقة الكبار',
+        teacherId: 1,
+        level: '',
+        studentIds: const [],
+        isEditing: false,
+        isAdult: true,
+        absenceFee: 50,
+        lateFee: 0,
+        missedMemorizationFee: 30,
+      );
+
+      expect(data.containsKey('lateFee'), isTrue);
+      expect(data['lateFee'], 0);
+    });
+
+    // Rates on a children's halaqa would be dead data the backend ignores and
+    // a future reader would have to explain.
+    test('omits the rates for a normal halaqa', () {
+      final data = buildHalaqaPayload(
+        name: 'حلقة النور',
+        teacherId: 1,
+        level: '',
+        studentIds: const [],
+        isEditing: false,
+      );
+
+      expect(data['isAdult'], false);
+      expect(data.containsKey('absenceFee'), isFalse);
+      expect(data.containsKey('lateFee'), isFalse);
+      expect(data.containsKey('missedMemorizationFee'), isFalse);
+    });
   });
 }

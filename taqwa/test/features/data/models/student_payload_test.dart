@@ -21,15 +21,19 @@ void main() {
     });
 
     test('sends the fields the backend still accepts', () {
+      // The backend's CreateStudentDto has no 'role' field — it derives the
+      // role from isAdult — and its ValidationPipe strips unknown keys
+      // anyway, so a hardcoded 'role' here would just be a lie the moment
+      // this same DTO can describe an adult student too.
       expect(payload.toJson(), {
         'fullName': 'Bilal Cherguini',
         'phone': '4008',
         'birthDate': '2012-05-01',
         'address': 'الجزائر العاصمة',
         'halaqaId': 2,
-        'parentId': 5,
         'avatar': 'https://example.test/a.png',
-        'role': 'STUDENT',
+        'isAdult': false,
+        'parentId': 5,
       });
     });
   });

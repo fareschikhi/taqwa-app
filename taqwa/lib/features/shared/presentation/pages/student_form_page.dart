@@ -15,6 +15,7 @@ import '../../../data/repositories/halaqa_repository.dart';
 import '../../../data/repositories/parent_repository.dart';
 import '../../../data/repositories/student_repository.dart';
 import '../widgets/avatar_picker_field.dart';
+import '../widgets/change_password_sheet.dart';
 import '../widgets/form_section.dart';
 import 'package:taqwa/core/widgets/app_text.dart';
 
@@ -48,6 +49,7 @@ class _StudentFormPageState extends State<StudentFormPage> {
   final _phoneController = TextEditingController();
   final _dobController = TextEditingController();
   final _addressController = TextEditingController();
+  final _passwordController = TextEditingController();
 
   List<HalaqaModel> _halaqas = [];
   List<UserOption> _parents = [];
@@ -56,6 +58,12 @@ class _StudentFormPageState extends State<StudentFormPage> {
   DateTime? _selectedBirthDate;
   XFile? _pickedImage;
   bool _isLoading = false;
+
+  /// An adult student is his own guardian — a real login, no parent — while
+  /// a child is the reverse. Changing an existing person's role afterwards
+  /// is out of scope (the backend has no path for it), so this only ever
+  /// matters, and only ever renders, while creating.
+  bool _isAdult = false;
 
   bool get _isEditing => widget.student != null;
 
@@ -85,6 +93,7 @@ class _StudentFormPageState extends State<StudentFormPage> {
     _phoneController.dispose();
     _dobController.dispose();
     _addressController.dispose();
+    _passwordController.dispose();
     super.dispose();
   }
 
@@ -161,6 +170,8 @@ class _StudentFormPageState extends State<StudentFormPage> {
             halaqaId: _selectedHalaqaId,
             parentId: _selectedParentId,
             avatar: avatarUrl,
+            isAdult: _isAdult,
+            password: _isAdult ? _passwordController.text : null,
           ),
         );
       }
@@ -327,7 +338,38 @@ class _StudentFormPageState extends State<StudentFormPage> {
           SizedBox(height: 6.h),
           _buildHalaqaDropdown(),
           SizedBox(height: 16.h),
-          if (_parents.isNotEmpty)
+          // Editing an existing person's role is out of scope — the backend
+          // has no path for it — so the switch, and everything it changes,
+          // only ever appears while creating.
+          if (!_isEditing) ...[
+            _buildAdultSwitch(),
+            SizedBox(height: 16.h),
+          ],
+          if (_isAdult) ...[
+            AppTextField(
+              label: 'كلمة المرور *',
+              hint: '••••••••',
+              controller: _passwordController,
+              obscureText: true,
+              prefixIcon: const Icon(
+                Icons.lock_outline,
+                color: AppColors.onSurfaceVariant,
+              ),
+              // Matches ChangePasswordSheet.validateNew rather than inventing
+              // a second definition of "too short" for the same rule.
+              validator: ChangePasswordSheet.validateNew,
+            ),
+            SizedBox(height: 4.h),
+            Align(
+              alignment: AlignmentDirectional.centerEnd,
+              child: AppText(
+                'يسجّل الطالب الدخول بهذه الكلمة، ويمكنه تغييرها لاحقاً.',
+                style: AppTextStyles.labelSm.copyWith(
+                  color: AppColors.onSurfaceVariant,
+                ),
+              ),
+            ),
+          ] else if (_parents.isNotEmpty)
             UserSelectorField(
               label: 'ولي الأمر (اختياري)',
               hint: 'ابحث واختر ولي الأمر',
@@ -338,6 +380,24 @@ class _StudentFormPageState extends State<StudentFormPage> {
               onSelected: (o) => setState(() => _selectedParentId = o.id),
             ),
         ],
+      ),
+    );
+  }
+
+  /// The switch on the left, the label filling the rest of the row — matches
+  /// how every other toggle in the admin forms lays out under this app's
+  /// deliberately-LTR tree (see `AppText`'s doc comment).
+  Widget _buildAdultSwitch() {
+    return SwitchListTile(
+      contentPadding: EdgeInsets.zero,
+      controlAffinity: ListTileControlAffinity.leading,
+      activeThumbColor: AppColors.primary,
+      value: _isAdult,
+      onChanged: (v) => setState(() => _isAdult = v),
+      title: AppText(
+        'طالب بالغ',
+        style: AppTextStyles.labelMd.copyWith(color: AppColors.onSurface),
+        textAlign: TextAlign.end,
       ),
     );
   }

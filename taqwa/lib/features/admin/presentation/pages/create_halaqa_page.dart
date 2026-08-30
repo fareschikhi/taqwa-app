@@ -21,6 +21,12 @@ import 'package:taqwa/core/widgets/app_text.dart';
 /// never learns the current roster, so sending a partial list would disconnect
 /// every student the admin did not re-pick. The picker is hidden on edit for
 /// the same reason; this guard keeps the payload honest regardless.
+///
+/// [isAdult] always travels — false is as meaningful an answer as true, and
+/// the backend's `UpdateHalaqaDto` accepts it either way. The three rates
+/// only travel alongside `isAdult: true`: a child's halaqa never charges
+/// anything, so sending zeros (or any number) for it would be dead data a
+/// future reader would have to explain, not a real setting.
 @visibleForTesting
 Map<String, dynamic> buildHalaqaPayload({
   required String name,
@@ -28,6 +34,10 @@ Map<String, dynamic> buildHalaqaPayload({
   required String level,
   required List<int> studentIds,
   required bool isEditing,
+  bool isAdult = false,
+  int? absenceFee,
+  int? lateFee,
+  int? missedMemorizationFee,
 }) {
   return <String, dynamic>{
     'name': name,
@@ -36,6 +46,11 @@ Map<String, dynamic> buildHalaqaPayload({
     // column; a create with a blank field leaves it out and keeps the NULL.
     if (isEditing || level.isNotEmpty) 'level': level.isEmpty ? null : level,
     if (!isEditing && studentIds.isNotEmpty) 'studentIds': studentIds,
+    'isAdult': isAdult,
+    if (isAdult && absenceFee != null) 'absenceFee': absenceFee,
+    if (isAdult && lateFee != null) 'lateFee': lateFee,
+    if (isAdult && missedMemorizationFee != null)
+      'missedMemorizationFee': missedMemorizationFee,
   };
 }
 
@@ -56,6 +71,9 @@ class _CreateHalaqaPageState extends State<CreateHalaqaPage> {
   final _nameController = TextEditingController();
   final _levelController = TextEditingController();
   final _studentSearchController = TextEditingController();
+  final _absenceFeeController = TextEditingController();
+  final _lateFeeController = TextEditingController();
+  final _missedMemorizationFeeController = TextEditingController();
 
   List<TeacherModel> _teachers = [];
   List<StudentModel> _allStudents = [];
@@ -65,6 +83,7 @@ class _CreateHalaqaPageState extends State<CreateHalaqaPage> {
   bool _isLoading = false;
   bool _isLoadingStudents = false;
   bool _showStudentDropdown = false;
+  bool _isAdultHalaqa = false;
   int? _selectedTeacherId;
 
   bool get _isEditing => widget.editHalaqa != null;
@@ -77,6 +96,11 @@ class _CreateHalaqaPageState extends State<CreateHalaqaPage> {
       _nameController.text = h.name;
       _levelController.text = h.level ?? '';
       _selectedTeacherId = h.teacherId;
+      _isAdultHalaqa = h.isAdult;
+      _absenceFeeController.text = h.absenceFee.toString();
+      _lateFeeController.text = h.lateFee.toString();
+      _missedMemorizationFeeController.text =
+          h.missedMemorizationFee.toString();
     }
     _loadTeachers();
     // Students back the create-only picker, so they are not needed on edit.
@@ -96,9 +120,7 @@ class _CreateHalaqaPageState extends State<CreateHalaqaPage> {
       if (mounted) {
         setState(() {
           _allStudents = result;
-          _filteredStudents = result
-              .where((s) => !_selectedStudents.any((sel) => sel.id == s.id))
-              .toList();
+          _filteredStudents = _eligibleStudents(_studentSearchController.text);
         });
       }
     } catch (_) {
@@ -108,14 +130,34 @@ class _CreateHalaqaPageState extends State<CreateHalaqaPage> {
     }
   }
 
-  void _onSearchChanged() {
-    final query = _studentSearchController.text.trim().toLowerCase();
+  /// An adults' halaqa can only enrol adult students and vice versa — the
+  /// backend rejects the mismatch outright — so the picker filters by
+  /// [_isAdultHalaqa] rather than ever offering a student who can't actually
+  /// be added.
+  List<StudentModel> _eligibleStudents(String query) {
+    final normalizedQuery = query.trim().toLowerCase();
+    return _allStudents
+        .where((s) => s.isAdult == _isAdultHalaqa)
+        .where((s) => !_selectedStudents.any((sel) => sel.id == s.id))
+        .where((s) => s.fullName.toLowerCase().contains(normalizedQuery))
+        .toList();
+  }
+
+  /// Switching the halaqa's type invalidates whatever was already picked
+  /// under the old one, so the selection is cleared rather than left to
+  /// either violate the adult/child pairing or silently vanish from the
+  /// payload without the admin noticing why.
+  void _onToggleAdultHalaqa(bool value) {
     setState(() {
-      _filteredStudents = _allStudents
-          .where((s) =>
-              !_selectedStudents.any((sel) => sel.id == s.id) &&
-              s.fullName.toLowerCase().contains(query))
-          .toList();
+      _isAdultHalaqa = value;
+      _selectedStudents.clear();
+      _filteredStudents = _eligibleStudents(_studentSearchController.text);
+    });
+  }
+
+  void _onSearchChanged() {
+    setState(() {
+      _filteredStudents = _eligibleStudents(_studentSearchController.text);
       _showStudentDropdown = true;
     });
   }
@@ -125,20 +167,24 @@ class _CreateHalaqaPageState extends State<CreateHalaqaPage> {
       _selectedStudents.add(student);
       _studentSearchController.clear();
       _showStudentDropdown = false;
-      _filteredStudents = _allStudents
-          .where((s) => !_selectedStudents.any((sel) => sel.id == s.id))
-          .toList();
+      _filteredStudents = _eligibleStudents('');
     });
   }
 
   void _removeStudent(StudentModel student) {
     setState(() {
       _selectedStudents.removeWhere((s) => s.id == student.id);
-      _filteredStudents = _allStudents
-          .where((s) => !_selectedStudents.any((sel) => sel.id == s.id))
-          .toList();
+      _filteredStudents = _eligibleStudents(_studentSearchController.text);
     });
   }
+
+  /// Parses a rate field defensively: the admin can type anything, and the
+  /// field's own validator has already rejected a non-numeric or negative
+  /// entry by the time this runs, so a failed parse here is unreachable in
+  /// practice — but returning null rather than throwing keeps a bad entry a
+  /// validation message, never a crash.
+  int? _parseRate(TextEditingController controller) =>
+      int.tryParse(controller.text.trim());
 
   Future<void> _submit() async {
     if (!_formKey.currentState!.validate()) return;
@@ -160,6 +206,12 @@ class _CreateHalaqaPageState extends State<CreateHalaqaPage> {
         studentIds:
             _selectedStudents.map((s) => s.id).whereType<int>().toList(),
         isEditing: _isEditing,
+        isAdult: _isAdultHalaqa,
+        absenceFee: _isAdultHalaqa ? _parseRate(_absenceFeeController) : null,
+        lateFee: _isAdultHalaqa ? _parseRate(_lateFeeController) : null,
+        missedMemorizationFee: _isAdultHalaqa
+            ? _parseRate(_missedMemorizationFeeController)
+            : null,
       );
 
       if (_isEditing) {
@@ -193,6 +245,9 @@ class _CreateHalaqaPageState extends State<CreateHalaqaPage> {
     _nameController.dispose();
     _levelController.dispose();
     _studentSearchController.dispose();
+    _absenceFeeController.dispose();
+    _lateFeeController.dispose();
+    _missedMemorizationFeeController.dispose();
     super.dispose();
   }
 
@@ -300,6 +355,49 @@ class _CreateHalaqaPageState extends State<CreateHalaqaPage> {
                                 onSelected: (o) => setState(
                                     () => _selectedTeacherId = o.id),
                               ),
+                              SizedBox(height: 8.h),
+                              _buildAdultHalaqaSwitch(),
+                              if (_isAdultHalaqa) ...[
+                                SizedBox(height: 12.h),
+                                _FieldLabel(label: 'رسوم الغياب *'),
+                                SizedBox(height: 6.h),
+                                AppTextField(
+                                  hint: '0',
+                                  controller: _absenceFeeController,
+                                  keyboardType: TextInputType.number,
+                                  validator: _validateRate,
+                                  prefixIcon: const Icon(
+                                    Icons.event_busy_outlined,
+                                    color: AppColors.onSurfaceVariant,
+                                  ),
+                                ),
+                                SizedBox(height: 16.h),
+                                _FieldLabel(label: 'رسوم التأخر *'),
+                                SizedBox(height: 6.h),
+                                AppTextField(
+                                  hint: '0',
+                                  controller: _lateFeeController,
+                                  keyboardType: TextInputType.number,
+                                  validator: _validateRate,
+                                  prefixIcon: const Icon(
+                                    Icons.timer_outlined,
+                                    color: AppColors.onSurfaceVariant,
+                                  ),
+                                ),
+                                SizedBox(height: 16.h),
+                                _FieldLabel(label: 'رسوم عدم الحفظ *'),
+                                SizedBox(height: 6.h),
+                                AppTextField(
+                                  hint: '0',
+                                  controller: _missedMemorizationFeeController,
+                                  keyboardType: TextInputType.number,
+                                  validator: _validateRate,
+                                  prefixIcon: const Icon(
+                                    Icons.menu_book_outlined,
+                                    color: AppColors.onSurfaceVariant,
+                                  ),
+                                ),
+                              ],
                             ],
                           ),
                         ),
@@ -558,6 +656,37 @@ class _CreateHalaqaPageState extends State<CreateHalaqaPage> {
         ),
       ),
     );
+  }
+
+  /// The switch on the left, the label filling the rest of the row — matches
+  /// how every other toggle in the admin forms lays out under this app's
+  /// deliberately-LTR tree (see `AppText`'s doc comment).
+  Widget _buildAdultHalaqaSwitch() {
+    return SwitchListTile(
+      contentPadding: EdgeInsets.zero,
+      controlAffinity: ListTileControlAffinity.leading,
+      activeThumbColor: AppColors.primary,
+      value: _isAdultHalaqa,
+      onChanged: _onToggleAdultHalaqa,
+      title: AppText(
+        'حلقة الكبار',
+        style: AppTextStyles.labelMd.copyWith(color: AppColors.onSurface),
+        textAlign: TextAlign.end,
+      ),
+    );
+  }
+
+  /// A rate is a whole number of dinars, and 0 is a legitimate answer — a
+  /// halaqa may fine absence but not lateness — so the floor is 0, not 1.
+  /// An admin can type anything into the field, so a bad entry must surface
+  /// here as a message rather than reach `int.parse` and crash.
+  String? _validateRate(String? v) {
+    final text = (v ?? '').trim();
+    if (text.isEmpty) return 'يرجى إدخال القيمة';
+    final n = int.tryParse(text);
+    if (n == null) return 'يرجى إدخال رقم صحيح';
+    if (n < 0) return 'يجب ألا تقل القيمة عن 0';
+    return null;
   }
 
   Widget _buildHeader(BuildContext context) {

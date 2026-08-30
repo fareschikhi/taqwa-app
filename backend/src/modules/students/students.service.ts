@@ -21,6 +21,12 @@ export class StudentsService {
         phone: true,
         avatar: true,
         isActive: true,
+        // The admin forms need to tell an adult student from a child one
+        // before he is ever assigned to a halaqa, to keep an adults' halaqa
+        // picker (and its child counterpart) from ever offering the wrong
+        // kind of student in the first place. `role` is the only place that
+        // distinction lives before enrolment.
+        role: true,
       },
     },
     halaqa: {
