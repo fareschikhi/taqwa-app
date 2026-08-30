@@ -1,4 +1,8 @@
-import { ArgumentMetadata, BadRequestException, ValidationPipe } from '@nestjs/common';
+import {
+  ArgumentMetadata,
+  BadRequestException,
+  ValidationPipe,
+} from '@nestjs/common';
 import { CreateHalaqaDto, UpdateHalaqaDto } from './halaqa.dto';
 
 // Same configuration main.ts installs globally, so these exercise the real
@@ -57,5 +61,31 @@ describe('halaqa DTOs', () => {
     // update() spreads the whole DTO into prisma.halaqa.update({ data }), so
     // any key that survives here and has no matching column throws.
     expect('isStudentsChanged' in dto).toBe(false);
+  });
+
+  it('keeps the fine rates an admin set on an adults halaqa', async () => {
+    const dto = (await pipe.transform(
+      {
+        name: 'حلقة الكبار',
+        teacherId: 1,
+        isAdult: true,
+        absenceFee: 50,
+        lateFee: 20,
+        missedMemorizationFee: 30,
+      },
+      body(CreateHalaqaDto),
+    )) as CreateHalaqaDto;
+
+    expect(dto.absenceFee).toBe(50);
+    expect(dto.missedMemorizationFee).toBe(30);
+  });
+
+  it('rejects a negative fine rate', async () => {
+    await expect(
+      pipe.transform(
+        { name: 'حلقة الكبار', teacherId: 1, isAdult: true, absenceFee: -5 },
+        body(CreateHalaqaDto),
+      ),
+    ).rejects.toBeInstanceOf(BadRequestException);
   });
 });
