@@ -1,5 +1,6 @@
 import { AttendanceStatus } from '@prisma/client';
 import { AttendanceService } from './attendance.service';
+import { desiredCharges } from './fine-reconciliation';
 
 /// Most of these tests predate notifications and do not exercise them, so they
 /// take a stub rather than repeating the second constructor argument.
@@ -21,9 +22,13 @@ describe('AttendanceService memorization cleanup', () => {
           studentId: 7,
           date: new Date('2026-08-26'),
           status: AttendanceStatus.ABSENT,
+          missedMemorization: false,
         }),
       },
       memorizationProgress: { deleteMany: jest.fn().mockResolvedValue({ count: 1 }) },
+      // Not what this describe block is about — reconcileFines resolves no
+      // student here, so it stays a no-op and never touches the fine tables.
+      student: { findUnique: jest.fn().mockResolvedValue(null) },
     };
     const prisma = {
       $transaction: jest.fn((cb: any) => cb(tx)),
@@ -399,6 +404,10 @@ describe('AttendanceService notifications', () => {
         upsert: jest.fn().mockResolvedValue({ id: 1 }),
       },
       memorizationProgress: { deleteMany: jest.fn() },
+      // Distinct from the top-level `student` below, which answers the
+      // post-commit notification lookup. reconcileFines runs inside the
+      // transaction and resolves no student here, so it is a no-op.
+      student: { findUnique: jest.fn().mockResolvedValue(null) },
     };
     return {
       $transaction: jest.fn((cb: any) => cb(tx)),
@@ -557,5 +566,118 @@ describe('AttendanceService attendance streak', () => {
     const { orderBy, where } = prisma.attendance.findMany.mock.calls[0][0];
     expect(where).toEqual({ studentId: 7 });
     expect(orderBy).toEqual({ date: 'desc' });
+  });
+});
+
+describe('AttendanceService fine reconciliation', () => {
+  const makePrisma = (opts: {
+    role?: string;
+    isAdult?: boolean;
+    existing?: Array<{ id: number; source: string }>;
+  } = {}) => {
+    const tx = {
+      attendance: {
+        findUnique: jest.fn().mockResolvedValue(null),
+        upsert: jest
+          .fn()
+          .mockImplementation(({ create }) =>
+            Promise.resolve({ id: 1, ...create }),
+          ),
+      },
+      memorizationProgress: { deleteMany: jest.fn().mockResolvedValue({ count: 0 }) },
+      student: {
+        // userId stands in for the fallback createdById: reconcileFines uses
+        // it only when no actor is passed in, which is exactly what create()
+        // does here since these tests call it with two arguments.
+        findUnique: jest.fn().mockResolvedValue({
+          userId: 30,
+          user: { role: opts.role ?? 'ADULT_STUDENT' },
+          halaqa: (opts.isAdult ?? true)
+            ? {
+                isAdult: true,
+                absenceFee: 50,
+                lateFee: 20,
+                missedMemorizationFee: 30,
+              }
+            : null,
+        }),
+      },
+      fineEntry: {
+        findMany: jest.fn().mockResolvedValue(opts.existing ?? []),
+        deleteMany: jest.fn().mockResolvedValue({ count: 0 }),
+        create: jest.fn().mockResolvedValue({ id: 100 }),
+      },
+    };
+    return { $transaction: jest.fn((cb: any) => cb(tx)), tx };
+  };
+
+  const svcWith = (prisma: unknown) =>
+    new AttendanceService(prisma as any, { create: jest.fn() } as any);
+
+  const dto = (status: AttendanceStatus, missedMemorization = false) => ({
+    studentId: 7,
+    date: '2026-08-26',
+    status,
+    missedMemorization,
+  });
+
+  it('charges an absent adult student the halaqa absence fee', async () => {
+    const prisma = makePrisma();
+    await svcWith(prisma).create(dto(AttendanceStatus.ABSENT));
+
+    expect(prisma.tx.fineEntry.create).toHaveBeenCalledWith(
+      expect.objectContaining({
+        data: expect.objectContaining({
+          studentId: 7,
+          kind: 'CHARGE',
+          source: 'ABSENCE',
+          amount: 50,
+        }),
+      }),
+    );
+  });
+
+  // The teacher's sheet re-saves the same day on every tap. The row is already
+  // there, so the second save must add nothing.
+  it('does not charge twice when the same day is saved again', async () => {
+    const prisma = makePrisma({ existing: [{ id: 100, source: 'ABSENCE' }] });
+    await svcWith(prisma).create(dto(AttendanceStatus.ABSENT));
+
+    expect(prisma.tx.fineEntry.create).not.toHaveBeenCalled();
+  });
+
+  it('withdraws the absence charge when the day is corrected to present', async () => {
+    const prisma = makePrisma({ existing: [{ id: 100, source: 'ABSENCE' }] });
+    await svcWith(prisma).create(dto(AttendanceStatus.PRESENT));
+
+    expect(prisma.tx.fineEntry.deleteMany).toHaveBeenCalledWith({
+      where: { id: { in: [100] } },
+    });
+    expect(prisma.tx.fineEntry.create).not.toHaveBeenCalled();
+  });
+
+  it('charges nothing for a child student', async () => {
+    const prisma = makePrisma({ role: 'STUDENT' });
+    await svcWith(prisma).create(dto(AttendanceStatus.ABSENT));
+
+    expect(prisma.tx.fineEntry.create).not.toHaveBeenCalled();
+  });
+
+  it('charges nothing when the adult student has no halaqa', async () => {
+    const prisma = makePrisma({ isAdult: false });
+    await svcWith(prisma).create(dto(AttendanceStatus.ABSENT));
+
+    expect(prisma.tx.fineEntry.create).not.toHaveBeenCalled();
+  });
+
+  it('charges the memorization fee for a present student who did not recite', async () => {
+    const prisma = makePrisma();
+    await svcWith(prisma).create(dto(AttendanceStatus.PRESENT, true));
+
+    expect(prisma.tx.fineEntry.create).toHaveBeenCalledWith(
+      expect.objectContaining({
+        data: expect.objectContaining({ source: 'MISSED_MEMORIZATION', amount: 30 }),
+      }),
+    );
   });
 });

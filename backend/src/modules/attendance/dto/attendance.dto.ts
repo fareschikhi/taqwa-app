@@ -1,4 +1,4 @@
-import { IsArray, IsEnum, IsInt, IsOptional, IsString, ValidateNested } from 'class-validator';
+import { IsArray, IsBoolean, IsEnum, IsInt, IsOptional, IsString, ValidateNested } from 'class-validator';
 import { Type } from 'class-transformer';
 import { AttendanceStatus } from '@prisma/client';
 
@@ -7,11 +7,13 @@ export class CreateAttendanceDto {
   @IsString() date: string; // ISO date string YYYY-MM-DD
   @IsEnum(AttendanceStatus) status: AttendanceStatus;
   @IsOptional() @IsString() notes?: string;
+  @IsOptional() @IsBoolean() missedMemorization?: boolean;
 }
 
 export class UpdateAttendanceDto {
   @IsOptional() @IsEnum(AttendanceStatus) status?: AttendanceStatus;
   @IsOptional() @IsString() notes?: string;
+  @IsOptional() @IsBoolean() missedMemorization?: boolean;
 }
 
 export class CreateBatchAttendanceDto {

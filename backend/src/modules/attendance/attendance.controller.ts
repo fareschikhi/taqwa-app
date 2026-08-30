@@ -4,6 +4,7 @@ import { JwtAuthGuard } from '../../common/guards/jwt-auth.guard';
 import { RolesGuard } from '../../common/guards/roles.guard';
 import { StudentOwnershipGuard } from '../../common/guards/student-ownership.guard';
 import { Roles } from '../../common/decorators/roles.decorator';
+import { CurrentUser } from '../../common/decorators/current-user.decorator';
 import { AttendanceService } from './attendance.service';
 import { CreateAttendanceDto, CreateBatchAttendanceDto, UpdateAttendanceDto } from './dto/attendance.dto';
 
@@ -14,11 +15,15 @@ export class AttendanceController {
 
   @Post()
   @Roles(Role.ADMIN, Role.TEACHER)
-  create(@Body() dto: CreateAttendanceDto) { return this.attendanceService.create(dto); }
+  create(@Body() dto: CreateAttendanceDto, @CurrentUser() user: any) {
+    return this.attendanceService.create(dto, user?.id ?? null);
+  }
 
   @Post('batch')
   @Roles(Role.ADMIN, Role.TEACHER)
-  createBatch(@Body() dto: CreateBatchAttendanceDto) { return this.attendanceService.createBatch(dto); }
+  createBatch(@Body() dto: CreateBatchAttendanceDto, @CurrentUser() user: any) {
+    return this.attendanceService.createBatch(dto, user?.id ?? null);
+  }
 
   @Get('student/:id')
   @Roles(Role.ADMIN, Role.TEACHER, Role.PARENT, Role.MANAGER, Role.ADULT_STUDENT)
@@ -40,7 +45,11 @@ export class AttendanceController {
 
   @Patch(':id')
   @Roles(Role.ADMIN, Role.TEACHER)
-  update(@Param('id', ParseIntPipe) id: number, @Body() dto: UpdateAttendanceDto) {
-    return this.attendanceService.update(id, dto);
+  update(
+    @Param('id', ParseIntPipe) id: number,
+    @Body() dto: UpdateAttendanceDto,
+    @CurrentUser() user: any,
+  ) {
+    return this.attendanceService.update(id, dto, user?.id ?? null);
   }
 }
