@@ -741,9 +741,9 @@ class _RecordItem extends StatelessWidget {
 /// own type rather than a plain int so a cancelled dialog (`null`) can never
 /// be confused with a submitted amount of zero.
 class _FineAdjustResult {
-  const _FineAdjustResult({required this.amount, this.reason});
+  const _FineAdjustResult({required this.amount, required this.reason});
   final int amount;
-  final String? reason;
+  final String reason;
 }
 
 /// Amount-and-reason dialog behind both fine actions. A charge and a
@@ -785,8 +785,11 @@ class _FineAdjustDialogState extends State<_FineAdjustDialog> {
     // failed parse has to land as the same validation message as any other
     // bad amount rather than throwing.
     final amount = int.tryParse(_amountController.text.trim());
+    final reason = _reasonController.text.trim();
     final error = amount == null
         ? 'أدخل مبلغاً أكبر من صفر'
+        : reason.isEmpty
+        ? 'أدخل سبب التعديل'
         : fineAdjustError(
             amount: amount,
             kind: widget.kind,
@@ -796,14 +799,7 @@ class _FineAdjustDialogState extends State<_FineAdjustDialog> {
       setState(() => _errorText = error);
       return;
     }
-    final reason = _reasonController.text.trim();
-    Navigator.pop(
-      context,
-      _FineAdjustResult(
-        amount: amount!,
-        reason: reason.isEmpty ? null : reason,
-      ),
-    );
+    Navigator.pop(context, _FineAdjustResult(amount: amount!, reason: reason));
   }
 
   @override
@@ -834,7 +830,7 @@ class _FineAdjustDialogState extends State<_FineAdjustDialog> {
               ),
               SizedBox(height: 12.h),
               AppTextField(
-                label: 'السبب (اختياري)',
+                label: 'السبب',
                 controller: _reasonController,
                 maxLines: 2,
               ),
