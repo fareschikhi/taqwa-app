@@ -654,6 +654,68 @@ describe('AttendanceService guardian notifications', () => {
       body: 'تم تسجيل تأخر Bilal Cherguini اليوم',
     });
   });
+
+  // reconcileFines only ever charges an ADULT_STUDENT (see the guard at the
+  // top of that method), so a real child can never actually be billed. This
+  // test still forces charged > 0 for a parent-notified id by giving the
+  // in-transaction lookup (which reconcileFines reads) a different role than
+  // the post-commit lookup (which notifyGuardians reads) — the two are
+  // separate mocks here precisely so this combination can be isolated. The
+  // fee suffix must stay adult-only: a parent is told who was absent, never
+  // billed at in the same breath. Without this test, deleting the isSelf
+  // gate on the fee interpolation would pass every other case here, since
+  // charged is 0 everywhere else a parent is the recipient.
+  it('never appends the fee to a parent notification, even when a charge was made', async () => {
+    const tx = {
+      attendance: {
+        findUnique: jest.fn().mockResolvedValue(null),
+        upsert: jest.fn().mockImplementation(({ create }) => ({ id: 1, ...create })),
+      },
+      memorizationProgress: { deleteMany: jest.fn().mockResolvedValue({ count: 0 }) },
+      student: {
+        findUnique: jest.fn().mockResolvedValue({
+          userId: 30,
+          user: { role: 'ADULT_STUDENT' },
+          halaqa: {
+            isAdult: true,
+            absenceFee: 500,
+            lateFee: 200,
+            missedMemorizationFee: 100,
+          },
+        }),
+      },
+      fineEntry: {
+        findMany: jest.fn().mockResolvedValue([]),
+        deleteMany: jest.fn(),
+        create: jest.fn(),
+      },
+    };
+    const prisma = {
+      $transaction: jest.fn((cb: any) => cb(tx)),
+      student: {
+        findUnique: jest.fn().mockResolvedValue({
+          userId: 30,
+          parentId: 4,
+          user: { fullName: 'Bilal Cherguini', role: 'STUDENT' },
+          parent: { userId: 12 },
+        }),
+      },
+    };
+    const notifications = { create: jest.fn().mockResolvedValue(undefined) };
+    const service = new AttendanceService(prisma as any, notifications as any);
+
+    await service.create({
+      studentId: 7,
+      date: '2026-08-26',
+      status: AttendanceStatus.ABSENT,
+    } as any);
+
+    expect(notifications.create).toHaveBeenCalledWith({
+      userId: 12,
+      title: 'غياب',
+      body: 'تم تسجيل غياب Bilal Cherguini اليوم',
+    });
+  });
 });
 
 describe('AttendanceService attendance streak', () => {
