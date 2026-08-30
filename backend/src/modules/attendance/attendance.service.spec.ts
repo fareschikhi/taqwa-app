@@ -514,6 +514,148 @@ describe('AttendanceService notifications', () => {
   });
 });
 
+describe('AttendanceService guardian notifications', () => {
+  const makeService = (student: Record<string, unknown>) => {
+    const tx = {
+      attendance: {
+        findUnique: jest.fn().mockResolvedValue(null),
+        upsert: jest.fn().mockImplementation(({ create }) => ({ id: 1, ...create })),
+      },
+      memorizationProgress: { deleteMany: jest.fn().mockResolvedValue({ count: 0 }) },
+      student: { findUnique: jest.fn().mockResolvedValue({ user: { role: 'STUDENT' }, halaqa: null }) },
+      fineEntry: {
+        findMany: jest.fn().mockResolvedValue([]),
+        deleteMany: jest.fn(),
+        create: jest.fn(),
+      },
+    };
+    const prisma = {
+      $transaction: jest.fn((cb: any) => cb(tx)),
+      student: { findUnique: jest.fn().mockResolvedValue(student) },
+    };
+    const notifications = { create: jest.fn().mockResolvedValue(undefined) };
+    return {
+      service: new AttendanceService(prisma as any, notifications as any),
+      notifications,
+    };
+  };
+
+  it('notifies the parent of a child student', async () => {
+    const { service, notifications } = makeService({
+      userId: 30,
+      parentId: 4,
+      user: { fullName: 'Bilal Cherguini', role: 'STUDENT' },
+      parent: { userId: 12 },
+    });
+
+    await service.create({
+      studentId: 7,
+      date: '2026-08-26',
+      status: AttendanceStatus.ABSENT,
+    } as any);
+
+    expect(notifications.create).toHaveBeenCalledWith(
+      expect.objectContaining({ userId: 12 }),
+    );
+  });
+
+  // He has no parent row at all, so the old lookup returned nothing and he
+  // heard about none of his own absences.
+  it('notifies an adult student on his own account', async () => {
+    const { service, notifications } = makeService({
+      userId: 11,
+      parentId: null,
+      user: { fullName: 'Yacine Belkacem', role: 'ADULT_STUDENT' },
+      parent: null,
+    });
+
+    await service.create({
+      studentId: 21,
+      date: '2026-08-26',
+      status: AttendanceStatus.ABSENT,
+    } as any);
+
+    expect(notifications.create).toHaveBeenCalledWith(
+      expect.objectContaining({ userId: 11 }),
+    );
+  });
+
+  // reconcileFines runs inside the transaction and returns what it charged;
+  // notifyGuardians must fold that amount into the same notification rather
+  // than dropping it, since a separate fine alert would be a second ping for
+  // one event.
+  it('appends the fee when the absence carried a charge', async () => {
+    const tx = {
+      attendance: {
+        findUnique: jest.fn().mockResolvedValue(null),
+        upsert: jest.fn().mockImplementation(({ create }) => ({ id: 1, ...create })),
+      },
+      memorizationProgress: { deleteMany: jest.fn().mockResolvedValue({ count: 0 }) },
+      student: {
+        findUnique: jest.fn().mockResolvedValue({
+          userId: 11,
+          user: { role: 'ADULT_STUDENT' },
+          halaqa: {
+            isAdult: true,
+            absenceFee: 500,
+            lateFee: 200,
+            missedMemorizationFee: 100,
+          },
+        }),
+      },
+      fineEntry: {
+        findMany: jest.fn().mockResolvedValue([]),
+        deleteMany: jest.fn(),
+        create: jest.fn(),
+      },
+    };
+    const prisma = {
+      $transaction: jest.fn((cb: any) => cb(tx)),
+      student: {
+        findUnique: jest.fn().mockResolvedValue({
+          userId: 11,
+          parentId: null,
+          user: { fullName: 'Yacine Belkacem', role: 'ADULT_STUDENT' },
+          parent: null,
+        }),
+      },
+    };
+    const notifications = { create: jest.fn().mockResolvedValue(undefined) };
+    const service = new AttendanceService(prisma as any, notifications as any);
+
+    await service.create({
+      studentId: 21,
+      date: '2026-08-26',
+      status: AttendanceStatus.ABSENT,
+    } as any);
+
+    expect(notifications.create).toHaveBeenCalledWith(
+      expect.objectContaining({ body: 'تم تسجيل غيابك اليوم — رسوم 500 دج' }),
+    );
+  });
+
+  it('names the child rather than charging a fee when the same student has a parent', async () => {
+    const { service, notifications } = makeService({
+      userId: 30,
+      parentId: 4,
+      user: { fullName: 'Bilal Cherguini', role: 'STUDENT' },
+      parent: { userId: 12 },
+    });
+
+    await service.create({
+      studentId: 7,
+      date: '2026-08-26',
+      status: AttendanceStatus.LATE,
+    } as any);
+
+    expect(notifications.create).toHaveBeenCalledWith({
+      userId: 12,
+      title: 'تأخر',
+      body: 'تم تسجيل تأخر Bilal Cherguini اليوم',
+    });
+  });
+});
+
 describe('AttendanceService attendance streak', () => {
   /// The streak is the run of attended days ending at the most recent record.
   /// LATE continues it: the same rule the rate already applies, so the two

@@ -119,8 +119,9 @@ export class AttendanceService {
   /// What a single write changed, so the notifier can tell a real transition
   /// from a re-save. `previous` is null when the row is new, which counts as
   /// a change: the first time a student is marked absent is exactly when the
-  /// parent should hear about it.
-  private async notifyParents(
+  /// guardian should hear about it. `charged` is whatever reconcileFines
+  /// billed for that same write, carried along so the notification can say so.
+  private async notifyGuardians(
     transitions: Array<{
       studentId: number;
       status: AttendanceStatus;
@@ -141,26 +142,41 @@ export class AttendanceService {
         const student = await this.prisma.student.findUnique({
           where: { id: t.studentId },
           select: {
-            parentId: true,
-            user: { select: { fullName: true } },
+            userId: true,
+            user: { select: { fullName: true, role: true } },
             parent: { select: { userId: true } },
           },
         });
-        const parentUserId = student?.parent?.userId;
-        if (!parentUserId) continue;
+
+        // Whoever should hear about this student: the parent for a child, and
+        // the adult student himself, who has no parent row by construction.
+        const recipientId =
+          student?.parent?.userId ??
+          (student?.user.role === 'ADULT_STUDENT' ? student.userId : null);
+        if (!recipientId) continue;
 
         const name = student?.user?.fullName ?? '';
+        const isSelf = student?.user.role === 'ADULT_STUDENT';
+        // Being marked absent and being charged for it are one piece of news,
+        // so the amount rides with the notification rather than arriving
+        // separately.
+        const fee = t.charged && t.charged > 0 ? ` — رسوم ${t.charged} دج` : '';
+
         await this.notifications.create(
           t.status === AttendanceStatus.ABSENT
             ? {
-                userId: parentUserId,
+                userId: recipientId,
                 title: 'غياب',
-                body: `تم تسجيل غياب ${name} اليوم`,
+                body: isSelf
+                  ? `تم تسجيل غيابك اليوم${fee}`
+                  : `تم تسجيل غياب ${name} اليوم`,
               }
             : {
-                userId: parentUserId,
+                userId: recipientId,
                 title: 'تأخر',
-                body: `تم تسجيل تأخر ${name} اليوم`,
+                body: isSelf
+                  ? `تم تسجيل تأخرك اليوم${fee}`
+                  : `تم تسجيل تأخر ${name} اليوم`,
               },
         );
       }
@@ -202,7 +218,7 @@ export class AttendanceService {
       },
     );
 
-    await this.notifyParents([
+    await this.notifyGuardians([
       { studentId: dto.studentId, status: dto.status, previous, charged },
     ]);
     return record;
@@ -261,7 +277,7 @@ export class AttendanceService {
       return written;
     });
 
-    await this.notifyParents(transitions);
+    await this.notifyGuardians(transitions);
     return { count: records.length, records };
   }
 
@@ -297,7 +313,7 @@ export class AttendanceService {
       },
     );
 
-    await this.notifyParents([{ studentId, status, previous, charged }]);
+    await this.notifyGuardians([{ studentId, status, previous, charged }]);
     return record;
   }
 
@@ -335,7 +351,7 @@ export class AttendanceService {
         record.date,
         record.status,
       );
-      // No notifyParents here — a PATCH is a correction to an existing row,
+      // No notifyGuardians here — a PATCH is a correction to an existing row,
       // not the kind of new event the parent needs pinged about — so there is
       // no transition list to attach the charged amount to.
       await this.reconcileFines(
