@@ -6,12 +6,39 @@ import {
 import { PrismaService } from '../../prisma/prisma.service';
 import { CreateHalaqaDto, UpdateHalaqaDto } from './dto/halaqa.dto';
 
+/// Who is asking for the list. Carries the teacher id because a teacher sees
+/// only the halaqas she runs. Mirrors FineActor and AttendanceActor, so every
+/// place that scopes by halaqa agrees on what an actor is.
+export type HalaqaActor = {
+  id: number;
+  role: string;
+  teacher?: { id: number } | null;
+};
+
 @Injectable()
 export class HalaqasService {
   constructor(private prisma: PrismaService) {}
 
-  async findAll() {
+  /// Every halaqa for staff who oversee them, and only her own for a teacher.
+  ///
+  /// The rows carry each halaqa's fine rates now, so an unfiltered list would
+  /// put a colleague's fee schedule on a teacher's device. Narrowing here
+  /// rather than removing her access keeps the two screens that read this
+  /// working — both already pick out a single halaqa by id, so a shorter list
+  /// behaves identically.
+  async findAll(actor: HalaqaActor | null = null) {
+    const where: { teacherId?: number } = {};
+
+    if (actor?.role === 'TEACHER') {
+      const teacherId = actor.teacher?.id;
+      // Fail closed. A teacher-role account with no teacher row runs no
+      // halaqas, and must not fall through to the unfiltered list.
+      if (teacherId == null) return [];
+      where.teacherId = teacherId;
+    }
+
     return this.prisma.halaqa.findMany({
+      where,
       include: {
         teacher: {
           include: { user: { select: { fullName: true, avatar: true } } },

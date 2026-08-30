@@ -145,3 +145,54 @@ describe('HalaqasService.update — enrolment revalidation on an isAdult flip', 
     expect(prisma.halaqa.update).toHaveBeenCalled();
   });
 });
+
+/// `GET /halaqas` is read by two teacher screens to find a student's halaqa,
+/// so a teacher cannot simply be denied it. The response is narrowed instead:
+/// the fine rates it now carries are another teacher's business, not hers.
+describe('HalaqasService.findAll scoping', () => {
+  const makeService = () => {
+    const prisma = {
+      halaqa: { findMany: jest.fn().mockResolvedValue([]) },
+    };
+    return { service: new HalaqasService(prisma as any), prisma };
+  };
+
+  const whereOf = (prisma: { halaqa: { findMany: jest.Mock } }) =>
+    prisma.halaqa.findMany.mock.calls[0][0].where;
+
+  it('gives a teacher only her own halaqas', async () => {
+    const { service, prisma } = makeService();
+
+    await service.findAll({ id: 50, role: 'TEACHER', teacher: { id: 3 } });
+
+    expect(whereOf(prisma)).toEqual({ teacherId: 3 });
+  });
+
+  it('gives an admin every halaqa', async () => {
+    const { service, prisma } = makeService();
+
+    await service.findAll({ id: 1, role: 'ADMIN' });
+
+    expect(whereOf(prisma)).toEqual({});
+  });
+
+  // Fail closed, the same way the fines and attendance guards do: a
+  // teacher-role account with no teacher row teaches nothing, so it must not
+  // fall through to the unfiltered list.
+  it('gives a teacher with no teacher profile nothing at all', async () => {
+    const { service, prisma } = makeService();
+
+    await expect(
+      service.findAll({ id: 50, role: 'TEACHER' }),
+    ).resolves.toEqual([]);
+    expect(prisma.halaqa.findMany).not.toHaveBeenCalled();
+  });
+
+  it('leaves the query unfiltered when no actor is supplied', async () => {
+    const { service, prisma } = makeService();
+
+    await service.findAll();
+
+    expect(whereOf(prisma)).toEqual({});
+  });
+});
