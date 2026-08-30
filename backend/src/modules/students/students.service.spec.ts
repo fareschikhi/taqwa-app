@@ -1,4 +1,5 @@
-import { NotFoundException } from '@nestjs/common';
+import { NotFoundException, BadRequestException } from '@nestjs/common';
+import * as bcrypt from 'bcrypt';
 import { StudentsService } from './students.service';
 
 describe('StudentsService.remove', () => {
@@ -38,8 +39,9 @@ describe('StudentsService.remove', () => {
 });
 
 describe('StudentsService.create', () => {
-  // Students are records, not accounts: `password` is gone from the DTO, but a
-  // stale client can still put one on the wire, so the service must ignore it.
+  // A password alone means nothing: only isAdult turns a student into an
+  // account, so a password arriving without it is ignored rather than
+  // silently upgrading a child student into someone who can log in.
   const makePrisma = () => ({
     user: {
       create: jest.fn().mockResolvedValue({ id: 42, student: { id: 7 } }),
@@ -72,6 +74,43 @@ describe('StudentsService.create', () => {
 
     const data = prisma.user.create.mock.calls[0][0].data;
     expect(data.passwordHash).toBeNull();
+  });
+
+  it('creates a normal student as an account that cannot log in', async () => {
+    const prisma = makePrisma();
+    const service = new StudentsService(prisma as any);
+
+    await service.create(payload as any);
+
+    const data = prisma.user.create.mock.calls[0][0].data;
+    expect(data.role).toBe('STUDENT');
+    expect(data.passwordHash).toBeNull();
+  });
+
+  it('creates an adult student with a usable password', async () => {
+    const prisma = makePrisma();
+    const service = new StudentsService(prisma as any);
+
+    await service.create({
+      ...payload,
+      isAdult: true,
+      password: 'secret123',
+    } as any);
+
+    const data = prisma.user.create.mock.calls[0][0].data;
+    expect(data.role).toBe('ADULT_STUDENT');
+    expect(await bcrypt.compare('secret123', data.passwordHash)).toBe(true);
+  });
+
+  // An adult student with no password is an account nobody can ever use, and
+  // the form would have no way to tell the admin why he cannot sign in.
+  it('refuses an adult student without a password', async () => {
+    const prisma = makePrisma();
+    const service = new StudentsService(prisma as any);
+
+    await expect(
+      service.create({ ...payload, isAdult: true } as any),
+    ).rejects.toBeInstanceOf(BadRequestException);
   });
 });
 

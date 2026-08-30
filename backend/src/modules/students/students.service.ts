@@ -2,7 +2,9 @@ import {
   Injectable,
   NotFoundException,
   ConflictException,
+  BadRequestException,
 } from '@nestjs/common';
+import * as bcrypt from 'bcrypt';
 import { PrismaService } from '../../prisma/prisma.service';
 import { CreateStudentDto, UpdateStudentDto } from './dto/student.dto';
 
@@ -92,21 +94,29 @@ export class StudentsService {
     const phone =
       dto.phone && dto.phone.trim() !== '' ? dto.phone.trim() : undefined;
 
+    if (dto.isAdult && !dto.password) {
+      throw new BadRequestException('كلمة المرور مطلوبة للطالب البالغ');
+    }
+
     try {
       const user = await this.prisma.user.create({
         data: {
           fullName: dto.fullName,
           phone,
-          // A student is a record, not an account: the role classifies the row
-          // while the null hash keeps the login door shut.
-          passwordHash: null,
-          role: 'STUDENT',
+          // A child student is a record, not an account: the role classifies
+          // the row while the null hash keeps the login door shut. An adult
+          // student is his own guardian, so his account is real.
+          passwordHash: dto.isAdult
+            ? await bcrypt.hash(dto.password!, 10)
+            : null,
+          role: dto.isAdult ? 'ADULT_STUDENT' : 'STUDENT',
           avatar: dto.avatar,
           student: {
             create: {
               birthDate: dto.birthDate ? new Date(dto.birthDate) : undefined,
               address: dto.address,
-              parentId: dto.parentId ?? undefined,
+              // An adult student has no parent by construction.
+              parentId: dto.isAdult ? undefined : (dto.parentId ?? undefined),
               halaqaId: dto.halaqaId ?? undefined,
             },
           },
