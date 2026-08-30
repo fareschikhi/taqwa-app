@@ -7,22 +7,31 @@ class TeacherStudentModel {
   final bool isActive;
   final int? teacherId;
 
+  /// The halaqa this student is enrolled in, when the server returned one.
+  /// `GET /students` nests it as `{ halaqa: { id, ... } }`; a student with no
+  /// halaqa yet (or an older payload) simply has no id to read here, and
+  /// nothing downstream can treat him as belonging to an adults' halaqa.
+  final int? halaqaId;
+
   const TeacherStudentModel({
     required this.id,
     required this.fullName,
     this.avatar,
     required this.isActive,
     this.teacherId,
+    this.halaqaId,
   });
 
   factory TeacherStudentModel.fromJson(Map<String, dynamic> json) {
     final user = json['user'] as Map<String, dynamic>?;
+    final halaqa = json['halaqa'] as Map<String, dynamic>?;
     return TeacherStudentModel(
       id: (json['id'] as num?)?.toInt() ?? 0,
       fullName: (user?['fullName'] as String?) ?? (json['fullName'] as String?) ?? '',
       avatar: (user?['avatar'] as String?) ?? (json['avatar'] as String?),
       isActive: (user?['isActive'] as bool?) ?? (json['isActive'] as bool?) ?? true,
       teacherId: (json['teacherId'] as num?)?.toInt(),
+      halaqaId: (halaqa?['id'] as num?)?.toInt() ?? (json['halaqaId'] as num?)?.toInt(),
     );
   }
 }

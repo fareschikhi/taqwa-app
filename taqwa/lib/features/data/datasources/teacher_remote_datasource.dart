@@ -134,10 +134,18 @@ class TeacherRemoteDatasource {
     required int studentId,
     required String date,
     required String status,
+    bool? missedMemorization,
   }) async {
     final response = await _dio.post(
       ApiEndpoints.attendance,
-      data: {'studentId': studentId, 'date': date, 'status': status},
+      data: {
+        'studentId': studentId,
+        'date': date,
+        'status': status,
+        // Left off entirely for a child student rather than sent as a
+        // meaningless false — the same rule attendanceBatchPayload follows.
+        'missedMemorization': ?missedMemorization,
+      },
     );
     return response.data as Map<String, dynamic>;
   }

@@ -93,4 +93,71 @@ void main() {
       expect(attendanceStatusFromApi('EXCUSED'), AttendanceStatus.unset);
     });
   });
+
+  group('missed memorization', () {
+    // The toggle changes without the chip changing, and the old comparison
+    // looked only at the chip — so this edit would never have been sent.
+    test('reports a student whose toggle changed but whose chip did not', () {
+      final pending = pendingAttendanceIds(
+        draft: {1: AttendanceStatus.present},
+        saved: {1: AttendanceStatus.present},
+        missedDraft: {1: true},
+        missedSaved: {1: false},
+      );
+
+      expect(pending, {1});
+    });
+
+    test('ignores a student whose toggle already matches the server', () {
+      final pending = pendingAttendanceIds(
+        draft: {1: AttendanceStatus.present},
+        saved: {1: AttendanceStatus.present},
+        missedDraft: {1: true},
+        missedSaved: {1: true},
+      );
+
+      expect(pending, isEmpty);
+    });
+
+    test('never sends an undecided student even when the toggle changed', () {
+      final pending = pendingAttendanceIds(
+        draft: {1: AttendanceStatus.unset},
+        saved: {},
+        missedDraft: {1: true},
+        missedSaved: {},
+      );
+
+      expect(pending, isEmpty);
+    });
+
+    test('carries the flag for an adult student', () {
+      final payload = attendanceBatchPayload(
+        draft: {1: AttendanceStatus.present},
+        saved: {},
+        date: '2026-08-28',
+        missedDraft: {1: true},
+      );
+
+      expect(payload, [
+        {
+          'studentId': 1,
+          'date': '2026-08-28',
+          'status': 'PRESENT',
+          'missedMemorization': true,
+        },
+      ]);
+    });
+
+    // A child student never accrues a fine, so the key is left off entirely
+    // rather than sent as a meaningless false.
+    test('omits the flag for a student who is not in the adult map', () {
+      final payload = attendanceBatchPayload(
+        draft: {1: AttendanceStatus.present},
+        saved: {},
+        date: '2026-08-28',
+      );
+
+      expect(payload.first.containsKey('missedMemorization'), isFalse);
+    });
+  });
 }

@@ -8,6 +8,15 @@ class HalaqaModel {
   final String? teacherName;
   final int studentCount;
 
+  /// An adults' halaqa charges fines for absence, lateness and a missed
+  /// recitation; a child's halaqa never does. Older payloads that predate
+  /// this feature omit the four fields below, so they default to "no fines"
+  /// rather than leaving the app to guess.
+  final bool isAdult;
+  final int absenceFee;
+  final int lateFee;
+  final int missedMemorizationFee;
+
   /// Always empty as of today's API. `GET /halaqas` (`findAll`) selects only
   /// the teacher and `_count.students`, so no student rows arrive at all; and
   /// `Halaqa.students` is a plain `Student[]` relation, so the rows that
@@ -25,6 +34,10 @@ class HalaqaModel {
     this.teacherName,
     this.studentCount = 0,
     this.students = const [],
+    this.isAdult = false,
+    this.absenceFee = 0,
+    this.lateFee = 0,
+    this.missedMemorizationFee = 0,
   });
 
   factory HalaqaModel.fromJson(Map<String, dynamic> json) {
@@ -54,6 +67,11 @@ class HalaqaModel {
       teacherName: tName,
       studentCount: sCount,
       students: studentsList,
+      isAdult: json['isAdult'] as bool? ?? false,
+      absenceFee: (json['absenceFee'] as num?)?.toInt() ?? 0,
+      lateFee: (json['lateFee'] as num?)?.toInt() ?? 0,
+      missedMemorizationFee:
+          (json['missedMemorizationFee'] as num?)?.toInt() ?? 0,
     );
   }
 

@@ -16,8 +16,11 @@ import '../../../../core/widgets/confirm_duplicate_memorization_dialog.dart';
 import '../../../../core/utils/memorization_duplicates.dart';
 import '../../../../core/widgets/avatar_widget.dart';
 import '../../../../core/providers/auth_provider.dart';
+import '../../../../core/utils/fine_balance.dart';
 import '../../../data/repositories/teacher_repository.dart';
+import '../../../data/repositories/halaqa_repository.dart';
 import '../../../data/models/teacher_student_model.dart';
+import '../../../data/models/halaqa/halaqa_model.dart';
 import 'package:taqwa/core/widgets/app_text.dart';
 
 class AttendancePage extends ConsumerStatefulWidget {
@@ -37,6 +40,16 @@ class _AttendancePageState extends ConsumerState<AttendancePage>
   /// changed and a failed write does not leave the two silently disagreeing.
   final Map<int, AttendanceStatus> _savedAttendance = {};
 
+  /// The "لم يحفظ" toggle, present only for adult students — a child never
+  /// accrues a fine, so his id never enters this map. It changes on its own,
+  /// independently of the status chip, which is exactly why the pending
+  /// comparison in attendance_draft.dart has to consider it too.
+  final Map<int, bool> _missed = {};
+
+  /// What the server last confirmed for the toggle, mirroring
+  /// [_savedAttendance]'s role for the status chip.
+  final Map<int, bool> _savedMissed = {};
+
   final Set<int> _memorizedStudentIds = {};
 
   // What is already on file for today, per student. The ids alone would say
@@ -48,6 +61,21 @@ class _AttendancePageState extends ConsumerState<AttendancePage>
 
   List<TeacherStudentModel> _students = [];
   final _repo = TeacherRepository();
+  final _halaqaRepo = HalaqaRepository();
+
+  /// Each student's own halaqa, resolved once when the roster loads. A
+  /// student's row from `GET /students` nests only `id`, `name` and `level`
+  /// for his halaqa — not the fine fields — so this holds the full
+  /// [HalaqaModel] (fetched separately) for whichever id he belongs to. A
+  /// student with no entry here is treated as a child: never fined, and the
+  /// toggle never renders for him.
+  final Map<int, HalaqaModel> _studentHalaqa = {};
+
+  bool _isAdultStudent(int studentId) =>
+      _studentHalaqa[studentId]?.isAdult ?? false;
+
+  int _missedMemorizationFeeFor(int studentId) =>
+      _studentHalaqa[studentId]?.missedMemorizationFee ?? 0;
 
   final _queueStore = AttendanceQueueStore();
 
@@ -65,8 +93,12 @@ class _AttendancePageState extends ConsumerState<AttendancePage>
   int get _checkedCount =>
       _attendance.values.where((s) => s != AttendanceStatus.unset).length;
 
-  Set<int> get _pendingIds =>
-      pendingAttendanceIds(draft: _attendance, saved: _savedAttendance);
+  Set<int> get _pendingIds => pendingAttendanceIds(
+    draft: _attendance,
+    saved: _savedAttendance,
+    missedDraft: _missed,
+    missedSaved: _savedMissed,
+  );
 
   @override
   void initState() {
@@ -105,18 +137,29 @@ class _AttendancePageState extends ConsumerState<AttendancePage>
         _repo.getStudents(teacherId: tid, limit: 100),
         _repo.getAttendanceByDate(_todayStr),
         _repo.getMemorizationByDate(_todayStr), // NEW
+        _halaqaRepo.getAllHalaqas(),
       ]);
 
       final studentList = (results[0] as StudentListResponse).data;
       final existingRecords = results[1] as List<Map<String, dynamic>>;
       final memorizationRecords =
           results[2] as List<Map<String, dynamic>>; // NEW
+      final halaqas = results[3] as List<HalaqaModel>;
+      final halaqasById = {for (final h in halaqas) h.id: h};
 
       final existingMap = <int, String>{};
+      // The toggle a student's Attendance row carried the last time it was
+      // written. A student with no row at all has neither, which is exactly
+      // why both maps are read together below rather than one implying "no
+      // row means false" — that would be a coincidence of the default, not a
+      // rule this code should lean on.
+      final existingMissedMap = <int, bool>{};
       for (final record in existingRecords) {
         final sId = (record['studentId'] as num?)?.toInt();
         final st = record['status'] as String?;
         if (sId != null && st != null) existingMap[sId] = st;
+        final missed = record['missedMemorization'] as bool?;
+        if (sId != null && missed != null) existingMissedMap[sId] = missed;
       }
 
       final memorizedByStudent = memorizationByStudent(memorizationRecords);
@@ -128,6 +171,11 @@ class _AttendancePageState extends ConsumerState<AttendancePage>
 
       setState(() {
         _students = studentList;
+        _studentHalaqa.clear();
+        for (final s in studentList) {
+          final halaqa = s.halaqaId == null ? null : halaqasById[s.halaqaId];
+          if (halaqa != null) _studentHalaqa[s.id] = halaqa;
+        }
         _memorizedStudentIds
           ..clear()
           ..addAll(memorizedByStudent.keys);
@@ -135,6 +183,7 @@ class _AttendancePageState extends ConsumerState<AttendancePage>
           ..clear()
           ..addAll(memorizedByStudent);
         _savedAttendance.clear();
+        _savedMissed.clear();
         for (final s in studentList) {
           final existing = attendanceStatusFromApi(existingMap[s.id]);
           // A student with no row yet has nothing saved, and `unset` is not a
@@ -145,6 +194,16 @@ class _AttendancePageState extends ConsumerState<AttendancePage>
           }
           if (!stillPending.contains(s.id)) {
             _attendance[s.id] = existing;
+          }
+          // A child never accrues a fine, so his id never enters either
+          // toggle map — that absence is what keeps the switch off his card
+          // and the key off his batch record.
+          if (_isAdultStudent(s.id)) {
+            final existingMissed = existingMissedMap[s.id] ?? false;
+            _savedMissed[s.id] = existingMissed;
+            if (!stillPending.contains(s.id)) {
+              _missed[s.id] = existingMissed;
+            }
           }
         }
         _isLoading = false;
@@ -223,20 +282,37 @@ class _AttendancePageState extends ConsumerState<AttendancePage>
     final apiStatus = status == null ? null : attendanceStatusToApi(status);
     if (status == null || apiStatus == null) return true;
 
+    // Built through the shared payload helper — for a batch of one, with
+    // `saved: {}` so this student is always included — rather than a
+    // hand-rolled map, so the toggle rides along exactly as it would in a
+    // full save. Hand-rolling it here a second time is how it would have
+    // been silently dropped from this path alone.
+    final record = attendanceBatchPayload(
+      draft: {studentId: status},
+      saved: const {},
+      date: _todayStr,
+      missedDraft: _missed,
+    ).first;
+    final missed = record['missedMemorization'] as bool?;
+
     setState(() => _savingStudentIds.add(studentId));
     try {
       await _repo.upsertAttendance(
         studentId: studentId,
         date: _todayStr,
         status: apiStatus,
+        missedMemorization: missed,
       );
-      if (mounted) setState(() => _savedAttendance[studentId] = status);
+      if (mounted) {
+        setState(() {
+          _savedAttendance[studentId] = status;
+          if (missed != null) _savedMissed[studentId] = missed;
+        });
+      }
       await _flushQueue();
       return true;
     } catch (_) {
-      await _enqueue([
-        {'studentId': studentId, 'date': _todayStr, 'status': apiStatus},
-      ]);
+      await _enqueue([record]);
       _showSnack('لا يوجد اتصال، سيتم حفظ الحضور تلقائياً', isError: true);
       // Still false: the server has not taken this mark, so the caller must
       // not open the memorization sheet on top of it.
@@ -251,6 +327,8 @@ class _AttendancePageState extends ConsumerState<AttendancePage>
       draft: _attendance,
       saved: _savedAttendance,
       date: _todayStr,
+      missedDraft: _missed,
+      missedSaved: _savedMissed,
     );
     if (payload.isEmpty || _isSaving) return;
 
@@ -266,6 +344,9 @@ class _AttendancePageState extends ConsumerState<AttendancePage>
           _savedAttendance[id] = attendanceStatusFromApi(
             record['status'] as String,
           );
+          if (record.containsKey('missedMemorization')) {
+            _savedMissed[id] = record['missedMemorization'] as bool;
+          }
         }
       });
       _showSnack('تم حفظ حضور ${payload.length} طالب', isError: false);
@@ -351,6 +432,14 @@ class _AttendancePageState extends ConsumerState<AttendancePage>
           // without these rows, so without this the teacher sees an empty
           // board and marks the halaqa a second time.
           _attendance[id] = status;
+          // Same reasoning for the toggle: a queued record that carried it
+          // must land in both maps, or the flush would leave that student
+          // looking pending forever despite the server now holding his mark.
+          if (record.containsKey('missedMemorization')) {
+            final missed = record['missedMemorization'] as bool;
+            _savedMissed[id] = missed;
+            _missed[id] = missed;
+          }
         }
       });
       _showSnack('تم حفظ ${sending.length} حضور مؤجل', isError: false);
@@ -385,8 +474,19 @@ class _AttendancePageState extends ConsumerState<AttendancePage>
       if (tapped == AttendanceStatus.absent) {
         _memorizedStudentIds.remove(student.id);
         _todayMemorization.remove(student.id);
+        // An absent student is already charged for the absence; leaving a
+        // stale "لم يحفظ" on him would bill the same fact twice, which is
+        // exactly what the server also refuses. The switch itself is about
+        // to become disabled, but the value behind it must not linger true.
+        _missed.remove(student.id);
       }
     });
+  }
+
+  /// Only ever called for an adult student, since the switch does not render
+  /// for anyone else.
+  void _onToggleMissed(int studentId, bool value) {
+    setState(() => _missed[studentId] = value);
   }
 
   /// Backing out of the shell would drop chips that were never written, and a
@@ -468,10 +568,16 @@ class _AttendancePageState extends ConsumerState<AttendancePage>
                                     isPending: _pendingIds.contains(student.id),
                                     hasMemorization: _memorizedStudentIds
                                         .contains(student.id),
+                                    isAdult: _isAdultStudent(student.id),
+                                    missedMemorizationFee:
+                                        _missedMemorizationFeeFor(student.id),
+                                    missed: _missed[student.id] ?? false,
                                     onSelectStatus: (s) =>
                                         _onChipTap(student, s),
                                     onOpenMemorization: () =>
                                         _openMemorizationSheet(student),
+                                    onToggleMissed: (v) =>
+                                        _onToggleMissed(student.id, v),
                                   );
                                 },
                               ),
@@ -618,8 +724,12 @@ class _StudentAttendanceTile extends StatelessWidget {
     required this.isSaving,
     required this.isPending,
     required this.hasMemorization,
+    required this.isAdult,
+    required this.missedMemorizationFee,
+    required this.missed,
     required this.onSelectStatus,
     required this.onOpenMemorization,
+    required this.onToggleMissed,
   });
   final String name;
   final String? avatarUrl;
@@ -631,8 +741,20 @@ class _StudentAttendanceTile extends StatelessWidget {
   /// so without this the teacher cannot tell the two apart.
   final bool isPending;
   final bool hasMemorization;
+
+  /// Whether this student belongs to an adults' halaqa. A child never
+  /// accrues a fine, so the toggle does not render for him at all.
+  final bool isAdult;
+
+  /// What toggling the switch on will charge — shown beside it so the
+  /// teacher sees the cost before she taps, not after.
+  final int missedMemorizationFee;
+
+  /// The current value of the "لم يحفظ" toggle.
+  final bool missed;
   final ValueChanged<AttendanceStatus> onSelectStatus;
   final VoidCallback onOpenMemorization;
+  final ValueChanged<bool> onToggleMissed;
 
   @override
   Widget build(BuildContext context) {
@@ -770,6 +892,46 @@ class _StudentAttendanceTile extends StatelessWidget {
                   ),
                 ],
               ),
+              // A child never accrues a fine, so this row does not exist for
+              // him at all — not even disabled — rather than showing a
+              // switch that could never do anything.
+              if (isAdult) ...[
+                SizedBox(height: 8.h),
+                Row(
+                  mainAxisAlignment: MainAxisAlignment.end,
+                  children: [
+                    AppText(
+                      formatFine(missedMemorizationFee),
+                      style: AppTextStyles.labelSm.copyWith(
+                        color: AppColors.onSurfaceVariant,
+                      ),
+                    ),
+                    SizedBox(width: 6.w),
+                    AppText(
+                      'لم يحفظ',
+                      style: AppTextStyles.labelSm.copyWith(
+                        color: canMemorize
+                            ? AppColors.onSurface
+                            : AppColors.onSurfaceVariant,
+                      ),
+                    ),
+                    Transform.scale(
+                      scale: 0.75,
+                      child: Switch(
+                        value: missed,
+                        activeThumbColor: AppColors.error,
+                        // Absent is already charged for the absence; charging
+                        // the same day twice for a missed recitation would
+                        // double-bill a student who never even sat down, and
+                        // the server refuses this pairing too.
+                        onChanged: canMemorize && !isSaving
+                            ? onToggleMissed
+                            : null,
+                      ),
+                    ),
+                  ],
+                ),
+              ],
             ],
           ),
           SizedBox(width: 18.w),
