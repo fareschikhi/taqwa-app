@@ -16,13 +16,13 @@ export class AttendanceController {
   @Post()
   @Roles(Role.ADMIN, Role.TEACHER)
   create(@Body() dto: CreateAttendanceDto, @CurrentUser() user: any) {
-    return this.attendanceService.create(dto, user?.id ?? null);
+    return this.attendanceService.create(dto, user ?? null);
   }
 
   @Post('batch')
   @Roles(Role.ADMIN, Role.TEACHER)
   createBatch(@Body() dto: CreateBatchAttendanceDto, @CurrentUser() user: any) {
-    return this.attendanceService.createBatch(dto, user?.id ?? null);
+    return this.attendanceService.createBatch(dto, user ?? null);
   }
 
   @Get('student/:id')
@@ -50,6 +50,6 @@ export class AttendanceController {
     @Body() dto: UpdateAttendanceDto,
     @CurrentUser() user: any,
   ) {
-    return this.attendanceService.update(id, dto, user?.id ?? null);
+    return this.attendanceService.update(id, dto, user ?? null);
   }
 }

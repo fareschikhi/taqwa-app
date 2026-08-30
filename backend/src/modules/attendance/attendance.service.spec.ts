@@ -32,6 +32,11 @@ describe('AttendanceService memorization cleanup', () => {
     };
     const prisma = {
       $transaction: jest.fn((cb: any) => cb(tx)),
+      // `update` resolves which student a row belongs to before the
+      // transaction, so the ownership rule has something to check. These tests
+      // pass no actor, so the rule itself is a no-op — the lookup still has to
+      // answer.
+      attendance: { findUnique: jest.fn().mockResolvedValue({ studentId: 7 }) },
       tx,
     };
     return prisma;
@@ -883,5 +888,156 @@ describe('AttendanceService fine reconciliation', () => {
         data: expect.objectContaining({ source: 'MISSED_MEMORIZATION', amount: 30 }),
       }),
     );
+  });
+});
+
+/// Recording attendance now moves money: an ABSENT mark on an adult student
+/// creates a fine. The manual fines path already holds a teacher to her own
+/// halaqa, but this path did not, so a teacher could cost another teacher's
+/// student money and then be unable to reduce it.
+describe('AttendanceService teacher ownership', () => {
+  const TEACHER = { id: 50, role: 'TEACHER', teacher: { id: 3 } };
+  const ADMIN = { id: 1, role: 'ADMIN' };
+
+  /// `rosters` maps a student id to the teacher who runs their halaqa, or null
+  /// for a student who sits in no halaqa at all. An id absent from the map
+  /// stands for a student who does not exist.
+  const makePrisma = (rosters: Record<number, number | null>) => {
+    const tx = {
+      attendance: {
+        findUnique: jest.fn().mockResolvedValue(null),
+        upsert: jest
+          .fn()
+          .mockImplementation(({ create }) => Promise.resolve({ id: 1, ...create })),
+      },
+      memorizationProgress: { deleteMany: jest.fn().mockResolvedValue({ count: 0 }) },
+      student: {
+        findUnique: jest.fn().mockResolvedValue({
+          userId: 30,
+          user: { role: 'STUDENT' },
+          halaqa: null,
+        }),
+      },
+      fineEntry: {
+        findMany: jest.fn().mockResolvedValue([]),
+        deleteMany: jest.fn(),
+        create: jest.fn(),
+      },
+    };
+    const prisma = {
+      $transaction: jest.fn((cb: any) => cb(tx)),
+      student: {
+        findMany: jest.fn().mockImplementation(({ where }) => {
+          const ids: number[] = where.id.in;
+          return Promise.resolve(
+            ids
+              .filter((id) => id in rosters)
+              .map((id) => ({
+                id,
+                halaqa:
+                  rosters[id] === null ? null : { teacherId: rosters[id] },
+              })),
+          );
+        }),
+      },
+      attendance: { findUnique: jest.fn().mockResolvedValue({ studentId: 7 }) },
+      tx,
+    };
+    return prisma;
+  };
+
+  const svc = (prisma: unknown) =>
+    new AttendanceService(prisma as any, { create: jest.fn() } as any);
+
+  const dto = (studentId: number) => ({
+    studentId,
+    date: '2026-08-26',
+    status: AttendanceStatus.ABSENT,
+  });
+
+  it('lets a teacher record attendance for her own halaqa', async () => {
+    const prisma = makePrisma({ 7: 3 });
+
+    await expect(
+      svc(prisma).create(dto(7) as any, TEACHER as any),
+    ).resolves.toBeDefined();
+  });
+
+  it('refuses a teacher recording for another teacher\'s student', async () => {
+    const prisma = makePrisma({ 7: 99 });
+
+    await expect(
+      svc(prisma).create(dto(7) as any, TEACHER as any),
+    ).rejects.toThrow();
+    expect(prisma.$transaction).not.toHaveBeenCalled();
+  });
+
+  // A student in no halaqa has no owning teacher, so no teacher owns him.
+  it('refuses a teacher recording for a student with no halaqa', async () => {
+    const prisma = makePrisma({ 7: null });
+
+    await expect(
+      svc(prisma).create(dto(7) as any, TEACHER as any),
+    ).rejects.toThrow();
+  });
+
+  // Same failure the fines guard had: two undefineds must not cancel out.
+  it('refuses a teacher-role actor carrying no teacher profile', async () => {
+    const prisma = makePrisma({ 7: null });
+    const malformed = { id: 50, role: 'TEACHER' };
+
+    await expect(
+      svc(prisma).create(dto(7) as any, malformed as any),
+    ).rejects.toThrow();
+  });
+
+  it('refuses a student id that does not exist rather than leaking that fact', async () => {
+    const prisma = makePrisma({});
+
+    await expect(
+      svc(prisma).create(dto(404) as any, TEACHER as any),
+    ).rejects.toThrow();
+  });
+
+  it('lets an admin record attendance for any student', async () => {
+    const prisma = makePrisma({ 7: 99 });
+
+    await expect(
+      svc(prisma).create(dto(7) as any, ADMIN as any),
+    ).resolves.toBeDefined();
+    expect(prisma.student.findMany).not.toHaveBeenCalled();
+  });
+
+  // A batch must be refused whole. Writing the teacher's own students and
+  // silently dropping the rest would leave her sheet half-saved with no sign.
+  it('refuses an entire batch when one record is another teacher\'s student', async () => {
+    const prisma = makePrisma({ 7: 3, 8: 99 });
+
+    await expect(
+      svc(prisma).createBatch(
+        { records: [dto(7), dto(8)] } as any,
+        TEACHER as any,
+      ),
+    ).rejects.toThrow();
+    expect(prisma.$transaction).not.toHaveBeenCalled();
+  });
+
+  it('accepts a batch where every student is hers', async () => {
+    const prisma = makePrisma({ 7: 3, 8: 3 });
+
+    await expect(
+      svc(prisma).createBatch(
+        { records: [dto(7), dto(8)] } as any,
+        TEACHER as any,
+      ),
+    ).resolves.toBeDefined();
+  });
+
+  it('refuses a correction to an existing row for another teacher\'s student', async () => {
+    const prisma = makePrisma({ 7: 99 });
+
+    await expect(
+      svc(prisma).update(1, { status: AttendanceStatus.PRESENT } as any, TEACHER as any),
+    ).rejects.toThrow();
   });
 });

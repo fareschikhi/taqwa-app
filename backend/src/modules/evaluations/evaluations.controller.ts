@@ -25,8 +25,13 @@ export class EvaluationsController {
     return this.evaluationsService.findByStudent(id);
   }
 
+  // Staff only, deliberately. This `:id` is an evaluation id, not a student
+  // id, so StudentOwnershipGuard cannot vouch for it — it reads `params.id` as
+  // a student. A parent listed here could therefore read any evaluation in the
+  // school by guessing its id. They reach their own child's through
+  // `student/:id` above, which the guard does cover.
   @Get(':id')
-  @Roles(Role.ADMIN, Role.TEACHER, Role.PARENT)
+  @Roles(Role.ADMIN, Role.TEACHER)
   findOne(@Param('id', ParseIntPipe) id: number) {
     return this.evaluationsService.findOne(id);
   }

@@ -1,4 +1,4 @@
-import { Injectable } from '@nestjs/common';
+import { ForbiddenException, Injectable } from '@nestjs/common';
 import { PrismaService } from '../../prisma/prisma.service';
 import {
   CreateAttendanceDto,
@@ -8,6 +8,16 @@ import {
 import { AttendanceStatus, Prisma } from '@prisma/client';
 import { NotificationsService } from '../notifications/notifications.service';
 import { desiredCharges, HalaqaFineRates } from './fine-reconciliation';
+
+/// Who is recording the attendance. Carries the teacher id because the halaqa
+/// a student sits in is what decides whether a given teacher may write for him.
+/// Mirrors FineActor, so the two paths that move a student's money agree on
+/// what an actor is.
+export type AttendanceActor = {
+  id: number;
+  role: string;
+  teacher?: { id: number } | null;
+};
 
 @Injectable()
 export class AttendanceService {
@@ -185,7 +195,53 @@ export class AttendanceService {
     }
   }
 
-  async create(dto: CreateAttendanceDto, actorUserId: number | null = null) {
+  /// Refuses a teacher writing attendance for a student who is not hers.
+  ///
+  /// Recording attendance now moves money — an ABSENT mark on an adult student
+  /// creates a fine — so this path needs the same ownership rule the manual
+  /// fines path already enforces. Without it a teacher could cost another
+  /// teacher's student money and then be unable to reduce it, since the fines
+  /// service would refuse her the correction.
+  ///
+  /// Reads are deliberately looser and stay that way; ADMIN and MANAGER are
+  /// unrestricted because oversight is their job. A null actor is not a
+  /// teacher and so passes: the controller is the only production caller and
+  /// always supplies one.
+  private async assertCanRecord(
+    studentIds: number[],
+    actor: AttendanceActor | null,
+  ) {
+    if (actor?.role !== 'TEACHER') return;
+
+    // Each side is checked on its own rather than compared directly: a missing
+    // teacher profile and a student with no halaqa would otherwise both read as
+    // undefined and cancel out into an accidental pass.
+    const teacherId = actor.teacher?.id;
+    if (teacherId == null) {
+      throw new ForbiddenException('لا يمكنك تسجيل حضور طالب من حلقة أخرى');
+    }
+
+    const students = await this.prisma.student.findMany({
+      where: { id: { in: studentIds } },
+      select: { id: true, halaqa: { select: { teacherId: true } } },
+    });
+
+    const allowed = new Set(
+      students
+        .filter((s) => s.halaqa?.teacherId === teacherId)
+        .map((s) => s.id),
+    );
+
+    // An id that matched no row fails here too, so a probe cannot tell a
+    // student who does not exist from one in someone else's halaqa.
+    if (studentIds.some((id) => !allowed.has(id))) {
+      throw new ForbiddenException('لا يمكنك تسجيل حضور طالب من حلقة أخرى');
+    }
+  }
+
+  async create(dto: CreateAttendanceDto, actor: AttendanceActor | null = null) {
+    await this.assertCanRecord([dto.studentId], actor);
+    const actorUserId = actor?.id ?? null;
     const date = new Date(dto.date);
     const missedMemorization = dto.missedMemorization ?? false;
     const { record, previous, charged } = await this.prisma.$transaction(
@@ -226,8 +282,16 @@ export class AttendanceService {
 
   async createBatch(
     dto: CreateBatchAttendanceDto,
-    actorUserId: number | null = null,
+    actor: AttendanceActor | null = null,
   ) {
+    // Checked for the whole batch before anything is written. Refusing record
+    // by record would leave the teacher's sheet half-saved, with her own
+    // students recorded and the rest silently dropped.
+    await this.assertCanRecord(
+      dto.records.map((r) => r.studentId),
+      actor,
+    );
+    const actorUserId = actor?.id ?? null;
     const transitions: Array<{
       studentId: number;
       status: AttendanceStatus;
@@ -286,8 +350,10 @@ export class AttendanceService {
     date: string,
     status: AttendanceStatus,
     missedMemorization = false,
-    actorUserId: number | null = null,
+    actor: AttendanceActor | null = null,
   ) {
+    await this.assertCanRecord([studentId], actor);
+    const actorUserId = actor?.id ?? null;
     const day = new Date(date);
     const { record, previous, charged } = await this.prisma.$transaction(
       async (tx) => {
@@ -339,8 +405,18 @@ export class AttendanceService {
   async update(
     id: number,
     dto: UpdateAttendanceDto,
-    actorUserId: number | null = null,
+    actor: AttendanceActor | null = null,
   ) {
+    // The route names an attendance row, not a student, so who it belongs to
+    // has to be looked up before the ownership rule can be applied. A missing
+    // row needs no check — the update below fails on its own.
+    const existing = await this.prisma.attendance.findUnique({
+      where: { id },
+      select: { studentId: true },
+    });
+    if (existing) await this.assertCanRecord([existing.studentId], actor);
+    const actorUserId = actor?.id ?? null;
+
     return this.prisma.$transaction(async (tx) => {
       // The dto may not carry a status at all, so the row that actually
       // resulted is what decides whether the cleanup and reconciliation apply.
