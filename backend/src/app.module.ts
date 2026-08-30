@@ -18,6 +18,7 @@ import { AbsenceJustificationModule } from './modules/absence-justification/abse
 import { StudentNotesModule } from './modules/student-notes/student-notes.module';
 import { UploadsModule } from './modules/uploads/uploads.module';
 import { DevicesModule } from './modules/devices/devices.module';
+import { FinesModule } from './modules/fines/fines.module';
 
 @Module({
   imports: [
@@ -40,6 +41,7 @@ import { DevicesModule } from './modules/devices/devices.module';
     StudentNotesModule,
     UploadsModule,
     DevicesModule,
+    FinesModule,
   ],
   controllers: [AppController],
   providers: [AppService],
