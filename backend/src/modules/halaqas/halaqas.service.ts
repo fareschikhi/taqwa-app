@@ -96,10 +96,31 @@ export class HalaqasService {
     if (!halaqa) throw new NotFoundException('الحلقة غير موجودة');
 
     const { studentIds, ...halaqaData } = dto;
-    await this.assertEnrolmentMatches(
-      dto.isAdult ?? halaqa.isAdult,
-      studentIds,
-    );
+    const nextIsAdult = dto.isAdult ?? halaqa.isAdult;
+
+    // `assertEnrolmentMatches` only checks the roster it is handed, and it is
+    // handed nothing whenever the edit form omits `studentIds` (which it
+    // always does — the update endpoint replaces the whole roster, so a
+    // partial list would disconnect everyone the admin did not re-pick).
+    // That is fine when the halaqa's type isn't changing. But if `isAdult`
+    // IS flipping and no new roster was sent, the *existing* roster is about
+    // to become mismatched with nobody having ever checked it — so load who
+    // is currently connected and validate that roster against the new type
+    // instead of silently trusting it.
+    let idsToValidate = studentIds;
+    if (
+      studentIds === undefined &&
+      dto.isAdult !== undefined &&
+      dto.isAdult !== halaqa.isAdult
+    ) {
+      const currentRoster = await this.prisma.student.findMany({
+        where: { halaqaId: id },
+        select: { id: true },
+      });
+      idsToValidate = currentRoster.map((s) => s.id);
+    }
+
+    await this.assertEnrolmentMatches(nextIsAdult, idsToValidate);
 
     return this.prisma.halaqa.update({
       where: { id },

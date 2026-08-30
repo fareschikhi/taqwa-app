@@ -36,5 +36,35 @@ void main() {
         'parentId': 5,
       });
     });
+
+    test('carries a password for an adult student', () {
+      final json = const StudentPayloadDto(
+        fullName: 'بلال شرقيني',
+        phone: '0550000000',
+        birthDate: '1998-01-01',
+        address: 'الجزائر العاصمة',
+        isAdult: true,
+        password: 'secret123',
+      ).toJson();
+
+      expect(json['isAdult'], true);
+      expect(json['password'], 'secret123');
+    });
+
+    // An adult student is his own guardian by construction, so a parent on
+    // his record would be dead data the backend never reads.
+    test('omits parentId for an adult student even if one was picked', () {
+      final json = const StudentPayloadDto(
+        fullName: 'بلال شرقيني',
+        phone: '0550000000',
+        birthDate: '1998-01-01',
+        address: 'الجزائر العاصمة',
+        isAdult: true,
+        password: 'secret123',
+        parentId: 4,
+      ).toJson();
+
+      expect(json.containsKey('parentId'), isFalse);
+    });
   });
 }
