@@ -1,4 +1,4 @@
-enum UserRole { admin, teacher, parent, student, manager }
+enum UserRole { admin, teacher, parent, student, adultStudent, manager }
 
 class UserModel {
   final int id;
@@ -45,6 +45,9 @@ class UserModel {
         break;
       case 'STUDENT':
         roleVal = UserRole.student;
+        break;
+      case 'ADULT_STUDENT':
+        roleVal = UserRole.adultStudent;
         break;
       case 'MANAGER':
         roleVal = UserRole.manager;
@@ -97,7 +100,17 @@ class UserModel {
       'fullName': fullName,
       'email': email,
       'phone': phone,
-      'role': role.name.toUpperCase(),
+      // Written out explicitly rather than derived from the Dart identifier:
+      // `role.name.toUpperCase()` would turn `adultStudent` into
+      // `ADULTSTUDENT`, which the API does not recognise.
+      'role': switch (role) {
+        UserRole.admin => 'ADMIN',
+        UserRole.teacher => 'TEACHER',
+        UserRole.parent => 'PARENT',
+        UserRole.student => 'STUDENT',
+        UserRole.adultStudent => 'ADULT_STUDENT',
+        UserRole.manager => 'MANAGER',
+      },
       'avatar': avatar,
       'isActive': isActive,
       if (studentId != null) 'student': {'id': studentId},

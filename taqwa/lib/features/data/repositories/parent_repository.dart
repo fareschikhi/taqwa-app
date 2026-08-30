@@ -14,6 +14,14 @@ class ParentRepository {
   Future<List<ParentChildModel>> getChildren(int parentId) =>
       _ds.getChildren(parentId);
 
+  /// An adult student switches between no one but himself, so his "children"
+  /// list is his own record wrapped in a single-element list — that keeps
+  /// selected_student_provider's `load()` one code path for both roles.
+  Future<List<ParentChildModel>> getSelf(int studentId) async {
+    final self = await _ds.getSelf(studentId);
+    return [self];
+  }
+
   Future<ParentModel> createParent(ParentPayloadDto parent) =>
       _ds.create(parent);
 

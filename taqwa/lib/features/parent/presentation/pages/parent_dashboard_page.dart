@@ -7,7 +7,7 @@ import '../../../../core/constants/app_constants.dart';
 import '../../../../core/widgets/app_card.dart';
 import '../../../../core/widgets/avatar_widget.dart';
 import '../../../../core/providers/auth_provider.dart';
-import '../../../../core/providers/selected_child_provider.dart';
+import '../../../../core/providers/selected_student_provider.dart';
 import '../../../../core/utils/last_session.dart';
 import '../../../../core/widgets/last_session_card.dart';
 import '../../../data/repositories/student_repository.dart';
@@ -37,7 +37,7 @@ class _ParentDashboardPageState extends ConsumerState<ParentDashboardPage> {
   void initState() {
     super.initState();
     WidgetsBinding.instance.addPostFrameCallback((_) {
-      final id = ref.read(selectedChildProvider).selected?.id;
+      final id = ref.read(selectedStudentProvider).selected?.id;
       if (id != null) _load(id);
     });
   }
@@ -72,11 +72,11 @@ class _ParentDashboardPageState extends ConsumerState<ParentDashboardPage> {
 
   @override
   Widget build(BuildContext context) {
-    final childState = ref.watch(selectedChildProvider);
+    final childState = ref.watch(selectedStudentProvider);
     final child = childState.selected;
     final parentName = ref.watch(authProvider).user?.fullName ?? '';
 
-    ref.listen(selectedChildProvider, (previous, next) {
+    ref.listen(selectedStudentProvider, (previous, next) {
       final id = next.selected?.id;
       if (id != null && id != _loadedChildId) _load(id);
     });

@@ -4,7 +4,7 @@ import 'package:flutter_screenutil/flutter_screenutil.dart';
 import '../../../../core/theme/app_colors.dart';
 import '../../../../core/theme/app_text_styles.dart';
 import '../../../../core/constants/app_constants.dart';
-import '../../../../core/providers/selected_child_provider.dart';
+import '../../../../core/providers/selected_student_provider.dart';
 import '../../../data/repositories/student_repository.dart';
 import '../../../data/models/attendance_summary_model.dart';
 import 'package:taqwa/core/widgets/app_text.dart';
@@ -29,7 +29,7 @@ class _ChildAttendanceHistoryPageState
   void initState() {
     super.initState();
     WidgetsBinding.instance.addPostFrameCallback((_) {
-      final id = ref.read(selectedChildProvider).selected?.id;
+      final id = ref.read(selectedStudentProvider).selected?.id;
       if (id != null) _load(id);
     });
   }
@@ -58,9 +58,9 @@ class _ChildAttendanceHistoryPageState
 
   @override
   Widget build(BuildContext context) {
-    final child = ref.watch(selectedChildProvider).selected;
+    final child = ref.watch(selectedStudentProvider).selected;
 
-    ref.listen(selectedChildProvider, (previous, next) {
+    ref.listen(selectedStudentProvider, (previous, next) {
       final id = next.selected?.id;
       if (id != null && id != _loadedChildId) _load(id);
     });

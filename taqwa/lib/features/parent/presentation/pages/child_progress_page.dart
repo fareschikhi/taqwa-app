@@ -6,7 +6,7 @@ import '../../../../core/theme/app_text_styles.dart';
 import '../../../../core/constants/app_constants.dart';
 import '../../../../core/constants/surahs.dart';
 import '../../../../core/enums/memorization_type.dart';
-import '../../../../core/providers/selected_child_provider.dart';
+import '../../../../core/providers/selected_student_provider.dart';
 import '../../../../core/utils/memorization_history.dart';
 import '../../../data/repositories/student_repository.dart';
 import 'package:taqwa/core/widgets/app_text.dart';
@@ -29,7 +29,7 @@ class _ChildProgressPageState extends ConsumerState<ChildProgressPage> {
   void initState() {
     super.initState();
     WidgetsBinding.instance.addPostFrameCallback((_) {
-      final id = ref.read(selectedChildProvider).selected?.id;
+      final id = ref.read(selectedStudentProvider).selected?.id;
       if (id != null) _load(id);
     });
   }
@@ -58,9 +58,9 @@ class _ChildProgressPageState extends ConsumerState<ChildProgressPage> {
 
   @override
   Widget build(BuildContext context) {
-    final child = ref.watch(selectedChildProvider).selected;
+    final child = ref.watch(selectedStudentProvider).selected;
 
-    ref.listen(selectedChildProvider, (previous, next) {
+    ref.listen(selectedStudentProvider, (previous, next) {
       final id = next.selected?.id;
       if (id != null && id != _loadedChildId) _load(id);
     });

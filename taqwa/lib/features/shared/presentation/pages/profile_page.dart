@@ -27,6 +27,8 @@ String roleLabelFor(UserRole role) {
       return 'ولي أمر';
     case UserRole.student:
       return 'طالب';
+    case UserRole.adultStudent:
+      return 'طالب بالغ';
   }
 }
 

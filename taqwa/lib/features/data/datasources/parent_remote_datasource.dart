@@ -25,6 +25,16 @@ class ParentRemoteDatasource {
         .toList();
   }
 
+  /// An adult student has no parent record, so there is no `/children` list
+  /// to fetch. GET /students/:id returns the same `user`/`halaqa`/`_count`
+  /// shape that GET /parents/:id/children returns per child, so it parses
+  /// with the same model; the ownership guard on that route is what keeps
+  /// him from reaching anyone else's record.
+  Future<ParentChildModel> getSelf(int studentId) async {
+    final res = await _dio.get('${ApiEndpoints.students}/$studentId');
+    return ParentChildModel.fromJson(res.data as Map<String, dynamic>);
+  }
+
   Future<ParentModel> create(ParentPayloadDto dto) async {
     final res = await _dio.post(ApiEndpoints.parents, data: dto.toJson());
     return ParentModel.fromJson(res.data);

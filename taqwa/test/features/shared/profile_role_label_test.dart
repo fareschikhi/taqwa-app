@@ -12,6 +12,8 @@ void main() {
       expect(roleLabelFor(UserRole.manager), 'مشرف');
       expect(roleLabelFor(UserRole.teacher), 'معلم');
       expect(roleLabelFor(UserRole.parent), 'ولي أمر');
+      expect(roleLabelFor(UserRole.student), 'طالب');
+      expect(roleLabelFor(UserRole.adultStudent), 'طالب بالغ');
     });
 
     test('does not fall back to parent for a manager', () {

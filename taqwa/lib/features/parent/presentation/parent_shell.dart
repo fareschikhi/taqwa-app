@@ -7,7 +7,7 @@ import '../../../core/theme/app_colors.dart';
 import '../../../core/theme/app_text_styles.dart';
 import '../../../core/theme/app_shadows.dart';
 import '../../../core/constants/app_constants.dart';
-import '../../../core/providers/selected_child_provider.dart';
+import '../../../core/providers/selected_student_provider.dart';
 import '../../../core/widgets/avatar_widget.dart';
 import 'pages/parent_dashboard_page.dart';
 import 'pages/child_progress_page.dart';
@@ -47,7 +47,7 @@ class _ParentShellState extends ConsumerState<ParentShell> {
       const ProfilePage(role: 'parent'),
     ];
     WidgetsBinding.instance.addPostFrameCallback((_) {
-      ref.read(selectedChildProvider.notifier).load();
+      ref.read(selectedStudentProvider.notifier).load();
       _loadUnread();
     });
 
@@ -83,9 +83,9 @@ class _ParentShellState extends ConsumerState<ParentShell> {
 
   @override
   Widget build(BuildContext context) {
-    final childState = ref.watch(selectedChildProvider);
+    final childState = ref.watch(selectedStudentProvider);
 
-    if (childState.isLoading && childState.children.isEmpty) {
+    if (childState.isLoading && childState.students.isEmpty) {
       return const Scaffold(
         backgroundColor: AppColors.background,
         body: Center(
@@ -94,7 +94,7 @@ class _ParentShellState extends ConsumerState<ParentShell> {
       );
     }
 
-    if (childState.children.isEmpty) {
+    if (childState.students.isEmpty) {
       return Scaffold(
         backgroundColor: AppColors.background,
         body: SafeArea(
@@ -117,7 +117,7 @@ class _ParentShellState extends ConsumerState<ParentShell> {
     return Scaffold(
       body: Column(
         children: [
-          if (childState.children.length > 1) _buildChildSwitcher(childState),
+          if (childState.students.length > 1) _buildChildSwitcher(childState),
           Expanded(
             child: IndexedStack(index: _currentIndex, children: _pages),
           ),
@@ -127,7 +127,7 @@ class _ParentShellState extends ConsumerState<ParentShell> {
     );
   }
 
-  Widget _buildChildSwitcher(SelectedChildState childState) {
+  Widget _buildChildSwitcher(SelectedStudentState childState) {
     return Container(
       color: AppColors.surfaceContainerLowest,
       padding: EdgeInsets.symmetric(horizontal: 12.w, vertical: 8.h),
@@ -138,14 +138,14 @@ class _ParentShellState extends ConsumerState<ParentShell> {
           child: ListView.separated(
             reverse: true,
             scrollDirection: Axis.horizontal,
-            itemCount: childState.children.length,
+            itemCount: childState.students.length,
             separatorBuilder: (_, _) => SizedBox(width: 8.w),
             itemBuilder: (_, i) {
-              final child = childState.children[i];
+              final child = childState.students[i];
               final isSelected = child.id == childState.selected?.id;
               return GestureDetector(
                 onTap: () =>
-                    ref.read(selectedChildProvider.notifier).select(child),
+                    ref.read(selectedStudentProvider.notifier).select(child),
                 child: AnimatedContainer(
                   duration: AppConstants.animFast,
                   padding: EdgeInsets.symmetric(horizontal: 10.w, vertical: 6.h),
