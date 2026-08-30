@@ -115,12 +115,15 @@ describe('StudentsService.create', () => {
 });
 
 describe('StudentsService.update', () => {
-  const makePrisma = () => ({
+  const makePrisma = (role: string = 'STUDENT') => ({
     student: {
-      findUnique: jest.fn().mockResolvedValue({ id: 7, userId: 42 }),
+      findUnique: jest
+        .fn()
+        .mockResolvedValue({ id: 7, userId: 42, user: { role } }),
       update: jest.fn().mockResolvedValue({ id: 7 }),
     },
     user: { update: jest.fn(), findFirst: jest.fn() },
+    halaqa: { findUnique: jest.fn() },
   });
 
   it('ignores a password a stale client still sends', async () => {
@@ -167,5 +170,189 @@ describe('StudentsService.update', () => {
     expect(prisma.student.update.mock.calls[0][0].data).toEqual({
       address: 'Algiers',
     });
+  });
+});
+
+// The halaqa/students pairing can be broken from either side of the relation:
+// HalaqasService checks it when a halaqa's roster is written, and these cover
+// the same invariant reached instead through a student's own halaqaId.
+describe('StudentsService halaqa pairing', () => {
+  it('refuses moving a child student into an adults\' halaqa on update', async () => {
+    const prisma = {
+      student: {
+        findUnique: jest
+          .fn()
+          .mockResolvedValue({ id: 7, userId: 42, user: { role: 'STUDENT' } }),
+        update: jest.fn(),
+      },
+      user: { update: jest.fn(), findFirst: jest.fn() },
+      halaqa: { findUnique: jest.fn().mockResolvedValue({ isAdult: true }) },
+    };
+    const service = new StudentsService(prisma as any);
+
+    await expect(
+      service.update(7, { halaqaId: 3 } as any),
+    ).rejects.toBeInstanceOf(BadRequestException);
+    expect(prisma.student.update).not.toHaveBeenCalled();
+  });
+
+  it('refuses moving an adult student into a normal halaqa on update', async () => {
+    const prisma = {
+      student: {
+        findUnique: jest.fn().mockResolvedValue({
+          id: 7,
+          userId: 42,
+          user: { role: 'ADULT_STUDENT' },
+        }),
+        update: jest.fn(),
+      },
+      user: { update: jest.fn(), findFirst: jest.fn() },
+      halaqa: { findUnique: jest.fn().mockResolvedValue({ isAdult: false }) },
+    };
+    const service = new StudentsService(prisma as any);
+
+    await expect(
+      service.update(7, { halaqaId: 3 } as any),
+    ).rejects.toBeInstanceOf(BadRequestException);
+    expect(prisma.student.update).not.toHaveBeenCalled();
+  });
+
+  it('allows moving a normal student into a matching halaqa on update', async () => {
+    const prisma = {
+      student: {
+        findUnique: jest
+          .fn()
+          .mockResolvedValue({ id: 7, userId: 42, user: { role: 'STUDENT' } }),
+        update: jest.fn().mockResolvedValue({ id: 7 }),
+      },
+      user: { update: jest.fn(), findFirst: jest.fn() },
+      halaqa: { findUnique: jest.fn().mockResolvedValue({ isAdult: false }) },
+    };
+    const service = new StudentsService(prisma as any);
+
+    await service.update(7, { halaqaId: 3 } as any);
+
+    expect(prisma.student.update.mock.calls[0][0].data).toEqual({
+      halaqaId: 3,
+    });
+  });
+
+  it('allows moving an adult student into a matching adults\' halaqa on update', async () => {
+    const prisma = {
+      student: {
+        findUnique: jest.fn().mockResolvedValue({
+          id: 7,
+          userId: 42,
+          user: { role: 'ADULT_STUDENT' },
+        }),
+        update: jest.fn().mockResolvedValue({ id: 7 }),
+      },
+      user: { update: jest.fn(), findFirst: jest.fn() },
+      halaqa: { findUnique: jest.fn().mockResolvedValue({ isAdult: true }) },
+    };
+    const service = new StudentsService(prisma as any);
+
+    await service.update(7, { halaqaId: 3 } as any);
+
+    expect(prisma.student.update.mock.calls[0][0].data).toEqual({
+      halaqaId: 3,
+    });
+  });
+
+  // Clearing the halaqa has nothing to mismatch against, and omitting it
+  // entirely means the student isn't moving at all — neither should touch
+  // the halaqas table.
+  it('clears halaqaId without checking the pairing', async () => {
+    const prisma = {
+      student: {
+        findUnique: jest
+          .fn()
+          .mockResolvedValue({ id: 7, userId: 42, user: { role: 'STUDENT' } }),
+        update: jest.fn().mockResolvedValue({ id: 7 }),
+      },
+      user: { update: jest.fn(), findFirst: jest.fn() },
+      halaqa: { findUnique: jest.fn() },
+    };
+    const service = new StudentsService(prisma as any);
+
+    await service.update(7, { halaqaId: null } as any);
+
+    expect(prisma.halaqa.findUnique).not.toHaveBeenCalled();
+    expect(prisma.student.update.mock.calls[0][0].data).toEqual({
+      halaqaId: null,
+    });
+  });
+
+  it('issues no halaqa query when halaqaId is omitted from the update', async () => {
+    const prisma = {
+      student: {
+        findUnique: jest
+          .fn()
+          .mockResolvedValue({ id: 7, userId: 42, user: { role: 'STUDENT' } }),
+        update: jest.fn().mockResolvedValue({ id: 7 }),
+      },
+      user: { update: jest.fn(), findFirst: jest.fn() },
+      halaqa: { findUnique: jest.fn() },
+    };
+    const service = new StudentsService(prisma as any);
+
+    await service.update(7, { address: 'Algiers' });
+
+    expect(prisma.halaqa.findUnique).not.toHaveBeenCalled();
+  });
+
+  const createPayload = {
+    fullName: 'Bilal Cherguini',
+    phone: '4008',
+    address: 'الجزائر العاصمة',
+    birthDate: '2012-05-01',
+  };
+
+  it('refuses creating a child student directly into an adults\' halaqa', async () => {
+    const prisma = {
+      user: { create: jest.fn() },
+      student: { findUnique: jest.fn() },
+      halaqa: { findUnique: jest.fn().mockResolvedValue({ isAdult: true }) },
+    };
+    const service = new StudentsService(prisma as any);
+
+    await expect(
+      service.create({ ...createPayload, halaqaId: 3 } as any),
+    ).rejects.toBeInstanceOf(BadRequestException);
+    expect(prisma.user.create).not.toHaveBeenCalled();
+  });
+
+  it('refuses creating an adult student directly into a normal halaqa', async () => {
+    const prisma = {
+      user: { create: jest.fn() },
+      student: { findUnique: jest.fn() },
+      halaqa: { findUnique: jest.fn().mockResolvedValue({ isAdult: false }) },
+    };
+    const service = new StudentsService(prisma as any);
+
+    await expect(
+      service.create({
+        ...createPayload,
+        halaqaId: 3,
+        isAdult: true,
+        password: 'secret123',
+      } as any),
+    ).rejects.toBeInstanceOf(BadRequestException);
+    expect(prisma.user.create).not.toHaveBeenCalled();
+  });
+
+  it('allows creating a student directly into a matching halaqa', async () => {
+    const prisma = {
+      user: {
+        create: jest.fn().mockResolvedValue({ id: 42, student: { id: 7 } }),
+      },
+      student: { findUnique: jest.fn().mockResolvedValue({ id: 7 }) },
+      halaqa: { findUnique: jest.fn().mockResolvedValue({ isAdult: false }) },
+    };
+    const service = new StudentsService(prisma as any);
+
+    await service.create({ ...createPayload, halaqaId: 3 } as any);
+
+    expect(prisma.user.create).toHaveBeenCalled();
   });
 });

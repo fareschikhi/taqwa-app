@@ -96,12 +96,39 @@ export class StudentsService {
     return s;
   }
 
+  /// Mirrors `HalaqasService.assertEnrolmentMatches` from the other side of
+  /// the same relation. That check only runs when a halaqa's own roster is
+  /// written, but a student can just as well arrive at a halaqa through this
+  /// service's `halaqaId`, so the pairing has to be re-checked here too or an
+  /// admin can slip a child into an adults' halaqa (or the reverse) through
+  /// this door instead. A missing halaqa is left for the foreign key
+  /// constraint downstream to report rather than duplicated here.
+  private async assertHalaqaMatches(halaqaId: number, isAdult: boolean) {
+    const halaqa = await this.prisma.halaqa.findUnique({
+      where: { id: halaqaId },
+      select: { isAdult: true },
+    });
+    if (!halaqa) return;
+
+    if (halaqa.isAdult !== isAdult) {
+      throw new BadRequestException(
+        halaqa.isAdult
+          ? 'حلقة الكبار تقبل الطلاب البالغين فقط'
+          : 'لا يمكن إضافة طالب بالغ إلى حلقة عادية',
+      );
+    }
+  }
+
   async create(dto: CreateStudentDto) {
     const phone =
       dto.phone && dto.phone.trim() !== '' ? dto.phone.trim() : undefined;
 
     if (dto.isAdult && !dto.password) {
       throw new BadRequestException('كلمة المرور مطلوبة للطالب البالغ');
+    }
+
+    if (dto.halaqaId !== undefined) {
+      await this.assertHalaqaMatches(dto.halaqaId, dto.isAdult ?? false);
     }
 
     try {
@@ -143,7 +170,10 @@ export class StudentsService {
   }
 
   async update(id: number, dto: UpdateStudentDto) {
-    const student = await this.prisma.student.findUnique({ where: { id } });
+    const student = await this.prisma.student.findUnique({
+      where: { id },
+      include: { user: { select: { role: true } } },
+    });
     if (!student) throw new NotFoundException('الطالب غير موجود');
 
     const userUpdate: any = {};
@@ -169,7 +199,17 @@ export class StudentsService {
     if (dto.birthDate) studentUpdate.birthDate = new Date(dto.birthDate);
     if (dto.address !== undefined) studentUpdate.address = dto.address;
     if (dto.parentId !== undefined) studentUpdate.parentId = dto.parentId;
-    if (dto.halaqaId !== undefined) studentUpdate.halaqaId = dto.halaqaId;
+    if (dto.halaqaId !== undefined) {
+      // Clearing the halaqa (null) has nothing to mismatch against, so only a
+      // move into an actual halaqa needs the pairing checked.
+      if (dto.halaqaId !== null) {
+        await this.assertHalaqaMatches(
+          dto.halaqaId,
+          student.user.role === 'ADULT_STUDENT',
+        );
+      }
+      studentUpdate.halaqaId = dto.halaqaId;
+    }
     // Compared against undefined, not truthiness: '' is how a teacher retracts
     // a rating, and a falsy check would silently drop that.
     if (dto.currentRating !== undefined)
