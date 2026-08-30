@@ -38,6 +38,7 @@ const makeService = (
 // The teacher who owns the halaqa these fixtures put the student in.
 const TEACHER = { id: 50, role: 'TEACHER', teacher: { id: 3 } };
 const ADMIN = { id: 1, role: 'ADMIN' };
+const MANAGER = { id: 2, role: 'MANAGER' };
 
 describe('FinesService.findByStudent', () => {
   it('sums charges minus reductions', async () => {
@@ -132,6 +133,55 @@ describe('FinesService.create', () => {
     await service.create(
       { studentId: 7, kind: 'CHARGE', amount: 40 } as any,
       ADMIN,
+    );
+
+    expect(prisma.fineEntry.create).toHaveBeenCalled();
+  });
+
+  // Two undefineds must not cancel out into a pass: a teacher-role actor with
+  // no teacher profile is malformed and must be refused regardless of whether
+  // the student happens to have no halaqa either.
+  it('refuses a teacher-role actor with no teacher profile, even against a student with no halaqa', async () => {
+    const { service } = makeService([], null);
+
+    await expect(
+      service.create(
+        { studentId: 7, kind: 'CHARGE', amount: 40 } as any,
+        { id: 50, role: 'TEACHER' },
+      ),
+    ).rejects.toBeInstanceOf(ForbiddenException);
+  });
+
+  // A student with no halaqa has no owning teacher, so no teacher — however
+  // well-formed the actor — may pass this check for him.
+  it('refuses a teacher with a valid profile when the student has no halaqa', async () => {
+    const { service } = makeService([], null);
+
+    await expect(
+      service.create(
+        { studentId: 7, kind: 'CHARGE', amount: 40 } as any,
+        TEACHER,
+      ),
+    ).rejects.toBeInstanceOf(ForbiddenException);
+  });
+
+  it('lets an admin charge a student with no halaqa', async () => {
+    const { service, prisma } = makeService([], null);
+
+    await service.create(
+      { studentId: 7, kind: 'CHARGE', amount: 40 } as any,
+      ADMIN,
+    );
+
+    expect(prisma.fineEntry.create).toHaveBeenCalled();
+  });
+
+  it('lets a manager charge a student with no halaqa', async () => {
+    const { service, prisma } = makeService([], null);
+
+    await service.create(
+      { studentId: 7, kind: 'CHARGE', amount: 40 } as any,
+      MANAGER,
     );
 
     expect(prisma.fineEntry.create).toHaveBeenCalled();

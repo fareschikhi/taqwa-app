@@ -33,7 +33,18 @@ export class FinesService {
       select: { halaqa: { select: { teacherId: true } } },
     });
 
-    if (student?.halaqa?.teacherId !== actor.teacher?.id) {
+    // Each side is checked on its own rather than compared directly: two
+    // missing values (a teacher-role actor with no teacher profile, a student
+    // with no halaqa) must not cancel out into a pass. A missing teacher
+    // profile is a malformed actor and a halaqa-less student has no owning
+    // teacher, so either absence alone is grounds to refuse.
+    const teacherId = actor.teacher?.id;
+    const owningTeacherId = student?.halaqa?.teacherId;
+    if (
+      teacherId == null ||
+      owningTeacherId == null ||
+      teacherId !== owningTeacherId
+    ) {
       throw new ForbiddenException('لا يمكنك تعديل رسوم طالب من حلقة أخرى');
     }
   }
