@@ -408,7 +408,7 @@ class _StudentFormPageState extends State<StudentFormPage> {
       initialDate: _selectedBirthDate ?? DateTime(2012),
       firstDate: DateTime(1990),
       lastDate: DateTime.now(),
-      locale: const Locale('ar'),
+      locale: const Locale('fr'),
     );
     if (picked == null) return;
     setState(() {
