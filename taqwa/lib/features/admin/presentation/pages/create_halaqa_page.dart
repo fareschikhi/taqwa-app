@@ -12,6 +12,7 @@ import '../../../../core/constants/app_constants.dart';
 import '../../../../core/widgets/app_button.dart';
 import '../../../../core/widgets/app_text_field.dart';
 import '../../../../core/widgets/user_selector_field.dart';
+import '../../../../core/widgets/confirm_second_halaqa_dialog.dart';
 import 'package:taqwa/core/widgets/app_text.dart';
 
 /// Builds the body sent to create or update a halaqa.
@@ -54,6 +55,36 @@ Map<String, dynamic> buildHalaqaPayload({
   };
 }
 
+/// The halaqas [selectedTeacherId] already runs, ignoring the one being
+/// edited. Empty means this save asks nothing of her that needs confirming.
+///
+/// The school's norm is one halaqa per teacher, so a non-empty result is what
+/// the confirmation dialog exists for — it both decides that a dialog is owed
+/// and supplies the names it lists.
+///
+/// Keeping a halaqa's existing teacher returns empty even when she is already
+/// over the norm: renaming a halaqa or editing its fees moves nobody, and a
+/// dialog on every such save would train the admin to dismiss it unread. Only
+/// a save that actually hands her a halaqa she does not already have asks.
+@visibleForTesting
+List<String> otherHalaqasOf({
+  required int? selectedTeacherId,
+  required int? currentTeacherId,
+  required int? editingHalaqaId,
+  required List<HalaqaModel> allHalaqas,
+}) {
+  if (selectedTeacherId == null) return const [];
+  if (selectedTeacherId == currentTeacherId) return const [];
+
+  return allHalaqas
+      .where((h) => h.teacherId == selectedTeacherId)
+      // The row under edit is about to become hers by this very save, so it
+      // is never evidence that she already had a halaqa.
+      .where((h) => h.id != editingHalaqaId)
+      .map((h) => h.name)
+      .toList();
+}
+
 class CreateHalaqaPage extends StatefulWidget {
   /// Pass [editHalaqa] to pre-fill the form for editing an existing halaqa.
   const CreateHalaqaPage({super.key, this.editHalaqa});
@@ -76,6 +107,11 @@ class _CreateHalaqaPageState extends State<CreateHalaqaPage> {
   final _missedMemorizationFeeController = TextEditingController();
 
   List<TeacherModel> _teachers = [];
+  /// Every halaqa in the school, used only to work out whether the picked
+  /// teacher already runs one. The admin's own `GET /halaqas` is unfiltered,
+  /// so this needs nothing from the teachers endpoint — which a teacher can
+  /// also read, and which must not start carrying colleagues' halaqa names.
+  List<HalaqaModel> _allHalaqas = [];
   List<StudentModel> _allStudents = [];
   List<StudentModel> _filteredStudents = [];
   final List<StudentModel> _selectedStudents = [];
@@ -103,6 +139,7 @@ class _CreateHalaqaPageState extends State<CreateHalaqaPage> {
           h.missedMemorizationFee.toString();
     }
     _loadTeachers();
+    _loadHalaqas();
     // Students back the create-only picker, so they are not needed on edit.
     if (!_isEditing) _loadStudents();
     _studentSearchController.addListener(_onSearchChanged);
@@ -111,6 +148,11 @@ class _CreateHalaqaPageState extends State<CreateHalaqaPage> {
   Future<void> _loadTeachers() async {
     final result = await _teacherRepository.getAllTeachers();
     if (mounted) setState(() => _teachers = result);
+  }
+
+  Future<void> _loadHalaqas() async {
+    final result = await _repo.getAllHalaqas();
+    if (mounted) setState(() => _allHalaqas = result);
   }
 
   Future<void> _loadStudents() async {
@@ -194,6 +236,28 @@ class _CreateHalaqaPageState extends State<CreateHalaqaPage> {
         const SnackBar(content: AppText('يرجى اختيار المعلم')),
       );
       return;
+    }
+
+    // One halaqa per teacher is the norm, and a second is allowed only if the
+    // admin means it. Nothing on the server enforces this: it is a judgement
+    // about staffing, not a data rule, so the halaqa stays saveable either way
+    // and the check lives at the point where a person can answer for it.
+    final alsoRuns = otherHalaqasOf(
+      selectedTeacherId: _selectedTeacherId,
+      currentTeacherId: widget.editHalaqa?.teacherId,
+      editingHalaqaId: widget.editHalaqa?.id,
+      allHalaqas: _allHalaqas,
+    );
+    if (alsoRuns.isNotEmpty) {
+      // The picker is built from `_teachers`, so a miss here means the list
+      // had not arrived yet; the prompt still has to read as a sentence.
+      final match = _teachers.where((t) => t.id == _selectedTeacherId);
+      final confirmed = await ConfirmSecondHalaqaDialog.show(
+        context,
+        teacherName: match.isEmpty ? 'هذا المعلم' : match.first.fullName,
+        existingHalaqas: alsoRuns,
+      );
+      if (!confirmed || !mounted) return;
     }
 
     setState(() => _isLoading = true);
