@@ -24,7 +24,8 @@ Map<int, List<Map<String, dynamic>>> memorizationByStudent(
   return grouped;
 }
 
-/// One line describing a record, e.g. `سورة الأعراف · حفظ جديد · 2 صفحة`.
+/// One line describing a record, e.g. `سورة الأعراف · حفظ جديد · 2 صفحة` or,
+/// for a hadith entry, `حديث النية · حفظ جديد · 1 حديث`.
 ///
 /// Used to show the teacher exactly what is already on file, so the warning
 /// names the work rather than just asserting that some exists.
@@ -35,8 +36,16 @@ String memorizationSummary(Map<String, dynamic> record) {
       MemorizationTypeX.fromApi(record['memorizationType'] as String?) ??
       MemorizationType.hifz;
   final typeLabel = type == MemorizationType.hifz ? 'حفظ جديد' : type.label;
-  final surah = surahLabelOf((record['surahNumber'] as num?)?.toInt());
   final amount = (record['amountDone'] as num?)?.toInt() ?? 0;
 
+  if (record['subject'] == 'HADITH') {
+    final reference = record['hadithReference'] as String?;
+    final label = (reference != null && reference.trim().isNotEmpty)
+        ? reference
+        : 'حديث';
+    return '$label · $typeLabel · $amount حديث';
+  }
+
+  final surah = surahLabelOf((record['surahNumber'] as num?)?.toInt());
   return '$surah · $typeLabel · $amount ${type.unitLabel}';
 }

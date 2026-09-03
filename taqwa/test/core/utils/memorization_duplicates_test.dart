@@ -87,5 +87,26 @@ void main() {
 
       expect(summary, 'سورة رقم - · حفظ جديد · 0 صفحة');
     });
+
+    test('names the hadith reference instead of a surah', () {
+      final summary = memorizationSummary({
+        'subject': 'HADITH',
+        'hadithReference': 'حديث النية',
+        'amountDone': 1,
+        'memorizationType': 'MEMORIZING',
+      });
+
+      expect(summary, 'حديث النية · حفظ جديد · 1 حديث');
+    });
+
+    test('falls back to a generic label when a hadith entry has no reference text', () {
+      final summary = memorizationSummary({
+        'subject': 'HADITH',
+        'amountDone': 2,
+        'memorizationType': 'BIGREVISION',
+      });
+
+      expect(summary, 'حديث · مراجعة كبرى · 2 حديث');
+    });
   });
 }
