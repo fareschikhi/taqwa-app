@@ -380,6 +380,10 @@ class _StudentDetailsPageState extends State<StudentDetailsPage> {
         MemorizationType.hifz;
     final amount = (entry['amountDone'] as num?)?.toInt() ?? 0;
     final typeLabel = type == MemorizationType.hifz ? 'حفظ جديد' : type.label;
+    final isHadith = entry['subject'] == 'HADITH';
+    final referenceLabel = isHadith
+        ? _hadithLabel(entry['hadithReference'] as String?)
+        : surahLabelOf((entry['surahNumber'] as num?)?.toInt());
 
     return AppCard(
       padding: EdgeInsets.all(16.w),
@@ -394,14 +398,14 @@ class _StudentDetailsPageState extends State<StudentDetailsPage> {
           ),
           SizedBox(height: 12.h),
           AppText(
-            surahLabelOf((entry['surahNumber'] as num?)?.toInt()),
+            referenceLabel,
             style: AppTextStyles.bodyMdBold.copyWith(
               color: AppColors.onSurface,
             ),
           ),
           SizedBox(height: 4.h),
           AppText(
-            '$typeLabel · $amount ${type.unitLabel}',
+            '$typeLabel · $amount ${isHadith ? 'حديث' : type.unitLabel}',
             style: AppTextStyles.labelSm.copyWith(
               color: AppColors.onSurfaceVariant,
             ),
@@ -568,6 +572,12 @@ String _formatDate(dynamic raw) {
   }
 }
 
+/// A hadith entry's reference text, or a generic placeholder when it is
+/// missing or blank — mirrors the fallback in memorizationSummary and
+/// LastSessionCard.
+String _hadithLabel(String? reference) =>
+    (reference != null && reference.trim().isNotEmpty) ? reference : 'حديث';
+
 class _StatBox extends StatelessWidget {
   const _StatBox({
     required this.label,
@@ -653,11 +663,14 @@ class _RecordItem extends StatelessWidget {
         MemorizationTypeX.fromApi(entry['memorizationType'] as String?) ??
         MemorizationType.hifz;
     final count = (entry['amountDone'] as num?)?.toInt() ?? 0;
+    final isHadith = entry['subject'] == 'HADITH';
     return _RecordItem(
       date: _formatDate(entry['date'] ?? entry['recordedAt']),
-      surah: surahLabelOf((entry['surahNumber'] as num?)?.toInt()),
+      surah: isHadith
+          ? _hadithLabel(entry['hadithReference'] as String?)
+          : surahLabelOf((entry['surahNumber'] as num?)?.toInt()),
       type: type == MemorizationType.hifz ? 'حفظ جديد' : type.label,
-      amount: '$count ${type.unitLabel}',
+      amount: '$count ${isHadith ? 'حديث' : type.unitLabel}',
     );
   }
 
