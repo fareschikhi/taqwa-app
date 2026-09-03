@@ -1,5 +1,9 @@
 import { BadRequestException } from '@nestjs/common';
-import { AttendanceStatus, Memorization } from '@prisma/client';
+import {
+  AttendanceStatus,
+  Memorization,
+  MemorizationSubject,
+} from '@prisma/client';
 import { MEMORIZATION_ERROR, MemorizationService } from './memorization.service';
 
 describe('MemorizationService.create attendance gate', () => {
@@ -87,5 +91,160 @@ describe('MemorizationService.create attendance gate', () => {
     await service.create(dto);
 
     expect(prisma.memorizationProgress.create).toHaveBeenCalled();
+  });
+});
+
+describe('MemorizationService hadith subject', () => {
+  const makePrisma = (
+    opts: {
+      attendanceStatus?: AttendanceStatus | null;
+      tracksHadith?: boolean;
+    } = {},
+  ) => ({
+    attendance: {
+      findUnique: jest
+        .fn()
+        .mockResolvedValue(
+          opts.attendanceStatus == null
+            ? null
+            : { id: 1, status: opts.attendanceStatus },
+        ),
+    },
+    student: {
+      findUnique: jest
+        .fn()
+        .mockResolvedValue({ tracksHadith: opts.tracksHadith ?? true }),
+    },
+    memorizationProgress: {
+      create: jest.fn().mockResolvedValue({ id: 20 }),
+    },
+  });
+
+  const hadithDto = {
+    studentId: 7,
+    amountDone: 1,
+    memorizationType: Memorization.MEMORIZING,
+    subject: MemorizationSubject.HADITH,
+    hadithReference: 'حديث النية',
+  };
+
+  it('records a hadith entry for a student with hadith enabled', async () => {
+    const prisma = makePrisma({ attendanceStatus: AttendanceStatus.PRESENT });
+    const service = new MemorizationService(prisma as any);
+
+    await service.create(hadithDto as any);
+
+    expect(prisma.memorizationProgress.create).toHaveBeenCalled();
+  });
+
+  it('refuses a hadith entry with no hadithReference', async () => {
+    const prisma = makePrisma({ attendanceStatus: AttendanceStatus.PRESENT });
+    const service = new MemorizationService(prisma as any);
+
+    await expect(
+      service.create({ ...hadithDto, hadithReference: '' } as any),
+    ).rejects.toBeInstanceOf(BadRequestException);
+  });
+
+  it('refuses a hadith entry for a student without hadith enabled', async () => {
+    const prisma = makePrisma({
+      attendanceStatus: AttendanceStatus.PRESENT,
+      tracksHadith: false,
+    });
+    const service = new MemorizationService(prisma as any);
+
+    await expect(service.create(hadithDto as any)).rejects.toMatchObject({
+      response: { code: MEMORIZATION_ERROR.HADITH_NOT_ENABLED },
+    });
+    expect(prisma.memorizationProgress.create).not.toHaveBeenCalled();
+  });
+
+  it('refuses a hadith entry carrying a surahNumber', async () => {
+    const prisma = makePrisma({ attendanceStatus: AttendanceStatus.PRESENT });
+    const service = new MemorizationService(prisma as any);
+
+    await expect(
+      service.create({ ...hadithDto, surahNumber: 2 } as any),
+    ).rejects.toBeInstanceOf(BadRequestException);
+  });
+
+  it('refuses a Quran entry carrying a hadithReference', async () => {
+    const prisma = makePrisma({ attendanceStatus: AttendanceStatus.PRESENT });
+    const service = new MemorizationService(prisma as any);
+
+    await expect(
+      service.create({
+        studentId: 7,
+        surahNumber: 2,
+        amountDone: 1,
+        memorizationType: Memorization.MEMORIZING,
+        hadithReference: 'حديث النية',
+      } as any),
+    ).rejects.toBeInstanceOf(BadRequestException);
+  });
+
+  it('bounds a hadith amount at 50', async () => {
+    const prisma = makePrisma({ attendanceStatus: AttendanceStatus.PRESENT });
+    const service = new MemorizationService(prisma as any);
+
+    await expect(
+      service.create({ ...hadithDto, amountDone: 51 } as any),
+    ).rejects.toBeInstanceOf(BadRequestException);
+  });
+
+  it('defaults an omitted subject to Quran without checking hadith eligibility', async () => {
+    const prisma = makePrisma({ attendanceStatus: AttendanceStatus.PRESENT });
+    const service = new MemorizationService(prisma as any);
+
+    await service.create({
+      studentId: 7,
+      surahNumber: 2,
+      amountDone: 1,
+      memorizationType: Memorization.MEMORIZING,
+    } as any);
+
+    expect(prisma.student.findUnique).not.toHaveBeenCalled();
+    expect(prisma.memorizationProgress.create).toHaveBeenCalled();
+  });
+});
+
+describe('MemorizationService.getStudentProgress subject scoping', () => {
+  const record = (over: Partial<Record<string, unknown>>) => ({
+    id: 1,
+    studentId: 7,
+    surahNumber: null,
+    amountDone: 1,
+    memorizationType: Memorization.MEMORIZING,
+    subject: MemorizationSubject.QURAN,
+    hadithReference: null,
+    recordedAt: new Date(),
+    ...over,
+  });
+
+  it('keeps hadith rows out of totalPagesDone and totalSurahs, and sums them into totalHadithsDone', async () => {
+    const prisma = {
+      memorizationProgress: {
+        findMany: jest.fn().mockResolvedValue([
+          record({
+            surahNumber: 2,
+            amountDone: 3,
+            subject: MemorizationSubject.QURAN,
+          }),
+          record({
+            surahNumber: null,
+            amountDone: 5,
+            subject: MemorizationSubject.HADITH,
+            hadithReference: 'حديث النية',
+          }),
+        ]),
+      },
+    };
+    const service = new MemorizationService(prisma as any);
+
+    const progress = await service.getStudentProgress(7);
+
+    expect(progress.totalPagesDone).toBe(3);
+    expect(progress.totalSurahs).toBe(1);
+    expect(progress.totalHadithsDone).toBe(5);
   });
 });

@@ -4,12 +4,17 @@ import {
   CreateMemorizationDto,
   UpdateMemorizationDto,
 } from './dto/memorization.dto';
-import { AttendanceStatus, Memorization } from '@prisma/client';
+import {
+  AttendanceStatus,
+  Memorization,
+  MemorizationSubject,
+} from '@prisma/client';
 import { MAX_AMOUNT, unitFor } from './progress-unit';
 
 // Attendance rows are written as new Date('YYYY-MM-DD'), which parses to UTC
 // midnight, and both date columns are @db.Date, which Prisma truncates in UTC.
-// Flooring the same way is what lets a lookup find the row the teacher wrote.
+// Flooring the same way is what lets a lookup find the row the teacher just
+// wrote.
 function startOfUtcDay(instant: Date): Date {
   const date = new Date(instant);
   date.setUTCHours(0, 0, 0, 0);
@@ -19,19 +24,77 @@ function startOfUtcDay(instant: Date): Date {
 /** Stable reason codes the app matches on. Never reuse or renumber these. */
 export const MEMORIZATION_ERROR = {
   STUDENT_ABSENT: 'STUDENT_ABSENT',
+  HADITH_NOT_ENABLED: 'HADITH_NOT_ENABLED',
 } as const;
 
 @Injectable()
 export class MemorizationService {
   constructor(private prisma: PrismaService) {}
 
-  private assertAmountFitsUnit(type: Memorization, amountDone: number) {
-    const unit = unitFor(type);
+  private assertAmountFitsUnit(
+    subject: MemorizationSubject,
+    type: Memorization,
+    amountDone: number,
+  ) {
+    const unit = unitFor(subject, type);
     const max = MAX_AMOUNT[unit];
     if (amountDone > max) {
       throw new BadRequestException(
-        `${type} is recorded in ${unit}S, so amountDone must be at most ${max}`,
+        `${unit} is recorded per entry with a limit of ${max}, so amountDone must be at most ${max}`,
       );
+    }
+  }
+
+  // A QURAN row identifies its surah; a HADITH row identifies itself with
+  // free text instead — there is no fixed hadith list to pick a number from.
+  // Each subject rejects the other's identity field, so a row can never
+  // carry both or neither.
+  private assertSubjectFields(
+    subject: MemorizationSubject,
+    surahNumber: number | null | undefined,
+    hadithReference: string | null | undefined,
+  ) {
+    if (subject === MemorizationSubject.QURAN) {
+      if (surahNumber == null) {
+        throw new BadRequestException(
+          'surahNumber is required for a Quran entry',
+        );
+      }
+      if (hadithReference) {
+        throw new BadRequestException(
+          'hadithReference is not valid for a Quran entry',
+        );
+      }
+    } else {
+      if (!hadithReference || !hadithReference.trim()) {
+        throw new BadRequestException(
+          'hadithReference is required for a hadith entry',
+        );
+      }
+      if (surahNumber != null) {
+        throw new BadRequestException(
+          'surahNumber is not valid for a hadith entry',
+        );
+      }
+    }
+  }
+
+  // Hadith tracking is opt-in per student, set by the admin. A HADITH write
+  // for a student without it enabled would create progress for a track the
+  // admin never turned on, so this is checked at write time rather than
+  // trusted from the client.
+  private async assertHadithEnabled(studentId: number) {
+    const student = await this.prisma.student.findUnique({
+      where: { id: studentId },
+      select: { tracksHadith: true },
+    });
+    if (!student?.tracksHadith) {
+      throw new BadRequestException({
+        statusCode: 400,
+        error: 'Bad Request',
+        code: MEMORIZATION_ERROR.HADITH_NOT_ENABLED,
+        message: 'This student does not have hadith memorization enabled',
+      });
     }
   }
 
@@ -61,10 +124,18 @@ export class MemorizationService {
   }
 
   async create(dto: CreateMemorizationDto) {
+    // The column defaults to QURAN when the client omits the subject, so
+    // every existing caller keeps recording Quran progress unchanged.
+    const subject = dto.subject ?? MemorizationSubject.QURAN;
     // The column defaults to MEMORIZING when the client omits the type, so the
     // bound has to be checked against that same fallback.
     const type = dto.memorizationType ?? Memorization.MEMORIZING;
-    this.assertAmountFitsUnit(type, dto.amountDone);
+
+    this.assertSubjectFields(subject, dto.surahNumber, dto.hadithReference);
+    this.assertAmountFitsUnit(subject, type, dto.amountDone);
+    if (subject === MemorizationSubject.HADITH) {
+      await this.assertHadithEnabled(dto.studentId);
+    }
 
     // Attendance.date is a bare DATE, so the timestamp has to be floored to
     // midnight to line up with the row the teacher just wrote.
@@ -72,7 +143,7 @@ export class MemorizationService {
     await this.assertNotAbsent(dto.studentId, date);
 
     return this.prisma.memorizationProgress.create({
-      data: { ...dto, date },
+      data: { ...dto, subject, date },
     });
   }
 
@@ -97,13 +168,25 @@ export class MemorizationService {
       throw new NotFoundException(`No memorization progress with id ${id}`);
     }
 
-    // Either half of the type/amount pair can arrive alone, so validate the
-    // combination the row will actually end up with. Switching a page-counted
-    // entry to a revision can otherwise leave an impossible hizb count behind.
+    // Any field of the subject/surah/hadith/type/amount group can arrive
+    // alone, so validate the combination the row will actually end up with.
+    const subject = dto.subject ?? existing.subject;
+    const surahNumber =
+      dto.surahNumber !== undefined ? dto.surahNumber : existing.surahNumber;
+    const hadithReference =
+      dto.hadithReference !== undefined
+        ? dto.hadithReference
+        : existing.hadithReference;
+
+    this.assertSubjectFields(subject, surahNumber, hadithReference);
     this.assertAmountFitsUnit(
+      subject,
       dto.memorizationType ?? existing.memorizationType,
       dto.amountDone ?? existing.amountDone,
     );
+    if (subject === MemorizationSubject.HADITH) {
+      await this.assertHadithEnabled(existing.studentId);
+    }
 
     return this.prisma.memorizationProgress.update({
       where: { id },
@@ -117,14 +200,27 @@ export class MemorizationService {
       orderBy: { recordedAt: 'desc' },
     });
 
+    const quranRecords = records.filter(
+      (r) => r.subject === MemorizationSubject.QURAN,
+    );
+
     // Revision amounts are hizbs, so they cannot be added to page counts.
-    // Only new memorization contributes to the page total.
-    const totalPagesDone = records
+    // Only new Quran memorization contributes to the page total, and hadith
+    // rows are excluded entirely — there is no "% of Quran" meaning for them.
+    const totalPagesDone = quranRecords
       .filter((r) => r.memorizationType === Memorization.MEMORIZING)
       .reduce((sum, r) => sum + r.amountDone, 0);
-    const totalSurahs = new Set(records.map((r) => r.surahNumber)).size;
+    const totalSurahs = new Set(quranRecords.map((r) => r.surahNumber)).size;
 
-    const typeCounts = records.reduce(
+    const totalHadithsDone = records
+      .filter(
+        (r) =>
+          r.subject === MemorizationSubject.HADITH &&
+          r.memorizationType === Memorization.MEMORIZING,
+      )
+      .reduce((sum, r) => sum + r.amountDone, 0);
+
+    const typeCounts = quranRecords.reduce(
       (acc, r) => {
         acc[r.memorizationType]++;
         return acc;
@@ -135,6 +231,6 @@ export class MemorizationService {
       >,
     );
 
-    return { records, totalPagesDone, totalSurahs, typeCounts };
+    return { records, totalPagesDone, totalHadithsDone, totalSurahs, typeCounts };
   }
 }
