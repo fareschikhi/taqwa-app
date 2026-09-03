@@ -65,6 +65,11 @@ class _StudentFormPageState extends State<StudentFormPage> {
   /// matters, and only ever renders, while creating.
   bool _isAdult = false;
 
+  /// Admin opt-in for this student's hadith tracking, editable on both
+  /// create and edit — unlike [_isAdult], nothing else on the form depends
+  /// on it, so there is no reason to lock it after creation.
+  bool _tracksHadith = false;
+
   bool get _isEditing => widget.student != null;
 
   @override
@@ -77,6 +82,7 @@ class _StudentFormPageState extends State<StudentFormPage> {
       _addressController.text = student.address;
       _selectedHalaqaId = student.halaqaId;
       _selectedParentId = student.parentId;
+      _tracksHadith = student.tracksHadith;
 
       final birthDate = DateTime.tryParse(student.birthDate);
       if (birthDate != null) {
@@ -159,6 +165,7 @@ class _StudentFormPageState extends State<StudentFormPage> {
           'halaqaId': ?_selectedHalaqaId,
           'parentId': ?_selectedParentId,
           'avatar': ?avatarUrl,
+          'tracksHadith': _tracksHadith,
         });
       } else {
         await _repo.createStudent(
@@ -172,6 +179,7 @@ class _StudentFormPageState extends State<StudentFormPage> {
             avatar: avatarUrl,
             isAdult: _isAdult,
             password: _isAdult ? _passwordController.text : null,
+            tracksHadith: _tracksHadith,
           ),
         );
       }
@@ -338,6 +346,8 @@ class _StudentFormPageState extends State<StudentFormPage> {
           SizedBox(height: 6.h),
           _buildHalaqaDropdown(),
           SizedBox(height: 16.h),
+          _buildTracksHadithSwitch(),
+          SizedBox(height: 16.h),
           // Editing an existing person's role is out of scope — the backend
           // has no path for it — so the switch, and everything it changes,
           // only ever appears while creating.
@@ -396,6 +406,24 @@ class _StudentFormPageState extends State<StudentFormPage> {
       onChanged: (v) => setState(() => _isAdult = v),
       title: AppText(
         'طالب بالغ',
+        style: AppTextStyles.labelMd.copyWith(color: AppColors.onSurface),
+        textAlign: TextAlign.end,
+      ),
+    );
+  }
+
+  /// Gates the Hadith subject on this student's recitation sheet. Unlike
+  /// [_buildAdultSwitch], this is meaningful on both create and edit, so it
+  /// is not hidden behind `_isEditing`.
+  Widget _buildTracksHadithSwitch() {
+    return SwitchListTile(
+      contentPadding: EdgeInsets.zero,
+      controlAffinity: ListTileControlAffinity.leading,
+      activeThumbColor: AppColors.primary,
+      value: _tracksHadith,
+      onChanged: (v) => setState(() => _tracksHadith = v),
+      title: AppText(
+        'يحفظ حديث',
         style: AppTextStyles.labelMd.copyWith(color: AppColors.onSurface),
         textAlign: TextAlign.end,
       ),
