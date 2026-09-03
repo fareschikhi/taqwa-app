@@ -112,6 +112,26 @@ describe('StudentsService.create', () => {
       service.create({ ...payload, isAdult: true } as any),
     ).rejects.toBeInstanceOf(BadRequestException);
   });
+
+  it('stores tracksHadith on the student row', async () => {
+    const prisma = makePrisma();
+    const service = new StudentsService(prisma as any);
+
+    await service.create({ ...payload, tracksHadith: true } as any);
+
+    const data = prisma.user.create.mock.calls[0][0].data;
+    expect(data.student.create.tracksHadith).toBe(true);
+  });
+
+  it('defaults tracksHadith to false when omitted', async () => {
+    const prisma = makePrisma();
+    const service = new StudentsService(prisma as any);
+
+    await service.create(payload as any);
+
+    const data = prisma.user.create.mock.calls[0][0].data;
+    expect(data.student.create.tracksHadith).toBe(false);
+  });
 });
 
 describe('StudentsService.update', () => {
@@ -162,6 +182,28 @@ describe('StudentsService.update', () => {
   });
 
   it('leaves the rating untouched when the field is absent', async () => {
+    const prisma = makePrisma();
+    const service = new StudentsService(prisma as any);
+
+    await service.update(7, { address: 'Algiers' });
+
+    expect(prisma.student.update.mock.calls[0][0].data).toEqual({
+      address: 'Algiers',
+    });
+  });
+
+  it('persists tracksHadith on update', async () => {
+    const prisma = makePrisma();
+    const service = new StudentsService(prisma as any);
+
+    await service.update(7, { tracksHadith: true });
+
+    expect(prisma.student.update.mock.calls[0][0].data).toEqual({
+      tracksHadith: true,
+    });
+  });
+
+  it('leaves tracksHadith untouched when absent from the update', async () => {
     const prisma = makePrisma();
     const service = new StudentsService(prisma as any);
 

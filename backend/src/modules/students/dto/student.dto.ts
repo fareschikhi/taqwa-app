@@ -16,6 +16,9 @@ export class CreateStudentDto {
   @IsOptional() @IsInt() halaqaId?: number;
   @IsOptional() @IsString() avatar?: string;
   @IsOptional() @IsBoolean() isAdult?: boolean;
+  // Admin opt-in gating the Hadith subject on this student's recitation
+  // sheet and the server-side hadith write path.
+  @IsOptional() @IsBoolean() tracksHadith?: boolean;
   // Only meaningful with isAdult; the service rejects the pairing that makes
   // an account nobody can sign into.
   @IsOptional() @IsString() @MinLength(6) password?: string;
@@ -31,4 +34,5 @@ export class UpdateStudentDto {
   @IsOptional() @IsInt() parentId?: number;
   @IsOptional() @IsInt() halaqaId?: number;
   @IsOptional() @IsString() avatar?: string;
+  @IsOptional() @IsBoolean() tracksHadith?: boolean;
 }

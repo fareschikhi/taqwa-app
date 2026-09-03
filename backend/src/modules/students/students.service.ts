@@ -151,6 +151,7 @@ export class StudentsService {
               // An adult student has no parent by construction.
               parentId: dto.isAdult ? undefined : (dto.parentId ?? undefined),
               halaqaId: dto.halaqaId ?? undefined,
+              tracksHadith: dto.tracksHadith ?? false,
             },
           },
         },
@@ -214,6 +215,8 @@ export class StudentsService {
     // a rating, and a falsy check would silently drop that.
     if (dto.currentRating !== undefined)
       studentUpdate.currentRating = dto.currentRating;
+    if (dto.tracksHadith !== undefined)
+      studentUpdate.tracksHadith = dto.tracksHadith;
 
     try {
       if (Object.keys(userUpdate).length > 0) {
