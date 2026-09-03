@@ -12,6 +12,9 @@ class TeacherStudentModel {
   /// halaqa yet (or an older payload) simply has no id to read here, and
   /// nothing downstream can treat him as belonging to an adults' halaqa.
   final int? halaqaId;
+  // Admin opt-in: whether this student's recitation sheet offers a Hadith
+  // subject alongside Quran.
+  final bool tracksHadith;
 
   const TeacherStudentModel({
     required this.id,
@@ -20,6 +23,7 @@ class TeacherStudentModel {
     required this.isActive,
     this.teacherId,
     this.halaqaId,
+    this.tracksHadith = false,
   });
 
   factory TeacherStudentModel.fromJson(Map<String, dynamic> json) {
@@ -32,6 +36,7 @@ class TeacherStudentModel {
       isActive: (user?['isActive'] as bool?) ?? (json['isActive'] as bool?) ?? true,
       teacherId: (json['teacherId'] as num?)?.toInt(),
       halaqaId: (halaqa?['id'] as num?)?.toInt() ?? (json['halaqaId'] as num?)?.toInt(),
+      tracksHadith: (json['tracksHadith'] as bool?) ?? false,
     );
   }
 }

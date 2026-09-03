@@ -17,6 +17,9 @@ class StudentModel {
   /// guessing wrong in the direction that could enrol him where he does not
   /// belong.
   final bool isAdult;
+  // Admin opt-in: whether this student's recitation sheet offers a Hadith
+  // subject alongside Quran.
+  final bool tracksHadith;
 
   const StudentModel({
     this.id,
@@ -30,6 +33,7 @@ class StudentModel {
     this.avatar,
     this.isActive,
     this.isAdult = false,
+    this.tracksHadith = false,
   });
 
   factory StudentModel.fromJson(Map<String, dynamic> json) {
@@ -68,6 +72,10 @@ class StudentModel {
       isAdult:
           ((json['role'] as String?) ?? (userMap?['role'] as String?)) ==
           'ADULT_STUDENT',
+      tracksHadith:
+          (json['tracksHadith'] as bool?) ??
+          (studentMap?['tracksHadith'] as bool?) ??
+          false,
     );
   }
 

@@ -33,6 +33,7 @@ void main() {
         'halaqaId': 2,
         'avatar': 'https://example.test/a.png',
         'isAdult': false,
+        'tracksHadith': false,
         'parentId': 5,
       });
     });
@@ -65,6 +66,18 @@ void main() {
       ).toJson();
 
       expect(json.containsKey('parentId'), isFalse);
+    });
+
+    test('sends tracksHadith when set', () {
+      final json = const StudentPayloadDto(
+        fullName: 'بلال شرقيني',
+        phone: '0550000000',
+        birthDate: '1998-01-01',
+        address: 'الجزائر العاصمة',
+        tracksHadith: true,
+      ).toJson();
+
+      expect(json['tracksHadith'], true);
     });
   });
 }
