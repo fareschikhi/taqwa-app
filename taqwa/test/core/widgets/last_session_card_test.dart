@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:taqwa/core/enums/memorization_subject.dart';
 import 'package:taqwa/core/enums/memorization_type.dart';
 import 'package:taqwa/core/utils/last_session.dart';
 import 'package:taqwa/core/widgets/last_session_card.dart';
@@ -161,5 +162,28 @@ void main() {
     await tester.pumpAndSettle();
 
     expect(find.text('لا يوجد سجل حضور بعد'), findsOneWidget);
+  });
+
+  testWidgets('shows the hadith reference and counts in hadiths', (tester) async {
+    await tester.pumpWidget(
+      _host(
+        LastSessionCard(
+          session: _session(
+            entries: const [
+              LastSessionEntry(
+                amount: 2,
+                type: MemorizationType.hifz,
+                subject: MemorizationSubject.hadith,
+                hadithReference: 'حديث النية',
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
+    await tester.pumpAndSettle();
+
+    expect(find.text('حفظ · 2 حديث'), findsOneWidget);
+    expect(find.text('حديث النية'), findsOneWidget);
   });
 }

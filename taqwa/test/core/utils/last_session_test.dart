@@ -1,4 +1,5 @@
 import 'package:flutter_test/flutter_test.dart';
+import 'package:taqwa/core/enums/memorization_subject.dart';
 import 'package:taqwa/core/enums/memorization_type.dart';
 import 'package:taqwa/core/utils/last_session.dart';
 
@@ -19,6 +20,8 @@ Map<String, dynamic> memorization(
   int surahNumber = 2,
   int amountDone = 3,
   String type = 'MEMORIZING',
+  String? subject,
+  String? hadithReference,
 }) {
   return {
     'id': '$date$surahNumber$type'.hashCode,
@@ -26,6 +29,8 @@ Map<String, dynamic> memorization(
     'surahNumber': surahNumber,
     'amountDone': amountDone,
     'memorizationType': type,
+    if (subject != null) 'subject': subject,
+    if (hadithReference != null) 'hadithReference': hadithReference,
   };
 }
 
@@ -168,6 +173,31 @@ void main() {
 
       expect(session!.date, DateTime.utc(2026, 8, 24));
       expect(session.status, 'ABSENT');
+    });
+
+    test('reads a hadith entry by its reference instead of a surah', () {
+      final session = lastSessionOf(
+        attendance: [attendance('2026-08-27', 'PRESENT')],
+        memorization: [
+          memorization(
+            '2026-08-27',
+            subject: 'HADITH',
+            hadithReference: 'حديث النية',
+          ),
+        ],
+      );
+
+      expect(session!.entries.single.subject, MemorizationSubject.hadith);
+      expect(session.entries.single.hadithReference, 'حديث النية');
+    });
+
+    test('defaults an entry with no subject in the payload to Quran', () {
+      final session = lastSessionOf(
+        attendance: [attendance('2026-08-27', 'PRESENT')],
+        memorization: [memorization('2026-08-27')],
+      );
+
+      expect(session!.entries.single.subject, MemorizationSubject.quran);
     });
   });
 }

@@ -1,23 +1,33 @@
 import '../constants/surahs.dart';
+import '../enums/memorization_subject.dart';
 import '../enums/memorization_type.dart';
 
 /// One thing the child recited on the day of their last attendance.
 class LastSessionEntry {
   const LastSessionEntry({
-    required this.surahNumber,
+    this.surahNumber,
     required this.amount,
     required this.type,
+    this.subject = MemorizationSubject.quran,
+    this.hadithReference,
   });
 
-  final int surahNumber;
+  /// QURAN-only; null for a HADITH entry.
+  final int? surahNumber;
 
-  /// Pages for new memorization, hizbs for revision. Which one it is follows
-  /// from [type], so nothing here re-derives the split.
+  /// Pages for new Quran memorization, hizbs for Quran revision, hadiths for
+  /// any hadith entry. Which one it is follows from [subject] and [type], so
+  /// nothing here re-derives the split.
   final int amount;
 
   /// Null when the API sends a type this build does not know about, so an
   /// unfamiliar value costs the label rather than the whole card.
   final MemorizationType? type;
+
+  final MemorizationSubject subject;
+
+  /// HADITH-only free-text identity; null for a QURAN entry.
+  final String? hadithReference;
 
   String? get surahName => surahNameOf(surahNumber);
 }
@@ -83,7 +93,11 @@ LastSession? lastSessionOf({
       for (final record in memorization)
         if (_utcDay(record['date']) == day)
           LastSessionEntry(
+            subject:
+                MemorizationSubjectX.fromApi(record['subject'] as String?) ??
+                MemorizationSubject.quran,
             surahNumber: (record['surahNumber'] as num?)?.toInt() ?? 0,
+            hadithReference: record['hadithReference'] as String?,
             amount: (record['amountDone'] as num?)?.toInt() ?? 0,
             type: MemorizationTypeX.fromApi(
               record['memorizationType'] as String?,

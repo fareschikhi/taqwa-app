@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:taqwa/core/constants/app_constants.dart';
+import 'package:taqwa/core/enums/memorization_subject.dart';
 import 'package:taqwa/core/enums/memorization_type.dart';
 import 'package:taqwa/core/theme/app_colors.dart';
 import 'package:taqwa/core/theme/app_text_styles.dart';
@@ -82,12 +83,19 @@ class LastSessionCard extends StatelessWidget {
 
   Widget _buildEntry(LastSessionEntry entry) {
     final type = entry.type;
+    final isHadith = entry.subject == MemorizationSubject.hadith;
 
     // A type this build does not know about still happened, so the amount is
     // reported without claiming a unit for it.
     final amountText = type == null
         ? 'تسميع · ${entry.amount}'
-        : '${type.label} · ${entry.amount} ${type.unitLabel}';
+        : '${type.label} · ${entry.amount} ${isHadith ? 'حديث' : type.unitLabel}';
+
+    final referenceText = isHadith
+        ? ((entry.hadithReference?.trim().isNotEmpty ?? false)
+            ? entry.hadithReference!
+            : 'حديث')
+        : 'سورة ${entry.surahName ?? 'رقم ${entry.surahNumber}'}';
 
     return Padding(
       padding: EdgeInsets.only(bottom: 4.h),
@@ -102,7 +110,7 @@ class LastSessionCard extends StatelessWidget {
             textAlign: TextAlign.end,
           ),
           AppText(
-            'سورة ${entry.surahName ?? 'رقم ${entry.surahNumber}'}',
+            referenceText,
             style: AppTextStyles.labelSm.copyWith(
               color: AppColors.onSurfaceVariant,
             ),
