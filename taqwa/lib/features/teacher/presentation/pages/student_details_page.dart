@@ -6,7 +6,7 @@ import '../../../../core/constants/app_constants.dart';
 import '../../../../core/constants/surahs.dart';
 import '../../../../core/enums/memorization_type.dart';
 import '../../../../core/utils/fine_balance.dart';
-import '../../../../core/utils/hadith_label.dart';
+import '../../../../core/utils/hadith_label.dart' show hadithLabelOrFallback, kHadithUnitLabel;
 import '../../../../core/widgets/app_button.dart';
 import '../../../../core/widgets/app_card.dart';
 import '../../../../core/widgets/app_text_field.dart';
@@ -406,7 +406,7 @@ class _StudentDetailsPageState extends State<StudentDetailsPage> {
           ),
           SizedBox(height: 4.h),
           AppText(
-            '$typeLabel · $amount ${isHadith ? 'حديث' : type.unitLabel}',
+            '$typeLabel · $amount ${isHadith ? kHadithUnitLabel : type.unitLabel}',
             style: AppTextStyles.labelSm.copyWith(
               color: AppColors.onSurfaceVariant,
             ),
@@ -665,7 +665,7 @@ class _RecordItem extends StatelessWidget {
           ? hadithLabelOrFallback(entry['hadithReference'] as String?)
           : surahLabelOf((entry['surahNumber'] as num?)?.toInt()),
       type: type == MemorizationType.hifz ? 'حفظ جديد' : type.label,
-      amount: '$count ${isHadith ? 'حديث' : type.unitLabel}',
+      amount: '$count ${isHadith ? kHadithUnitLabel : type.unitLabel}',
     );
   }
 

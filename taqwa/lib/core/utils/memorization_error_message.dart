@@ -4,6 +4,10 @@ import 'package:dio/dio.dart';
 /// Mirrors `MEMORIZATION_ERROR.STUDENT_ABSENT` in the backend.
 const String kStudentAbsentCode = 'STUDENT_ABSENT';
 
+/// Reason code the API attaches when hadith tracking is disabled for the student.
+/// Mirrors `MEMORIZATION_ERROR.HADITH_NOT_ENABLED` in the backend.
+const String kHadithNotEnabledCode = 'HADITH_NOT_ENABLED';
+
 const String _genericFailure = 'فشل حفظ التسميع';
 
 /// The message the teacher sees when saving a recitation fails.
@@ -17,8 +21,13 @@ String memorizationErrorMessage(Object error) {
   if (error is! DioException) return _genericFailure;
 
   final data = error.response?.data;
-  if (data is Map && data['code'] == kStudentAbsentCode) {
-    return 'لا يمكن تسجيل التسميع لطالب مسجَّل كغائب';
+  if (data is Map) {
+    if (data['code'] == kStudentAbsentCode) {
+      return 'لا يمكن تسجيل التسميع لطالب مسجَّل كغائب';
+    }
+    if (data['code'] == kHadithNotEnabledCode) {
+      return 'لم يتم تفعيل تتبع الحديث لهذا الطالب';
+    }
   }
 
   // Transport failures are already worded by the error interceptor, and it

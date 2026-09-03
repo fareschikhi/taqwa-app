@@ -80,7 +80,7 @@ class _MemorizationEntrySheetState extends State<MemorizationEntrySheet> {
       final latest = recentMemorization(hadithRecords, limit: 1);
       if (!mounted || latest.isEmpty) return;
       final reference = latest.first['hadithReference'] as String?;
-      if (reference != null && reference.isNotEmpty) {
+      if (reference != null && reference.isNotEmpty && _hadithController.text.isEmpty) {
         setState(() => _hadithController.text = reference);
       }
     } catch (_) {

@@ -21,6 +21,16 @@ void main() {
       expect(memorizationErrorMessage(error), contains('كغائب'));
     });
 
+    test('tells the teacher hadith is not enabled when the server says so', () {
+      final error = withBody({
+        'statusCode': 400,
+        'code': 'HADITH_NOT_ENABLED',
+        'message': 'Hadith tracking is not enabled for this student',
+      });
+
+      expect(memorizationErrorMessage(error), contains('تتبع الحديث'));
+    });
+
     // The bug this guards: any 400 used to read as "student is absent", so a
     // rejected amount sent the teacher to the attendance chips, where nothing
     // was wrong and nothing they did could help.

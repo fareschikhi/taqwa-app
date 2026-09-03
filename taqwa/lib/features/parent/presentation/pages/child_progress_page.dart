@@ -8,6 +8,7 @@ import '../../../../core/constants/surahs.dart';
 import '../../../../core/enums/memorization_type.dart';
 import '../../../../core/providers/selected_student_provider.dart';
 import '../../../../core/utils/memorization_history.dart';
+import '../../../../core/utils/hadith_label.dart';
 import '../../../data/repositories/student_repository.dart';
 import 'package:taqwa/core/widgets/app_text.dart';
 
@@ -272,7 +273,10 @@ class _ChildProgressPageState extends ConsumerState<ChildProgressPage> {
         MemorizationTypeX.fromApi(entry['memorizationType'] as String?) ??
         MemorizationType.hifz;
     final typeLabel = type == MemorizationType.hifz ? 'حفظ جديد' : type.label;
-    final surahLabel = surahLabelOf((entry['surahNumber'] as num?)?.toInt());
+    final isHadith = entry['subject'] == 'HADITH';
+    final referenceLabel = isHadith
+        ? hadithLabelOrFallback(entry['hadithReference'] as String?)
+        : surahLabelOf((entry['surahNumber'] as num?)?.toInt());
     String dateStr = '';
     try {
       final dt = DateTime.parse(
@@ -305,7 +309,7 @@ class _ChildProgressPageState extends ConsumerState<ChildProgressPage> {
             crossAxisAlignment: CrossAxisAlignment.end,
             children: [
               AppText(
-                surahLabel,
+                referenceLabel,
                 style: AppTextStyles.bodyMdBold.copyWith(
                   color: AppColors.onSurface,
                 ),
@@ -332,7 +336,7 @@ class _ChildProgressPageState extends ConsumerState<ChildProgressPage> {
                       ),
                     ),
                     child: AppText(
-                      '${entry['amountDone']} ${type.unitLabel}',
+                      '${entry['amountDone']} ${isHadith ? kHadithUnitLabel : type.unitLabel}',
                       style: AppTextStyles.labelMd.copyWith(
                         color: AppColors.onSurface,
                       ),

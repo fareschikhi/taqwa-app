@@ -186,4 +186,38 @@ void main() {
       expect(find.text('تسجيل'), findsOneWidget);
     },
   );
+
+  testWidgets(
+    'clears controller when switching to hadith, then prefills if empty',
+    (tester) async {
+      _setPhoneViewport(tester);
+      DioClient.instance.httpClientAdapter = _StubAdapter(
+        jsonEncode([
+          {
+            'id': 1,
+            'studentId': 1,
+            'surahNumber': null,
+            'amountDone': 1,
+            'memorizationType': 'MEMORIZING',
+            'subject': 'HADITH',
+            'hadithReference': 'حديث النية',
+            'date': '2026-08-20T00:00:00.000Z',
+            'recordedAt': '2026-08-20T10:00:00.000Z',
+          },
+        ]),
+      );
+
+      await tester.pumpWidget(
+        _host(MemorizationEntrySheet(student: _student(tracksHadith: true))),
+      );
+      await tester.pumpAndSettle();
+
+      // Switch to hadith — this triggers the prefill request.
+      await tester.tap(find.text('الحديث'));
+      await tester.pumpAndSettle();
+
+      // The field should be prefilled with the previous hadith reference.
+      expect(find.text('حديث النية'), findsOneWidget);
+    },
+  );
 }
