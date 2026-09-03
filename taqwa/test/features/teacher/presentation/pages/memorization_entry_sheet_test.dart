@@ -151,4 +151,39 @@ void main() {
       expect(find.text('حديث النية'), findsOneWidget);
     },
   );
+
+  testWidgets(
+    'does not overflow when a keyboard opens over the hadith field on a small phone',
+    (tester) async {
+      // iPhone-SE-class viewport: 750x1334 physical @2x devicePixelRatio,
+      // i.e. 375x667 logical — a small phone, not the roomier one
+      // _setPhoneViewport uses elsewhere in this file.
+      tester.view.physicalSize = const Size(750, 1334);
+      tester.view.devicePixelRatio = 2.0;
+      addTearDown(tester.view.reset);
+
+      await tester.pumpWidget(
+        _host(MemorizationEntrySheet(student: _student(tracksHadith: true))),
+      );
+      await tester.pumpAndSettle();
+
+      await tester.tap(find.text('الحديث'));
+      await tester.pumpAndSettle();
+
+      // Simulates a normal ~300dp keyboard covering the bottom of the
+      // screen — the inset the OS applies once the multi-line hadith field
+      // is focused — without needing a real text-input platform channel.
+      tester.view.viewInsets = const FakeViewPadding(bottom: 600);
+      await tester.pumpAndSettle();
+
+      // A RenderFlex overflow is reported through FlutterError, which the
+      // test framework records as an exception on the tester rather than
+      // throwing synchronously — so this is what actually catches the
+      // regression the fix addresses.
+      expect(tester.takeException(), isNull);
+      // The submit button must still be part of the tree (reachable by
+      // scrolling), not pushed out of the layout entirely.
+      expect(find.text('تسجيل'), findsOneWidget);
+    },
+  );
 }

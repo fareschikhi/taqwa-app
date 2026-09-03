@@ -71,7 +71,9 @@ class _MemorizationEntrySheetState extends State<MemorizationEntrySheet> {
   Future<void> _loadHadithPrefill() async {
     _hadithPrefillLoaded = true;
     try {
-      final history = await _studentRepo.getMemorizationHistory(widget.student.id);
+      final history = await _studentRepo.getMemorizationHistory(
+        widget.student.id,
+      );
       final hadithRecords = history
           .where((r) => r['subject'] == 'HADITH')
           .toList();
@@ -164,75 +166,152 @@ class _MemorizationEntrySheetState extends State<MemorizationEntrySheet> {
           ),
         ),
         padding: EdgeInsets.fromLTRB(16.w, 12.h, 16.w, 24.h),
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          crossAxisAlignment: CrossAxisAlignment.end,
-          children: [
-            Center(
-              child: Container(
-                width: 40.w,
-                height: 4.h,
-                decoration: BoxDecoration(
-                  color: AppColors.outlineVariant,
-                  borderRadius: BorderRadius.circular(AppConstants.radiusFull),
+        // Scrollable so an open keyboard (which shrinks the available height
+        // via the viewInsets padding above) makes the content scroll instead
+        // of overflowing and clipping the تسجيل button underneath it.
+        child: SingleChildScrollView(
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.end,
+            children: [
+              Center(
+                child: Container(
+                  width: 40.w,
+                  height: 4.h,
+                  decoration: BoxDecoration(
+                    color: AppColors.outlineVariant,
+                    borderRadius: BorderRadius.circular(
+                      AppConstants.radiusFull,
+                    ),
+                  ),
                 ),
               ),
-            ),
-            SizedBox(height: 12.h),
-            AppText(
-              widget.student.fullName,
-              style: AppTextStyles.headlineMd.copyWith(
-                color: AppColors.onSurface,
+              SizedBox(height: 12.h),
+              AppText(
+                widget.student.fullName,
+                style: AppTextStyles.headlineMd.copyWith(
+                  color: AppColors.onSurface,
+                ),
               ),
-            ),
-            SizedBox(height: 12.h),
+              SizedBox(height: 12.h),
 
-            AppCard(
-              padding: EdgeInsets.all(16.w),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.end,
-                children: [
-                  if (widget.student.tracksHadith) ...[
+              AppCard(
+                padding: EdgeInsets.all(16.w),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.end,
+                  children: [
+                    if (widget.student.tracksHadith) ...[
+                      AppText(
+                        'النوع',
+                        style: AppTextStyles.labelMd.copyWith(
+                          color: AppColors.onSurfaceVariant,
+                        ),
+                      ),
+                      SizedBox(height: 6.h),
+                      SegmentedSelector<MemorizationSubject>(
+                        options: const [
+                          SegmentOption(
+                            value: MemorizationSubject.quran,
+                            label: 'القرآن',
+                          ),
+                          SegmentOption(
+                            value: MemorizationSubject.hadith,
+                            label: 'الحديث',
+                          ),
+                        ],
+                        selected: _selectedSubject,
+                        onChanged: _onSubjectChanged,
+                      ),
+                      SizedBox(height: 12.h),
+                    ],
+
+                    if (_isHadith) ...[
+                      AppText(
+                        'الحديث',
+                        style: AppTextStyles.labelMd.copyWith(
+                          color: AppColors.onSurfaceVariant,
+                        ),
+                      ),
+                      SizedBox(height: 6.h),
+                      AppTextField(
+                        hint: 'اكتب الحديث أو مرجعه',
+                        controller: _hadithController,
+                        maxLines: 3,
+                      ),
+                    ] else ...[
+                      AppText(
+                        'السورة',
+                        style: AppTextStyles.labelMd.copyWith(
+                          color: AppColors.onSurfaceVariant,
+                        ),
+                      ),
+                      SizedBox(height: 6.h),
+                      Container(
+                        decoration: BoxDecoration(
+                          color: AppColors.surfaceContainerLow,
+                          borderRadius: BorderRadius.circular(
+                            AppConstants.radiusMd,
+                          ),
+                          border: Border.all(color: AppColors.inputBorder),
+                        ),
+                        padding: EdgeInsets.symmetric(horizontal: 16.w),
+                        child: DropdownButtonHideUnderline(
+                          child: DropdownButton<int>(
+                            value: _selectedSurah,
+                            isExpanded: true,
+                            hint: AppText(
+                              'اختر السورة...',
+                              style: AppTextStyles.labelMd.copyWith(
+                                color: AppColors.inputPlaceholder,
+                              ),
+                            ),
+                            items: kSurahs
+                                .map(
+                                  (s) => DropdownMenuItem(
+                                    value: s.number,
+                                    child: AppText(s.name),
+                                  ),
+                                )
+                                .toList(),
+                            onChanged: (v) =>
+                                setState(() => _selectedSurah = v),
+                          ),
+                        ),
+                      ),
+                    ],
+                    SizedBox(height: 12.h),
+
                     AppText(
-                      'النوع',
+                      'نوع العرض',
                       style: AppTextStyles.labelMd.copyWith(
                         color: AppColors.onSurfaceVariant,
                       ),
                     ),
                     SizedBox(height: 6.h),
-                    SegmentedSelector<MemorizationSubject>(
+                    SegmentedSelector<MemorizationType>(
                       options: const [
                         SegmentOption(
-                          value: MemorizationSubject.quran,
-                          label: 'القرآن',
+                          value: MemorizationType.majorReview,
+                          label: 'مراجعة كبرى',
                         ),
                         SegmentOption(
-                          value: MemorizationSubject.hadith,
-                          label: 'الحديث',
+                          value: MemorizationType.minorReview,
+                          label: 'مراجعة صغرى',
+                        ),
+                        SegmentOption(
+                          value: MemorizationType.hifz,
+                          label: 'حفظ',
                         ),
                       ],
-                      selected: _selectedSubject,
-                      onChanged: _onSubjectChanged,
+                      selected: _selectedType,
+                      onChanged: _onTypeChanged,
                     ),
                     SizedBox(height: 12.h),
-                  ],
 
-                  if (_isHadith) ...[
                     AppText(
-                      'الحديث',
-                      style: AppTextStyles.labelMd.copyWith(
-                        color: AppColors.onSurfaceVariant,
-                      ),
-                    ),
-                    SizedBox(height: 6.h),
-                    AppTextField(
-                      hint: 'اكتب الحديث أو مرجعه',
-                      controller: _hadithController,
-                      maxLines: 3,
-                    ),
-                  ] else ...[
-                    AppText(
-                      'السورة',
+                      // Revision is counted in hizbs, new Quran memorization in
+                      // pages, any hadith entry in hadiths.
+                      _selectedType == null ? 'العدد' : _amountLabel,
                       style: AppTextStyles.labelMd.copyWith(
                         color: AppColors.onSurfaceVariant,
                       ),
@@ -246,118 +325,52 @@ class _MemorizationEntrySheetState extends State<MemorizationEntrySheet> {
                         ),
                         border: Border.all(color: AppColors.inputBorder),
                       ),
-                      padding: EdgeInsets.symmetric(horizontal: 16.w),
-                      child: DropdownButtonHideUnderline(
-                        child: DropdownButton<int>(
-                          value: _selectedSurah,
-                          isExpanded: true,
-                          hint: AppText(
-                            'اختر السورة...',
-                            style: AppTextStyles.labelMd.copyWith(
-                              color: AppColors.inputPlaceholder,
+                      child: Row(
+                        children: [
+                          IconButton(
+                            icon: const Icon(Icons.add, size: 18),
+                            onPressed: _selectedType == null
+                                ? null
+                                : () => setState(() {
+                                    if (_amount < _maxAmount) {
+                                      _amount++;
+                                    }
+                                  }),
+                            color: AppColors.primary,
+                          ),
+                          Expanded(
+                            child: AppText(
+                              _selectedType == null ? '—' : '$_amount',
+                              textAlign: TextAlign.center,
+                              style: AppTextStyles.bodyMdBold,
                             ),
                           ),
-                          items: kSurahs
-                              .map(
-                                (s) => DropdownMenuItem(
-                                  value: s.number,
-                                  child: AppText(s.name),
-                                ),
-                              )
-                              .toList(),
-                          onChanged: (v) => setState(() => _selectedSurah = v),
-                        ),
+                          IconButton(
+                            icon: const Icon(Icons.remove, size: 18),
+                            onPressed: _selectedType == null
+                                ? null
+                                : () => setState(() {
+                                    if (_amount > 1) _amount--;
+                                  }),
+                            color: AppColors.onSurfaceVariant,
+                          ),
+                        ],
                       ),
                     ),
                   ],
-                  SizedBox(height: 12.h),
-
-                  AppText(
-                    'نوع العرض',
-                    style: AppTextStyles.labelMd.copyWith(
-                      color: AppColors.onSurfaceVariant,
-                    ),
-                  ),
-                  SizedBox(height: 6.h),
-                  SegmentedSelector<MemorizationType>(
-                    options: const [
-                      SegmentOption(
-                        value: MemorizationType.majorReview,
-                        label: 'مراجعة كبرى',
-                      ),
-                      SegmentOption(
-                        value: MemorizationType.minorReview,
-                        label: 'مراجعة صغرى',
-                      ),
-                      SegmentOption(value: MemorizationType.hifz, label: 'حفظ'),
-                    ],
-                    selected: _selectedType,
-                    onChanged: _onTypeChanged,
-                  ),
-                  SizedBox(height: 12.h),
-
-                  AppText(
-                    // Revision is counted in hizbs, new Quran memorization in
-                    // pages, any hadith entry in hadiths.
-                    _selectedType == null ? 'العدد' : _amountLabel,
-                    style: AppTextStyles.labelMd.copyWith(
-                      color: AppColors.onSurfaceVariant,
-                    ),
-                  ),
-                  SizedBox(height: 6.h),
-                  Container(
-                    decoration: BoxDecoration(
-                      color: AppColors.surfaceContainerLow,
-                      borderRadius: BorderRadius.circular(
-                        AppConstants.radiusMd,
-                      ),
-                      border: Border.all(color: AppColors.inputBorder),
-                    ),
-                    child: Row(
-                      children: [
-                        IconButton(
-                          icon: const Icon(Icons.add, size: 18),
-                          onPressed: _selectedType == null
-                              ? null
-                              : () => setState(() {
-                                  if (_amount < _maxAmount) {
-                                    _amount++;
-                                  }
-                                }),
-                          color: AppColors.primary,
-                        ),
-                        Expanded(
-                          child: AppText(
-                            _selectedType == null ? '—' : '$_amount',
-                            textAlign: TextAlign.center,
-                            style: AppTextStyles.bodyMdBold,
-                          ),
-                        ),
-                        IconButton(
-                          icon: const Icon(Icons.remove, size: 18),
-                          onPressed: _selectedType == null
-                              ? null
-                              : () => setState(() {
-                                  if (_amount > 1) _amount--;
-                                }),
-                          color: AppColors.onSurfaceVariant,
-                        ),
-                      ],
-                    ),
-                  ),
-                ],
+                ),
               ),
-            ),
 
-            SizedBox(height: 16.h),
-            AppButton(
-              label: 'تسجيل',
-              variant: AppButtonVariant.gradient,
-              icon: Icons.save_outlined,
-              isLoading: _isSaving,
-              onPressed: _submit,
-            ),
-          ],
+              SizedBox(height: 16.h),
+              AppButton(
+                label: 'تسجيل',
+                variant: AppButtonVariant.gradient,
+                icon: Icons.save_outlined,
+                isLoading: _isSaving,
+                onPressed: _submit,
+              ),
+            ],
+          ),
         ),
       ),
     );
