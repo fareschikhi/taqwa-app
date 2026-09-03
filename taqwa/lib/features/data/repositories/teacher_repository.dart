@@ -122,18 +122,23 @@ class TeacherRepository {
   // ─── Memorization ─────────────────────────────────────────────────────────────────
 
   /// Returns the row the server created, so the caller can show what is now
-  /// on file without refetching the day.
+  /// on file without refetching the day. [surahNumber] is required for a
+  /// QURAN subject and omitted for HADITH; [hadithReference] is the reverse.
   Future<Map<String, dynamic>> submitMemorization({
     required int studentId,
-    required int surahNumber,
+    int? surahNumber,
     required int amountDone,
     required String memorizationType,
+    String subject = 'QURAN',
+    String? hadithReference,
   }) async {
     return _ds.submitMemorization(
       studentId: studentId,
       surahNumber: surahNumber,
       amountDone: amountDone,
       memorizationType: memorizationType,
+      subject: subject,
+      hadithReference: hadithReference,
     );
   }
 }

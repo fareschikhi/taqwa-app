@@ -181,17 +181,21 @@ class TeacherRemoteDatasource {
 
   Future<Map<String, dynamic>> submitMemorization({
     required int studentId,
-    required int surahNumber,
+    int? surahNumber,
     required int amountDone,
     required String memorizationType,
+    String subject = 'QURAN',
+    String? hadithReference,
   }) async {
     final response = await _dio.post(
       ApiEndpoints.memorization,
       data: {
         'studentId': studentId,
-        'surahNumber': surahNumber,
+        if (surahNumber != null) 'surahNumber': surahNumber,
         'amountDone': amountDone,
         'memorizationType': memorizationType,
+        'subject': subject,
+        if (hadithReference != null) 'hadithReference': hadithReference,
       },
     );
     return response.data as Map<String, dynamic>;
