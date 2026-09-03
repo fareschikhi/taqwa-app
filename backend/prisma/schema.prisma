@@ -30,6 +30,11 @@ enum Memorization {
   BIGREVISION
 }
 
+enum MemorizationSubject {
+  QURAN
+  HADITH
+}
+
 enum AttendanceStatus {
   PRESENT
   ABSENT
@@ -131,6 +136,10 @@ model Student {
   // Free text rather than an enum: teachers word the overall rating however
   // they like ("ممتاز", "جيد جداً", "يحتاج مراجعة"), so the set is not fixed.
   currentRating  String?
+  // Admin-set opt-in: gates both whether the teacher's recitation sheet
+  // offers a Hadith subject for this student and whether the server accepts
+  // a HADITH-subject write for him.
+  tracksHadith   Boolean   @default(false)
 
   user        User                   @relation(fields: [userId], references: [id], onDelete: Cascade)
   parent      Parent?                @relation(fields: [parentId], references: [id], onDelete: SetNull)
@@ -204,14 +213,20 @@ model Attendance {
 // ─────────────────────────────────────────────────────────────────────────────
 
 model MemorizationProgress {
-  id               Int          @id @default(autoincrement())
+  id               Int                 @id @default(autoincrement())
   studentId        Int
-  surahNumber      Int
+  // QURAN-only: which surah. Nullable because a HADITH row has none.
+  surahNumber      Int?
   amountDone       Int
-  memorizationType Memorization @default(MEMORIZING)
-  recordedAt       DateTime     @default(now())
-  date             DateTime     @db.Date 
-  updatedAt        DateTime     @updatedAt
+  memorizationType Memorization        @default(MEMORIZING)
+  subject          MemorizationSubject @default(QURAN)
+  // HADITH-only free-text identity (a name, a number in whichever collection
+  // the halaqa uses, a short description) — there is no fixed hadith list to
+  // pick a number from the way surahNumber picks one off the mushaf.
+  hadithReference  String?             @db.VarChar(500)
+  recordedAt       DateTime            @default(now())
+  date             DateTime            @db.Date 
+  updatedAt        DateTime            @updatedAt
 
   student Student @relation(fields: [studentId], references: [id], onDelete: Cascade)
 
