@@ -6,6 +6,7 @@ import 'package:taqwa/core/enums/memorization_type.dart';
 import 'package:taqwa/core/theme/app_colors.dart';
 import 'package:taqwa/core/theme/app_text_styles.dart';
 import 'package:taqwa/core/utils/last_session.dart';
+import 'package:taqwa/core/utils/hadith_label.dart';
 import 'package:taqwa/core/widgets/app_card.dart';
 import 'package:taqwa/core/widgets/app_text.dart';
 
@@ -92,9 +93,7 @@ class LastSessionCard extends StatelessWidget {
         : '${type.label} · ${entry.amount} ${isHadith ? 'حديث' : type.unitLabel}';
 
     final referenceText = isHadith
-        ? ((entry.hadithReference?.trim().isNotEmpty ?? false)
-            ? entry.hadithReference!
-            : 'حديث')
+        ? hadithLabelOrFallback(entry.hadithReference)
         : 'سورة ${entry.surahName ?? 'رقم ${entry.surahNumber}'}';
 
     return Padding(

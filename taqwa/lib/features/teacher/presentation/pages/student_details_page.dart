@@ -6,6 +6,7 @@ import '../../../../core/constants/app_constants.dart';
 import '../../../../core/constants/surahs.dart';
 import '../../../../core/enums/memorization_type.dart';
 import '../../../../core/utils/fine_balance.dart';
+import '../../../../core/utils/hadith_label.dart';
 import '../../../../core/widgets/app_button.dart';
 import '../../../../core/widgets/app_card.dart';
 import '../../../../core/widgets/app_text_field.dart';
@@ -382,7 +383,7 @@ class _StudentDetailsPageState extends State<StudentDetailsPage> {
     final typeLabel = type == MemorizationType.hifz ? 'حفظ جديد' : type.label;
     final isHadith = entry['subject'] == 'HADITH';
     final referenceLabel = isHadith
-        ? _hadithLabel(entry['hadithReference'] as String?)
+        ? hadithLabelOrFallback(entry['hadithReference'] as String?)
         : surahLabelOf((entry['surahNumber'] as num?)?.toInt());
 
     return AppCard(
@@ -572,12 +573,6 @@ String _formatDate(dynamic raw) {
   }
 }
 
-/// A hadith entry's reference text, or a generic placeholder when it is
-/// missing or blank — mirrors the fallback in memorizationSummary and
-/// LastSessionCard.
-String _hadithLabel(String? reference) =>
-    (reference != null && reference.trim().isNotEmpty) ? reference : 'حديث';
-
 class _StatBox extends StatelessWidget {
   const _StatBox({
     required this.label,
@@ -667,7 +662,7 @@ class _RecordItem extends StatelessWidget {
     return _RecordItem(
       date: _formatDate(entry['date'] ?? entry['recordedAt']),
       surah: isHadith
-          ? _hadithLabel(entry['hadithReference'] as String?)
+          ? hadithLabelOrFallback(entry['hadithReference'] as String?)
           : surahLabelOf((entry['surahNumber'] as num?)?.toInt()),
       type: type == MemorizationType.hifz ? 'حفظ جديد' : type.label,
       amount: '$count ${isHadith ? 'حديث' : type.unitLabel}',

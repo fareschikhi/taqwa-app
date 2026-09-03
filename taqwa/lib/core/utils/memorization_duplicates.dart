@@ -1,5 +1,6 @@
 import '../constants/surahs.dart';
 import '../enums/memorization_type.dart';
+import 'hadith_label.dart';
 
 /// Helpers for spotting a student who already has recitation recorded today.
 ///
@@ -40,9 +41,7 @@ String memorizationSummary(Map<String, dynamic> record) {
 
   if (record['subject'] == 'HADITH') {
     final reference = record['hadithReference'] as String?;
-    final label = (reference != null && reference.trim().isNotEmpty)
-        ? reference
-        : 'حديث';
+    final label = hadithLabelOrFallback(reference);
     return '$label · $typeLabel · $amount حديث';
   }
 
