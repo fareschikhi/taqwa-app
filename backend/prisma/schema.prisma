@@ -82,6 +82,7 @@ model User {
   notifications Notification[]
   deviceTokens  DeviceToken[]
   finesCreated  FineEntry[]
+  announcements HalaqaAnnouncement[]
 
   @@index([role])
   @@index([isActive])
@@ -176,6 +177,7 @@ model Halaqa {
   teacher  Teacher         @relation(fields: [teacherId], references: [id], onDelete: Cascade)
   students Student[]
   managers ManagerHalaqa[]
+  announcements HalaqaAnnouncement[]
 
   @@index([teacherId])
   @@map("halaqas")
@@ -276,6 +278,36 @@ model StudentNote {
   @@index([studentId])
   @@index([teacherId])
   @@map("student_notes")
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// Halaqa Announcement (manager/admin → a whole halaqa)
+// ─────────────────────────────────────────────────────────────────────────────
+
+// News about the circle rather than about a student: the teacher is away, the
+// session moves to 6pm, the halaqa is off for the holidays. Read by everyone
+// tied to the halaqa; written by a manager assigned to it, or by an admin.
+model HalaqaAnnouncement {
+  id       Int    @id @default(autoincrement())
+  halaqaId Int
+  // The User who posted, not the Manager: an admin posts too and has no
+  // manager row.
+  authorId Int
+  title    String @db.VarChar(200)
+  body     String @db.Text
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  halaqa Halaqa @relation(fields: [halaqaId], references: [id], onDelete: Cascade)
+  // Restrict, not Cascade: deleting a manager's account must not silently
+  // erase what a halaqa was told.
+  author User @relation(fields: [authorId], references: [id], onDelete: Restrict)
+
+  // Matches the only two queries there are — one halaqa's history, and a feed
+  // over a set of halaqa ids — both ordered by createdAt.
+  @@index([halaqaId, createdAt])
+  @@map("halaqa_announcements")
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
