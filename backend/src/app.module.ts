@@ -16,6 +16,7 @@ import { NotificationsModule } from './modules/notifications/notifications.modul
 import { ManagersModule } from './modules/managers/managers.module';
 import { AbsenceJustificationModule } from './modules/absence-justification/absence-justification.module';
 import { StudentNotesModule } from './modules/student-notes/student-notes.module';
+import { HalaqaAnnouncementsModule } from './modules/halaqa-announcements/halaqa-announcements.module';
 import { UploadsModule } from './modules/uploads/uploads.module';
 import { DevicesModule } from './modules/devices/devices.module';
 import { FinesModule } from './modules/fines/fines.module';
@@ -39,6 +40,7 @@ import { FinesModule } from './modules/fines/fines.module';
     ManagersModule,
     AbsenceJustificationModule,
     StudentNotesModule,
+    HalaqaAnnouncementsModule,
     UploadsModule,
     DevicesModule,
     FinesModule,
