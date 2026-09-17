@@ -32,8 +32,11 @@ class _AdminDashboardPageState extends ConsumerState<AdminDashboardPage> {
   int _teachersCount = 0;
   int _halaqasCount = 0;
   int _managersCount = 0;
-  String _attendanceRate = '—';
-  List<DayAttendanceRate> _week = const [];
+
+  /// Students marked present today over everyone marked at all, as a count.
+  /// Em dash until the first record of the day lands.
+  String _attendanceToday = '—';
+  List<DayAttendance> _week = const [];
 
   @override
   void initState() {
@@ -58,8 +61,8 @@ class _AdminDashboardPageState extends ConsumerState<AdminDashboardPage> {
       final managers = results[3];
       final studentsCount = await studentsCountFuture;
 
-      // Compute today's attendance rate from today's records
-      String rate = '—';
+      // Compute today's attendance from today's records
+      String attendedToday = '—';
       try {
         final today = DateTime.now();
         final dateStr =
@@ -71,16 +74,18 @@ class _AdminDashboardPageState extends ConsumerState<AdminDashboardPage> {
           final present = attList
               .where((a) => a['status'] == 'PRESENT' || a['status'] == 'LATE')
               .length;
-          rate = '${((present / attList.length) * 100).round()}%';
+          attendedToday = '$present من ${attList.length}';
         }
       } catch (_) {}
 
       // The weekly chart is a nicety: if it fails the rest of the dashboard
       // still loads, and the chart says it has nothing rather than inventing
       // a week.
-      List<DayAttendanceRate> week = const [];
+      List<DayAttendance> week = const [];
       try {
-        week = weeklyRatesFrom(await _teacherRepo.getWeeklyAttendanceRates());
+        week = weeklyAttendanceFrom(
+          await _teacherRepo.getWeeklyAttendanceRates(),
+        );
       } catch (_) {}
 
       if (mounted) {
@@ -89,7 +94,7 @@ class _AdminDashboardPageState extends ConsumerState<AdminDashboardPage> {
           _teachersCount = teachers.length;
           _halaqasCount = halaqas.length;
           _managersCount = managers.length;
-          _attendanceRate = rate;
+          _attendanceToday = attendedToday;
           _week = week;
           _isLoading = false;
         });
@@ -248,8 +253,8 @@ class _AdminDashboardPageState extends ConsumerState<AdminDashboardPage> {
           bubbleColor: AppColors.secondaryContainer,
         ),
         StatCard(
-          value: _attendanceRate,
-          label: 'نسبة الحضور',
+          value: _attendanceToday,
+          label: 'الحضور اليوم',
           icon: Icons.check_circle,
           iconColor: AppColors.primary,
           iconBgColor: AppColors.primaryContainer,
@@ -330,7 +335,7 @@ class _AdminDashboardPageState extends ConsumerState<AdminDashboardPage> {
 class _AttendanceBarChart extends StatelessWidget {
   const _AttendanceBarChart({required this.days});
 
-  final List<DayAttendanceRate> days;
+  final List<DayAttendance> days;
 
   @override
   Widget build(BuildContext context) {
@@ -365,16 +370,18 @@ class _AttendanceBarChart extends StatelessWidget {
     );
   }
 
-  Widget _bar(DayAttendanceRate day) {
-    final rate = day.rate;
+  Widget _bar(DayAttendance day) {
+    final marked = day.marked;
     return Padding(
       padding: EdgeInsets.symmetric(horizontal: 4.w),
       child: Column(
         children: [
           AppText(
-            rate == null ? '—' : '$rate%',
-            style: AppTextStyles.caption.copyWith(
-              color: rate == null ? AppColors.outline : AppColors.primary,
+            day.hasRecord ? '${day.present}' : '—',
+            // labelSm, not caption: this is a head count the admin has to
+            // actually read, and 10sp Tajawal reads as decoration.
+            style: AppTextStyles.labelSm.copyWith(
+              color: day.hasRecord ? AppColors.primary : AppColors.outline,
             ),
           ),
           SizedBox(height: 4.h),
@@ -390,7 +397,7 @@ class _AttendanceBarChart extends StatelessWidget {
                 ),
               ),
               child: FractionallySizedBox(
-                heightFactor: (rate ?? 0) / 100,
+                heightFactor: marked > 0 ? day.present / marked : 0,
                 alignment: Alignment.bottomCenter,
                 child: Container(
                   decoration: BoxDecoration(

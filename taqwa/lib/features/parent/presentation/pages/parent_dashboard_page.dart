@@ -194,7 +194,7 @@ class _ParentDashboardPageState extends ConsumerState<ParentDashboardPage> {
   Widget _buildChildCard(BuildContext context, ParentChildModel child) {
     // The card reports the current month; the attendance history tab keeps
     // showing the whole enrolment, which is why both figures are available.
-    final monthAttendanceRate = _attendance?.monthRate ?? 0;
+    final monthAttendedDays = _attendance?.monthAttended ?? 0;
     final pagesDone = (_progress?['totalPagesDone'] as num?)?.toInt() ?? 0;
 
     return GestureDetector(
@@ -288,8 +288,8 @@ class _ParentDashboardPageState extends ConsumerState<ParentDashboardPage> {
                 children: [
                   Expanded(
                     child: _StatChip(
-                      label: 'حضور الشهر',
-                      value: _isLoading ? '--' : '$monthAttendanceRate%',
+                      label: 'أيام الحضور هذا الشهر',
+                      value: _isLoading ? '--' : '$monthAttendedDays',
                     ),
                   ),
                   Container(

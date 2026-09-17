@@ -123,7 +123,7 @@ class _ChildAttendanceHistoryPageState
                 else ...[
                   // The boxes report the current month; the timeline under
                   // them stays the whole record, so the heading says which is
-                  // which rather than leaving a bare percentage to be read as
+                  // which rather than leaving a bare count to be read as
                   // an all-time figure.
                   AppText(
                     'إحصائيات هذا الشهر',
@@ -136,7 +136,7 @@ class _ChildAttendanceHistoryPageState
                     children: [
                       Expanded(
                         child: _StatBox(
-                          label: 'حضور',
+                          label: 'أيام الحضور',
                           value: '${_summary?.monthAttended ?? 0}',
                           color: AppColors.primary,
                         ),
@@ -144,17 +144,9 @@ class _ChildAttendanceHistoryPageState
                       SizedBox(width: 10.w),
                       Expanded(
                         child: _StatBox(
-                          label: 'غياب',
+                          label: 'أيام الغياب',
                           value: '${_summary?.monthAbsent ?? 0}',
                           color: AppColors.error,
-                        ),
-                      ),
-                      SizedBox(width: 10.w),
-                      Expanded(
-                        child: _StatBox(
-                          label: 'نسبة الحضور',
-                          value: '${_summary?.monthRate ?? 0}%',
-                          color: AppColors.secondary,
                         ),
                       ),
                     ],

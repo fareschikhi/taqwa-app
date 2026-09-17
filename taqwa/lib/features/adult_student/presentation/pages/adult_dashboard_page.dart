@@ -223,7 +223,7 @@ class _AdultDashboardPageState extends ConsumerState<AdultDashboardPage> {
   /// gradient hero that exists on the parent's side only to be a tappable
   /// route to a *child's* details page.
   Widget _buildSummary() {
-    final monthAttendanceRate = _attendance?.monthRate ?? 0;
+    final monthAttendedDays = _attendance?.monthAttended ?? 0;
     final pagesDone = (_progress?['totalPagesDone'] as num?)?.toInt() ?? 0;
 
     return Container(
@@ -236,8 +236,8 @@ class _AdultDashboardPageState extends ConsumerState<AdultDashboardPage> {
         children: [
           Expanded(
             child: _StatChip(
-              label: 'حضور الشهر',
-              value: '$monthAttendanceRate%',
+              label: 'أيام الحضور هذا الشهر',
+              value: '$monthAttendedDays',
             ),
           ),
           Container(

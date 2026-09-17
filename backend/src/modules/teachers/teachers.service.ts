@@ -139,14 +139,15 @@ export class TeachersService {
 
   async getTeacherAttendanceSummary(teacherId: number) {
     const now = new Date();
-    const startOfMonth = new Date(now.getFullYear(), now.getMonth(), 1);
+    // Attendance.date is a bare DATE that Prisma stores at UTC midnight, so
+    // the window is built in UTC too. A local-time window sits hours off those
+    // values and silently drops the first or last day of the month — which a
+    // percentage hid and a day count does not.
+    const startOfMonth = new Date(
+      Date.UTC(now.getUTCFullYear(), now.getUTCMonth(), 1),
+    );
     const endOfMonth = new Date(
-      now.getFullYear(),
-      now.getMonth() + 1,
-      0,
-      23,
-      59,
-      59,
+      Date.UTC(now.getUTCFullYear(), now.getUTCMonth() + 1, 0, 23, 59, 59, 999),
     );
 
     const students = await this.prisma.student.findMany({
@@ -156,7 +157,7 @@ export class TeachersService {
     const studentIds = students.map((s) => s.id);
 
     if (studentIds.length === 0) {
-      return { present: 0, absent: 0, rate: 0, month: now.getMonth() + 1 };
+      return { present: 0, absent: 0, rate: 0, month: now.getUTCMonth() + 1 };
     }
 
     // `present` covers everyone who turned up, late ones included: a late
@@ -182,7 +183,7 @@ export class TeachersService {
     const total = present + absent;
     const rate = total > 0 ? Math.round((present / total) * 100) : 0;
 
-    return { present, absent, rate, month: now.getMonth() + 1 };
+    return { present, absent, rate, month: now.getUTCMonth() + 1 };
   }
 
   async getRevisionNeeded(teacherId: number) {
@@ -249,9 +250,10 @@ export class TeachersService {
     const total = students.length;
     if (total === 0) {
       return {
-        memorizationPercent: 0,
-        minorReviewPercent: 0,
-        majorReviewPercent: 0,
+        memorizingCount: 0,
+        minorReviewCount: 0,
+        majorReviewCount: 0,
+        studentsCount: 0,
       };
     }
 
@@ -277,9 +279,10 @@ export class TeachersService {
     }
 
     return {
-      memorizationPercent: Math.round((memorizing / total) * 100),
-      minorReviewPercent: Math.round((minorReview / total) * 100),
-      majorReviewPercent: Math.round((majorReview / total) * 100),
+      memorizingCount: memorizing,
+      minorReviewCount: minorReview,
+      majorReviewCount: majorReview,
+      studentsCount: total,
     };
   }
 }

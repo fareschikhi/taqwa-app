@@ -17,8 +17,9 @@ void main() {
         'monthRate': 75,
       });
 
-      expect(model.rate, 70);
-      expect(model.monthRate, 75);
+      expect(model.present, 6);
+      expect(model.absent, 3);
+      expect(model.late, 1);
       expect(model.monthPresent, 2);
       expect(model.monthAbsent, 1);
       expect(model.monthLate, 1);
@@ -35,6 +36,31 @@ void main() {
       });
 
       expect(model.monthAttended, 5);
+      expect(model.monthMarked, 6);
+    });
+
+    // The student endpoint keeps `late` out of `present`, so putting the two
+    // back together is what "days he turned up" actually means there.
+    test('folds late days into the all-time attended count', () {
+      final model = AttendanceSummaryModel.fromJson({
+        'present': 6,
+        'absent': 3,
+        'late': 2,
+      });
+
+      expect(model.attended, 8);
+    });
+
+    // The teacher endpoint has already folded late arrivals into `present` and
+    // sends no `late` of its own, so `attended` must not double-count there.
+    test('leaves the teacher endpoint figures alone', () {
+      final model = AttendanceSummaryModel.fromJson({
+        'present': 40,
+        'absent': 8,
+        'month': 9,
+      });
+
+      expect(model.attended, 40);
     });
 
     // The teacher dashboard reads the same model from an endpoint that sends
@@ -43,7 +69,6 @@ void main() {
       final model = AttendanceSummaryModel.fromJson({
         'present': 5,
         'absent': 3,
-        'rate': 63,
         'month': 8,
       });
 
@@ -51,22 +76,21 @@ void main() {
       expect(model.monthAbsent, 0);
       expect(model.monthLate, 0);
       expect(model.monthAttended, 0);
-      expect(model.monthRate, 0);
+      expect(model.monthMarked, 0);
     });
 
     test('survives a completely empty payload', () {
       final model = AttendanceSummaryModel.fromJson({});
 
-      expect(model.rate, 0);
-      expect(model.monthRate, 0);
+      expect(model.present, 0);
       expect(model.monthAttended, 0);
+      expect(model.month, 1);
     });
 
     test('reads the current streak', () {
       final model = AttendanceSummaryModel.fromJson({
         'present': 6,
         'absent': 3,
-        'rate': 70,
         'month': 8,
         'currentStreak': 4,
       });
@@ -80,7 +104,6 @@ void main() {
       final model = AttendanceSummaryModel.fromJson({
         'present': 6,
         'absent': 3,
-        'rate': 70,
         'month': 8,
       });
 

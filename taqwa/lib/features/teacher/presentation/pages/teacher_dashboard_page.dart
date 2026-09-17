@@ -209,6 +209,11 @@ class _TeacherDashboardPageState extends ConsumerState<TeacherDashboardPage> {
   }
 
   Widget _buildBentoGrid() {
+    // This endpoint scopes `present` and `absent` to the current month and has
+    // already folded late arrivals into `present`, so these are the days the
+    // halaqa was attended this month rather than over the whole enrolment.
+    final attendedDays = _attendanceSummary?.present ?? 0;
+    final markedDays = attendedDays + (_attendanceSummary?.absent ?? 0);
     return Column(
       children: [
         // Attendance summary — full width, horizontal layout
@@ -219,8 +224,11 @@ class _TeacherDashboardPageState extends ConsumerState<TeacherDashboardPage> {
               // Stats
               Expanded(
                 child: CircularProgressWidget(
-                  percentage: (_attendanceSummary?.rate ?? 0) / 100.0,
-                  label: 'حضور الشهر',
+                  // The ring stays a visual; the figure inside it is the
+                  // number of days, which is what the teacher is being told.
+                  fillFraction: markedDays > 0 ? attendedDays / markedDays : 0.0,
+                  centerText: '$attendedDays',
+                  label: 'أيام الحضور هذا الشهر',
                   size: 80.w,
                   strokeWidth: 8.w,
                 ),
@@ -354,19 +362,22 @@ class _TeacherDashboardPageState extends ConsumerState<TeacherDashboardPage> {
           SizedBox(height: 16.h),
           _ProgressBarRow(
             label: 'الحفظ',
-            percentage: (mem?.memorizationPercent ?? 0) / 100.0,
+            count: mem?.memorizingCount ?? 0,
+            total: mem?.studentsCount ?? 0,
             color: AppColors.primary,
           ),
           SizedBox(height: 12.h),
           _ProgressBarRow(
             label: 'مراجعة صغرى',
-            percentage: (mem?.minorReviewPercent ?? 0) / 100.0,
+            count: mem?.minorReviewCount ?? 0,
+            total: mem?.studentsCount ?? 0,
             color: AppColors.secondary,
           ),
           SizedBox(height: 12.h),
           _ProgressBarRow(
             label: 'مراجعة كبرى',
-            percentage: (mem?.majorReviewPercent ?? 0) / 100.0,
+            count: mem?.majorReviewCount ?? 0,
+            total: mem?.studentsCount ?? 0,
             color: AppColors.tertiary,
           ),
         ],
@@ -443,15 +454,22 @@ class _ReviewStudentRow extends StatelessWidget {
 class _ProgressBarRow extends StatelessWidget {
   const _ProgressBarRow({
     required this.label,
-    required this.percentage,
+    required this.count,
+    required this.total,
     required this.color,
   });
   final String label;
-  final double percentage;
+
+  /// Students at this stage, and everyone the bar measures them against.
+  final int count;
+  final int total;
   final Color color;
 
   @override
   Widget build(BuildContext context) {
+    // The bar is a visual only; the figure beside it is the head count, so an
+    // empty halaqa draws an empty track rather than dividing by zero.
+    final fill = total > 0 ? count / total : 0.0;
     return Column(
       crossAxisAlignment: CrossAxisAlignment.end,
       children: [
@@ -459,7 +477,7 @@ class _ProgressBarRow extends StatelessWidget {
           mainAxisAlignment: MainAxisAlignment.spaceBetween,
           children: [
             AppText(
-              '${(percentage * 100).round()}%',
+              '$count من $total',
               style: AppTextStyles.labelMdBold.copyWith(
                 color: color,
                 fontWeight: FontWeight.w700,
@@ -478,7 +496,7 @@ class _ProgressBarRow extends StatelessWidget {
         ClipRRect(
           borderRadius: BorderRadius.circular(AppConstants.radiusFull),
           child: LinearProgressIndicator(
-            value: percentage,
+            value: fill,
             minHeight: 8.h,
             backgroundColor: AppColors.surfaceContainerHigh,
             valueColor: AlwaysStoppedAnimation(color),

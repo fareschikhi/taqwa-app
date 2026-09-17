@@ -8,20 +8,26 @@ import 'package:taqwa/core/widgets/app_text.dart';
 class CircularProgressWidget extends StatelessWidget {
   const CircularProgressWidget({
     super.key,
-    required this.percentage,
+    required this.fillFraction,
     required this.label,
     this.size,
     this.strokeWidth,
     this.color,
-    this.centerText,
+    required this.centerText,
   });
 
-  final double percentage;
+  /// How full the ring is drawn, 0-1. This is the visual only — the figure
+  /// the viewer actually reads is [centerText].
+  final double fillFraction;
   final String label;
   final double? size;
   final double? strokeWidth;
   final Color? color;
-  final String? centerText;
+
+  /// The figure shown inside the ring. Required, and never derived from
+  /// [fillFraction]: the ring is the visual, this is the number being reported,
+  /// and the app reports counts rather than shares.
+  final String centerText;
 
   @override
   Widget build(BuildContext context) {
@@ -42,7 +48,7 @@ class CircularProgressWidget extends StatelessWidget {
                 width: sz,
                 height: sz,
                 child: CircularProgressIndicator(
-                  value: percentage.clamp(0.0, 1.0),
+                  value: fillFraction.clamp(0.0, 1.0),
                   strokeWidth: sw,
                   backgroundColor: AppColors.surfaceContainerHigh,
                   valueColor: AlwaysStoppedAnimation(color0),
@@ -53,7 +59,7 @@ class CircularProgressWidget extends StatelessWidget {
                 mainAxisSize: MainAxisSize.min,
                 children: [
                   AppText(
-                    centerText ?? '${(percentage * 100).round()}%',
+                    centerText,
                     style: AppTextStyles.headlineMd.copyWith(
                       color: color0,
                       fontWeight: FontWeight.w700,
