@@ -10,6 +10,11 @@ import 'package:taqwa/features/data/repositories/manager_repository.dart';
 import 'package:taqwa/features/data/repositories/absence_justification_repository.dart';
 import '../widgets/justification_form_card.dart';
 import 'package:taqwa/core/widgets/app_text.dart';
+import 'package:taqwa/core/widgets/halaqa_news_card.dart';
+import 'package:taqwa/features/data/models/halaqa/halaqa_announcement_model.dart';
+import 'package:taqwa/features/data/repositories/halaqa_announcement_repository.dart';
+import 'package:taqwa/features/shared/presentation/pages/halaqa_news_page.dart';
+import 'package:taqwa/features/manager/presentation/widgets/halaqa_news_form_sheet.dart';
 
 class ManagerDashboardPage extends ConsumerStatefulWidget {
   const ManagerDashboardPage({super.key});
@@ -22,8 +27,10 @@ class ManagerDashboardPage extends ConsumerStatefulWidget {
 class _ManagerDashboardPageState extends ConsumerState<ManagerDashboardPage> {
   final _managerRepo = ManagerRepository();
   final _justificationRepo = AbsenceJustificationRepository();
+  final _newsRepo = HalaqaAnnouncementRepository();
   Map<String, dynamic>? _stats;
   List<dynamic> _students = [];
+  List<HalaqaAnnouncementModel> _news = [];
   int? _managerId;
   bool _isLoading = true;
 
@@ -54,6 +61,13 @@ class _ManagerDashboardPageState extends ConsumerState<ManagerDashboardPage> {
       // list the "بانتظار التبرير" tab of the justifications page shows.
       final unjustified = await _justificationRepo.getUnjustified(mgrId);
 
+      // A failed feed must not cost the dashboard the data it already has, so
+      // it degrades to an empty list rather than throwing — the same call
+      // ParentShell._loadUnread makes for its badge.
+      final news = await _newsRepo.myAnnouncements().catchError(
+        (_) => <HalaqaAnnouncementModel>[],
+      );
+
       // Distinct parents across the manager's students. Derived from the
       // students payload because GET /parents needs MANAGE_ACCOUNTS, which
       // not every manager has.
@@ -73,6 +87,7 @@ class _ManagerDashboardPageState extends ConsumerState<ManagerDashboardPage> {
           };
           _managerId = mgrId;
           _students = students;
+          _news = news;
           _isLoading = false;
         });
       }
@@ -110,6 +125,13 @@ class _ManagerDashboardPageState extends ConsumerState<ManagerDashboardPage> {
                             SizedBox(height: 20.h),
                             _buildStatCards(),
                             SizedBox(height: 24.h),
+                            HalaqaNewsCard(
+                              announcements: _news,
+                              canCompose: _managerId != null,
+                              onCompose: _composeNews,
+                              onSeeAll: _openNews,
+                            ),
+                            SizedBox(height: 24.h),
                             if (_managerId != null)
                               JustificationFormCard(
                                 managerId: _managerId!,
@@ -126,6 +148,29 @@ class _ManagerDashboardPageState extends ConsumerState<ManagerDashboardPage> {
               ),
       ),
     );
+  }
+
+  Future<void> _composeNews() async {
+    final saved = await HalaqaNewsFormSheet.show(
+      context,
+      isAdmin: false,
+      managerId: _managerId,
+    );
+    if (saved) await _loadData();
+  }
+
+  Future<void> _openNews() async {
+    await Navigator.of(context).push(
+      MaterialPageRoute(
+        builder: (_) => HalaqaNewsPage(
+          canCompose: _managerId != null,
+          isAdmin: false,
+          managerId: _managerId,
+        ),
+      ),
+    );
+    // Something may have been posted, edited or deleted on that page.
+    await _loadData();
   }
 
   Future<void> _logout() async {

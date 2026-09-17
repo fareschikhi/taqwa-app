@@ -14,6 +14,11 @@ import 'package:taqwa/features/data/repositories/halaqa_repository.dart';
 import 'package:taqwa/features/data/repositories/manager_repository.dart';
 import '../admin_shell.dart';
 import 'package:taqwa/core/widgets/app_text.dart';
+import 'package:taqwa/core/widgets/halaqa_news_card.dart';
+import 'package:taqwa/features/data/models/halaqa/halaqa_announcement_model.dart';
+import 'package:taqwa/features/data/repositories/halaqa_announcement_repository.dart';
+import 'package:taqwa/features/shared/presentation/pages/halaqa_news_page.dart';
+import 'package:taqwa/features/manager/presentation/widgets/halaqa_news_form_sheet.dart';
 
 class AdminDashboardPage extends ConsumerStatefulWidget {
   const AdminDashboardPage({super.key});
@@ -27,11 +32,13 @@ class _AdminDashboardPageState extends ConsumerState<AdminDashboardPage> {
   final _teacherRepo = TeacherRepository();
   final _halaqaRepo = HalaqaRepository();
   final _managerRepo = ManagerRepository();
+  final _newsRepo = HalaqaAnnouncementRepository();
   bool _isLoading = true;
   int _studentsCount = 0;
   int _teachersCount = 0;
   int _halaqasCount = 0;
   int _managersCount = 0;
+  List<HalaqaAnnouncementModel> _news = [];
 
   /// Students marked present today over everyone marked at all, as a count.
   /// Em dash until the first record of the day lands.
@@ -60,6 +67,13 @@ class _AdminDashboardPageState extends ConsumerState<AdminDashboardPage> {
       final halaqas = results[2];
       final managers = results[3];
       final studentsCount = await studentsCountFuture;
+
+      // A failed feed must not cost the dashboard the data it already has, so
+      // it degrades to an empty list rather than throwing — the same call
+      // ParentShell._loadUnread makes for its badge.
+      final news = await _newsRepo.myAnnouncements().catchError(
+        (_) => <HalaqaAnnouncementModel>[],
+      );
 
       // Compute today's attendance from today's records
       String attendedToday = '—';
@@ -96,6 +110,7 @@ class _AdminDashboardPageState extends ConsumerState<AdminDashboardPage> {
           _managersCount = managers.length;
           _attendanceToday = attendedToday;
           _week = week;
+          _news = news;
           _isLoading = false;
         });
       }
@@ -129,6 +144,13 @@ class _AdminDashboardPageState extends ConsumerState<AdminDashboardPage> {
                     SizedBox(height: 24.h),
                     _buildKpiGrid(),
                     SizedBox(height: 24.h),
+                    HalaqaNewsCard(
+                      announcements: _news,
+                      canCompose: true,
+                      onCompose: _composeNews,
+                      onSeeAll: _openNews,
+                    ),
+                    SizedBox(height: 24.h),
                     _buildChartAndActivity(),
                     SizedBox(height: 32.h),
                   ]),
@@ -139,6 +161,20 @@ class _AdminDashboardPageState extends ConsumerState<AdminDashboardPage> {
         ),
       ),
     );
+  }
+
+  Future<void> _composeNews() async {
+    final saved = await HalaqaNewsFormSheet.show(context, isAdmin: true);
+    if (saved) await _loadStats();
+  }
+
+  Future<void> _openNews() async {
+    await Navigator.of(context).push(
+      MaterialPageRoute(
+        builder: (_) => const HalaqaNewsPage(canCompose: true, isAdmin: true),
+      ),
+    );
+    await _loadStats();
   }
 
   Widget _buildAppBar(BuildContext context) {
