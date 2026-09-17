@@ -30,8 +30,8 @@ function run(user: unknown) {
 const nowSeconds = () => Math.floor(Date.now() / SECONDS);
 
 describe('TokenRefreshInterceptor', () => {
-  it('re-signs a token inside the last three days', async () => {
-    const user = { id: 5, role: 'TEACHER', tokenExp: nowSeconds() + 2 * DAY };
+  it('re-signs a token inside the last week', async () => {
+    const user = { id: 5, role: 'TEACHER', tokenExp: nowSeconds() + 5 * DAY };
     const { response, jwt, result } = run(user);
 
     await result;
@@ -44,7 +44,7 @@ describe('TokenRefreshInterceptor', () => {
   });
 
   it('leaves a freshly issued token alone', async () => {
-    const user = { id: 5, role: 'TEACHER', tokenExp: nowSeconds() + 6 * DAY };
+    const user = { id: 5, role: 'TEACHER', tokenExp: nowSeconds() + 20 * DAY };
     const { response, jwt, result } = run(user);
 
     await result;
@@ -63,7 +63,7 @@ describe('TokenRefreshInterceptor', () => {
   });
 
   it('passes the handler response through untouched', async () => {
-    const user = { id: 5, role: 'TEACHER', tokenExp: nowSeconds() + 2 * DAY };
+    const user = { id: 5, role: 'TEACHER', tokenExp: nowSeconds() + 5 * DAY };
     const { result } = run(user);
 
     await expect(result).resolves.toBe('ok');

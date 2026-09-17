@@ -21,7 +21,7 @@ import { requireEnv } from '../../common/config/env';
           // Cast because JwtSignOptions types this as a `ms` template literal,
           // which an env string cannot satisfy statically.
           expiresIn: (process.env.JWT_EXPIRES_IN ??
-            '7d') as JwtSignOptions['expiresIn'],
+            '30d') as JwtSignOptions['expiresIn'],
         },
       }),
     }),

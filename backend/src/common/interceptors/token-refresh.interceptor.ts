@@ -16,7 +16,7 @@ import { tap } from 'rxjs/operators';
  * `{ id, isActive: true }` on every request — deactivating an account already
  * revokes it immediately, which is the main thing such a table would buy.
  */
-const REFRESH_WHEN_REMAINING_SECONDS = 3 * 24 * 60 * 60;
+const REFRESH_WHEN_REMAINING_SECONDS = 7 * 24 * 60 * 60;
 
 @Injectable()
 export class TokenRefreshInterceptor implements NestInterceptor {
