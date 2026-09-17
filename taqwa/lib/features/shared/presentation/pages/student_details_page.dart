@@ -12,16 +12,31 @@ import '../../../../core/widgets/app_card.dart';
 import '../../../../core/widgets/app_text_field.dart';
 import '../../../../core/widgets/avatar_widget.dart';
 import '../../../../core/widgets/fine_balance_card.dart';
+import '../../../data/models/attendance_summary_model.dart';
 import '../../../data/models/fine/fine_summary_model.dart';
 import '../../../data/repositories/fine_repository.dart';
 import '../../../data/repositories/halaqa_repository.dart';
 import '../../../data/repositories/student_repository.dart';
-import '../../../data/models/teacher_student_model.dart';
 import 'package:taqwa/core/widgets/app_text.dart';
 
 class StudentDetailsPage extends StatefulWidget {
-  const StudentDetailsPage({super.key, required this.student});
-  final TeacherStudentModel student;
+  const StudentDetailsPage({
+    super.key,
+    required this.studentId,
+    required this.fullName,
+    this.avatar,
+    this.halaqaId,
+  });
+
+  /// What the caller already knows before this page's own load lands: the id
+  /// it fetches with, the halaqa that decides whether fines apply, and a name
+  /// and avatar for the header in the meantime. Everything else on screen
+  /// comes from `GET students/:id/profile`, which every role that opens this
+  /// page is allowed to call.
+  final int studentId;
+  final String fullName;
+  final String? avatar;
+  final int? halaqaId;
 
   @override
   State<StudentDetailsPage> createState() => _StudentDetailsPageState();
@@ -36,6 +51,11 @@ class _StudentDetailsPageState extends State<StudentDetailsPage> {
   String? _error;
   Map<String, dynamic>? _profile;
   Map<String, dynamic>? _progress;
+
+  /// Attendance is read from its own endpoint rather than the profile, because
+  /// the profile only carries an all-time figure and the page reports the
+  /// current month.
+  AttendanceSummaryModel? _attendance;
 
   // `GET /students/:id/profile` nests only `name`, `level` and the teacher
   // for the halaqa — not `isAdult` — so whether this student can carry a fine
@@ -55,14 +75,16 @@ class _StudentDetailsPageState extends State<StudentDetailsPage> {
       _error = null;
     });
     try {
-      final results = await Future.wait([
-        _repo.getProfile(widget.student.id),
-        _repo.getMemorizationProgress(widget.student.id),
+      final results = await Future.wait<dynamic>([
+        _repo.getProfile(widget.studentId),
+        _repo.getMemorizationProgress(widget.studentId),
+        _repo.getAttendanceSummary(widget.studentId),
       ]);
       if (!mounted) return;
       setState(() {
-        _profile = results[0];
-        _progress = results[1];
+        _profile = results[0] as Map<String, dynamic>;
+        _progress = results[1] as Map<String, dynamic>;
+        _attendance = results[2] as AttendanceSummaryModel;
         _isLoading = false;
       });
       // Runs after the profile is on screen: a halaqa lookup failing (or a
@@ -79,12 +101,12 @@ class _StudentDetailsPageState extends State<StudentDetailsPage> {
   }
 
   Future<void> _loadFines() async {
-    final halaqaId = widget.student.halaqaId;
+    final halaqaId = widget.halaqaId;
     if (halaqaId == null) return;
     try {
       final halaqa = await _halaqaRepo.getHalaqa(halaqaId);
       if (!mounted || !halaqa.isAdult) return;
-      final summary = await _fineRepo.forStudent(widget.student.id);
+      final summary = await _fineRepo.forStudent(widget.studentId);
       if (!mounted) return;
       setState(() {
         _isAdultStudent = true;
@@ -97,8 +119,8 @@ class _StudentDetailsPageState extends State<StudentDetailsPage> {
     }
   }
 
-  /// The teacher words the rating themselves, so this is a free-text field
-  /// rather than a picker. Submitting an empty box clears the rating.
+  /// Whoever opens the page words the rating themselves, so this is a
+  /// free-text field rather than a picker. Submitting an empty box clears it.
   Future<void> _editRating() async {
     final controller = TextEditingController(text: _currentRating ?? '');
     final saved = await showDialog<String>(
@@ -154,7 +176,7 @@ class _StudentDetailsPageState extends State<StudentDetailsPage> {
     if (saved == null) return;
     final rating = saved.trim();
     try {
-      await _repo.updateStudent(widget.student.id, {'currentRating': rating});
+      await _repo.updateStudent(widget.studentId, {'currentRating': rating});
       if (!mounted) return;
       // Patched in place so the box updates without a second round trip; a
       // later refresh reads the stored value back anyway.
@@ -259,7 +281,7 @@ class _StudentDetailsPageState extends State<StudentDetailsPage> {
     // Revision amounts are hizbs, so the server counts pages from new
     // memorization only — this is a page count, not a share of the Quran.
     final pagesDone = (_progress?['totalPagesDone'] as num?)?.toInt() ?? 0;
-    final attendanceRate = (_profile?['attendanceRate'] as num?)?.toInt() ?? 0;
+    final attendedDays = _attendance?.monthAttended ?? 0;
 
     // IntrinsicHeight bounds the row's height so the boxes can stretch to match
     // each other. Without it the row is unbounded inside the sliver and stretch
@@ -278,8 +300,8 @@ class _StudentDetailsPageState extends State<StudentDetailsPage> {
           SizedBox(width: 12.w),
           Expanded(
             child: _StatBox(
-              label: 'الحضور',
-              value: '$attendanceRate%',
+              label: 'أيام الحضور هذا الشهر',
+              value: '$attendedDays',
               color: AppColors.secondary,
             ),
           ),
@@ -350,7 +372,7 @@ class _StudentDetailsPageState extends State<StudentDetailsPage> {
 
     try {
       await _fineRepo.adjust(
-        studentId: widget.student.id,
+        studentId: widget.studentId,
         kind: kind,
         amount: result.amount,
         reason: result.reason,
@@ -363,9 +385,9 @@ class _StudentDetailsPageState extends State<StudentDetailsPage> {
       // under the teacher between opening the dialog and submitting it comes
       // back as a 400 with its own Arabic message, which belongs on screen
       // as-is rather than behind a generic failure.
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text(FineRepository.errorMessage(e))),
-      );
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(SnackBar(content: Text(FineRepository.errorMessage(e))));
     }
   }
 
@@ -454,13 +476,20 @@ class _StudentDetailsPageState extends State<StudentDetailsPage> {
 
   Widget _buildHeader(BuildContext context) {
     final user = _profile?['user'] as Map<String, dynamic>?;
-    final name = (user?['fullName'] as String?) ?? widget.student.fullName;
-    final avatar = (user?['avatar'] as String?) ?? widget.student.avatar;
+    final name = (user?['fullName'] as String?) ?? widget.fullName;
+    final avatar = (user?['avatar'] as String?) ?? widget.avatar;
     final teacherName =
         ((_halaqa?['teacher'] as Map<String, dynamic>?)?['user']
                 as Map<String, dynamic>?)?['fullName']
             as String?;
     final level = _halaqa?['level'] as String?;
+    // Null for an adult student, who is his own guardian and has no parent row
+    // at all. The line is left out entirely rather than filled with a
+    // placeholder, which would read as a parent the school failed to record.
+    final parentName =
+        ((_profile?['parent'] as Map<String, dynamic>?)?['user']
+                as Map<String, dynamic>?)?['fullName']
+            as String?;
 
     return Container(
       padding: EdgeInsets.all(16.w),
@@ -526,6 +555,13 @@ class _StudentDetailsPageState extends State<StudentDetailsPage> {
                         color: AppColors.onPrimary.withValues(alpha: 0.8),
                       ),
                     ),
+                    if (parentName != null)
+                      AppText(
+                        'ولي الأمر: $parentName',
+                        style: AppTextStyles.labelMd.copyWith(
+                          color: AppColors.onPrimary.withValues(alpha: 0.8),
+                        ),
+                      ),
                   ],
                 ),
               ),
@@ -821,9 +857,7 @@ class _FineAdjustDialogState extends State<_FineAdjustDialog> {
         backgroundColor: AppColors.surface,
         title: AppText(
           title,
-          style: AppTextStyles.headlineSm.copyWith(
-            color: AppColors.onSurface,
-          ),
+          style: AppTextStyles.headlineSm.copyWith(color: AppColors.onSurface),
         ),
         content: SingleChildScrollView(
           child: Column(
@@ -846,9 +880,7 @@ class _FineAdjustDialogState extends State<_FineAdjustDialog> {
                 SizedBox(height: 8.h),
                 AppText(
                   _errorText!,
-                  style: AppTextStyles.labelSm.copyWith(
-                    color: AppColors.error,
-                  ),
+                  style: AppTextStyles.labelSm.copyWith(color: AppColors.error),
                   textAlign: TextAlign.end,
                 ),
               ],
@@ -867,7 +899,10 @@ class _FineAdjustDialogState extends State<_FineAdjustDialog> {
           ),
           TextButton(
             onPressed: _submit,
-            child: AppText('حفظ', style: AppTextStyles.button.copyWith(color: accent)),
+            child: AppText(
+              'حفظ',
+              style: AppTextStyles.button.copyWith(color: accent),
+            ),
           ),
         ],
       ),

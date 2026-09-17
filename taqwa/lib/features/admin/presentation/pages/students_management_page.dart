@@ -9,6 +9,7 @@ import 'package:taqwa/features/data/network/dio_client.dart';
 import 'package:taqwa/features/data/network/api_endpoints.dart';
 import '../../../../features/data/models/student/student_model.dart';
 import '../../../../features/data/repositories/student_repository.dart';
+import '../../../shared/presentation/pages/student_details_page.dart';
 import '../../../shared/presentation/pages/student_form_page.dart';
 import '../admin_shell.dart';
 import 'package:taqwa/core/utils/student_grouping.dart';
@@ -52,6 +53,25 @@ class _StudentsManagementPageState extends State<StudentsManagementPage> {
       ),
     );
     if (mounted) _load();
+  }
+
+  /// Opens the shared read-only profile. The four values it needs are already
+  /// in the list payload, so the page can draw its header before its own
+  /// `GET /students/:id/profile` returns.
+  void _openDetails(Map<String, dynamic> student) {
+    final user = student['user'] as Map<String, dynamic>? ?? const {};
+    final halaqa = student['halaqa'] as Map<String, dynamic>?;
+    Navigator.push(
+      context,
+      MaterialPageRoute(
+        builder: (_) => StudentDetailsPage(
+          studentId: student['id'] as int,
+          fullName: (user['fullName'] as String?) ?? '',
+          avatar: user['avatar'] as String?,
+          halaqaId: (halaqa?['id'] as num?)?.toInt(),
+        ),
+      ),
+    );
   }
 
   Future<void> _deleteStudent(int id) async {
@@ -290,6 +310,8 @@ class _StudentsManagementPageState extends State<StudentsManagementPage> {
                                       padding: EdgeInsets.only(bottom: 16.h),
                                       child: _StudentCard(
                                         student: student,
+                                        onOpenDetails: () =>
+                                            _openDetails(student),
                                         onEdit: () => _openForm(student),
                                         onDelete: () => _deleteStudent(
                                           student['id'] as int,
@@ -320,11 +342,16 @@ class _StudentsManagementPageState extends State<StudentsManagementPage> {
 class _StudentCard extends StatelessWidget {
   const _StudentCard({
     required this.student,
+    required this.onOpenDetails,
     required this.onEdit,
     required this.onDelete,
     required this.onToggleActive,
   });
   final Map<String, dynamic> student;
+  /// Tapping the card body opens the profile. Edit, delete and the status
+  /// toggle stay on their own buttons inside it, and their own gesture
+  /// detectors win over this one, so the row keeps all four actions.
+  final VoidCallback onOpenDetails;
   final VoidCallback onEdit;
   final VoidCallback onDelete;
   final VoidCallback onToggleActive;
@@ -340,106 +367,112 @@ class _StudentCard extends StatelessWidget {
     final attendanceCount = counts['attendance'] ?? 0;
     final memCount = counts['memorization'] ?? 0;
 
-    return Container(
-      decoration: BoxDecoration(
-        color: AppColors.surfaceContainerLowest,
-        borderRadius: BorderRadius.circular(AppConstants.radiusXl),
-        boxShadow: const [
-          BoxShadow(
-            color: Color.fromRGBO(18, 52, 59, 0.04),
-            blurRadius: 20,
-            offset: Offset(0, 4),
+    return GestureDetector(
+      onTap: onOpenDetails,
+      // Opaque so the padding around the content is part of the target, not
+      // just the text and the avatar.
+      behavior: HitTestBehavior.opaque,
+      child: Container(
+        decoration: BoxDecoration(
+          color: AppColors.surfaceContainerLowest,
+          borderRadius: BorderRadius.circular(AppConstants.radiusXl),
+          boxShadow: const [
+            BoxShadow(
+              color: Color.fromRGBO(18, 52, 59, 0.04),
+              blurRadius: 20,
+              offset: Offset(0, 4),
+            ),
+          ],
+          border: Border(
+            right: BorderSide(color: AppColors.primary, width: 4.w),
           ),
-        ],
-        border: Border(
-          right: BorderSide(color: AppColors.primary, width: 4.w),
         ),
-      ),
-      padding: EdgeInsets.all(16.w),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.end,
-        children: [
-          Row(
-            children: [
-              Container(
-                padding: EdgeInsets.symmetric(horizontal: 8.w, vertical: 3.h),
-                decoration: BoxDecoration(
-                  color: isActive
-                      ? AppColors.primary.withValues(alpha: 0.1)
-                      : AppColors.surfaceVariant,
-                  borderRadius: BorderRadius.circular(AppConstants.radiusMd),
-                ),
-                child: AppText(
-                  isActive ? 'نشط' : 'غير نشط',
-                  style: AppTextStyles.labelSm.copyWith(
-                    color: isActive ? AppColors.primary : AppColors.outline,
+        padding: EdgeInsets.all(16.w),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.end,
+          children: [
+            Row(
+              children: [
+                Container(
+                  padding: EdgeInsets.symmetric(horizontal: 8.w, vertical: 3.h),
+                  decoration: BoxDecoration(
+                    color: isActive
+                        ? AppColors.primary.withValues(alpha: 0.1)
+                        : AppColors.surfaceVariant,
+                    borderRadius: BorderRadius.circular(AppConstants.radiusMd),
+                  ),
+                  child: AppText(
+                    isActive ? 'نشط' : 'غير نشط',
+                    style: AppTextStyles.labelSm.copyWith(
+                      color: isActive ? AppColors.primary : AppColors.outline,
+                    ),
                   ),
                 ),
-              ),
-              const Spacer(),
-              Column(
-                crossAxisAlignment: CrossAxisAlignment.end,
-                children: [
-                  AppText(
-                    fullName,
-                    style: AppTextStyles.bodyMdBold.copyWith(
-                      color: AppColors.onSurface,
-                    ),
-                  ),
-                  Container(
-                    padding: EdgeInsets.symmetric(
-                      horizontal: 8.w,
-                      vertical: 2.h,
-                    ),
-                    decoration: BoxDecoration(
-                      color: AppColors.secondaryContainer.withValues(alpha: 0.4),
-                      borderRadius:
-                          BorderRadius.circular(AppConstants.radiusFull),
-                    ),
-                    child: AppText(
-                      halaqaName,
-                      style: AppTextStyles.labelSm.copyWith(
-                        color: AppColors.secondary,
+                const Spacer(),
+                Column(
+                  crossAxisAlignment: CrossAxisAlignment.end,
+                  children: [
+                    AppText(
+                      fullName,
+                      style: AppTextStyles.bodyMdBold.copyWith(
+                        color: AppColors.onSurface,
                       ),
                     ),
-                  ),
-                ],
-              ),
-              SizedBox(width: 12.w),
-              AvatarWidget(
-                avatarUrl:
-                    (student['avatar'] as String?) ??
-                    (user['avatar'] as String?),
-                size: 44.w,
-                fallback: AppText(
-                  fullName.isNotEmpty ? fullName[0] : '؟',
-                  style: AppTextStyles.headlineSm.copyWith(
-                    color: AppColors.onPrimaryContainer,
+                    Container(
+                      padding: EdgeInsets.symmetric(
+                        horizontal: 8.w,
+                        vertical: 2.h,
+                      ),
+                      decoration: BoxDecoration(
+                        color: AppColors.secondaryContainer.withValues(alpha: 0.4),
+                        borderRadius:
+                            BorderRadius.circular(AppConstants.radiusFull),
+                      ),
+                      child: AppText(
+                        halaqaName,
+                        style: AppTextStyles.labelSm.copyWith(
+                          color: AppColors.secondary,
+                        ),
+                      ),
+                    ),
+                  ],
+                ),
+                SizedBox(width: 12.w),
+                AvatarWidget(
+                  avatarUrl:
+                      (student['avatar'] as String?) ??
+                      (user['avatar'] as String?),
+                  size: 44.w,
+                  fallback: AppText(
+                    fullName.isNotEmpty ? fullName[0] : '؟',
+                    style: AppTextStyles.headlineSm.copyWith(
+                      color: AppColors.onPrimaryContainer,
+                    ),
                   ),
                 ),
-              ),
-            ],
-          ),
-          SizedBox(height: 12.h),
-          Row(
-            children: [
-              Expanded(
-                child: _InfoCell(label: 'حضور', value: '$attendanceCount'),
-              ),
-              SizedBox(width: 8.w),
-              Expanded(
-                child: _InfoCell(label: 'حفظ', value: '$memCount'),
-              ),
-            ],
-          ),
-          SizedBox(height: 12.h),
-          CardActionRow(
-            isActive: isActive,
-            onToggleActive: onToggleActive,
-            onDelete: onDelete,
-            onEdit: onEdit,
-          ),
-        ],
+              ],
+            ),
+            SizedBox(height: 12.h),
+            Row(
+              children: [
+                Expanded(
+                  child: _InfoCell(label: 'حضور', value: '$attendanceCount'),
+                ),
+                SizedBox(width: 8.w),
+                Expanded(
+                  child: _InfoCell(label: 'حفظ', value: '$memCount'),
+                ),
+              ],
+            ),
+            SizedBox(height: 12.h),
+            CardActionRow(
+              isActive: isActive,
+              onToggleActive: onToggleActive,
+              onDelete: onDelete,
+              onEdit: onEdit,
+            ),
+          ],
+        ),
       ),
     );
   }

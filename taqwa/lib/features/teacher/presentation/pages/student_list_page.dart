@@ -13,7 +13,7 @@ import '../../../data/repositories/fine_repository.dart';
 import '../../../data/repositories/halaqa_repository.dart';
 import '../../../data/repositories/teacher_repository.dart';
 import '../../../data/models/teacher_student_model.dart';
-import 'student_details_page.dart';
+import '../../../shared/presentation/pages/student_details_page.dart';
 import 'package:taqwa/core/widgets/app_text.dart';
 
 class StudentListPage extends ConsumerStatefulWidget {
@@ -305,7 +305,10 @@ class _StudentListPageState extends ConsumerState<StudentListPage> {
                                     context,
                                     MaterialPageRoute(
                                       builder: (_) => StudentDetailsPage(
-                                        student: student,
+                                        studentId: student.id,
+                                        fullName: student.fullName,
+                                        avatar: student.avatar,
+                                        halaqaId: student.halaqaId,
                                       ),
                                     ),
                                   ),
@@ -355,14 +358,6 @@ class _StudentListTile extends StatelessWidget {
       child: Row(
         crossAxisAlignment: CrossAxisAlignment.center,
         children: [
-          Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              _PercRow(percent: 0, color: AppColors.primary, label: 'حفظ'),
-              SizedBox(height: 4.h),
-              _PercRow(percent: 0, color: AppColors.secondary, label: 'حضور'),
-            ],
-          ),
           const Spacer(),
           Column(
             crossAxisAlignment: CrossAxisAlignment.end,
@@ -411,40 +406,6 @@ class _StudentListTile extends StatelessWidget {
           ),
         ],
       ),
-    );
-  }
-}
-
-class _PercRow extends StatelessWidget {
-  const _PercRow({
-    required this.percent,
-    required this.color,
-    required this.label,
-  });
-  final double percent;
-  final Color color;
-  final String label;
-
-  @override
-  Widget build(BuildContext context) {
-    return Row(
-      mainAxisSize: MainAxisSize.min,
-      children: [
-        AppText(
-          '${(percent * 100).round()}%',
-          style: AppTextStyles.labelSm.copyWith(
-            color: color,
-            fontWeight: FontWeight.w700,
-          ),
-        ),
-        SizedBox(width: 4.w),
-        AppText(
-          label,
-          style: AppTextStyles.caption.copyWith(
-            color: AppColors.onSurfaceVariant,
-          ),
-        ),
-      ],
     );
   }
 }

@@ -13,6 +13,7 @@ import '../../../../core/widgets/halaqa_group_section.dart';
 import '../../../../features/data/models/student/student_model.dart';
 import '../../../../features/data/repositories/student_repository.dart';
 import '../../../../features/data/repositories/manager_repository.dart';
+import '../../../shared/presentation/pages/student_details_page.dart';
 import '../../../shared/presentation/pages/student_form_page.dart';
 import 'package:taqwa/core/widgets/app_text.dart';
 
@@ -50,6 +51,25 @@ class _ManagerStudentsPageState extends ConsumerState<ManagerStudentsPage> {
       ),
     );
     if (mounted) _loadStudents();
+  }
+
+  /// Opens the shared read-only profile. The four values it needs are already
+  /// in the list payload, so the page can draw its header before its own
+  /// `GET /students/:id/profile` returns.
+  void _openDetails(Map<String, dynamic> student) {
+    final user = student['user'] as Map<String, dynamic>? ?? const {};
+    final halaqa = student['halaqa'] as Map<String, dynamic>?;
+    Navigator.push(
+      context,
+      MaterialPageRoute(
+        builder: (_) => StudentDetailsPage(
+          studentId: student['id'] as int,
+          fullName: (user['fullName'] as String?) ?? '',
+          avatar: user['avatar'] as String?,
+          halaqaId: (halaqa?['id'] as num?)?.toInt(),
+        ),
+      ),
+    );
   }
 
   Future<void> _deleteStudent(int id) async {
@@ -268,6 +288,7 @@ class _ManagerStudentsPageState extends ConsumerState<ManagerStudentsPage> {
                                   padding: EdgeInsets.only(bottom: 12.h),
                                   child: _StudentCard(
                                     student: student,
+                                    onOpenDetails: () => _openDetails(student),
                                     canManage: canManage,
                                     canDelete: canDelete,
                                     onEdit: () => _openForm(student),
@@ -291,12 +312,18 @@ class _ManagerStudentsPageState extends ConsumerState<ManagerStudentsPage> {
 class _StudentCard extends StatelessWidget {
   const _StudentCard({
     required this.student,
+    required this.onOpenDetails,
     this.canManage = false,
     this.canDelete = false,
     this.onEdit,
     this.onDelete,
   });
   final Map<String, dynamic> student;
+
+  /// Tapping the card body opens the profile. Edit and delete stay on their
+  /// own icons inside it, and their gesture detectors win over this one, so a
+  /// manager who may not manage still gets the profile from the same tap.
+  final VoidCallback onOpenDetails;
   final bool canManage;
   final bool canDelete;
   final VoidCallback? onEdit;
@@ -316,168 +343,175 @@ class _StudentCard extends StatelessWidget {
     final count = student['_count'] as Map<String, dynamic>? ?? {};
     final attendanceCount = count['attendance'] ?? 0;
 
-    return Container(
-      decoration: BoxDecoration(
-        color: AppColors.surfaceContainerLowest,
-        borderRadius: BorderRadius.circular(AppConstants.radiusXl),
-        boxShadow: const [
-          BoxShadow(
-            color: Color.fromRGBO(18, 52, 59, 0.04),
-            blurRadius: 20,
-            offset: Offset(0, 4),
-          ),
-        ],
-      ),
-      padding: EdgeInsets.all(16.w),
-      child: Row(
-        children: [
-          Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              // Icon(Icons.visibility_outlined,
-              //     color: AppColors.primary, size: 20.w),
-              if (canManage) ...[
-                SizedBox(height: 8.h),
-                GestureDetector(
-                  onTap: onEdit,
-                  child: Icon(
-                    Icons.edit_outlined,
-                    color: AppColors.onSurfaceVariant,
-                    size: 25.w,
-                  ),
-                ),
-              ],
-              SizedBox(height: 8.h),
-              if (canDelete) ...[
-                SizedBox(height: 8.h),
-                GestureDetector(
-                  onTap: onDelete,
-                  child: Icon(
-                    Icons.delete_outline,
-                    color: AppColors.error,
-                    size: 25.w,
-                  ),
-                ),
-              ],
-            ],
-          ),
-          const Spacer(),
-          Column(
-            crossAxisAlignment: CrossAxisAlignment.end,
-            children: [
-              Row(
-                children: [
-                  AppText(
-                    fullName,
-                    style: AppTextStyles.headlineSm.copyWith(
-                      color: AppColors.onSurface,
-                    ),
-                  ),
-                  SizedBox(width: 10.w),
-                  Container(
-                    width: 48.w,
-                    height: 48.w,
-                    decoration: BoxDecoration(
-                      color: AppColors.primaryContainer,
-                      shape: BoxShape.circle,
-                    ),
+    return GestureDetector(
+      onTap: onOpenDetails,
+      // Opaque so the padding around the content is part of the target, not
+      // just the text and the icons.
+      behavior: HitTestBehavior.opaque,
+      child: Container(
+        decoration: BoxDecoration(
+          color: AppColors.surfaceContainerLowest,
+          borderRadius: BorderRadius.circular(AppConstants.radiusXl),
+          boxShadow: const [
+            BoxShadow(
+              color: Color.fromRGBO(18, 52, 59, 0.04),
+              blurRadius: 20,
+              offset: Offset(0, 4),
+            ),
+          ],
+        ),
+        padding: EdgeInsets.all(16.w),
+        child: Row(
+          children: [
+            Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                // Icon(Icons.visibility_outlined,
+                //     color: AppColors.primary, size: 20.w),
+                if (canManage) ...[
+                  SizedBox(height: 8.h),
+                  GestureDetector(
+                    onTap: onEdit,
                     child: Icon(
-                      Icons.person,
-                      color: AppColors.onPrimaryContainer,
-                      size: 28.w,
+                      Icons.edit_outlined,
+                      color: AppColors.onSurfaceVariant,
+                      size: 25.w,
                     ),
                   ),
                 ],
-              ),
-              SizedBox(height: 4.h),
-              if (phone.isNotEmpty)
+                SizedBox(height: 8.h),
+                if (canDelete) ...[
+                  SizedBox(height: 8.h),
+                  GestureDetector(
+                    onTap: onDelete,
+                    child: Icon(
+                      Icons.delete_outline,
+                      color: AppColors.error,
+                      size: 25.w,
+                    ),
+                  ),
+                ],
+              ],
+            ),
+            const Spacer(),
+            Column(
+              crossAxisAlignment: CrossAxisAlignment.end,
+              children: [
                 Row(
                   children: [
                     AppText(
-                      phone,
-                      style: AppTextStyles.labelMd.copyWith(
-                        color: AppColors.onSurfaceVariant,
+                      fullName,
+                      style: AppTextStyles.headlineSm.copyWith(
+                        color: AppColors.onSurface,
                       ),
                     ),
-                    SizedBox(width: 4.w),
-                    const Icon(
-                      Icons.phone_outlined,
-                      size: 14,
-                      color: AppColors.onSurfaceVariant,
+                    SizedBox(width: 10.w),
+                    Container(
+                      width: 48.w,
+                      height: 48.w,
+                      decoration: BoxDecoration(
+                        color: AppColors.primaryContainer,
+                        shape: BoxShape.circle,
+                      ),
+                      child: Icon(
+                        Icons.person,
+                        color: AppColors.onPrimaryContainer,
+                        size: 28.w,
+                      ),
                     ),
                   ],
                 ),
-              SizedBox(height: 8.h),
-              Row(
-                children: [
-                  Container(
-                    padding: EdgeInsets.symmetric(
-                      horizontal: 8.w,
-                      vertical: 3.h,
-                    ),
-                    decoration: BoxDecoration(
-                      color: AppColors.surfaceContainerHigh,
-                      borderRadius: BorderRadius.circular(
-                        AppConstants.radiusMd,
+                SizedBox(height: 4.h),
+                if (phone.isNotEmpty)
+                  Row(
+                    children: [
+                      AppText(
+                        phone,
+                        style: AppTextStyles.labelMd.copyWith(
+                          color: AppColors.onSurfaceVariant,
+                        ),
                       ),
-                    ),
-                    child: AppText(
-                      '$attendanceCount حضور',
-                      style: AppTextStyles.labelSm.copyWith(
+                      SizedBox(width: 4.w),
+                      const Icon(
+                        Icons.phone_outlined,
+                        size: 14,
                         color: AppColors.onSurfaceVariant,
                       ),
-                    ),
+                    ],
                   ),
-                  SizedBox(width: 8.w),
-                  Container(
-                    padding: EdgeInsets.symmetric(
-                      horizontal: 8.w,
-                      vertical: 3.h,
-                    ),
-                    decoration: BoxDecoration(
-                      color: (isActive ? AppColors.primary : AppColors.outline)
-                          .withValues(alpha: 0.1),
-                      borderRadius: BorderRadius.circular(
-                        AppConstants.radiusFull,
+                SizedBox(height: 8.h),
+                Row(
+                  children: [
+                    Container(
+                      padding: EdgeInsets.symmetric(
+                        horizontal: 8.w,
+                        vertical: 3.h,
+                      ),
+                      decoration: BoxDecoration(
+                        color: AppColors.surfaceContainerHigh,
+                        borderRadius: BorderRadius.circular(
+                          AppConstants.radiusMd,
+                        ),
+                      ),
+                      child: AppText(
+                        '$attendanceCount حضور',
+                        style: AppTextStyles.labelSm.copyWith(
+                          color: AppColors.onSurfaceVariant,
+                        ),
                       ),
                     ),
-                    child: Row(
-                      mainAxisSize: MainAxisSize.min,
-                      children: [
-                        Container(
-                          width: 6.w,
-                          height: 6.w,
-                          decoration: BoxDecoration(
-                            color: isActive
-                                ? AppColors.primary
-                                : AppColors.outline,
-                            shape: BoxShape.circle,
-                          ),
+                    SizedBox(width: 8.w),
+                    Container(
+                      padding: EdgeInsets.symmetric(
+                        horizontal: 8.w,
+                        vertical: 3.h,
+                      ),
+                      decoration: BoxDecoration(
+                        color:
+                            (isActive ? AppColors.primary : AppColors.outline)
+                                .withValues(alpha: 0.1),
+                        borderRadius: BorderRadius.circular(
+                          AppConstants.radiusFull,
                         ),
-                        SizedBox(width: 4.w),
-                        AppText(
-                          isActive ? 'نشط' : 'غير نشط',
-                          style: AppTextStyles.labelSm.copyWith(
-                            color: isActive
-                                ? AppColors.primary
-                                : AppColors.outline,
+                      ),
+                      child: Row(
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          Container(
+                            width: 6.w,
+                            height: 6.w,
+                            decoration: BoxDecoration(
+                              color: isActive
+                                  ? AppColors.primary
+                                  : AppColors.outline,
+                              shape: BoxShape.circle,
+                            ),
                           ),
-                        ),
-                      ],
+                          SizedBox(width: 4.w),
+                          AppText(
+                            isActive ? 'نشط' : 'غير نشط',
+                            style: AppTextStyles.labelSm.copyWith(
+                              color: isActive
+                                  ? AppColors.primary
+                                  : AppColors.outline,
+                            ),
+                          ),
+                        ],
+                      ),
                     ),
-                  ),
-                ],
-              ),
-              SizedBox(height: 4.h),
-              AppText(
-                halaqaName,
-                style: AppTextStyles.labelSm.copyWith(
-                  color: AppColors.onSurfaceVariant,
+                  ],
                 ),
-              ),
-            ],
-          ),
-        ],
+                SizedBox(height: 4.h),
+                AppText(
+                  halaqaName,
+                  style: AppTextStyles.labelSm.copyWith(
+                    color: AppColors.onSurfaceVariant,
+                  ),
+                ),
+              ],
+            ),
+          ],
+        ),
       ),
     );
   }

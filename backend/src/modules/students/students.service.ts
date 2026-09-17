@@ -252,6 +252,12 @@ export class StudentsService {
             teacher: { select: { user: { select: { fullName: true } } } },
           },
         },
+        // Who to contact about this student. Optional by design: an adult
+        // student is his own guardian and has no parent row at all, so the
+        // profile simply carries null and the UI omits the line.
+        parent: {
+          select: { user: { select: { fullName: true, phone: true } } },
+        },
         memorization: { orderBy: { recordedAt: 'desc' }, take: 10 },
         evaluations: {
           orderBy: { createdAt: 'desc' },
