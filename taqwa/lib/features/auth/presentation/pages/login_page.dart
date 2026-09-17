@@ -6,13 +6,7 @@ import '../../../../core/theme/app_text_styles.dart';
 import '../../../../core/constants/app_constants.dart';
 import '../../../../core/widgets/app_button.dart';
 import '../../../../core/widgets/app_text_field.dart';
-import 'package:taqwa/features/data/models/user_model.dart';
 import '../../../../core/providers/auth_provider.dart';
-import '../../../admin/presentation/admin_shell.dart';
-import '../../../teacher/presentation/teacher_shell.dart';
-import '../../../parent/presentation/parent_shell.dart';
-import '../../../manager/presentation/manager_shell.dart';
-import '../../../adult_student/presentation/adult_student_shell.dart';
 import 'package:taqwa/core/widgets/app_text.dart';
 import 'package:taqwa/core/widgets/forgot_password_dialog.dart';
 
@@ -71,19 +65,10 @@ class _LoginPageState extends ConsumerState<LoginPage>
     if (!mounted) return;
     setState(() => _isLoading = false);
 
-    if (success) {
-      final role = ref.read(authProvider).user?.role;
-      final Widget dest = switch (role) {
-        UserRole.admin => const AdminShell(),
-        UserRole.teacher => const TeacherShell(),
-        UserRole.manager => const ManagerShell(),
-        UserRole.adultStudent => const AdultStudentShell(),
-        _ => const ParentShell(),
-      };
-      Navigator.of(
-        context,
-      ).pushReplacement(MaterialPageRoute(builder: (_) => dest));
-    } else {
+    // Nothing is pushed on success: AuthGate watches the same state and swaps
+    // this form for the right shell itself. Navigating here as well would
+    // stack a second copy of that shell on top of the one already shown.
+    if (!success) {
       final msg = ref.read(authProvider).errorMessage ?? 'حدث خطأ، حاول مجدداً';
       ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: AppText(msg)));
     }

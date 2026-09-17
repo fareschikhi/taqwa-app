@@ -4,6 +4,7 @@ import 'package:dio/dio.dart';
 import 'package:firebase_messaging/firebase_messaging.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_secure_storage/flutter_secure_storage.dart';
+import 'package:taqwa/core/utils/session_expiry.dart';
 import 'package:taqwa/features/data/models/user_model.dart';
 import 'package:taqwa/features/data/repositories/auth_repository_impl.dart';
 import 'package:taqwa/features/data/repositories/device_repository.dart';
@@ -70,15 +71,20 @@ class AuthNotifier extends Notifier<AuthState> {
   @override
   AuthState build() {
     Future.microtask(() => checkAutoLogin());
-    return AuthState();
+    // Loading from the first frame, not from when checkAutoLogin gets its
+    // turn: a returning user would otherwise be shown the login form for the
+    // microtask it takes to read their token back.
+    return AuthState(isLoading: true);
   }
 
   Future<void> checkAutoLogin() async {
     state = state.copyWith(isLoading: true);
     try {
       final token = await _storage.read(key: 'jwt_token');
+      if (!ref.mounted) return;
       if (token != null) {
         final cachedUserJson = await _storage.read(key: 'cached_user');
+        if (!ref.mounted) return;
         UserModel? cachedUser;
         if (cachedUserJson != null) {
           cachedUser = UserModel.fromJson(jsonDecode(cachedUserJson));
@@ -97,13 +103,29 @@ class AuthNotifier extends Notifier<AuthState> {
 
         // Fetch fresh profile in the background
         final freshUser = await _userDatasource.me();
-        await _storage.write(key: 'cached_user', value: jsonEncode(freshUser.toJson()));
-        
+        await _storage.write(
+          key: 'cached_user',
+          value: jsonEncode(freshUser.toJson()),
+        );
+        if (!ref.mounted) return;
         state = state.copyWith(user: freshUser);
       } else {
         state = state.copyWith(isLoading: false);
       }
-    } catch (e) {
+    } on Object catch (e) {
+      // Signing out invalidates this notifier, so a launch the user abandons
+      // part-way leaves this running against a Ref that is already gone.
+      if (!ref.mounted) return;
+      // Only the server refusing the token means the session is over. Any
+      // other failure — no signal, a sleeping server, a 500 — leaves the
+      // cached session in place so the app still opens on what it has.
+      if (isRejectedSession(e)) {
+        await _storage.delete(key: 'jwt_token');
+        await _storage.delete(key: 'cached_user');
+        if (!ref.mounted) return;
+        state = AuthState();
+        return;
+      }
       state = state.copyWith(isLoading: false);
     }
   }

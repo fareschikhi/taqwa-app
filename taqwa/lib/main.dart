@@ -6,7 +6,7 @@ import 'package:flutter_localizations/flutter_localizations.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'core/theme/app_theme.dart';
-import 'features/auth/presentation/pages/login_page.dart';
+import 'features/auth/presentation/pages/auth_gate.dart';
 
 /// Runs in its own isolate when a message arrives with the app closed, so it
 /// shares nothing with the running app and has to initialise Firebase itself.
@@ -64,7 +64,7 @@ class TaqwaApp extends StatelessWidget {
                 child: widget!,
               );
             },
-            home: const LoginPage(),
+            home: const AuthGate(),
           );
         },
       ),

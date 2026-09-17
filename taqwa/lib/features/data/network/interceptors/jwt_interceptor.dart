@@ -26,7 +26,7 @@ class JwtInterceptor extends Interceptor {
   @override
   void onResponse(Response response, ResponseInterceptorHandler handler) async {
     // The session slides forward while the user is active, so an expiry is
-    // only ever reached by not opening the app for a week.
+    // only ever reached by not opening the app for a month.
     final refreshed = refreshedTokenFrom(response);
     if (refreshed != null) {
       await _storage.write(key: 'jwt_token', value: refreshed);

@@ -1,7 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
-import 'package:taqwa/features/auth/presentation/pages/login_page.dart';
 import '../../../../core/theme/app_colors.dart';
 import '../../../../core/theme/app_text_styles.dart';
 import '../../../../core/constants/app_constants.dart';
@@ -114,9 +113,9 @@ class _ProfilePageState extends ConsumerState<ProfilePage> {
   Future<void> _logout() async {
     await ref.read(authProvider.notifier).logout();
     if (!mounted) return;
-    Navigator.of(
-      context,
-    ).pushReplacement(MaterialPageRoute(builder: (_) => const LoginPage()));
+    // AuthGate is the root and shows the login form itself once the session
+    // is gone. This only clears anything pushed on top of it.
+    Navigator.of(context).popUntil((route) => route.isFirst);
   }
 
   @override

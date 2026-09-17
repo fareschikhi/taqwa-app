@@ -6,7 +6,6 @@ import '../../../../core/theme/app_text_styles.dart';
 import '../../../../core/constants/app_constants.dart';
 import '../../../../core/providers/auth_provider.dart';
 import '../../../../core/widgets/confirm_logout_dialog.dart';
-import '../../../auth/presentation/pages/login_page.dart';
 import 'package:taqwa/features/data/repositories/manager_repository.dart';
 import 'package:taqwa/features/data/repositories/absence_justification_repository.dart';
 import '../widgets/justification_form_card.dart';
@@ -134,9 +133,9 @@ class _ManagerDashboardPageState extends ConsumerState<ManagerDashboardPage> {
     if (!confirmed) return;
     await ref.read(authProvider.notifier).logout();
     if (!mounted) return;
-    Navigator.of(
-      context,
-    ).pushReplacement(MaterialPageRoute(builder: (_) => const LoginPage()));
+    // AuthGate is the root and shows the login form itself once the session
+    // is gone. This only clears anything pushed on top of it.
+    Navigator.of(context).popUntil((route) => route.isFirst);
   }
 
   Widget _buildAppBar(String name) {
