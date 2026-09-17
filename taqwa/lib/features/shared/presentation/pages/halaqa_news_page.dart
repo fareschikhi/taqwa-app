@@ -44,6 +44,7 @@ class _HalaqaNewsPageState extends State<HalaqaNewsPage> {
   }
 
   Future<void> _load() async {
+    if (!mounted) return;
     setState(() {
       _isLoading = true;
       _error = null;
