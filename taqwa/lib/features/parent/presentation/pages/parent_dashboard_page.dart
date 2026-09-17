@@ -15,6 +15,10 @@ import '../../../data/models/attendance_summary_model.dart';
 import '../../../data/models/parent/parent_child_model.dart';
 import 'child_details_page.dart';
 import 'package:taqwa/core/widgets/app_text.dart';
+import 'package:taqwa/core/widgets/halaqa_news_card.dart';
+import 'package:taqwa/features/data/models/halaqa/halaqa_announcement_model.dart';
+import 'package:taqwa/features/data/repositories/halaqa_announcement_repository.dart';
+import 'package:taqwa/features/shared/presentation/pages/halaqa_news_page.dart';
 
 class ParentDashboardPage extends ConsumerStatefulWidget {
   const ParentDashboardPage({super.key});
@@ -26,12 +30,14 @@ class ParentDashboardPage extends ConsumerStatefulWidget {
 
 class _ParentDashboardPageState extends ConsumerState<ParentDashboardPage> {
   final _repo = StudentRepository();
+  final _newsRepo = HalaqaAnnouncementRepository();
   bool _isLoading = true;
   int? _loadedChildId;
   AttendanceSummaryModel? _attendance;
   Map<String, dynamic>? _progress;
   List<Map<String, dynamic>> _notes = [];
   List<Map<String, dynamic>> _attendanceHistory = [];
+  List<HalaqaAnnouncementModel> _news = [];
 
   @override
   void initState() {
@@ -56,18 +62,28 @@ class _ParentDashboardPageState extends ConsumerState<ParentDashboardPage> {
       ]);
       final profile = results[2] as Map<String, dynamic>;
       final rawNotes = (profile['notes'] as List?) ?? [];
+      final news = await _newsRepo.myAnnouncements().catchError(
+        (_) => <HalaqaAnnouncementModel>[],
+      );
       if (mounted) {
         setState(() {
           _attendance = results[0] as AttendanceSummaryModel;
           _progress = results[1] as Map<String, dynamic>;
           _notes = rawNotes.cast<Map<String, dynamic>>();
           _attendanceHistory = results[3] as List<Map<String, dynamic>>;
+          _news = news;
           _isLoading = false;
         });
       }
     } catch (_) {
       if (mounted) setState(() => _isLoading = false);
     }
+  }
+
+  Future<void> _openNews() async {
+    await Navigator.of(context).push(
+      MaterialPageRoute(builder: (_) => const HalaqaNewsPage()),
+    );
   }
 
   @override
@@ -119,6 +135,13 @@ class _ParentDashboardPageState extends ConsumerState<ParentDashboardPage> {
                     else ...[
                       _buildLastSession(),
                       SizedBox(height: 20.h),
+                      if (_news.isNotEmpty) ...[
+                        HalaqaNewsCard(
+                          announcements: _news,
+                          onSeeAll: _openNews,
+                        ),
+                        SizedBox(height: 20.h),
+                      ],
                       _buildTeacherNotes(),
                     ],
                     SizedBox(height: 32.h),

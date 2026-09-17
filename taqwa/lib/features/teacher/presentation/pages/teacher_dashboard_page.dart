@@ -12,6 +12,10 @@ import '../../../data/models/attendance_summary_model.dart';
 import '../../../data/models/revision_needed_model.dart';
 import '../../../data/models/memorization_progress_summary_model.dart';
 import 'package:taqwa/core/widgets/app_text.dart';
+import 'package:taqwa/core/widgets/halaqa_news_card.dart';
+import 'package:taqwa/features/data/models/halaqa/halaqa_announcement_model.dart';
+import 'package:taqwa/features/data/repositories/halaqa_announcement_repository.dart';
+import 'package:taqwa/features/shared/presentation/pages/halaqa_news_page.dart';
 
 class TeacherDashboardPage extends ConsumerStatefulWidget {
   const TeacherDashboardPage({super.key});
@@ -23,10 +27,12 @@ class TeacherDashboardPage extends ConsumerStatefulWidget {
 
 class _TeacherDashboardPageState extends ConsumerState<TeacherDashboardPage> {
   final _repo = TeacherRepository();
+  final _newsRepo = HalaqaAnnouncementRepository();
 
   AttendanceSummaryModel? _attendanceSummary;
   List<RevisionNeededModel> _revisionNeeded = [];
   MemorizationProgressSummaryModel? _memorizationProgress;
+  List<HalaqaAnnouncementModel> _news = [];
 
   bool _isLoading = true;
   String? _error;
@@ -58,10 +64,14 @@ class _TeacherDashboardPageState extends ConsumerState<TeacherDashboardPage> {
         _repo.getRevisionNeeded(teacherId),
         _repo.getMemorizationProgress(teacherId),
       ]);
+      final news = await _newsRepo.myAnnouncements().catchError(
+        (_) => <HalaqaAnnouncementModel>[],
+      );
       setState(() {
         _attendanceSummary = results[0] as AttendanceSummaryModel;
         _revisionNeeded = results[1] as List<RevisionNeededModel>;
         _memorizationProgress = results[2] as MemorizationProgressSummaryModel;
+        _news = news;
         _isLoading = false;
       });
     } catch (e) {
@@ -73,6 +83,12 @@ class _TeacherDashboardPageState extends ConsumerState<TeacherDashboardPage> {
   }
 
   Future<void> _loadData() => loadData();
+
+  Future<void> _openNews() async {
+    await Navigator.of(context).push(
+      MaterialPageRoute(builder: (_) => const HalaqaNewsPage()),
+    );
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -135,6 +151,13 @@ class _TeacherDashboardPageState extends ConsumerState<TeacherDashboardPage> {
                           SizedBox(height: 24.h),
                           _buildBentoGrid(),
                           SizedBox(height: 24.h),
+                          if (_news.isNotEmpty) ...[
+                            HalaqaNewsCard(
+                              announcements: _news,
+                              onSeeAll: _openNews,
+                            ),
+                            SizedBox(height: 20.h),
+                          ],
                           _buildMemorizationProgress(),
                           SizedBox(height: 32.h),
                         ]),

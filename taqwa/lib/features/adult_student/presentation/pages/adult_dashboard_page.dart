@@ -10,11 +10,15 @@ import 'package:taqwa/core/utils/last_session.dart';
 import 'package:taqwa/core/widgets/app_card.dart';
 import 'package:taqwa/core/widgets/app_text.dart';
 import 'package:taqwa/core/widgets/fine_balance_card.dart';
+import 'package:taqwa/core/widgets/halaqa_news_card.dart';
 import 'package:taqwa/core/widgets/last_session_card.dart';
 import 'package:taqwa/features/data/models/attendance_summary_model.dart';
 import 'package:taqwa/features/data/models/fine/fine_summary_model.dart';
+import 'package:taqwa/features/data/models/halaqa/halaqa_announcement_model.dart';
 import 'package:taqwa/features/data/repositories/fine_repository.dart';
+import 'package:taqwa/features/data/repositories/halaqa_announcement_repository.dart';
 import 'package:taqwa/features/data/repositories/student_repository.dart';
+import 'package:taqwa/features/shared/presentation/pages/halaqa_news_page.dart';
 import 'fines_history_page.dart';
 
 /// The adult student's own front page. There is no child to pick a card for
@@ -32,6 +36,7 @@ class AdultDashboardPage extends ConsumerStatefulWidget {
 class _AdultDashboardPageState extends ConsumerState<AdultDashboardPage> {
   final _studentRepo = StudentRepository();
   final _fineRepo = FineRepository();
+  final _newsRepo = HalaqaAnnouncementRepository();
 
   bool _isLoading = true;
   int? _loadedStudentId;
@@ -40,6 +45,7 @@ class _AdultDashboardPageState extends ConsumerState<AdultDashboardPage> {
   List<Map<String, dynamic>> _attendanceHistory = [];
   List<Map<String, dynamic>> _notes = [];
   FineSummaryModel? _fines;
+  List<HalaqaAnnouncementModel> _news = [];
 
   @override
   void initState() {
@@ -67,6 +73,9 @@ class _AdultDashboardPageState extends ConsumerState<AdultDashboardPage> {
       ]);
       final profile = results[3] as Map<String, dynamic>;
       final rawNotes = (profile['notes'] as List?) ?? [];
+      final news = await _newsRepo.myAnnouncements().catchError(
+        (_) => <HalaqaAnnouncementModel>[],
+      );
       if (mounted) {
         setState(() {
           _attendance = results[0] as AttendanceSummaryModel;
@@ -74,12 +83,19 @@ class _AdultDashboardPageState extends ConsumerState<AdultDashboardPage> {
           _attendanceHistory = results[2] as List<Map<String, dynamic>>;
           _notes = rawNotes.cast<Map<String, dynamic>>();
           _fines = results[4] as FineSummaryModel;
+          _news = news;
           _isLoading = false;
         });
       }
     } catch (_) {
       if (mounted) setState(() => _isLoading = false);
     }
+  }
+
+  Future<void> _openNews() async {
+    await Navigator.of(context).push(
+      MaterialPageRoute(builder: (_) => const HalaqaNewsPage()),
+    );
   }
 
   @override
@@ -129,6 +145,13 @@ class _AdultDashboardPageState extends ConsumerState<AdultDashboardPage> {
                     else ...[
                       _buildFineBalance(),
                       SizedBox(height: 20.h),
+                      if (_news.isNotEmpty) ...[
+                        HalaqaNewsCard(
+                          announcements: _news,
+                          onSeeAll: _openNews,
+                        ),
+                        SizedBox(height: 20.h),
+                      ],
                       _buildSummary(),
                       SizedBox(height: 20.h),
                       _buildLastSession(),
