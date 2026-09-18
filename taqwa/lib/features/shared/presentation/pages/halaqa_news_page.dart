@@ -138,14 +138,25 @@ class _HalaqaNewsPageState extends State<HalaqaNewsPage> {
 
     final error = _error;
     if (error != null) {
-      return Center(
-        child: Padding(
-          padding: EdgeInsets.symmetric(horizontal: 24.w),
-          child: AppText(
-            error,
-            style: AppTextStyles.bodyMd.copyWith(color: AppColors.error),
-            textAlign: TextAlign.center,
-          ),
+      // Inside the RefreshIndicator, and scrollable even though it holds one
+      // line: a reader has no compose button to retry from, so pulling down is
+      // their only way back from a dropped connection without leaving the page.
+      return RefreshIndicator(
+        color: AppColors.primary,
+        onRefresh: _load,
+        child: ListView(
+          physics: const AlwaysScrollableScrollPhysics(),
+          children: [
+            SizedBox(height: 120.h),
+            Padding(
+              padding: EdgeInsets.symmetric(horizontal: 24.w),
+              child: AppText(
+                error,
+                style: AppTextStyles.bodyMd.copyWith(color: AppColors.error),
+                textAlign: TextAlign.center,
+              ),
+            ),
+          ],
         ),
       );
     }
@@ -203,8 +214,11 @@ class _HalaqaNewsPageState extends State<HalaqaNewsPage> {
                   onPressed: () => _delete(announcement),
                 ),
               ],
-              const Spacer(),
-              Flexible(
+              // Expanded, with no Spacer competing for the same flex space:
+              // TextAlign.end already pushes a short title to the right, and
+              // a Spacer here would have capped the title at half the row and
+              // wrapped long ones early.
+              Expanded(
                 child: AppText(
                   announcement.title,
                   style: AppTextStyles.labelMdBold.copyWith(
