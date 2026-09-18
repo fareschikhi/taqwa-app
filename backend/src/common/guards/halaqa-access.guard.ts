@@ -26,6 +26,13 @@ import { ALL_HALAQAS, halaqaIdsFor } from './halaqa-scope';
  * Denials throw rather than returning false, the way ManagerPermissionGuard
  * does: returning false lets Nest raise its own English "Forbidden resource",
  * and the app puts a rejection's `message` straight in front of the user.
+ *
+ * Guards run before pipes, so this guard resolves and rejects a malformed
+ * halaqa id itself, before the DTO's own `@IsInt()` ever runs: a POST with a
+ * missing or non-numeric `halaqaId` surfaces here as a denial rather than as
+ * a validation error. That is deliberate — it still fails closed — but it
+ * means the DTO's `halaqaId` validation is not reachable through this route
+ * in practice.
  */
 @Injectable()
 export class HalaqaAccessGuard implements CanActivate {
