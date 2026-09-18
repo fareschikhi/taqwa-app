@@ -1,4 +1,4 @@
-import '../widgets/attendance_chip.dart';
+import '../widgets/attendance_controls.dart';
 
 /// The API's spelling of a chip, or null when there is nothing to send.
 ///

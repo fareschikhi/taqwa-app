@@ -1,6 +1,6 @@
 import 'package:flutter_test/flutter_test.dart';
 import 'package:taqwa/core/utils/attendance_draft.dart';
-import 'package:taqwa/core/widgets/attendance_chip.dart';
+import 'package:taqwa/core/widgets/attendance_controls.dart';
 
 void main() {
   group('pendingAttendanceIds', () {
@@ -143,6 +143,27 @@ void main() {
           'studentId': 1,
           'date': '2026-08-28',
           'status': 'PRESENT',
+          'missedMemorization': true,
+        },
+      ]);
+    });
+
+    // Unlike absence, lateness does not absorb the missed recitation: the
+    // server's desiredCharges stacks LATE and MISSED_MEMORIZATION on the same
+    // day, so both have to survive the trip in one record.
+    test('carries the flag for a late adult who also did not recite', () {
+      final payload = attendanceBatchPayload(
+        draft: {1: AttendanceStatus.late},
+        saved: {},
+        date: '2026-08-28',
+        missedDraft: {1: true},
+      );
+
+      expect(payload, [
+        {
+          'studentId': 1,
+          'date': '2026-08-28',
+          'status': 'LATE',
           'missedMemorization': true,
         },
       ]);

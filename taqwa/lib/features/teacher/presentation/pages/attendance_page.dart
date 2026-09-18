@@ -9,7 +9,7 @@ import '../../../../core/utils/attendance_draft.dart';
 import '../../../../core/utils/attendance_queue.dart';
 import '../../../data/local/attendance_queue_store.dart';
 import '../../../../core/widgets/app_button.dart';
-import '../../../../core/widgets/attendance_chip.dart';
+import '../../../../core/widgets/attendance_controls.dart';
 import '../../../../core/widgets/confirm_discard_attendance_dialog.dart';
 import '../../../../core/widgets/confirm_discard_memorization_dialog.dart';
 import '../../../../core/widgets/confirm_duplicate_memorization_dialog.dart';
@@ -50,6 +50,17 @@ class _AttendancePageState extends ConsumerState<AttendancePage>
   /// [_savedAttendance]'s role for the status chip.
   final Map<int, bool> _savedMissed = {};
 
+  /// What the sheet held the moment it finished loading: the server's own
+  /// rows, with present filled in for every student it had none for.
+  ///
+  /// Saving is measured against [_savedAttendance], because an untouched
+  /// default still has to reach the server. Backing out is measured against
+  /// this instead — walking away from defaults loses nothing, since the next
+  /// open rebuilds them, so only a mark the teacher moved by hand is worth
+  /// warning about.
+  final Map<int, AttendanceStatus> _initialAttendance = {};
+  final Map<int, bool> _initialMissed = {};
+
   final Set<int> _memorizedStudentIds = {};
 
   // What is already on file for today, per student. The ids alone would say
@@ -77,6 +88,8 @@ class _AttendancePageState extends ConsumerState<AttendancePage>
   int _missedMemorizationFeeFor(int studentId) =>
       _studentHalaqa[studentId]?.missedMemorizationFee ?? 0;
 
+  int _lateFeeFor(int studentId) => _studentHalaqa[studentId]?.lateFee ?? 0;
+
   final _queueStore = AttendanceQueueStore();
 
   /// Marks the server has not taken yet. Mirrors what is on disk, so the
@@ -90,14 +103,30 @@ class _AttendancePageState extends ConsumerState<AttendancePage>
     return '${now.year}-${now.month.toString().padLeft(2, '0')}-${now.day.toString().padLeft(2, '0')}';
   }
 
-  int get _checkedCount =>
-      _attendance.values.where((s) => s != AttendanceStatus.unset).length;
+  /// How many students the server has a row for today.
+  ///
+  /// This used to count marks the teacher had decided on, which stopped
+  /// meaning anything once every student opens on present — it would have
+  /// read as a full bar before she had done a thing. Saved-versus-total is
+  /// the question that still has two answers.
+  int get _savedCount =>
+      _students.where((s) => _savedAttendance.containsKey(s.id)).length;
 
   Set<int> get _pendingIds => pendingAttendanceIds(
     draft: _attendance,
     saved: _savedAttendance,
     missedDraft: _missed,
     missedSaved: _savedMissed,
+  );
+
+  /// Students the teacher has moved away from what the sheet loaded with.
+  /// The same comparison as [_pendingIds], run against the baseline instead
+  /// of the server, so defaults nobody touched do not count as work to lose.
+  Set<int> get _handEditedIds => pendingAttendanceIds(
+    draft: _attendance,
+    saved: _initialAttendance,
+    missedDraft: _missed,
+    missedSaved: _initialMissed,
   );
 
   @override
@@ -183,6 +212,8 @@ class _AttendancePageState extends ConsumerState<AttendancePage>
           ..clear()
           ..addAll(memorizedByStudent);
         _savedAttendance.clear();
+        _initialAttendance.clear();
+        _initialMissed.clear();
         _savedMissed.clear();
         for (final s in studentList) {
           final existing = attendanceStatusFromApi(existingMap[s.id]);
@@ -192,8 +223,15 @@ class _AttendancePageState extends ConsumerState<AttendancePage>
           if (existing != AttendanceStatus.unset) {
             _savedAttendance[s.id] = existing;
           }
+          // A student the server has no row for starts on present: the sheet
+          // marks exceptions, so saving without touching him records him
+          // present rather than recording nothing at all.
+          final baseline = existing == AttendanceStatus.unset
+              ? AttendanceStatus.present
+              : existing;
+          _initialAttendance[s.id] = baseline;
           if (!stillPending.contains(s.id)) {
-            _attendance[s.id] = existing;
+            _attendance[s.id] = baseline;
           }
           // A child never accrues a fine, so his id never enters either
           // toggle map — that absence is what keeps the switch off his card
@@ -201,6 +239,7 @@ class _AttendancePageState extends ConsumerState<AttendancePage>
           if (_isAdultStudent(s.id)) {
             final existingMissed = existingMissedMap[s.id] ?? false;
             _savedMissed[s.id] = existingMissed;
+            _initialMissed[s.id] = existingMissed;
             if (!stillPending.contains(s.id)) {
               _missed[s.id] = existingMissed;
             }
@@ -489,11 +528,15 @@ class _AttendancePageState extends ConsumerState<AttendancePage>
     setState(() => _missed[studentId] = value);
   }
 
-  /// Backing out of the shell would drop chips that were never written, and a
-  /// marked-but-unsaved row looks exactly like a saved one on screen.
+  /// Backing out of the shell would drop marks that were never written, and
+  /// a marked-but-unsaved row looks exactly like a saved one on screen.
+  ///
+  /// Counts hand edits, not everything unsaved: since the sheet opens with
+  /// everyone defaulted to present, otherwise merely opening it and leaving
+  /// would warn about the whole halaqa.
   Future<void> _onPopInvoked(bool didPop, Object? result) async {
     if (didPop) return;
-    final pending = _pendingIds.length;
+    final pending = _handEditedIds.length;
     if (pending == 0) return;
 
     final discard = await ConfirmDiscardAttendanceDialog.show(
@@ -512,7 +555,7 @@ class _AttendancePageState extends ConsumerState<AttendancePage>
     });
 
     return PopScope(
-      canPop: _pendingIds.isEmpty,
+      canPop: _handEditedIds.isEmpty,
       onPopInvokedWithResult: _onPopInvoked,
       child: Scaffold(
         backgroundColor: AppColors.background,
@@ -571,6 +614,7 @@ class _AttendancePageState extends ConsumerState<AttendancePage>
                                     isAdult: _isAdultStudent(student.id),
                                     missedMemorizationFee:
                                         _missedMemorizationFeeFor(student.id),
+                                    lateFee: _lateFeeFor(student.id),
                                     missed: _missed[student.id] ?? false,
                                     onSelectStatus: (s) =>
                                         _onChipTap(student, s),
@@ -643,7 +687,7 @@ class _AttendancePageState extends ConsumerState<AttendancePage>
 
   Widget _buildProgress() {
     final total = _students.length;
-    final uncheckedCount = total - _checkedCount;
+    final unsavedCount = total - _savedCount;
     return Padding(
       padding: EdgeInsets.fromLTRB(16.w, 16.h, 16.w, 8.h),
       child: Column(
@@ -653,15 +697,13 @@ class _AttendancePageState extends ConsumerState<AttendancePage>
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
               AppText(
-                '$_checkedCount / $total',
+                '$_savedCount / $total',
                 style: AppTextStyles.headlineMd.copyWith(
                   color: AppColors.primary,
                 ),
               ),
               AppText(
-                _checkedCount < total
-                    ? 'غير محدد $uncheckedCount'
-                    : 'تم تحديد الكل',
+                _savedCount < total ? 'غير محفوظ $unsavedCount' : 'تم حفظ الكل',
                 style: AppTextStyles.labelMd.copyWith(
                   color: AppColors.onSurfaceVariant,
                 ),
@@ -672,7 +714,7 @@ class _AttendancePageState extends ConsumerState<AttendancePage>
           ClipRRect(
             borderRadius: BorderRadius.circular(AppConstants.radiusFull),
             child: LinearProgressIndicator(
-              value: total > 0 ? _checkedCount / total : 0,
+              value: total > 0 ? _savedCount / total : 0,
               minHeight: 10.h,
               backgroundColor: AppColors.surfaceContainerHigh,
               valueColor: const AlwaysStoppedAnimation(AppColors.primary),
@@ -726,6 +768,7 @@ class _StudentAttendanceTile extends StatelessWidget {
     required this.hasMemorization,
     required this.isAdult,
     required this.missedMemorizationFee,
+    required this.lateFee,
     required this.missed,
     required this.onSelectStatus,
     required this.onOpenMemorization,
@@ -750,8 +793,19 @@ class _StudentAttendanceTile extends StatelessWidget {
   /// teacher sees the cost before she taps, not after.
   final int missedMemorizationFee;
 
+  /// What marking this student late will charge. Shown on the chip itself so
+  /// the cost is readable before the tap, the same reason the missed-recitation
+  /// fee sits beside its switch.
+  final int lateFee;
+
   /// The current value of the "لم يحفظ" toggle.
   final bool missed;
+
+  /// The price to print on the late chip, or null when lateness is free —
+  /// a child's halaqa, or an adults' one whose rate is still zero. A chip
+  /// reading "0 دج" would imply a charge that never arrives.
+  String? get _lateFeeLabel =>
+      isAdult && lateFee > 0 ? formatFine(lateFee) : null;
   final ValueChanged<AttendanceStatus> onSelectStatus;
   final VoidCallback onOpenMemorization;
   final ValueChanged<bool> onToggleMissed;
@@ -759,9 +813,6 @@ class _StudentAttendanceTile extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final canMemorize = status != AttendanceStatus.absent;
-    final memorizationAccent = canMemorize
-        ? AppColors.primary
-        : AppColors.outlineVariant;
     return Container(
       padding: EdgeInsets.symmetric(horizontal: 16.w, vertical: 12.h),
       decoration: BoxDecoration(
@@ -776,181 +827,145 @@ class _StudentAttendanceTile extends StatelessWidget {
           ),
         ],
       ),
-      child: Row(
-        mainAxisAlignment: MainAxisAlignment.end,
+      child: Column(
+        mainAxisSize: MainAxisSize.min,
         children: [
-          Container(
-            decoration: BoxDecoration(
-              color: hasMemorization && canMemorize
-                  ? AppColors.primary.withValues(alpha: 0.08)
-                  : AppColors.surfaceContainerLow,
-              borderRadius: BorderRadius.circular(AppConstants.radiusMd),
-              border: Border.all(
-                color: hasMemorization && canMemorize
-                    ? AppColors.primary
-                    : AppColors.inputBorder,
-                width: hasMemorization && canMemorize ? 1.2 : 1,
-              ),
-            ),
-            child: InkWell(
-              onTap: canMemorize ? onOpenMemorization : null,
-              borderRadius: BorderRadius.circular(AppConstants.radiusMd),
-              child: Padding(
-                padding: EdgeInsets.symmetric(horizontal: 10.w, vertical: 6.h),
-                child: Column(
-                  mainAxisSize: MainAxisSize.min,
-                  children: [
-                    Stack(
-                      clipBehavior: Clip.none,
-                      children: [
-                        Icon(
-                          Icons.menu_book_outlined,
-                          size: 20,
-                          color: memorizationAccent,
-                        ),
-                        if (hasMemorization && canMemorize)
-                          Positioned(
-                            top: -2,
-                            right: -2,
-                            child: Container(
-                              width: 8.w,
-                              height: 8.w,
-                              decoration: BoxDecoration(
-                                color: AppColors
-                                    .present, // reuse your existing green token
-                                shape: BoxShape.circle,
-                                border: Border.all(
-                                  color: AppColors.surfaceContainerLowest,
-                                  width: 1,
-                                ),
-                              ),
-                            ),
-                          ),
-                      ],
-                    ),
-                    SizedBox(height: 2.h),
-                    AppText(
-                      'عرض',
-                      style: AppTextStyles.labelSm.copyWith(
-                        color: memorizationAccent,
-                        fontWeight: hasMemorization && canMemorize
-                            ? FontWeight.bold
-                            : FontWeight.normal,
-                      ),
-                    ),
-                  ],
-                ),
-              ),
-            ),
-          ),
-          Spacer(),
-          Column(
+          Row(
             crossAxisAlignment: CrossAxisAlignment.center,
             children: [
-              Row(
-                mainAxisSize: MainAxisSize.min,
-                children: [
-                  if (isPending) ...[
-                    Container(
-                      width: 7.w,
-                      height: 7.w,
-                      decoration: const BoxDecoration(
-                        color: AppColors.late,
-                        shape: BoxShape.circle,
-                      ),
-                    ),
-                    SizedBox(width: 6.w),
-                  ],
-                  AppText(
-                    name,
-                    style: AppTextStyles.bodyMdBold.copyWith(
-                      color: AppColors.onSurface,
-                    ),
-                  ),
-                ],
-              ),
-              SizedBox(height: 10.h),
-              Row(
-                mainAxisAlignment: MainAxisAlignment.end,
-                children: [
-                  AttendanceChip(
-                    label: 'غائب',
-                    status: status,
-                    myStatus: AttendanceStatus.absent,
-                    onTap: () {
-                      if (!isSaving) onSelectStatus(AttendanceStatus.absent);
-                    },
-                  ),
-                  SizedBox(width: 6.w),
-                  AttendanceChip(
-                    label: 'حاضر',
-                    status: status,
-                    myStatus: AttendanceStatus.present,
-                    onTap: () {
-                      if (!isSaving) onSelectStatus(AttendanceStatus.present);
-                    },
-                  ),
-                ],
-              ),
-              // A child never accrues a fine, so this row does not exist for
-              // him at all — not even disabled — rather than showing a
-              // switch that could never do anything.
-              if (isAdult) ...[
-                SizedBox(height: 8.h),
-                Row(
-                  mainAxisAlignment: MainAxisAlignment.end,
-                  children: [
-                    AppText(
-                      formatFine(missedMemorizationFee),
-                      style: AppTextStyles.labelSm.copyWith(
-                        color: AppColors.onSurfaceVariant,
-                      ),
-                    ),
-                    SizedBox(width: 6.w),
-                    AppText(
-                      'لم يحفظ',
-                      style: AppTextStyles.labelSm.copyWith(
-                        color: canMemorize
-                            ? AppColors.onSurface
-                            : AppColors.onSurfaceVariant,
-                      ),
-                    ),
-                    Transform.scale(
-                      scale: 0.75,
-                      child: Switch(
-                        value: missed,
-                        activeThumbColor: AppColors.error,
-                        // Absent is already charged for the absence; charging
-                        // the same day twice for a missed recitation would
-                        // double-bill a student who never even sat down, and
-                        // the server refuses this pairing too.
-                        onChanged: canMemorize && !isSaving
-                            ? onToggleMissed
-                            : null,
-                      ),
-                    ),
-                  ],
-                ),
-              ],
+              SizedBox(width: _statusColumnWidth, child: _buildStatusPicker()),
+              SizedBox(width: 12.w),
+              Expanded(child: _buildName()),
+              SizedBox(width: 12.w),
+              _buildAvatar(),
             ],
           ),
-          SizedBox(width: 18.w),
-
-          AvatarWidget(
-            avatarUrl: avatarUrl,
-            size: 64.w,
-            backgroundColor: AppColors.surfaceContainerHigh,
-            fallback: AppText(
-              '$index',
-              style: AppTextStyles.labelMd.copyWith(
-                color: AppColors.onSurfaceVariant,
-              ),
-            ),
-          ),
+          SizedBox(height: 10.h),
+          _buildRecitationRow(canMemorize),
         ],
       ),
     );
   }
+
+  /// Wide enough for the dropdown's longest state — the late entry, whose fee
+  /// sits under the label — plus the arrow. The menu it opens is laid out to
+  /// the same width, so this has to satisfy both.
+  double get _statusColumnWidth => 140.w;
+
+  /// The three statuses, stacked down the left edge.
+  Widget _buildStatusPicker() {
+    return AttendanceDropdown(
+      status: status,
+      lateFeeLabel: _lateFeeLabel,
+      enabled: !isSaving,
+      onChanged: onSelectStatus,
+    );
+  }
+
+  /// The student's name, ellipsised rather than allowed to overflow the gap
+  /// between the chips and the avatar. The pending dot keeps its size.
+  Widget _buildName() {
+    return Row(
+      mainAxisAlignment: MainAxisAlignment.end,
+      children: [
+        if (isPending) ...[
+          Container(
+            width: 7.w,
+            height: 7.w,
+            decoration: const BoxDecoration(
+              color: AppColors.late,
+              shape: BoxShape.circle,
+            ),
+          ),
+          SizedBox(width: 6.w),
+        ],
+        Flexible(
+          child: AppText(
+            name,
+            maxLines: 2,
+            overflow: TextOverflow.ellipsis,
+            textAlign: TextAlign.end,
+            style: AppTextStyles.bodyMdBold.copyWith(
+              color: AppColors.onSurface,
+            ),
+          ),
+        ),
+      ],
+    );
+  }
+
+  Widget _buildAvatar() {
+    return AvatarWidget(
+      avatarUrl: avatarUrl,
+      size: 64.w,
+      backgroundColor: AppColors.surfaceContainerHigh,
+      fallback: AppText(
+        '$index',
+        style: AppTextStyles.labelMd.copyWith(
+          color: AppColors.onSurfaceVariant,
+        ),
+      ),
+    );
+  }
+
+  /// The two answers to "did he recite today?" side by side: open the sheet
+  /// and record what he read, or mark that he did not and take the fine.
+  ///
+  /// A child never accrues a fine, so the toggle does not render for him at
+  /// all — not even disabled — and the button takes the whole row instead.
+  Widget _buildRecitationRow(bool canMemorize) {
+    // IntrinsicHeight, not a bare stretch: the tile is a ListView child, so
+    // its height is unbounded, and stretching against that asks the children
+    // for an infinite height. This measures the taller control first, then
+    // stretches both to it.
+    return IntrinsicHeight(
+      child: Row(
+        crossAxisAlignment: CrossAxisAlignment.stretch,
+        children: [
+          // Equal halves. The fee sits on its own line rather than joined onto
+          // the label, which is what lets the toggle live in half a row
+          // without shrinking a money value to fit.
+          Expanded(
+            child: RecitationButton(
+              icon: Icons.menu_book_outlined,
+              label: 'تحديد العرض',
+              color: canMemorize ? AppColors.primary : AppColors.outlineVariant,
+              highlighted: hasMemorization && canMemorize,
+              showBadge: hasMemorization && canMemorize,
+              enabled: canMemorize,
+              onTap: onOpenMemorization,
+            ),
+          ),
+          if (isAdult) ...[
+            SizedBox(width: 8.w),
+            Expanded(
+              child: RecitationButton(
+                icon: Icons.menu_book_outlined,
+                strikethrough: true,
+                label: 'لم يحفظ',
+                subLabel: _missedFeeLabel,
+                color: AppColors.error,
+                selected: missed,
+                selectedInk: AppColors.onError,
+                // Absent is already charged for the absence; charging the same
+                // day twice for a missed recitation would double-bill a student
+                // who never even sat down, and the server refuses this pairing
+                // too.
+                enabled: canMemorize && !isSaving,
+                onTap: () => onToggleMissed(!missed),
+              ),
+            ),
+          ],
+        ],
+      ),
+    );
+  }
+
+  /// What not reciting costs, or null where the halaqa charges nothing for it
+  /// — the toggle then reads as a plain "لم يحفظ" rather than claiming a
+  /// price of zero.
+  String? get _missedFeeLabel =>
+      missedMemorizationFee > 0 ? formatFine(missedMemorizationFee) : null;
 
   Color get _borderColor {
     switch (status) {
