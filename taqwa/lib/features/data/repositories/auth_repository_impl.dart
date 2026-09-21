@@ -1,13 +1,13 @@
 import 'dart:convert';
 
 import 'package:dio/dio.dart';
-import 'package:flutter_secure_storage/flutter_secure_storage.dart';
+import 'package:taqwa/core/storage/secure_storage.dart';
 import '../datasources/auth_remote_datasource.dart';
 import '../models/auth_response_model.dart';
 
 class AuthRepository {
   final _datasource = AuthRemoteDatasource();
-  final _storage = const FlutterSecureStorage();
+  final _storage = appSecureStorage;
 
   /// [identifier] is a phone number, or an email when it contains '@'.
   ///

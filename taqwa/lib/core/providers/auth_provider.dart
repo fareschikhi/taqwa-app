@@ -4,6 +4,7 @@ import 'package:dio/dio.dart';
 import 'package:firebase_messaging/firebase_messaging.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_secure_storage/flutter_secure_storage.dart';
+import 'package:taqwa/core/storage/secure_storage.dart';
 import 'package:taqwa/core/utils/session_expiry.dart';
 import 'package:taqwa/features/data/models/user_model.dart';
 import 'package:taqwa/features/data/repositories/auth_repository_impl.dart';
@@ -39,7 +40,7 @@ class AuthState {
 }
 
 class AuthNotifier extends Notifier<AuthState> {
-  final FlutterSecureStorage _storage = const FlutterSecureStorage();
+  final FlutterSecureStorage _storage = appSecureStorage;
   final AuthRepository _authRepository = AuthRepository();
   final UserRemoteDatasource _userDatasource = UserRemoteDatasource();
   final DeviceRepository _deviceRepository = DeviceRepository();
@@ -131,7 +132,13 @@ class AuthNotifier extends Notifier<AuthState> {
   }
 
   Future<bool> login(String identifier, String password) async {
-    state = state.copyWith(isLoading: true);
+    // Only the stale error is cleared, never isLoading: that flag is how
+    // AuthGate says "still restoring a stored session", and raising it here
+    // swapped the login form out for the startup spinner mid-request. The
+    // form's State went with it, so the refusal came back to a page that was
+    // already gone — no reason shown, and the identifier the user had typed
+    // lost along with the old controllers. The button runs its own spinner.
+    state = state.copyWith(errorMessage: null);
     try {
       final result = await _authRepository.login(
         identifier: identifier,
