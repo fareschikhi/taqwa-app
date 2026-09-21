@@ -1,0 +1,16 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+  Keeps the signed-in session out of Android's cloud backup.
+
+  flutter_secure_storage keeps the encrypted value in this preferences file
+  and the key that decrypts it in the AndroidKeyStore. Backup takes the file;
+  it cannot take the key, which is hardware-bound and deliberately
+  non-exportable. Restoring the pair therefore hands a fresh install
+  ciphertext nothing can read, and every lookup throws from then on — which
+  is how a reinstall used to leave a user unable to sign in at all.
+
+  Leaving the session behind costs the user one sign-in on a new device.
+-->
+<full-backup-content>
+    <exclude domain="sharedpref" path="FlutterSecureStorage.xml"/>
+</full-backup-content>
