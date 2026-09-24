@@ -82,6 +82,8 @@ class _CreateManagerPageState extends State<CreateManagerPage> {
                 final img = await _picker.pickImage(
                   source: ImageSource.gallery,
                   imageQuality: 80,
+                  maxWidth: AppConstants.pickedImageMaxDimension,
+                  maxHeight: AppConstants.pickedImageMaxDimension,
                 );
                 if (img != null && mounted) {
                   setState(() => _selectedImage = img);
@@ -96,6 +98,8 @@ class _CreateManagerPageState extends State<CreateManagerPage> {
                 final img = await _picker.pickImage(
                   source: ImageSource.camera,
                   imageQuality: 80,
+                  maxWidth: AppConstants.pickedImageMaxDimension,
+                  maxHeight: AppConstants.pickedImageMaxDimension,
                 );
                 if (img != null && mounted) {
                   setState(() => _selectedImage = img);

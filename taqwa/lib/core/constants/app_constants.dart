@@ -42,5 +42,13 @@ class AppConstants {
   static double get iconContainerSize => 40.w;
   /// Card padding
   static double get cardPadding => 24.w;
+
+  // ═══════════════════════════════════════
+  // Image Picking
+  // ═══════════════════════════════════════
+  /// Longest edge, in pixels, a picked profile photo is scaled down to.
+  /// Nothing shows an avatar larger than this, and a full-resolution camera
+  /// photo can exceed the server's 5MB upload limit even at quality 80.
+  static const double pickedImageMaxDimension = 1024;
 }
 

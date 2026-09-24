@@ -64,7 +64,8 @@ class _CreateTeacherPageState extends State<CreateTeacherPage> {
   }
 
   bool get _hasAvatarImage =>
-      _selectedImage != null || (widget.editTeacher?.avatar?.isNotEmpty ?? false);
+      _selectedImage != null ||
+      (widget.editTeacher?.avatar?.isNotEmpty ?? false);
 
   Future<void> _pickImage() async {
     showModalBottomSheet(
@@ -88,6 +89,8 @@ class _CreateTeacherPageState extends State<CreateTeacherPage> {
                 final img = await _picker.pickImage(
                   source: ImageSource.gallery,
                   imageQuality: 80,
+                  maxWidth: AppConstants.pickedImageMaxDimension,
+                  maxHeight: AppConstants.pickedImageMaxDimension,
                 );
                 if (img != null && mounted) {
                   setState(() => _selectedImage = img);
@@ -96,12 +99,17 @@ class _CreateTeacherPageState extends State<CreateTeacherPage> {
             ),
             ListTile(
               leading: const Icon(Icons.camera_alt, color: AppColors.primary),
-              title: AppText('التقاط صورة بالكاميرا', style: AppTextStyles.bodyMd),
+              title: AppText(
+                'التقاط صورة بالكاميرا',
+                style: AppTextStyles.bodyMd,
+              ),
               onTap: () async {
                 Navigator.pop(ctx);
                 final img = await _picker.pickImage(
                   source: ImageSource.camera,
                   imageQuality: 80,
+                  maxWidth: AppConstants.pickedImageMaxDimension,
+                  maxHeight: AppConstants.pickedImageMaxDimension,
                 );
                 if (img != null && mounted) {
                   setState(() => _selectedImage = img);
@@ -265,7 +273,7 @@ class _CreateTeacherPageState extends State<CreateTeacherPage> {
                             AppText(
                               _selectedImage != null
                                   ? 'تم اختيار صورة'
-                                  : 'PNG أو JPG (الحد الأقصى 2MB)',
+                                  : 'PNG أو JPG (الحد الأقصى 5MB)',
                               style: AppTextStyles.labelSm.copyWith(
                                 color: _selectedImage != null
                                     ? AppColors.primary

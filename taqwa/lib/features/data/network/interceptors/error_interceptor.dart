@@ -15,6 +15,10 @@ class ErrorInterceptor extends Interceptor {
       // Nothing answered at the other end: no DNS, no route, refused socket.
       // This is the case where the network really is worth checking.
       message = 'تعذّر الاتصال بالخادم، يرجى التحقق من الشبكة';
+    } else if (err.response?.statusCode == 413) {
+      // Checked before the server's own message: for an oversized upload
+      // that is Multer's stock English "File too large".
+      message = 'حجم الصورة كبير جدًا، يرجى اختيار صورة أصغر';
     } else if (err.response != null) {
       final data = err.response!.data;
       if (data is Map && data['message'] != null) {

@@ -108,5 +108,27 @@ void main() {
 
       expect(message, 'first problem\nsecond problem');
     });
+
+    // Multer rejects an oversized upload with Nest's stock English body, which
+    // would otherwise be passed through verbatim to an Arabic-only screen.
+    test('an oversized upload is reported in Arabic', () async {
+      final message = await messageFor(
+        (options) => DioException(
+          requestOptions: options,
+          type: DioExceptionType.badResponse,
+          response: Response<dynamic>(
+            requestOptions: options,
+            statusCode: 413,
+            data: {
+              'message': 'File too large',
+              'error': 'Payload Too Large',
+              'statusCode': 413,
+            },
+          ),
+        ),
+      );
+
+      expect(message, 'حجم الصورة كبير جدًا، يرجى اختيار صورة أصغر');
+    });
   });
 }

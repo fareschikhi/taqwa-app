@@ -63,7 +63,12 @@ class AvatarPickerField extends StatelessWidget {
     );
     if (source == null) return;
 
-    final img = await ImagePicker().pickImage(source: source, imageQuality: 80);
+    final img = await ImagePicker().pickImage(
+      source: source,
+      imageQuality: 80,
+      maxWidth: AppConstants.pickedImageMaxDimension,
+      maxHeight: AppConstants.pickedImageMaxDimension,
+    );
     if (img != null) onPicked(img);
   }
 
