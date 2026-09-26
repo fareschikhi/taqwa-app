@@ -5,12 +5,18 @@ import {
   IsOptional,
   IsString,
 } from 'class-validator';
+import {
+  IsFullName,
+  IsOptionalEmail,
+  IsOptionalPhone,
+  IsPassword,
+} from '../../../common/validators/account-fields';
 
 export class CreateManagerDto {
-  @IsString() fullName: string;
-  @IsOptional() @IsString() email?: string;
-  @IsOptional() @IsString() phone?: string;
-  @IsString() password: string;
+  @IsFullName() fullName: string;
+  @IsOptionalEmail() email?: string;
+  @IsOptionalPhone() phone?: string;
+  @IsPassword() password: string;
   @IsOptional() @IsString() avatar?: string;
   @IsOptional() @IsArray() @IsInt({ each: true }) halaqaIds?: number[];
   @IsOptional() @IsBoolean() canManageAccounts?: boolean;
@@ -18,10 +24,10 @@ export class CreateManagerDto {
 }
 
 export class UpdateManagerDto {
-  @IsOptional() @IsString() fullName?: string;
-  @IsOptional() @IsString() email?: string;
-  @IsOptional() @IsString() phone?: string;
-  @IsOptional() @IsString() password?: string;
+  @IsOptional() @IsFullName() fullName?: string;
+  @IsOptionalEmail() email?: string;
+  @IsOptionalPhone() phone?: string;
+  @IsOptional() @IsPassword() password?: string;
   @IsOptional() @IsString() avatar?: string;
   @IsOptional() @IsArray() @IsInt({ each: true }) halaqaIds?: number[];
   @IsOptional() @IsBoolean() canManageAccounts?: boolean;

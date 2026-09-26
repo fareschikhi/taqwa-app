@@ -6,6 +6,7 @@ import '../../../../core/theme/app_colors.dart';
 import '../../../../core/theme/app_text_styles.dart';
 import '../../../../core/constants/app_constants.dart';
 import '../../../../core/widgets/app_button.dart';
+import '../../../../core/utils/account_validators.dart';
 import '../../../../core/widgets/app_text_field.dart';
 import 'package:taqwa/features/data/models/teacher/teacher_payload_dto.dart';
 import 'package:taqwa/features/data/models/teacher/teacher_model.dart';
@@ -294,6 +295,7 @@ class _CreateTeacherPageState extends State<CreateTeacherPage> {
                         label: 'اسم و لقب المعلم',
                         hint: 'أدخل الاسم كاملاً',
                         controller: _nameController,
+                        validator: AccountValidators.fullName,
                       ),
                       // Date of birth and address are create-only: the update
                       // endpoint stores neither, so showing them on edit would
@@ -342,6 +344,7 @@ class _CreateTeacherPageState extends State<CreateTeacherPage> {
                         hint: '05X XXX XXXX',
                         controller: _phoneController,
                         keyboardType: TextInputType.phone,
+                        validator: AccountValidators.phone,
                         prefixIcon: const Icon(
                           Icons.phone_outlined,
                           color: AppColors.onSurfaceVariant,
@@ -353,6 +356,7 @@ class _CreateTeacherPageState extends State<CreateTeacherPage> {
                         hint: 'example@domain.com',
                         controller: _emailController,
                         keyboardType: TextInputType.emailAddress,
+                        validator: AccountValidators.email,
                         prefixIcon: const Icon(
                           Icons.email_outlined,
                           color: AppColors.onSurfaceVariant,
@@ -366,6 +370,10 @@ class _CreateTeacherPageState extends State<CreateTeacherPage> {
                         hint: '••••••••',
                         controller: _passwordController,
                         obscureText: true,
+                        validator: (v) => AccountValidators.password(
+                          v,
+                          optional: _isEditing,
+                        ),
                         prefixIcon: const Icon(
                           Icons.lock_outline,
                           color: AppColors.onSurfaceVariant,

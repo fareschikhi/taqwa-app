@@ -1,19 +1,25 @@
 import { IsDateString, IsOptional, IsString } from 'class-validator';
+import {
+  IsFullName,
+  IsOptionalEmail,
+  IsOptionalPhone,
+  IsPassword,
+} from '../../../common/validators/account-fields';
 
 export class CreateTeacherDto {
-  @IsString() fullName: string;
-  @IsOptional() @IsString() email?: string;
-  @IsOptional() @IsString() phone?: string;
-  @IsString() password: string;
+  @IsFullName() fullName: string;
+  @IsOptionalEmail() email?: string;
+  @IsOptionalPhone() phone?: string;
+  @IsPassword() password: string;
   @IsOptional() @IsDateString() hireDate?: string;
   @IsOptional() @IsString() avatar?: string;
 }
 
 export class UpdateTeacherDto {
-  @IsOptional() @IsString() fullName?: string;
-  @IsOptional() @IsString() email?: string;
-  @IsOptional() @IsString() phone?: string;
-  @IsOptional() @IsString() password?: string;
+  @IsOptional() @IsFullName() fullName?: string;
+  @IsOptionalEmail() email?: string;
+  @IsOptionalPhone() phone?: string;
+  @IsOptional() @IsPassword() password?: string;
   @IsOptional() @IsDateString() hireDate?: string;
   @IsOptional() @IsString() avatar?: string;
 }

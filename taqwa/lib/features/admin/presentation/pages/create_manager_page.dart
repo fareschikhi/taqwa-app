@@ -6,6 +6,7 @@ import '../../../../core/theme/app_colors.dart';
 import '../../../../core/theme/app_text_styles.dart';
 import '../../../../core/constants/app_constants.dart';
 import '../../../../core/widgets/app_button.dart';
+import '../../../../core/utils/account_validators.dart';
 import '../../../../core/widgets/app_text_field.dart';
 import 'package:taqwa/features/data/services/image_upload_service.dart';
 import 'package:taqwa/features/data/models/halaqa/halaqa_model.dart';
@@ -292,9 +293,7 @@ class _CreateManagerPageState extends State<CreateManagerPage> {
                         label: 'الاسم و اللقب',
                         hint: 'أدخل الاسم كاملاً',
                         controller: _nameController,
-                        validator: (v) => v == null || v.trim().isEmpty
-                            ? 'الاسم مطلوب'
-                            : null,
+                        validator: AccountValidators.fullName,
                       ),
                       SizedBox(height: 24.h),
                       // Section: Contact
@@ -308,6 +307,7 @@ class _CreateManagerPageState extends State<CreateManagerPage> {
                         hint: '05X XXX XXXX',
                         controller: _phoneController,
                         keyboardType: TextInputType.phone,
+                        validator: AccountValidators.phone,
                         prefixIcon: const Icon(
                           Icons.phone_outlined,
                           color: AppColors.onSurfaceVariant,
@@ -319,6 +319,7 @@ class _CreateManagerPageState extends State<CreateManagerPage> {
                         hint: 'example@domain.com',
                         controller: _emailController,
                         keyboardType: TextInputType.emailAddress,
+                        validator: AccountValidators.email,
                         prefixIcon: const Icon(
                           Icons.email_outlined,
                           color: AppColors.onSurfaceVariant,
@@ -332,11 +333,10 @@ class _CreateManagerPageState extends State<CreateManagerPage> {
                         hint: '••••••••',
                         controller: _passwordController,
                         obscureText: true,
-                        validator: _isEditing
-                            ? null
-                            : (v) => v == null || v.isEmpty
-                                  ? 'كلمة المرور مطلوبة'
-                                  : null,
+                        validator: (v) => AccountValidators.password(
+                          v,
+                          optional: _isEditing,
+                        ),
                         prefixIcon: const Icon(
                           Icons.lock_outline,
                           color: AppColors.onSurfaceVariant,

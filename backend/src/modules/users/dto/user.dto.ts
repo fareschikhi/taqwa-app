@@ -1,20 +1,23 @@
-import { IsBoolean, IsEmail, IsEnum, IsOptional, IsString, MinLength, ValidateIf } from 'class-validator';
+import { IsBoolean, IsEmail, IsEnum, IsOptional, IsString, ValidateIf } from 'class-validator';
 import { Role } from '@prisma/client';
+import {
+  IsFullName,
+  IsOptionalEmail,
+  IsOptionalPhone,
+  IsPassword,
+} from '../../../common/validators/account-fields';
 
 export class CreateUserDto {
-  @IsString()
+  @IsFullName()
   fullName: string;
 
-  @IsOptional()
-  @IsEmail()
+  @IsOptionalEmail()
   email?: string;
 
-  @IsOptional()
-  @IsString()
+  @IsOptionalPhone()
   phone?: string;
 
-  @IsString()
-  @MinLength(6)
+  @IsPassword()
   password: string;
 
   @IsEnum(Role)
@@ -27,20 +30,17 @@ export class CreateUserDto {
 
 export class UpdateUserDto {
   @IsOptional()
-  @IsString()
+  @IsFullName()
   fullName?: string;
 
-  @IsOptional()
-  @IsEmail()
+  @IsOptionalEmail()
   email?: string;
 
-  @IsOptional()
-  @IsString()
+  @IsOptionalPhone()
   phone?: string;
 
   @IsOptional()
-  @IsString()
-  @MinLength(6)
+  @IsPassword()
   password?: string;
 
   @IsOptional()
