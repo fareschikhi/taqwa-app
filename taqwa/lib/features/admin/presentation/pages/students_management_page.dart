@@ -49,6 +49,7 @@ class _StudentsManagementPageState extends State<StudentsManagementPage> {
       MaterialPageRoute(
         builder: (_) => StudentFormPage(
           student: student == null ? null : StudentModel.fromJson(student),
+          canSetTracksHadith: true,
         ),
       ),
     );
@@ -69,6 +70,7 @@ class _StudentsManagementPageState extends State<StudentsManagementPage> {
           fullName: (user['fullName'] as String?) ?? '',
           avatar: user['avatar'] as String?,
           halaqaId: (halaqa?['id'] as num?)?.toInt(),
+          canEditParent: true,
         ),
       ),
     );

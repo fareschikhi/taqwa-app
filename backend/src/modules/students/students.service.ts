@@ -6,7 +6,11 @@ import {
 } from '@nestjs/common';
 import * as bcrypt from 'bcrypt';
 import { PrismaService } from '../../prisma/prisma.service';
-import { CreateStudentDto, UpdateStudentDto } from './dto/student.dto';
+import {
+  CreateStudentDto,
+  StudentRegistrationDto,
+  UpdateStudentDto,
+} from './dto/student.dto';
 
 @Injectable()
 export class StudentsService {
@@ -119,9 +123,41 @@ export class StudentsService {
     }
   }
 
+  /// Copies the registration-form details a request actually carries, so an
+  /// edit that leaves them out does not wipe what is stored. '' clears one.
+  private registrationFields(dto: StudentRegistrationDto) {
+    const data: Record<string, string | boolean | null> = {};
+    for (const key of [
+      'schoolLevel',
+      'healthStatus',
+      'familyStatus',
+      'fatherJob',
+      'motherJob',
+      'occupation',
+      'externalActivities',
+    ] as const) {
+      const value = dto[key];
+      if (value !== undefined) data[key] = value.trim() === '' ? null : value.trim();
+    }
+    if (dto.isMarried !== undefined) data.isMarried = dto.isMarried;
+    return data;
+  }
+
+  /// Phone and email are both unique on `users`; name the one that clashed.
+  private conflict(error: any) {
+    const target = String(error?.meta?.target ?? '');
+    return new ConflictException(
+      target.includes('email')
+        ? 'البريد الإلكتروني مستخدم بالفعل'
+        : 'رقم الهاتف مستخدم بالفعل',
+    );
+  }
+
   async create(dto: CreateStudentDto) {
     const phone =
       dto.phone && dto.phone.trim() !== '' ? dto.phone.trim() : undefined;
+    const email =
+      dto.email && dto.email.trim() !== '' ? dto.email.trim() : undefined;
 
     if (dto.isAdult && !dto.password) {
       throw new BadRequestException('كلمة المرور مطلوبة للطالب البالغ');
@@ -136,6 +172,7 @@ export class StudentsService {
         data: {
           fullName: dto.fullName,
           phone,
+          email,
           // A child student is a record, not an account: the role classifies
           // the row while the null hash keeps the login door shut. An adult
           // student is his own guardian, so his account is real.
@@ -152,6 +189,7 @@ export class StudentsService {
               parentId: dto.isAdult ? undefined : (dto.parentId ?? undefined),
               halaqaId: dto.halaqaId ?? undefined,
               tracksHadith: dto.tracksHadith ?? false,
+              ...this.registrationFields(dto),
             },
           },
         },
@@ -163,9 +201,7 @@ export class StudentsService {
       }
       return user;
     } catch (error: any) {
-      if (error?.code === 'P2002') {
-        throw new ConflictException('رقم الهاتف مستخدم بالفعل');
-      }
+      if (error?.code === 'P2002') throw this.conflict(error);
       throw error;
     }
   }
@@ -194,9 +230,13 @@ export class StudentsService {
       userUpdate.phone = phone;
     }
 
+    if (dto.email !== undefined) {
+      userUpdate.email = dto.email.trim() === '' ? null : dto.email.trim();
+    }
+
     if (dto.avatar) userUpdate.avatar = dto.avatar;
 
-    const studentUpdate: any = {};
+    const studentUpdate: any = { ...this.registrationFields(dto) };
     if (dto.birthDate) studentUpdate.birthDate = new Date(dto.birthDate);
     if (dto.address !== undefined) studentUpdate.address = dto.address;
     if (dto.parentId !== undefined) studentUpdate.parentId = dto.parentId;
@@ -231,9 +271,7 @@ export class StudentsService {
         include: this.include,
       });
     } catch (error: any) {
-      if (error?.code === 'P2002') {
-        throw new ConflictException('رقم الهاتف مستخدم بالفعل');
-      }
+      if (error?.code === 'P2002') throw this.conflict(error);
       throw error;
     }
   }
@@ -243,20 +281,44 @@ export class StudentsService {
       where: { id },
       include: {
         user: {
-          select: { fullName: true, email: true, phone: true, avatar: true },
+          // role tells the profile which registration form (child or adult)
+          // the student's details were filled from.
+          select: {
+            fullName: true,
+            email: true,
+            phone: true,
+            avatar: true,
+            role: true,
+          },
         },
         halaqa: {
           select: {
             name: true,
             level: true,
             teacher: { select: { user: { select: { fullName: true } } } },
+            // A parent's point of contact for the halaqa. Only managers who
+            // can still sign in and have a phone are worth a WhatsApp button.
+            managers: {
+              where: { manager: { user: { isActive: true, phone: { not: null } } } },
+              orderBy: { assignedAt: 'asc' },
+              select: {
+                manager: {
+                  select: {
+                    id: true,
+                    user: { select: { fullName: true, phone: true } },
+                  },
+                },
+              },
+            },
           },
         },
         // Who to contact about this student. Optional by design: an adult
         // student is his own guardian and has no parent row at all, so the
-        // profile simply carries null and the UI omits the line.
+        // profile simply carries null and the UI omits the card.
         parent: {
-          select: { user: { select: { fullName: true, phone: true } } },
+          select: {
+            user: { select: { fullName: true, phone: true, avatar: true } },
+          },
         },
         memorization: { orderBy: { recordedAt: 'desc' }, take: 10 },
         evaluations: {

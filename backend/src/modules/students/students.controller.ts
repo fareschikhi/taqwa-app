@@ -2,6 +2,7 @@ import {
   Body,
   Controller,
   Delete,
+  ForbiddenException,
   Get,
   Param,
   ParseIntPipe,
@@ -16,12 +17,27 @@ import { RolesGuard } from '../../common/guards/roles.guard';
 import { StudentOwnershipGuard } from '../../common/guards/student-ownership.guard';
 import { ManagerPermissionGuard } from '../../common/guards/manager-permission.guard';
 import { Roles } from '../../common/decorators/roles.decorator';
+import { CurrentUser } from '../../common/decorators/current-user.decorator';
 import {
   ManagerPermission,
   RequirePermission,
 } from '../../common/decorators/permissions.decorator';
 import { StudentsService } from './students.service';
 import { CreateStudentDto, UpdateStudentDto } from './dto/student.dto';
+
+/// Hadith tracking is the admin's call alone. A manager (and, on PATCH, a
+/// teacher) reaches the same routes for everything else on the student, so
+/// the flag is refused by role here rather than trusted to the app hiding
+/// its switch. Any presence counts, `false` included — clearing the flag is
+/// as much a decision as setting it.
+function assertMaySetTracksHadith(
+  dto: { tracksHadith?: boolean },
+  user: { role?: string },
+) {
+  if (dto.tracksHadith !== undefined && user?.role !== Role.ADMIN) {
+    throw new ForbiddenException('غير مصرح لك بهذا الإجراء');
+  }
+}
 
 @UseGuards(JwtAuthGuard, RolesGuard, ManagerPermissionGuard)
 @Controller('students')
@@ -63,14 +79,20 @@ export class StudentsController {
   @Post()
   @Roles(Role.ADMIN, Role.MANAGER)
   @RequirePermission(ManagerPermission.MANAGE_ACCOUNTS)
-  create(@Body() dto: CreateStudentDto) {
+  create(@Body() dto: CreateStudentDto, @CurrentUser() user: any) {
+    assertMaySetTracksHadith(dto, user);
     return this.studentsService.create(dto);
   }
 
   @Patch(':id')
   @Roles(Role.ADMIN, Role.TEACHER, Role.MANAGER)
   @RequirePermission(ManagerPermission.MANAGE_ACCOUNTS)
-  update(@Param('id', ParseIntPipe) id: number, @Body() dto: UpdateStudentDto) {
+  update(
+    @Param('id', ParseIntPipe) id: number,
+    @Body() dto: UpdateStudentDto,
+    @CurrentUser() user: any,
+  ) {
+    assertMaySetTracksHadith(dto, user);
     return this.studentsService.update(id, dto);
   }
 

@@ -142,6 +142,19 @@ model Student {
   // a HADITH-subject write for him.
   tracksHadith   Boolean   @default(false)
 
+  // Registration-form details (استمارة التسجيل). All optional: students
+  // enrolled before the form existed carry none of them. schoolLevel is the
+  // child's school grade or the adult's education level; the father/mother
+  // jobs are child-only, occupation and isMarried adult-only.
+  schoolLevel        String?  @db.VarChar(100)
+  healthStatus       String?  @db.VarChar(255)
+  familyStatus       String?  @db.VarChar(255)
+  fatherJob          String?  @db.VarChar(100)
+  motherJob          String?  @db.VarChar(100)
+  occupation         String?  @db.VarChar(100)
+  externalActivities String?  @db.VarChar(255)
+  isMarried          Boolean?
+
   user        User                   @relation(fields: [userId], references: [id], onDelete: Cascade)
   parent      Parent?                @relation(fields: [parentId], references: [id], onDelete: SetNull)
   halaqa      Halaqa?                @relation(fields: [halaqaId], references: [id])
@@ -151,6 +164,7 @@ model Student {
   notes          StudentNote[]
   justifications AbsenceJustification[]
   fines          FineEntry[]
+  notifications  Notification[]
 
   @@index([parentId])
   @@map("students")
@@ -295,6 +309,11 @@ model HalaqaAnnouncement {
   authorId Int
   title    String @db.VarChar(200)
   body     String @db.Text
+  // Shared by the rows of one "all halaqas" post: one row per halaqa keeps
+  // every reader's scope a plain halaqaId match, and the batch is what the
+  // feed collapses back into one item and what edit and delete act on.
+  // Null for news posted to a single halaqa.
+  batchId  String? @db.VarChar(36)
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
@@ -307,6 +326,7 @@ model HalaqaAnnouncement {
   // Matches the only two queries there are — one halaqa's history, and a feed
   // over a set of halaqa ids — both ordered by createdAt.
   @@index([halaqaId, createdAt])
+  @@index([batchId])
   @@map("halaqa_announcements")
 }
 
@@ -320,12 +340,18 @@ model Notification {
   title     String   @db.VarChar(200)
   body      String   @db.Text
   isRead    Boolean  @default(false)
+  // The child the news is about, so a parent with several children sees
+  // only the selected one's. Null for news about no one child — and for rows
+  // written before this column existed — which every child's list shows.
+  studentId Int?
   createdAt DateTime @default(now())
 
-  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+  user    User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  student Student? @relation(fields: [studentId], references: [id], onDelete: Cascade)
 
   @@index([userId])
   @@index([isRead])
+  @@index([studentId])
   @@map("notifications")
 }
 

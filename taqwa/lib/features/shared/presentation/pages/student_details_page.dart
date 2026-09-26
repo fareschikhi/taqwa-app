@@ -16,7 +16,10 @@ import '../../../data/models/attendance_summary_model.dart';
 import '../../../data/models/fine/fine_summary_model.dart';
 import '../../../data/repositories/fine_repository.dart';
 import '../../../data/repositories/halaqa_repository.dart';
+import '../../../data/repositories/parent_repository.dart';
 import '../../../data/repositories/student_repository.dart';
+import '../widgets/profile_detail_widgets.dart';
+import 'parent_form_page.dart';
 import 'package:taqwa/core/widgets/app_text.dart';
 
 class StudentDetailsPage extends StatefulWidget {
@@ -26,6 +29,7 @@ class StudentDetailsPage extends StatefulWidget {
     required this.fullName,
     this.avatar,
     this.halaqaId,
+    this.canEditParent = false,
   });
 
   /// What the caller already knows before this page's own load lands: the id
@@ -38,6 +42,11 @@ class StudentDetailsPage extends StatefulWidget {
   final String? avatar;
   final int? halaqaId;
 
+  /// Whether tapping the parent card opens that parent's edit form. Only the
+  /// admin's student list turns this on; every other role sees the same card
+  /// as read-only contact details.
+  final bool canEditParent;
+
   @override
   State<StudentDetailsPage> createState() => _StudentDetailsPageState();
 }
@@ -46,6 +55,12 @@ class _StudentDetailsPageState extends State<StudentDetailsPage> {
   final _repo = StudentRepository();
   final _halaqaRepo = HalaqaRepository();
   final _fineRepo = FineRepository();
+  final _parentRepo = ParentRepository();
+  bool _isOpeningParent = false;
+
+  /// The registration details (health, family situation…) stay folded until
+  /// asked for, so they are not on screen every time the profile opens.
+  bool _showRegistration = false;
 
   bool _isLoading = true;
   String? _error;
@@ -197,6 +212,113 @@ class _StudentDetailsPageState extends State<StudentDetailsPage> {
   Map<String, dynamic>? get _halaqa =>
       _profile?['halaqa'] as Map<String, dynamic>?;
 
+  /// The profile's parent `user` block — name, phone and avatar. Null for an
+  /// adult student, who is his own guardian and has no parent row at all; the
+  /// card is left out entirely rather than filled with a placeholder, which
+  /// would read as a parent the school failed to record.
+  Map<String, dynamic>? get _parent =>
+      (_profile?['parent'] as Map<String, dynamic>?)?['user']
+          as Map<String, dynamic>?;
+
+  /// The profile only nests the parent's contact fields, while the edit form
+  /// needs the whole row (email, address, linked children), so the parent is
+  /// fetched by the student's `parentId` before the form opens. The profile
+  /// is reloaded afterwards in case the name, phone or photo changed.
+  Future<void> _openParent() async {
+    final parentId = (_profile?['parentId'] as num?)?.toInt();
+    if (parentId == null || _isOpeningParent) return;
+    setState(() => _isOpeningParent = true);
+    try {
+      final parent = await _parentRepo.getParent(parentId);
+      if (!mounted) return;
+      final saved = await Navigator.push<bool>(
+        context,
+        MaterialPageRoute(builder: (_) => ParentFormPage(parent: parent)),
+      );
+      if (saved == true && mounted) await _load();
+    } catch (e) {
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text(ParentRepository.errorMessage(e))),
+      );
+    } finally {
+      if (mounted) setState(() => _isOpeningParent = false);
+    }
+  }
+
+  Widget _buildParentCard(Map<String, dynamic> parent) {
+    final name = (parent['fullName'] as String?) ?? '';
+    final phone = parent['phone'] as String?;
+    final canOpen = widget.canEditParent;
+
+    return AppCard(
+      padding: EdgeInsets.all(16.w),
+      onTap: canOpen ? _openParent : null,
+      child: Row(
+        children: [
+          AvatarWidget(
+            avatarUrl: parent['avatar'] as String?,
+            size: 44.w,
+            fallback: AppText(
+              name.isNotEmpty ? name[0] : '؟',
+              style: AppTextStyles.labelMdBold.copyWith(
+                color: AppColors.onPrimaryContainer,
+              ),
+            ),
+          ),
+          SizedBox(width: 12.w),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                AppText(
+                  'ولي الأمر',
+                  style: AppTextStyles.labelSm.copyWith(
+                    color: AppColors.onSurfaceVariant,
+                  ),
+                ),
+                SizedBox(height: 2.h),
+                AppText(
+                  name,
+                  style: AppTextStyles.bodyMdBold.copyWith(
+                    color: AppColors.onSurface,
+                  ),
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
+                ),
+                if (phone != null && phone.isNotEmpty) ...[
+                  SizedBox(height: 2.h),
+                  AppText(
+                    phone,
+                    style: AppTextStyles.labelSm.copyWith(
+                      color: AppColors.onSurfaceVariant,
+                    ),
+                    textDirection: TextDirection.ltr,
+                  ),
+                ],
+              ],
+            ),
+          ),
+          if (canOpen)
+            _isOpeningParent
+                ? SizedBox(
+                    width: 20.w,
+                    height: 20.w,
+                    child: const CircularProgressIndicator(
+                      strokeWidth: 2,
+                      color: AppColors.primary,
+                    ),
+                  )
+                : Icon(
+                    Icons.chevron_left,
+                    color: AppColors.onSurfaceVariant,
+                    size: 20.w,
+                  ),
+        ],
+      ),
+    );
+  }
+
   List<Map<String, dynamic>> get _records =>
       ((_profile?['memorization'] as List<dynamic>?) ?? const [])
           .cast<Map<String, dynamic>>();
@@ -258,10 +380,16 @@ class _StudentDetailsPageState extends State<StudentDetailsPage> {
                     delegate: SliverChildListDelegate([
                       SizedBox(height: 20.h),
                       _buildStatsRow(),
+                      if (_parent != null) ...[
+                        SizedBox(height: 16.h),
+                        _buildParentCard(_parent!),
+                      ],
                       if (_isAdultStudent && _fineSummary != null) ...[
                         SizedBox(height: 16.h),
                         _buildFinesSection(),
                       ],
+                      SizedBox(height: 16.h),
+                      _buildRegistrationCard(),
                       SizedBox(height: 20.h),
                       _buildLastSessionCard(),
                       SizedBox(height: 16.h),
@@ -391,6 +519,133 @@ class _StudentDetailsPageState extends State<StudentDetailsPage> {
     }
   }
 
+  /// What the registration form (استمارة التسجيل) recorded, laid out as the
+  /// children's or the adults' form depending on the account's role. Folded
+  /// to its title until [_showRegistration]; once open every row shows,
+  /// blank ones as "غير مسجل", so a gap in the file is visible.
+  Widget _buildRegistrationCard() {
+    final user = _profile?['user'] as Map<String, dynamic>?;
+    final isAdult = user?['role'] == 'ADULT_STUDENT';
+    String? value(String key) => _profile?[key] as String?;
+
+    final birthDate = DateTime.tryParse(value('birthDate') ?? '');
+    final married = _profile?['isMarried'] as bool?;
+
+    final rows = <Widget>[
+      DetailInfoRow(
+        icon: Icons.calendar_today_outlined,
+        label: 'تاريخ الميلاد',
+        value: birthDate == null
+            ? null
+            : '${birthDate.day.toString().padLeft(2, '0')}/'
+                  '${birthDate.month.toString().padLeft(2, '0')}/'
+                  '${birthDate.year}',
+        isLtr: true,
+      ),
+      DetailInfoRow(
+        icon: Icons.location_on_outlined,
+        label: 'العنوان',
+        value: value('address'),
+      ),
+      DetailInfoRow(
+        icon: Icons.phone_outlined,
+        label: 'رقم الهاتف',
+        value: user?['phone'] as String?,
+        isLtr: true,
+      ),
+      if (isAdult)
+        DetailInfoRow(
+          icon: Icons.email_outlined,
+          label: 'البريد الإلكتروني',
+          value: user?['email'] as String?,
+          isLtr: true,
+        ),
+      DetailInfoRow(
+        icon: Icons.menu_book_outlined,
+        label: isAdult ? 'المستوى الدراسي' : 'الصف الدراسي',
+        value: value('schoolLevel'),
+      ),
+      if (isAdult) ...[
+        DetailInfoRow(
+          icon: Icons.work_outline,
+          label: 'المهنة',
+          value: value('occupation'),
+        ),
+        DetailInfoRow(
+          icon: Icons.favorite_border,
+          label: 'الحالة الاجتماعية',
+          value: married == null ? null : (married ? 'متزوج' : 'أعزب'),
+        ),
+      ] else ...[
+        DetailInfoRow(
+          icon: Icons.work_outline,
+          label: 'مهنة الأب',
+          value: value('fatherJob'),
+        ),
+        DetailInfoRow(
+          icon: Icons.work_outline,
+          label: 'مهنة الأم',
+          value: value('motherJob'),
+        ),
+      ],
+      DetailInfoRow(
+        icon: Icons.health_and_safety_outlined,
+        label: 'الحالة الصحية',
+        value: value('healthStatus'),
+      ),
+      DetailInfoRow(
+        icon: Icons.family_restroom_outlined,
+        label: 'الحالة الاجتماعية للأسرة',
+        value: value('familyStatus'),
+      ),
+      DetailInfoRow(
+        icon: Icons.schedule_outlined,
+        label: 'توقيت النشاطات الخارجية',
+        value: value('externalActivities'),
+      ),
+    ];
+
+    return AppCard(
+      padding: EdgeInsets.all(16.w),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.stretch,
+        children: [
+          Row(
+            children: [
+              TextButton.icon(
+                onPressed: () => setState(
+                  () => _showRegistration = !_showRegistration,
+                ),
+                icon: Icon(
+                  _showRegistration
+                      ? Icons.keyboard_arrow_up
+                      : Icons.keyboard_arrow_down,
+                  color: AppColors.primary,
+                  size: 20.w,
+                ),
+                label: AppText(
+                  _showRegistration ? 'إخفاء المعلومات' : 'عرض المعلومات',
+                  style: AppTextStyles.labelMd.copyWith(
+                    color: AppColors.primary,
+                  ),
+                ),
+              ),
+              const Spacer(),
+              AppText(
+                'بيانات التسجيل',
+                style: AppTextStyles.headlineSm.copyWith(
+                  color: AppColors.onSurface,
+                ),
+              ),
+            ],
+          ),
+          if (_showRegistration)
+            for (final row in rows) ...[SizedBox(height: 12.h), row],
+        ],
+      ),
+    );
+  }
+
   /// There is no assignment model behind a "current task", so this reports the
   /// most recent recitation instead of inventing a target to measure against.
   Widget _buildLastSessionCard() {
@@ -483,13 +738,6 @@ class _StudentDetailsPageState extends State<StudentDetailsPage> {
                 as Map<String, dynamic>?)?['fullName']
             as String?;
     final level = _halaqa?['level'] as String?;
-    // Null for an adult student, who is his own guardian and has no parent row
-    // at all. The line is left out entirely rather than filled with a
-    // placeholder, which would read as a parent the school failed to record.
-    final parentName =
-        ((_profile?['parent'] as Map<String, dynamic>?)?['user']
-                as Map<String, dynamic>?)?['fullName']
-            as String?;
 
     return Container(
       padding: EdgeInsets.all(16.w),
@@ -555,13 +803,6 @@ class _StudentDetailsPageState extends State<StudentDetailsPage> {
                         color: AppColors.onPrimary.withValues(alpha: 0.8),
                       ),
                     ),
-                    if (parentName != null)
-                      AppText(
-                        'ولي الأمر: $parentName',
-                        style: AppTextStyles.labelMd.copyWith(
-                          color: AppColors.onPrimary.withValues(alpha: 0.8),
-                        ),
-                      ),
                   ],
                 ),
               ),

@@ -7,6 +7,7 @@ import 'package:taqwa/features/data/services/image_upload_service.dart';
 import '../../../../core/theme/app_colors.dart';
 import '../../../../core/theme/app_text_styles.dart';
 import '../../../../core/widgets/app_button.dart';
+import '../../../../core/utils/account_validators.dart';
 import '../../../../core/widgets/app_text_field.dart';
 import '../../../../core/widgets/user_selector_field.dart';
 import '../../../data/models/student/student_model.dart';
@@ -26,14 +27,27 @@ import 'package:taqwa/core/widgets/app_text.dart';
 /// The one role-dependent bit is where the halaqa list comes from: pass
 /// [managerId] for a manager and the options are scoped to that manager's
 /// halaqas, because GET /halaqas is ADMIN/TEACHER-only.
+///
+/// The other is the hadith switch, shown and sent only when
+/// [canSetTracksHadith] is true — the backend refuses the key from any role
+/// but admin.
 class StudentFormPage extends StatefulWidget {
-  const StudentFormPage({super.key, this.student, this.managerId});
+  const StudentFormPage({
+    super.key,
+    this.student,
+    this.managerId,
+    this.canSetTracksHadith = false,
+  });
 
   /// Student being edited; null means "create a new one".
   final StudentModel? student;
 
   /// Set when a manager is using the form.
   final int? managerId;
+
+  /// Opt-in rather than derived from [managerId], so no caller other than
+  /// the admin section ever offers a switch the backend would reject.
+  final bool canSetTracksHadith;
 
   @override
   State<StudentFormPage> createState() => _StudentFormPageState();
@@ -50,6 +64,19 @@ class _StudentFormPageState extends State<StudentFormPage> {
   final _dobController = TextEditingController();
   final _addressController = TextEditingController();
   final _passwordController = TextEditingController();
+
+  // Registration-form (استمارة التسجيل) details. Which of them render — and
+  // get sent — follows [_isAdultForm]; the rest keep their text so flipping
+  // the switch back and forth loses nothing.
+  final _schoolLevelController = TextEditingController();
+  final _healthController = TextEditingController();
+  final _familyStatusController = TextEditingController();
+  final _fatherJobController = TextEditingController();
+  final _motherJobController = TextEditingController();
+  final _occupationController = TextEditingController();
+  final _emailController = TextEditingController();
+  final _activitiesController = TextEditingController();
+  bool? _isMarried;
 
   List<HalaqaModel> _halaqas = [];
   List<UserOption> _parents = [];
@@ -72,6 +99,11 @@ class _StudentFormPageState extends State<StudentFormPage> {
 
   bool get _isEditing => widget.student != null;
 
+  /// Which registration form applies: the switch while creating, the
+  /// student's own role while editing (the switch is hidden then).
+  bool get _isAdultForm =>
+      _isEditing ? widget.student!.isAdult : _isAdult;
+
   @override
   void initState() {
     super.initState();
@@ -83,6 +115,15 @@ class _StudentFormPageState extends State<StudentFormPage> {
       _selectedHalaqaId = student.halaqaId;
       _selectedParentId = student.parentId;
       _tracksHadith = student.tracksHadith;
+      _schoolLevelController.text = student.schoolLevel ?? '';
+      _healthController.text = student.healthStatus ?? '';
+      _familyStatusController.text = student.familyStatus ?? '';
+      _fatherJobController.text = student.fatherJob ?? '';
+      _motherJobController.text = student.motherJob ?? '';
+      _occupationController.text = student.occupation ?? '';
+      _emailController.text = student.email ?? '';
+      _activitiesController.text = student.externalActivities ?? '';
+      _isMarried = student.isMarried;
 
       final birthDate = DateTime.tryParse(student.birthDate);
       if (birthDate != null) {
@@ -100,7 +141,40 @@ class _StudentFormPageState extends State<StudentFormPage> {
     _dobController.dispose();
     _addressController.dispose();
     _passwordController.dispose();
+    _schoolLevelController.dispose();
+    _healthController.dispose();
+    _familyStatusController.dispose();
+    _fatherJobController.dispose();
+    _motherJobController.dispose();
+    _occupationController.dispose();
+    _emailController.dispose();
+    _activitiesController.dispose();
     super.dispose();
+  }
+
+  /// The registration details for the form that applies, keyed as the
+  /// backend names them. Blank text is sent as '' so an edit can clear a
+  /// value; the backend stores it as null.
+  Map<String, Object> _registration() {
+    final common = {
+      'schoolLevel': _schoolLevelController.text.trim(),
+      'healthStatus': _healthController.text.trim(),
+      'familyStatus': _familyStatusController.text.trim(),
+      'externalActivities': _activitiesController.text.trim(),
+    };
+    if (_isAdultForm) {
+      return {
+        ...common,
+        'occupation': _occupationController.text.trim(),
+        'email': _emailController.text.trim(),
+        'isMarried': ?_isMarried,
+      };
+    }
+    return {
+      ...common,
+      'fatherJob': _fatherJobController.text.trim(),
+      'motherJob': _motherJobController.text.trim(),
+    };
   }
 
   String _formatDate(DateTime d) =>
@@ -127,11 +201,8 @@ class _StudentFormPageState extends State<StudentFormPage> {
       parents = (await _parentRepo.getAllParents())
           .where((p) => p.id != null)
           .map(
-            (p) => UserOption(
-              id: p.id!,
-              fullName: p.fullName,
-              avatar: p.avatar,
-            ),
+            (p) =>
+                UserOption(id: p.id!, fullName: p.fullName, avatar: p.avatar),
           )
           .toList();
     } catch (_) {}
@@ -165,7 +236,8 @@ class _StudentFormPageState extends State<StudentFormPage> {
           'halaqaId': ?_selectedHalaqaId,
           'parentId': ?_selectedParentId,
           'avatar': ?avatarUrl,
-          'tracksHadith': _tracksHadith,
+          if (widget.canSetTracksHadith) 'tracksHadith': _tracksHadith,
+          ..._registration(),
         });
       } else {
         await _repo.createStudent(
@@ -179,7 +251,8 @@ class _StudentFormPageState extends State<StudentFormPage> {
             avatar: avatarUrl,
             isAdult: _isAdult,
             password: _isAdult ? _passwordController.text : null,
-            tracksHadith: _tracksHadith,
+            tracksHadith: widget.canSetTracksHadith ? _tracksHadith : null,
+            registration: _registration(),
           ),
         );
       }
@@ -195,9 +268,9 @@ class _StudentFormPageState extends State<StudentFormPage> {
       Navigator.pop(context, true);
     } catch (e) {
       if (!mounted) return;
-      ScaffoldMessenger.of(
-        context,
-      ).showSnackBar(SnackBar(content: AppText(StudentRepository.errorMessage(e))));
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: AppText(StudentRepository.errorMessage(e))),
+      );
     } finally {
       if (mounted) setState(() => _isLoading = false);
     }
@@ -285,8 +358,7 @@ class _StudentFormPageState extends State<StudentFormPage> {
               Icons.person_outline,
               color: AppColors.onSurfaceVariant,
             ),
-            validator: (v) =>
-                (v == null || v.trim().isEmpty) ? 'هذا الحقل مطلوب' : null,
+            validator: AccountValidators.fullName,
           ),
           SizedBox(height: 16.h),
           AppTextField(
@@ -326,35 +398,26 @@ class _StudentFormPageState extends State<StudentFormPage> {
           SizedBox(height: 16.h),
           AppTextField(
             label: 'رقم الهاتف *',
-            hint: '05 123 456 789',
+            hint: '05 51 23 45 67',
             controller: _phoneController,
             keyboardType: TextInputType.phone,
             prefixIcon: const Icon(
               Icons.phone_outlined,
               color: AppColors.onSurfaceVariant,
             ),
-            validator: (v) =>
-                (v == null || v.trim().isEmpty) ? 'هذا الحقل مطلوب' : null,
+            validator: (v) => AccountValidators.phone(v, required: true),
           ),
           SizedBox(height: 24.h),
           const FormSectionHeader(
             icon: Icons.school_outlined,
-            title: 'الحلقة وولي الأمر',
+            title: 'استمارة التسجيل',
           ),
-          SizedBox(height: 16.h),
-          const FormFieldLabel(label: 'الحلقة القرآنية (اختياري)'),
-          SizedBox(height: 6.h),
-          _buildHalaqaDropdown(),
-          SizedBox(height: 16.h),
-          _buildTracksHadithSwitch(),
           SizedBox(height: 16.h),
           // Editing an existing person's role is out of scope — the backend
           // has no path for it — so the switch, and everything it changes,
           // only ever appears while creating.
-          if (!_isEditing) ...[
-            _buildAdultSwitch(),
-            SizedBox(height: 16.h),
-          ],
+          if (!_isEditing) ...[_buildAdultSwitch(), SizedBox(height: 16.h)],
+          ..._buildRegistrationFields(),
           if (_isAdult) ...[
             AppTextField(
               label: 'كلمة المرور *',
@@ -379,7 +442,8 @@ class _StudentFormPageState extends State<StudentFormPage> {
                 ),
               ),
             ),
-          ] else if (_parents.isNotEmpty)
+            SizedBox(height: 16.h),
+          ] else if (_parents.isNotEmpty) ...[
             UserSelectorField(
               label: 'ولي الأمر (اختياري)',
               hint: 'ابحث واختر ولي الأمر',
@@ -389,6 +453,16 @@ class _StudentFormPageState extends State<StudentFormPage> {
               selectedId: _selectedParentId,
               onSelected: (o) => setState(() => _selectedParentId = o.id),
             ),
+            SizedBox(height: 16.h),
+          ],
+          // Halaqa and the hadith track come last, after who the student is.
+          const FormFieldLabel(label: 'الحلقة القرآنية (اختياري)'),
+          SizedBox(height: 6.h),
+          _buildHalaqaDropdown(),
+          if (widget.canSetTracksHadith) ...[
+            SizedBox(height: 16.h),
+            _buildTracksHadithSwitch(),
+          ],
         ],
       ),
     );
@@ -412,6 +486,107 @@ class _StudentFormPageState extends State<StudentFormPage> {
     );
   }
 
+  /// The fields of the paper registration form (استمارة التسجيل) that the
+  /// rest of this page does not already ask for: the children's form or the
+  /// adults' one, following [_isAdultForm]. Name, birth date, address, phone
+  /// and photo are above; the guardian is the parent picker below.
+  List<Widget> _buildRegistrationFields() {
+    Widget field(
+      String label,
+      TextEditingController controller,
+      IconData icon, {
+      TextInputType? keyboardType,
+      String? Function(String?)? validator,
+    }) {
+      return Padding(
+        padding: EdgeInsets.only(bottom: 16.h),
+        child: AppTextField(
+          label: label,
+          controller: controller,
+          keyboardType: keyboardType,
+          prefixIcon: Icon(icon, color: AppColors.onSurfaceVariant),
+          validator: validator,
+        ),
+      );
+    }
+
+    final health = field(
+      _isAdultForm ? 'الحالة الصحية' : 'الحالة الصحية للطالب',
+      _healthController,
+      Icons.health_and_safety_outlined,
+    );
+    final familyStatus = field(
+      'الحالة الاجتماعية للأسرة',
+      _familyStatusController,
+      Icons.family_restroom_outlined,
+    );
+    final activities = field(
+      _isAdultForm
+          ? 'توقيت النشاطات الخارجية (رياضة...) إن وجدت'
+          : 'توقيت النشاطات الخارجية (رياضة، دعم مدرسي...) إن وجدت',
+      _activitiesController,
+      Icons.schedule_outlined,
+    );
+
+    if (_isAdultForm) {
+      return [
+        field(
+          'المستوى الدراسي',
+          _schoolLevelController,
+          Icons.menu_book_outlined,
+        ),
+        field(
+          'المهنة إن وجدت',
+          _occupationController,
+          Icons.work_outline,
+        ),
+        health,
+        familyStatus,
+        field(
+          'البريد الإلكتروني',
+          _emailController,
+          Icons.email_outlined,
+          keyboardType: TextInputType.emailAddress,
+          validator: AccountValidators.email,
+        ),
+        activities,
+        _buildMaritalStatus(),
+        SizedBox(height: 16.h),
+      ];
+    }
+    return [
+      field('الصف الدراسي', _schoolLevelController, Icons.menu_book_outlined),
+      health,
+      familyStatus,
+      field('مهنة الأب', _fatherJobController, Icons.work_outline),
+      field('مهنة الأم', _motherJobController, Icons.work_outline),
+      activities,
+    ];
+  }
+
+  /// "هل أنت؟ أعزب / متزوج" from the adults' form. Left unanswered it stays
+  /// null; tapping the chosen chip again clears it.
+  Widget _buildMaritalStatus() {
+    Widget chip(String label, bool value) => ChoiceChip(
+      label: AppText(label, style: AppTextStyles.labelMd),
+      selected: _isMarried == value,
+      selectedColor: AppColors.primary.withValues(alpha: 0.15),
+      onSelected: (on) => setState(() => _isMarried = on ? value : null),
+    );
+
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.end,
+      children: [
+        const FormFieldLabel(label: 'الحالة الاجتماعية'),
+        SizedBox(height: 6.h),
+        Wrap(
+          spacing: 8.w,
+          children: [chip('متزوج', true), chip('أعزب', false)],
+        ),
+      ],
+    );
+  }
+
   /// Gates the Hadith subject on this student's recitation sheet. Unlike
   /// [_buildAdultSwitch], this is meaningful on both create and edit, so it
   /// is not hidden behind `_isEditing`.
@@ -423,7 +598,7 @@ class _StudentFormPageState extends State<StudentFormPage> {
       value: _tracksHadith,
       onChanged: (v) => setState(() => _tracksHadith = v),
       title: AppText(
-        'يحفظ حديث',
+        'مشارك في برنامج حفظ السنة النبوية',
         style: AppTextStyles.labelMd.copyWith(color: AppColors.onSurface),
         textAlign: TextAlign.end,
       ),

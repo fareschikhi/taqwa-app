@@ -21,6 +21,20 @@ class StudentModel {
   // subject alongside Quran.
   final bool tracksHadith;
 
+  // Registration-form details (استمارة التسجيل), all optional. [schoolLevel]
+  // is a child's school grade or an adult's education level; the parents'
+  // jobs belong to the children's form, [occupation], [email] and
+  // [isMarried] to the adults'.
+  final String? email;
+  final String? schoolLevel;
+  final String? healthStatus;
+  final String? familyStatus;
+  final String? fatherJob;
+  final String? motherJob;
+  final String? occupation;
+  final String? externalActivities;
+  final bool? isMarried;
+
   const StudentModel({
     this.id,
     this.userId,
@@ -34,6 +48,15 @@ class StudentModel {
     this.isActive,
     this.isAdult = false,
     this.tracksHadith = false,
+    this.email,
+    this.schoolLevel,
+    this.healthStatus,
+    this.familyStatus,
+    this.fatherJob,
+    this.motherJob,
+    this.occupation,
+    this.externalActivities,
+    this.isMarried,
   });
 
   factory StudentModel.fromJson(Map<String, dynamic> json) {
@@ -50,6 +73,8 @@ class StudentModel {
         '';
     final String addressRaw =
         json['address']?.toString() ?? studentMap?['address']?.toString() ?? '';
+    String? text(String key) =>
+        (json[key] as String?) ?? (studentMap?[key] as String?);
 
     return StudentModel(
       id: (json['id'] as num?)?.toInt() ?? (studentMap?['id'] as num?)?.toInt(),
@@ -76,6 +101,16 @@ class StudentModel {
           (json['tracksHadith'] as bool?) ??
           (studentMap?['tracksHadith'] as bool?) ??
           false,
+      email: (json['email'] as String?) ?? (userMap?['email'] as String?),
+      schoolLevel: text('schoolLevel'),
+      healthStatus: text('healthStatus'),
+      familyStatus: text('familyStatus'),
+      fatherJob: text('fatherJob'),
+      motherJob: text('motherJob'),
+      occupation: text('occupation'),
+      externalActivities: text('externalActivities'),
+      isMarried:
+          (json['isMarried'] as bool?) ?? (studentMap?['isMarried'] as bool?),
     );
   }
 
