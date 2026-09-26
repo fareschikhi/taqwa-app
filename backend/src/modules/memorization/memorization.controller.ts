@@ -32,14 +32,26 @@ export class MemorizationController {
   }
 
   @Get('student/:id')
-  @Roles(Role.ADMIN, Role.TEACHER, Role.PARENT, Role.ADULT_STUDENT)
+  @Roles(
+    Role.ADMIN,
+    Role.TEACHER,
+    Role.PARENT,
+    Role.MANAGER,
+    Role.ADULT_STUDENT,
+  )
   @UseGuards(StudentOwnershipGuard)
   findByStudent(@Param('id', ParseIntPipe) id: number) {
     return this.memorizationService.findByStudent(id);
   }
 
   @Get('student/:id/progress')
-  @Roles(Role.ADMIN, Role.TEACHER, Role.PARENT, Role.ADULT_STUDENT)
+  @Roles(
+    Role.ADMIN,
+    Role.TEACHER,
+    Role.PARENT,
+    Role.MANAGER,
+    Role.ADULT_STUDENT,
+  )
   @UseGuards(StudentOwnershipGuard)
   getProgress(@Param('id', ParseIntPipe) id: number) {
     return this.memorizationService.getStudentProgress(id);

@@ -5,6 +5,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:taqwa/core/constants/hadith_books.dart';
 import 'package:taqwa/features/data/models/teacher_student_model.dart';
 import 'package:taqwa/features/data/network/dio_client.dart';
 import 'package:taqwa/features/teacher/presentation/pages/memorization_entry_sheet.dart';
@@ -102,7 +103,7 @@ void main() {
     expect(find.text('السورة'), findsOneWidget);
   });
 
-  testWidgets('switching to Hadith replaces the surah field with a text field', (
+  testWidgets('switching to Hadith replaces the surah field with a book picker', (
     tester,
   ) async {
     _setPhoneViewport(tester);
@@ -115,11 +116,19 @@ void main() {
     await tester.pumpAndSettle();
 
     expect(find.text('السورة'), findsNothing);
-    expect(find.text('الحديث'), findsWidgets); // segment label + field label
+    expect(find.text('الكتاب'), findsOneWidget);
+    expect(find.text('اختر الكتاب...'), findsOneWidget);
+
+    await tester.tap(find.text('اختر الكتاب...'));
+    await tester.pumpAndSettle();
+
+    for (final book in kHadithBooks) {
+      expect(find.text(book), findsWidgets);
+    }
   });
 
   testWidgets(
-    "prefills the hadith field with the student's most recent hadith",
+    'leaves the book picker empty when the last hadith was free text',
     (tester) async {
       _setPhoneViewport(tester);
       DioClient.instance.httpClientAdapter = _StubAdapter(
@@ -143,17 +152,51 @@ void main() {
       );
       await tester.pumpAndSettle();
 
+      await tester.tap(find.text('الحديث'));
+      await tester.pumpAndSettle();
+
+      expect(find.text('حديث النية'), findsNothing);
+      expect(find.text('اختر الكتاب...'), findsOneWidget);
+    },
+  );
+
+  testWidgets(
+    "preselects the book of the student's most recent hadith",
+    (tester) async {
+      _setPhoneViewport(tester);
+      DioClient.instance.httpClientAdapter = _StubAdapter(
+        jsonEncode([
+          {
+            'id': 1,
+            'studentId': 1,
+            'surahNumber': null,
+            'amountDone': 1,
+            'memorizationType': 'MEMORIZING',
+            'subject': 'HADITH',
+            'hadithReference': 'عُمدة الأحكام',
+            'date': '2026-08-20T00:00:00.000Z',
+            'recordedAt': '2026-08-20T10:00:00.000Z',
+          },
+        ]),
+      );
+
+      await tester.pumpWidget(
+        _host(MemorizationEntrySheet(student: _student(tracksHadith: true))),
+      );
+      await tester.pumpAndSettle();
+
       // Only the segment option carries this text before switching, so it is
       // unambiguous to tap here.
       await tester.tap(find.text('الحديث'));
       await tester.pumpAndSettle();
 
-      expect(find.text('حديث النية'), findsOneWidget);
+      expect(find.text('عُمدة الأحكام'), findsOneWidget);
+      expect(find.text('اختر الكتاب...'), findsNothing);
     },
   );
 
   testWidgets(
-    'does not overflow when a keyboard opens over the hadith field on a small phone',
+    'does not overflow when a keyboard opens over the hadith form on a small phone',
     (tester) async {
       // iPhone-SE-class viewport: 750x1334 physical @2x devicePixelRatio,
       // i.e. 375x667 logical — a small phone, not the roomier one
@@ -171,8 +214,8 @@ void main() {
       await tester.pumpAndSettle();
 
       // Simulates a normal ~300dp keyboard covering the bottom of the
-      // screen — the inset the OS applies once the multi-line hadith field
-      // is focused — without needing a real text-input platform channel.
+      // screen — the inset the OS applies while a field is focused —
+      // without needing a real text-input platform channel.
       tester.view.viewInsets = const FakeViewPadding(bottom: 600);
       await tester.pumpAndSettle();
 
@@ -184,40 +227,6 @@ void main() {
       // The submit button must still be part of the tree (reachable by
       // scrolling), not pushed out of the layout entirely.
       expect(find.text('تسجيل'), findsOneWidget);
-    },
-  );
-
-  testWidgets(
-    'clears controller when switching to hadith, then prefills if empty',
-    (tester) async {
-      _setPhoneViewport(tester);
-      DioClient.instance.httpClientAdapter = _StubAdapter(
-        jsonEncode([
-          {
-            'id': 1,
-            'studentId': 1,
-            'surahNumber': null,
-            'amountDone': 1,
-            'memorizationType': 'MEMORIZING',
-            'subject': 'HADITH',
-            'hadithReference': 'حديث النية',
-            'date': '2026-08-20T00:00:00.000Z',
-            'recordedAt': '2026-08-20T10:00:00.000Z',
-          },
-        ]),
-      );
-
-      await tester.pumpWidget(
-        _host(MemorizationEntrySheet(student: _student(tracksHadith: true))),
-      );
-      await tester.pumpAndSettle();
-
-      // Switch to hadith — this triggers the prefill request.
-      await tester.tap(find.text('الحديث'));
-      await tester.pumpAndSettle();
-
-      // The field should be prefilled with the previous hadith reference.
-      expect(find.text('حديث النية'), findsOneWidget);
     },
   );
 }

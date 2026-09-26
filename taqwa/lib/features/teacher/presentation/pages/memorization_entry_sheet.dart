@@ -4,6 +4,7 @@ import 'package:taqwa/features/teacher/presentation/pages/segmented_selector.dar
 import '../../../../core/theme/app_colors.dart';
 import '../../../../core/theme/app_text_styles.dart';
 import '../../../../core/constants/app_constants.dart';
+import '../../../../core/constants/hadith_books.dart';
 import '../../../../core/constants/surahs.dart';
 import '../../../../core/enums/memorization_subject.dart';
 import '../../../../core/enums/memorization_type.dart';
@@ -11,7 +12,6 @@ import '../../../../core/utils/memorization_error_message.dart';
 import '../../../../core/utils/memorization_history.dart';
 import '../../../../core/widgets/app_card.dart';
 import '../../../../core/widgets/app_button.dart';
-import '../../../../core/widgets/app_text_field.dart';
 import '../../../data/models/teacher_student_model.dart';
 import '../../../data/repositories/student_repository.dart';
 import '../../../data/repositories/teacher_repository.dart';
@@ -28,7 +28,7 @@ class MemorizationEntrySheet extends StatefulWidget {
 class _MemorizationEntrySheetState extends State<MemorizationEntrySheet> {
   MemorizationSubject _selectedSubject = MemorizationSubject.quran;
   int? _selectedSurah;
-  final _hadithController = TextEditingController();
+  String? _selectedHadithBook;
   bool _hadithPrefillLoaded = false;
   int _amount = 1;
   MemorizationType? _selectedType;
@@ -45,12 +45,6 @@ class _MemorizationEntrySheetState extends State<MemorizationEntrySheet> {
       _isHadith ? 'عدد الأحاديث' : (_selectedType?.amountLabel ?? 'العدد');
   int get _maxAmount => _isHadith ? 50 : (_selectedType?.maxAmount ?? 1);
 
-  @override
-  void dispose() {
-    _hadithController.dispose();
-    super.dispose();
-  }
-
   void _onSubjectChanged(MemorizationSubject subject) {
     setState(() {
       _selectedSubject = subject;
@@ -64,10 +58,10 @@ class _MemorizationEntrySheetState extends State<MemorizationEntrySheet> {
     }
   }
 
-  /// Seeds the hadith field with the student's most recent hadith reference,
-  /// so continuing the same hadith is a no-op and starting a new one is a
-  /// single edit. Best-effort: a failed fetch just leaves the field empty,
-  /// the same as a student with no prior hadith entries.
+  /// Preselects the book of the student's most recent hadith entry, so
+  /// continuing the same book is a no-op. An older free-text reference that
+  /// is not one of [kHadithBooks] leaves the dropdown empty. Best-effort: a
+  /// failed fetch is the same as a student with no prior hadith entries.
   Future<void> _loadHadithPrefill() async {
     _hadithPrefillLoaded = true;
     try {
@@ -80,12 +74,12 @@ class _MemorizationEntrySheetState extends State<MemorizationEntrySheet> {
       final latest = recentMemorization(hadithRecords, limit: 1);
       if (!mounted || latest.isEmpty) return;
       final reference = latest.first['hadithReference'] as String?;
-      if (reference != null && reference.isNotEmpty && _hadithController.text.isEmpty) {
-        setState(() => _hadithController.text = reference);
+      if (kHadithBooks.contains(reference) && _selectedHadithBook == null) {
+        setState(() => _selectedHadithBook = reference);
       }
     } catch (_) {
       // Prefill is a convenience, not a requirement — the teacher can still
-      // type the hadith by hand.
+      // pick the book by hand.
     }
   }
 
@@ -99,9 +93,8 @@ class _MemorizationEntrySheetState extends State<MemorizationEntrySheet> {
   }
 
   Future<void> _submit() async {
-    final hadithText = _hadithController.text.trim();
     final missingIdentity = _isHadith
-        ? hadithText.isEmpty
+        ? _selectedHadithBook == null
         : _selectedSurah == null;
 
     if (missingIdentity || _selectedType == null) {
@@ -109,7 +102,7 @@ class _MemorizationEntrySheetState extends State<MemorizationEntrySheet> {
         SnackBar(
           content: AppText(
             _isHadith
-                ? 'يرجى إدخال الحديث وتحديد نوع المراجعة'
+                ? 'يرجى تحديد الكتاب ونوع المراجعة'
                 : 'يرجى تحديد السورة ونوع المراجعة',
             style: AppTextStyles.labelMd.copyWith(color: AppColors.onPrimary),
             textDirection: TextDirection.rtl,
@@ -126,7 +119,7 @@ class _MemorizationEntrySheetState extends State<MemorizationEntrySheet> {
       final created = await _repo.submitMemorization(
         studentId: widget.student.id,
         surahNumber: _isHadith ? null : _selectedSurah,
-        hadithReference: _isHadith ? hadithText : null,
+        hadithReference: _isHadith ? _selectedHadithBook : null,
         amountDone: _amount,
         memorizationType: _selectedType!.apiValue,
         subject: _selectedSubject.apiValue,
@@ -227,16 +220,43 @@ class _MemorizationEntrySheetState extends State<MemorizationEntrySheet> {
 
                     if (_isHadith) ...[
                       AppText(
-                        'الحديث',
+                        'الكتاب',
                         style: AppTextStyles.labelMd.copyWith(
                           color: AppColors.onSurfaceVariant,
                         ),
                       ),
                       SizedBox(height: 6.h),
-                      AppTextField(
-                        hint: 'اكتب الحديث أو مرجعه',
-                        controller: _hadithController,
-                        maxLines: 3,
+                      Container(
+                        decoration: BoxDecoration(
+                          color: AppColors.surfaceContainerLow,
+                          borderRadius: BorderRadius.circular(
+                            AppConstants.radiusMd,
+                          ),
+                          border: Border.all(color: AppColors.inputBorder),
+                        ),
+                        padding: EdgeInsets.symmetric(horizontal: 16.w),
+                        child: DropdownButtonHideUnderline(
+                          child: DropdownButton<String>(
+                            value: _selectedHadithBook,
+                            isExpanded: true,
+                            hint: AppText(
+                              'اختر الكتاب...',
+                              style: AppTextStyles.labelMd.copyWith(
+                                color: AppColors.inputPlaceholder,
+                              ),
+                            ),
+                            items: kHadithBooks
+                                .map(
+                                  (b) => DropdownMenuItem(
+                                    value: b,
+                                    child: AppText(b),
+                                  ),
+                                )
+                                .toList(),
+                            onChanged: (v) =>
+                                setState(() => _selectedHadithBook = v),
+                          ),
+                        ),
                       ),
                     ] else ...[
                       AppText(
