@@ -25,6 +25,10 @@ class _ChildAttendanceHistoryPageState
   AttendanceSummaryModel? _summary;
   List<Map<String, dynamic>> _history = [];
 
+  /// The timeline opens on the last month; anything older waits behind a
+  /// button so a long record does not bury the days a parent came to see.
+  bool _showOlder = false;
+
   @override
   void initState() {
     super.initState();
@@ -37,6 +41,9 @@ class _ChildAttendanceHistoryPageState
   Future<void> _load(int childId) async {
     setState(() {
       _isLoading = true;
+      // A pull-to-refresh keeps the older days open; another child starts
+      // folded again.
+      if (childId != _loadedChildId) _showOlder = false;
       _loadedChildId = childId;
     });
     try {
@@ -122,7 +129,7 @@ class _ChildAttendanceHistoryPageState
                   )
                 else ...[
                   // The boxes report the current month; the timeline under
-                  // them stays the whole record, so the heading says which is
+                  // them reaches back further, so the heading says which is
                   // which rather than leaving a bare count to be read as
                   // an all-time figure.
                   AppText(
@@ -197,7 +204,7 @@ class _ChildAttendanceHistoryPageState
                       ),
                     )
                   else
-                    ..._history.map(_buildRecordRow),
+                    ..._buildTimeline(),
                 ],
                 SizedBox(height: 32.h),
               ],
@@ -206,6 +213,58 @@ class _ChildAttendanceHistoryPageState
         ),
       ),
     );
+  }
+
+  /// The last month's days, then a button that reveals the older ones below
+  /// it — below, so the button stays where it was tapped.
+  List<Widget> _buildTimeline() {
+    final now = DateTime.now();
+    // Same day last month; DateTime rolls month 0 back to December.
+    final cutoff = DateTime(now.year, now.month - 1, now.day);
+    bool isOld(Map<String, dynamic> record) {
+      final dt = DateTime.tryParse(record['date'].toString());
+      // An unreadable date is kept in view rather than hidden as old.
+      return dt != null &&
+          DateTime(dt.year, dt.month, dt.day).isBefore(cutoff);
+    }
+
+    final recent = _history.where((r) => !isOld(r)).toList();
+    final older = _history.where(isOld).toList();
+
+    return [
+      if (recent.isEmpty)
+        Padding(
+          padding: EdgeInsets.symmetric(vertical: 16.h),
+          child: AppText(
+            'لا يوجد سجل حضور خلال الشهر الأخير',
+            style: AppTextStyles.bodyMd.copyWith(
+              color: AppColors.onSurfaceVariant,
+            ),
+          ),
+        ),
+      ...recent.map(_buildRecordRow),
+      if (older.isNotEmpty) ...[
+        Center(
+          child: TextButton.icon(
+            onPressed: () => setState(() => _showOlder = !_showOlder),
+            icon: Icon(
+              _showOlder ? Icons.expand_less : Icons.history,
+              size: 18.w,
+              color: AppColors.primary,
+            ),
+            label: AppText(
+              _showOlder
+                  ? 'إخفاء السجل الأقدم'
+                  : 'عرض السجل الأقدم (${older.length})',
+              style: AppTextStyles.labelMdBold.copyWith(
+                color: AppColors.primary,
+              ),
+            ),
+          ),
+        ),
+        if (_showOlder) ...older.map(_buildRecordRow),
+      ],
+    ];
   }
 
   Widget _buildRecordRow(Map<String, dynamic> record) {
