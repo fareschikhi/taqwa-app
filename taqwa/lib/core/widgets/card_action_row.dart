@@ -30,7 +30,8 @@ class CardActionRow extends StatelessWidget {
     return Row(
       children: [
         if (isActive != null) ...[
-          // Toggle status btn
+          // Toggle status btn: shows the current status (green = active,
+          // red = inactive); tapping opens the confirm dialog to flip it.
           GestureDetector(
             onTap: onToggleActive,
             child: Container(
@@ -39,15 +40,15 @@ class CardActionRow extends StatelessWidget {
               decoration: BoxDecoration(
                 borderRadius: BorderRadius.circular(AppConstants.radiusMd),
                 color: isActive!
-                    ? AppColors.errorContainer
-                    : AppColors.primaryContainer,
+                    ? AppColors.primaryContainer
+                    : AppColors.errorContainer,
               ),
               child: Icon(
-                isActive! ? Icons.block : Icons.check_circle_outline,
+                isActive! ? Icons.check_circle_outline : Icons.block,
                 size: 18.w,
                 color: isActive!
-                    ? AppColors.error
-                    : AppColors.onPrimaryContainer,
+                    ? AppColors.onPrimaryContainer
+                    : AppColors.error,
               ),
             ),
           ),

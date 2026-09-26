@@ -21,9 +21,9 @@ void main() {
     await tester.pumpAndSettle();
 
     expect(find.text('تعديل'), findsOneWidget);
-    expect(find.byIcon(Icons.block), findsOneWidget);
+    expect(find.byIcon(Icons.check_circle_outline), findsOneWidget);
 
-    await tester.tap(find.byIcon(Icons.block));
+    await tester.tap(find.byIcon(Icons.check_circle_outline));
     await tester.tap(find.byIcon(Icons.delete_outline));
     await tester.tap(find.text('تعديل'));
     await tester.pump();
@@ -33,7 +33,7 @@ void main() {
     expect(edited, isTrue);
   });
 
-  testWidgets('shows the activate icon when inactive', (tester) async {
+  testWidgets('shows the red block icon when inactive', (tester) async {
     await tester.pumpWidget(_host(CardActionRow(
       isActive: false,
       onToggleActive: () {},
@@ -42,8 +42,8 @@ void main() {
     )));
     await tester.pumpAndSettle();
 
-    expect(find.byIcon(Icons.check_circle_outline), findsOneWidget);
-    expect(find.byIcon(Icons.block), findsNothing);
+    expect(find.byIcon(Icons.block), findsOneWidget);
+    expect(find.byIcon(Icons.check_circle_outline), findsNothing);
   });
 
   // Halaqas are not users and have no isActive column, so the toggle must

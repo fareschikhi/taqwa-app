@@ -60,7 +60,7 @@ void main() {
   });
 
   testWidgets('mixed Arabic and Latin follows the Arabic', (tester) async {
-    const text = 'PNG أو JPG (الحد الأقصى 2MB)';
+    const text = 'PNG أو JPG (الحد الأقصى 5MB)';
     await pumpText(tester, const AppText(text));
 
     expect(paragraphOf(tester, text).textDirection, TextDirection.rtl);
