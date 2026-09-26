@@ -45,5 +45,9 @@
 	<true/>
 	<key>UIApplicationSupportsIndirectInputEvents</key>
 	<true/>
+	<key>NSCameraUsageDescription</key>
+	<string>يستخدم التطبيق الكاميرا لالتقاط الصورة الشخصية للحساب.</string>
+	<key>NSPhotoLibraryUsageDescription</key>
+	<string>يحتاج التطبيق إلى معرض الصور لاختيار الصورة الشخصية للحساب.</string>
 </dict>
 </plist>
