@@ -4,6 +4,7 @@ import 'package:taqwa/features/data/network/dio_client.dart';
 import 'package:taqwa/features/data/network/api_endpoints.dart';
 import '../models/student/student_model.dart';
 import '../models/attendance_summary_model.dart';
+import '../models/student_note_model.dart';
 
 class StudentRemoteDatasource {
   final Dio _dio = DioClient.instance;
@@ -44,6 +45,17 @@ class StudentRemoteDatasource {
   Future<Map<String, dynamic>> getProfile(int id) async {
     final res = await _dio.get('/students/$id/profile');
     return res.data as Map<String, dynamic>;
+  }
+
+  /// Every note written about the student, newest first. The profile only
+  /// carries the latest five.
+  Future<List<StudentNoteModel>> getNotes(int studentId) async {
+    final res = await _dio.get(
+      '${ApiEndpoints.studentNotes}/student/$studentId',
+    );
+    return (res.data as List)
+        .map((e) => StudentNoteModel.fromJson(e as Map<String, dynamic>))
+        .toList();
   }
 
   Future<AttendanceSummaryModel> getAttendanceSummary(int studentId) async {

@@ -13,6 +13,7 @@ describe('StudentNotesService notifications', () => {
       update: jest.fn().mockResolvedValue({ id: 1, note: 'جديد' }),
       delete: jest.fn().mockResolvedValue({ id: 1 }),
     },
+    $transaction: jest.fn((ops: Promise<unknown>[]) => Promise.all(ops)),
     student: {
       findUnique: jest.fn().mockResolvedValue(
         opts.parentUserId == null
@@ -39,6 +40,7 @@ describe('StudentNotesService notifications', () => {
 
     expect(notifications.create).toHaveBeenCalledWith({
       userId: 9,
+      studentId: 7,
       title: 'ملاحظة من المعلم',
       body: 'Bilal: أحسن اليوم',
     });
@@ -126,5 +128,39 @@ describe('StudentNotesService notifications', () => {
     await service.remove(1);
 
     expect(notifications.create).not.toHaveBeenCalled();
+  });
+
+  describe('bulk notes', () => {
+    const bulk = (studentIds: number[]) => ({ studentIds, teacherId: 2, note: 'غداً مراجعة' });
+
+    it('writes one note per student, all in one transaction', async () => {
+      const prisma = makePrisma({ parentUserId: 9 });
+      const service = new StudentNotesService(prisma as any, notificationsMock() as any);
+
+      const notes = await service.createBulk(bulk([7, 8, 9]));
+
+      expect(notes.map((n: any) => n.studentId)).toEqual([7, 8, 9]);
+      expect(prisma.studentNote.create).toHaveBeenCalledTimes(3);
+      expect(prisma.$transaction).toHaveBeenCalledTimes(1);
+    });
+
+    it('writes a repeated student only once', async () => {
+      const prisma = makePrisma({ parentUserId: 9 });
+      const service = new StudentNotesService(prisma as any, notificationsMock() as any);
+
+      await service.createBulk(bulk([7, 7, 8]));
+
+      expect(prisma.studentNote.create).toHaveBeenCalledTimes(2);
+    });
+
+    it("tells each student's parent", async () => {
+      const prisma = makePrisma({ parentUserId: 9 });
+      const notifications = notificationsMock();
+      const service = new StudentNotesService(prisma as any, notifications as any);
+
+      await service.createBulk(bulk([7, 8]));
+
+      expect(notifications.create).toHaveBeenCalledTimes(2);
+    });
   });
 });

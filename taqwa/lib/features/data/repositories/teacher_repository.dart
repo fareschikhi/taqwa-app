@@ -115,6 +115,18 @@ class TeacherRepository {
     );
   }
 
+  Future<List<StudentNoteModel>> createBulkNote({
+    required List<int> studentIds,
+    required int teacherId,
+    required String note,
+  }) async {
+    return _ds.createBulkNote(
+      studentIds: studentIds,
+      teacherId: teacherId,
+      note: note,
+    );
+  }
+
   Future<void> deleteNote(int id) async {
     await _ds.deleteNote(id);
   }

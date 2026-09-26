@@ -1,6 +1,10 @@
 import { Injectable, NotFoundException } from '@nestjs/common';
 import { PrismaService } from '../../prisma/prisma.service';
-import { CreateStudentNoteDto, UpdateStudentNoteDto } from './dto/student-note.dto';
+import {
+  CreateBulkStudentNoteDto,
+  CreateStudentNoteDto,
+  UpdateStudentNoteDto,
+} from './dto/student-note.dto';
 import { NotificationsService } from '../notifications/notifications.service';
 import { notePreview } from './note-preview';
 
@@ -45,6 +49,7 @@ export class StudentNotesService {
       const name = student?.user?.fullName ?? '';
       await this.notifications.create({
         userId: parentUserId,
+        studentId,
         title: 'ملاحظة من المعلم',
         body: `${name}: ${notePreview(note)}`,
       });
@@ -64,6 +69,23 @@ export class StudentNotesService {
     });
     await this.notifyParent(dto.studentId, dto.note);
     return note;
+  }
+
+  async createBulk(dto: CreateBulkStudentNoteDto) {
+    // A repeated id would write the same note twice to one child.
+    const studentIds = [...new Set(dto.studentIds)];
+    // All or nothing: a teacher who sent a note to the class should not have
+    // to work out which half of it landed.
+    const notes = await this.prisma.$transaction(
+      studentIds.map((studentId) =>
+        this.prisma.studentNote.create({
+          data: { studentId, teacherId: dto.teacherId, note: dto.note },
+          include: this.include,
+        }),
+      ),
+    );
+    await Promise.all(studentIds.map((id) => this.notifyParent(id, dto.note)));
+    return notes;
   }
 
   async findByTeacher(teacherId: number) {

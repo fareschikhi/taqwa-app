@@ -22,6 +22,9 @@ class NotesPage extends ConsumerStatefulWidget {
 class _NotesPageState extends ConsumerState<NotesPage> {
   final _noteController = TextEditingController();
   TeacherStudentModel? _selectedStudent;
+  // Picked "all students": the note goes to every student in _students, one
+  // row each. Mutually exclusive with _selectedStudent.
+  bool _allStudents = false;
   bool _showForm = false;
   bool _isSaving = false;
   bool _isLoading = true;
@@ -64,21 +67,33 @@ class _NotesPageState extends ConsumerState<NotesPage> {
 
   Future<void> _saveNote() async {
     final tid = _teacherId;
-    if (tid == null || _selectedStudent == null) return;
+    if (tid == null) return;
+    if (_selectedStudent == null && !(_allStudents && _students.isNotEmpty)) {
+      return;
+    }
     final text = _noteController.text.trim();
     if (text.isEmpty) return;
 
     setState(() => _isSaving = true);
     try {
-      final newNote = await _repo.createNote(
-        studentId: _selectedStudent!.id,
-        teacherId: tid,
-        note: text,
-      );
+      final newNotes = _allStudents
+          ? await _repo.createBulkNote(
+              studentIds: _students.map((s) => s.id).toList(),
+              teacherId: tid,
+              note: text,
+            )
+          : [
+              await _repo.createNote(
+                studentId: _selectedStudent!.id,
+                teacherId: tid,
+                note: text,
+              ),
+            ];
       setState(() {
-        _notes = [newNote, ..._notes];
+        _notes = [...newNotes, ..._notes];
         _showForm = false;
         _selectedStudent = null;
+        _allStudents = false;
         _noteController.clear();
         _isSaving = false;
       });
@@ -96,7 +111,8 @@ class _NotesPageState extends ConsumerState<NotesPage> {
 
   Future<void> _pickStudent() async {
     String query = '';
-    final selected = await showModalBottomSheet<TeacherStudentModel>(
+    // Either a TeacherStudentModel or _allStudentsChoice.
+    final selected = await showModalBottomSheet<Object>(
       context: context,
       isScrollControlled: true,
       shape: RoundedRectangleBorder(
@@ -181,6 +197,23 @@ class _NotesPageState extends ConsumerState<NotesPage> {
                       ),
                     ),
                     SizedBox(height: 8.h),
+                    if (query.isEmpty && _students.isNotEmpty) ...[
+                      ListTile(
+                        trailing: const Icon(
+                          Icons.group,
+                          color: AppColors.primary,
+                        ),
+                        title: AppText(
+                          'جميع الطلاب (${_students.length})',
+                          style: AppTextStyles.labelMdBold.copyWith(
+                            color: AppColors.primary,
+                          ),
+                          textAlign: TextAlign.end,
+                        ),
+                        onTap: () => Navigator.pop(ctx, _allStudentsChoice),
+                      ),
+                      Divider(height: 1, color: AppColors.outlineVariant),
+                    ],
                     ConstrainedBox(
                       constraints: BoxConstraints(maxHeight: 320.h),
                       child: filtered.isEmpty
@@ -221,8 +254,18 @@ class _NotesPageState extends ConsumerState<NotesPage> {
         );
       },
     );
-    if (selected != null) setState(() => _selectedStudent = selected);
+    if (selected == null) return;
+    setState(() {
+      _allStudents = selected == _allStudentsChoice;
+      _selectedStudent = selected is TeacherStudentModel ? selected : null;
+    });
   }
+
+  static const _allStudentsChoice = 'all';
+
+  String? get _recipientLabel => _allStudents
+      ? 'جميع الطلاب (${_students.length})'
+      : _selectedStudent?.fullName;
 
   @override
   void dispose() {
@@ -342,10 +385,9 @@ class _NotesPageState extends ConsumerState<NotesPage> {
                                     ),
                                     Expanded(
                                       child: AppText(
-                                        _selectedStudent?.fullName ??
-                                            'اختر الطالب...',
+                                        _recipientLabel ?? 'اختر الطالب...',
                                         style: AppTextStyles.labelMd.copyWith(
-                                          color: _selectedStudent != null
+                                          color: _recipientLabel != null
                                               ? AppColors.onSurface
                                               : AppColors.inputPlaceholder,
                                         ),

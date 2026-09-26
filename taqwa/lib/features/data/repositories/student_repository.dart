@@ -3,6 +3,7 @@ import 'package:taqwa/features/data/models/student/student_payload_dto.dart';
 import '../datasources/student_remote_datasource.dart';
 import '../models/student/student_model.dart';
 import '../models/attendance_summary_model.dart';
+import '../models/student_note_model.dart';
 
 class StudentRepository {
   final _ds = StudentRemoteDatasource();
@@ -22,6 +23,9 @@ class StudentRepository {
   Future<void> deleteStudent(int id) => _ds.delete(id);
 
   Future<Map<String, dynamic>> getProfile(int id) => _ds.getProfile(id);
+
+  Future<List<StudentNoteModel>> getNotes(int studentId) =>
+      _ds.getNotes(studentId);
 
   Future<AttendanceSummaryModel> getAttendanceSummary(int studentId) =>
       _ds.getAttendanceSummary(studentId);
