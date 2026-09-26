@@ -4,9 +4,9 @@ import 'package:taqwa/core/theme/app_colors.dart';
 import 'package:taqwa/core/theme/app_text_styles.dart';
 import 'package:taqwa/core/widgets/app_card.dart';
 import 'package:taqwa/core/widgets/app_text.dart';
-import 'package:taqwa/core/widgets/confirm_delete_dialog.dart';
 import 'package:taqwa/features/data/models/halaqa/halaqa_announcement_model.dart';
 import 'package:taqwa/features/data/repositories/halaqa_announcement_repository.dart';
+import 'package:taqwa/features/manager/presentation/widgets/delete_halaqa_news.dart';
 import 'package:taqwa/features/manager/presentation/widgets/halaqa_news_form_sheet.dart';
 
 /// The full halaqa news history for whoever is signed in.
@@ -67,16 +67,6 @@ class _HalaqaNewsPageState extends State<HalaqaNewsPage> {
     }
   }
 
-  void _showMessage(String message, {bool isError = false}) {
-    if (!mounted) return;
-    ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(
-        content: AppText(message, textAlign: TextAlign.right),
-        backgroundColor: isError ? AppColors.error : AppColors.primary,
-      ),
-    );
-  }
-
   Future<void> _compose({HalaqaAnnouncementModel? existing}) async {
     final saved = await HalaqaNewsFormSheet.show(
       context,
@@ -88,22 +78,7 @@ class _HalaqaNewsPageState extends State<HalaqaNewsPage> {
   }
 
   Future<void> _delete(HalaqaAnnouncementModel announcement) async {
-    final confirmed = await ConfirmDeleteDialog.show(
-      context,
-      message: 'هل تريد حذف هذا الخبر؟ لا يمكن التراجع عن هذا الإجراء.',
-    );
-    if (!confirmed) return;
-
-    try {
-      await _repo.delete(announcement.id);
-      _showMessage('تم حذف الخبر');
-      await _load();
-    } catch (e) {
-      _showMessage(
-        HalaqaAnnouncementRepository.errorMessage(e),
-        isError: true,
-      );
-    }
+    if (await deleteHalaqaNews(context, announcement)) await _load();
   }
 
   @override
@@ -231,7 +206,7 @@ class _HalaqaNewsPageState extends State<HalaqaNewsPage> {
           ),
           SizedBox(height: 2.h),
           AppText(
-            '${announcement.halaqaName} · ${announcement.formattedDate}',
+            '${announcement.halaqaLabel} · ${announcement.formattedDate}',
             style: AppTextStyles.labelSm.copyWith(
               color: AppColors.onSurfaceVariant,
             ),

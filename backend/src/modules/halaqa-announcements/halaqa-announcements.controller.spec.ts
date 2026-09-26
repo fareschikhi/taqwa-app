@@ -49,6 +49,7 @@ describe('HalaqaAnnouncementsController wiring', () => {
   it('keeps writes with the manager and the admin', () => {
     for (const handler of [
       HalaqaAnnouncementsController.prototype.create,
+      HalaqaAnnouncementsController.prototype.createForAll,
       HalaqaAnnouncementsController.prototype.update,
       HalaqaAnnouncementsController.prototype.remove,
     ]) {
@@ -99,5 +100,13 @@ describe('HalaqaAnnouncementsController wiring', () => {
     expect(guardsFor(HalaqaAnnouncementsController.prototype.findMine)).not.toContain(
       HalaqaAccessGuard,
     );
+  });
+
+  // Same reasoning as the feed: "all halaqas" names no halaqa for the guard
+  // to resolve, and the service draws them from the caller's own scope.
+  it('scopes the all-halaqas post in the service, not the guard', () => {
+    const handler = HalaqaAnnouncementsController.prototype.createForAll;
+    expect(sourceFor(handler)).toBeUndefined();
+    expect(guardsFor(handler)).not.toContain(HalaqaAccessGuard);
   });
 });

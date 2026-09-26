@@ -17,7 +17,9 @@ import { Roles } from '../../common/decorators/roles.decorator';
 import { HalaqaFrom } from '../../common/decorators/halaqa-source.decorator';
 import { CurrentUser } from '../../common/decorators/current-user.decorator';
 import { HalaqaAnnouncementsService } from './halaqa-announcements.service';
+import type { ScopedUser } from '../../common/guards/halaqa-scope';
 import {
+  CreateAllHalaqasAnnouncementDto,
   CreateHalaqaAnnouncementDto,
   UpdateHalaqaAnnouncementDto,
 } from './dto/halaqa-announcement.dto';
@@ -63,6 +65,17 @@ export class HalaqaAnnouncementsController {
     return this.service.create(dto, user.id);
   }
 
+  // No access guard, like `mine`: there is no one halaqa to check. The
+  // service picks the halaqas from the caller's own scope instead.
+  @Post('all')
+  @Roles(Role.ADMIN, Role.MANAGER)
+  createForAll(
+    @Body() dto: CreateAllHalaqasAnnouncementDto,
+    @CurrentUser() user: ScopedUser & { id: number },
+  ) {
+    return this.service.createForAll(dto, user);
+  }
+
   @Patch(':id')
   @Roles(Role.ADMIN, Role.MANAGER)
   @HalaqaFrom('announcement')
@@ -70,15 +83,19 @@ export class HalaqaAnnouncementsController {
   update(
     @Param('id', ParseIntPipe) id: number,
     @Body() dto: UpdateHalaqaAnnouncementDto,
+    @CurrentUser() user: ScopedUser,
   ) {
-    return this.service.update(id, dto);
+    return this.service.update(id, dto, user);
   }
 
   @Delete(':id')
   @Roles(Role.ADMIN, Role.MANAGER)
   @HalaqaFrom('announcement')
   @UseGuards(HalaqaAccessGuard)
-  remove(@Param('id', ParseIntPipe) id: number) {
-    return this.service.remove(id);
+  remove(
+    @Param('id', ParseIntPipe) id: number,
+    @CurrentUser() user: ScopedUser,
+  ) {
+    return this.service.remove(id, user);
   }
 }

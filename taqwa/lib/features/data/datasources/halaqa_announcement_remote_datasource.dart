@@ -25,6 +25,14 @@ class HalaqaAnnouncementRemoteDatasource {
     return HalaqaAnnouncementModel.fromJson(res.data);
   }
 
+  /// Posts to every halaqa the caller may reach; the server works out which.
+  Future<HalaqaAnnouncementModel> createForAll(
+    Map<String, dynamic> data,
+  ) async {
+    final res = await _dio.post('$_base/all', data: data);
+    return HalaqaAnnouncementModel.fromJson(res.data);
+  }
+
   Future<HalaqaAnnouncementModel> update(
     int id,
     Map<String, dynamic> data,

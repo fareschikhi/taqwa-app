@@ -54,6 +54,10 @@ class HalaqaNewsFormSheet extends StatefulWidget {
   State<HalaqaNewsFormSheet> createState() => _HalaqaNewsFormSheetState();
 }
 
+/// The dropdown value for "every halaqa I may post to". Real halaqa ids are
+/// positive, so it cannot collide with one.
+const int _allHalaqas = -1;
+
 class _HalaqaNewsFormSheetState extends State<HalaqaNewsFormSheet> {
   final _repo = HalaqaAnnouncementRepository();
   final _halaqaRepo = HalaqaRepository();
@@ -74,7 +78,8 @@ class _HalaqaNewsFormSheetState extends State<HalaqaNewsFormSheet> {
     if (existing != null) {
       _titleController.text = existing.title;
       _bodyController.text = existing.body;
-      _halaqaId = existing.halaqaId;
+      // An all-halaqas post is edited as one, so it reads as one here too.
+      _halaqaId = existing.batchId != null ? _allHalaqas : existing.halaqaId;
     }
     WidgetsBinding.instance.addPostFrameCallback((_) => _loadHalaqas());
   }
@@ -138,6 +143,10 @@ class _HalaqaNewsFormSheetState extends State<HalaqaNewsFormSheet> {
     try {
       if (_isEditing) {
         await _repo.update(widget.existing!.id, {'title': title, 'body': body});
+      } else if (halaqaId == _allHalaqas) {
+        // The server picks the halaqas from the caller's scope — all of them
+        // for an admin, the assigned ones for a manager — so none are sent.
+        await _repo.createForAll({'title': title, 'body': body});
       } else {
         await _repo.create({
           'halaqaId': halaqaId,
@@ -272,26 +281,31 @@ class _HalaqaNewsFormSheetState extends State<HalaqaNewsFormSheet> {
                   color: AppColors.onSurfaceVariant,
                 ),
               ),
-              items: _halaqas
-                  .map(
-                    (h) => DropdownMenuItem<int>(
-                      value: h.id,
-                      child: Align(
-                        alignment: Alignment.centerRight,
-                        child: AppText(
-                          h.name,
-                          style: AppTextStyles.bodyMd.copyWith(
-                            color: AppColors.onSurface,
-                          ),
-                        ),
-                      ),
-                    ),
-                  )
-                  .toList(),
+              items: [
+                // Only worth offering when there is more than one to cover —
+                // and always present for an all-halaqas post being edited,
+                // or the dropdown would have no item for its own value.
+                if (_halaqas.length > 1 || _halaqaId == _allHalaqas)
+                  _item(_allHalaqas, 'كل الحلقات'),
+                ..._halaqas.map((h) => _item(h.id, h.name)),
+              ],
             ),
           ),
         ),
       ],
+    );
+  }
+
+  DropdownMenuItem<int> _item(int value, String label) {
+    return DropdownMenuItem<int>(
+      value: value,
+      child: Align(
+        alignment: Alignment.centerRight,
+        child: AppText(
+          label,
+          style: AppTextStyles.bodyMd.copyWith(color: AppColors.onSurface),
+        ),
+      ),
     );
   }
 }

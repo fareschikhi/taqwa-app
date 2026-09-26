@@ -22,6 +22,41 @@ void main() {
     expect(model.createdAt.year, 2026);
   });
 
+  test('lists every halaqa of an all-halaqas post', () {
+    final model = HalaqaAnnouncementModel.fromJson({
+      'id': 31,
+      'halaqaId': 4,
+      'title': 'عطلة',
+      'body': 'الحلقات معطلة غدا',
+      'createdAt': '2026-09-24T09:12:40.214Z',
+      'batchId': '6f1c2a9e-0000-4000-8000-000000000000',
+      'halaqa': {'id': 4, 'name': 'حلقة النور'},
+      'halaqas': [
+        {'id': 4, 'name': 'حلقة النور'},
+        {'id': 7, 'name': 'حلقة الفجر'},
+      ],
+    });
+
+    expect(model.batchId, isNotNull);
+    expect(model.halaqaNames, ['حلقة النور', 'حلقة الفجر']);
+    expect(model.halaqaLabel, 'حلقة النور، حلقة الفجر');
+  });
+
+  // /halaqa/:id sends no `halaqas`: the row's own halaqa is the whole list.
+  test('falls back to its own halaqa without a halaqas list', () {
+    final model = HalaqaAnnouncementModel.fromJson({
+      'id': 31,
+      'halaqaId': 4,
+      'title': 'x',
+      'body': 'y',
+      'createdAt': '2026-09-24T09:12:40.214Z',
+      'halaqa': {'id': 4, 'name': 'حلقة النور'},
+    });
+
+    expect(model.batchId, isNull);
+    expect(model.halaqaLabel, 'حلقة النور');
+  });
+
   test('formats the date the way the rest of the app does', () {
     final model = HalaqaAnnouncementModel.fromJson({
       'id': 31,

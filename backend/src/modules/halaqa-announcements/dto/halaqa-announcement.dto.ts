@@ -5,9 +5,8 @@ import { IsInt, IsNotEmpty, IsOptional, IsString, MaxLength } from 'class-valida
 const trimmed = () =>
   Transform(({ value }) => (typeof value === 'string' ? value.trim() : value));
 
-export class CreateHalaqaAnnouncementDto {
-  @IsInt() halaqaId: number;
-
+/** The news itself, for POST /all — the server supplies the halaqas. */
+export class CreateAllHalaqasAnnouncementDto {
   @trimmed()
   @IsString()
   @IsNotEmpty()
@@ -18,6 +17,10 @@ export class CreateHalaqaAnnouncementDto {
   @IsString()
   @IsNotEmpty()
   body: string;
+}
+
+export class CreateHalaqaAnnouncementDto extends CreateAllHalaqasAnnouncementDto {
+  @IsInt() halaqaId: number;
 }
 
 export class UpdateHalaqaAnnouncementDto {

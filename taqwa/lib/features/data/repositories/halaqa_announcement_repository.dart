@@ -13,6 +13,9 @@ class HalaqaAnnouncementRepository {
   Future<HalaqaAnnouncementModel> create(Map<String, dynamic> data) =>
       _ds.create(data);
 
+  Future<HalaqaAnnouncementModel> createForAll(Map<String, dynamic> data) =>
+      _ds.createForAll(data);
+
   Future<HalaqaAnnouncementModel> update(int id, Map<String, dynamic> data) =>
       _ds.update(id, data);
 

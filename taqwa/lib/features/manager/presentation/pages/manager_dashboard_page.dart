@@ -14,6 +14,7 @@ import 'package:taqwa/core/widgets/halaqa_news_card.dart';
 import 'package:taqwa/features/data/models/halaqa/halaqa_announcement_model.dart';
 import 'package:taqwa/features/data/repositories/halaqa_announcement_repository.dart';
 import 'package:taqwa/features/shared/presentation/pages/halaqa_news_page.dart';
+import 'package:taqwa/features/manager/presentation/widgets/delete_halaqa_news.dart';
 import 'package:taqwa/features/manager/presentation/widgets/halaqa_news_form_sheet.dart';
 
 class ManagerDashboardPage extends ConsumerStatefulWidget {
@@ -129,6 +130,11 @@ class _ManagerDashboardPageState extends ConsumerState<ManagerDashboardPage> {
                               announcements: _news,
                               canCompose: _managerId != null,
                               onCompose: _composeNews,
+                              onEdit: _managerId != null
+                                  ? (a) => _composeNews(existing: a)
+                                  : null,
+                              onDelete:
+                                  _managerId != null ? _deleteNews : null,
                               onSeeAll: _openNews,
                             ),
                             SizedBox(height: 24.h),
@@ -150,13 +156,18 @@ class _ManagerDashboardPageState extends ConsumerState<ManagerDashboardPage> {
     );
   }
 
-  Future<void> _composeNews() async {
+  Future<void> _composeNews({HalaqaAnnouncementModel? existing}) async {
     final saved = await HalaqaNewsFormSheet.show(
       context,
       isAdmin: false,
       managerId: _managerId,
+      existing: existing,
     );
     if (saved) await _loadData();
+  }
+
+  Future<void> _deleteNews(HalaqaAnnouncementModel announcement) async {
+    if (await deleteHalaqaNews(context, announcement)) await _loadData();
   }
 
   Future<void> _openNews() async {

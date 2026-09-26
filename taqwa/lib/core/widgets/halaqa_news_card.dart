@@ -19,6 +19,10 @@ const int kNewsPreviewCount = 3;
 /// one: the dashboards are dense already and an empty box teaches a reader
 /// nothing. A manager or admin still sees the card, because they are the ones
 /// who need to find the compose action.
+///
+/// [onEdit] and [onDelete] put the same per-item icons on each row as the
+/// history page has, so a typo in the latest news is fixed where it is seen
+/// instead of behind `عرض الكل`, which only appears past [kNewsPreviewCount].
 class HalaqaNewsCard extends StatelessWidget {
   const HalaqaNewsCard({
     super.key,
@@ -26,12 +30,16 @@ class HalaqaNewsCard extends StatelessWidget {
     this.onSeeAll,
     this.onCompose,
     this.canCompose = false,
+    this.onEdit,
+    this.onDelete,
   });
 
   final List<HalaqaAnnouncementModel> announcements;
   final VoidCallback? onSeeAll;
   final VoidCallback? onCompose;
   final bool canCompose;
+  final ValueChanged<HalaqaAnnouncementModel>? onEdit;
+  final ValueChanged<HalaqaAnnouncementModel>? onDelete;
 
   @override
   Widget build(BuildContext context) {
@@ -63,6 +71,8 @@ class HalaqaNewsCard extends StatelessWidget {
                   (a) => _NewsRow(
                     announcement: a,
                     isLast: a == preview.last,
+                    onEdit: onEdit,
+                    onDelete: onDelete,
                   ),
                 ),
               if (hasMore && onSeeAll != null) ...[
@@ -112,10 +122,17 @@ class HalaqaNewsCard extends StatelessWidget {
 }
 
 class _NewsRow extends StatelessWidget {
-  const _NewsRow({required this.announcement, required this.isLast});
+  const _NewsRow({
+    required this.announcement,
+    required this.isLast,
+    this.onEdit,
+    this.onDelete,
+  });
 
   final HalaqaAnnouncementModel announcement;
   final bool isLast;
+  final ValueChanged<HalaqaAnnouncementModel>? onEdit;
+  final ValueChanged<HalaqaAnnouncementModel>? onDelete;
 
   @override
   Widget build(BuildContext context) {
@@ -124,23 +141,68 @@ class _NewsRow extends StatelessWidget {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.end,
         children: [
-          AppText(
-            announcement.title,
-            style: AppTextStyles.labelMdBold.copyWith(
-              color: AppColors.onSurface,
-            ),
-            textAlign: TextAlign.end,
+          Row(
+            children: [
+              if (onEdit != null)
+                IconButton(
+                  icon: Icon(
+                    Icons.edit_outlined,
+                    size: 18.w,
+                    color: AppColors.onSurfaceVariant,
+                  ),
+                  tooltip: 'تعديل',
+                  visualDensity: VisualDensity.compact,
+                  onPressed: () => onEdit!(announcement),
+                ),
+              if (onDelete != null)
+                IconButton(
+                  icon: Icon(
+                    Icons.delete_outline,
+                    size: 18.w,
+                    color: AppColors.error,
+                  ),
+                  tooltip: 'حذف',
+                  visualDensity: VisualDensity.compact,
+                  onPressed: () => onDelete!(announcement),
+                ),
+              Expanded(
+                child: AppText(
+                  announcement.title,
+                  style: AppTextStyles.labelMdBold.copyWith(
+                    color: AppColors.onSurface,
+                  ),
+                  textAlign: TextAlign.end,
+                ),
+              ),
+            ],
           ),
           SizedBox(height: 2.h),
           // The halaqa name shows on every item rather than only when the
           // viewer spans several circles: one rule, no branch that can be
-          // wrong about which case this is.
-          AppText(
-            '${announcement.halaqaName} · ${announcement.formattedDate}',
-            style: AppTextStyles.labelSm.copyWith(
-              color: AppColors.onSurfaceVariant,
-            ),
-            textAlign: TextAlign.end,
+          // wrong about which case this is. An all-halaqas post can name many,
+          // so the names give way to an ellipsis here and the date never does;
+          // the history page shows the whole list.
+          Row(
+            mainAxisAlignment: MainAxisAlignment.end,
+            children: [
+              AppText(
+                '${announcement.formattedDate} · ',
+                style: AppTextStyles.labelSm.copyWith(
+                  color: AppColors.onSurfaceVariant,
+                ),
+              ),
+              Flexible(
+                child: AppText(
+                  announcement.halaqaLabel,
+                  style: AppTextStyles.labelSm.copyWith(
+                    color: AppColors.onSurfaceVariant,
+                  ),
+                  textAlign: TextAlign.end,
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
+                ),
+              ),
+            ],
           ),
           SizedBox(height: 6.h),
           AppText(
