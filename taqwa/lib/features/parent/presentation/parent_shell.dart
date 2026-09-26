@@ -60,8 +60,7 @@ class _ParentShellState extends ConsumerState<ParentShell> {
     // the tab rather than wherever they last were.
     _onMessageOpened = FirebaseMessaging.onMessageOpenedApp.listen((_) {
       if (!mounted) return;
-      setState(() => _currentIndex = 3);
-      _loadUnread();
+      _selectTab(3);
     });
   }
 
@@ -72,18 +71,49 @@ class _ParentShellState extends ConsumerState<ParentShell> {
     super.dispose();
   }
 
+  /// The badge counts what the ملاحظات tab would show: the selected child's
+  /// news, not every child's.
+  int? get _childId => ref.read(selectedStudentProvider).selected?.id;
+
   Future<void> _loadUnread() async {
+    final childId = _childId;
     try {
-      final count = await NotificationRepository().unreadCount();
-      if (mounted) setState(() => _unread = count);
+      final count = await NotificationRepository().unreadCount(
+        studentId: childId,
+      );
+      if (mounted && childId == _childId) setState(() => _unread = count);
     } catch (_) {
       // The badge is a nicety; a failure must not break the shell.
+    }
+  }
+
+  void _selectTab(int i) {
+    setState(() => _currentIndex = i);
+    if (i == 3) _clearUnread();
+  }
+
+  /// Opening ملاحظات counts as seeing them: the badge goes at once and the
+  /// server is told, so it does not come back on the next refresh. The cards
+  /// already on screen keep their unread tint until the list reloads.
+  Future<void> _clearUnread() async {
+    setState(() => _unread = 0);
+    try {
+      await NotificationRepository().markAllRead(studentId: _childId);
+    } catch (_) {
+      // Same as loading: the badge must not break the shell.
     }
   }
 
   @override
   Widget build(BuildContext context) {
     final childState = ref.watch(selectedStudentProvider);
+
+    ref.listen(selectedStudentProvider, (previous, next) {
+      if (next.selected?.id == previous?.selected?.id) return;
+      // Already looking at the tab: the new child's list is on screen, so it
+      // counts as seen just as opening the tab would.
+      _currentIndex == 3 ? _clearUnread() : _loadUnread();
+    });
 
     if (childState.isLoading && childState.students.isEmpty) {
       return const Scaffold(
@@ -215,7 +245,7 @@ class _ParentShellState extends ConsumerState<ParentShell> {
       _NavItem(
         icon: Icons.notifications_outlined,
         activeIcon: Icons.notifications,
-        label: 'الإشعارات',
+        label: 'ملاحظات',
       ),
       _NavItem(
         icon: Icons.person_outline,
@@ -242,7 +272,7 @@ class _ParentShellState extends ConsumerState<ParentShell> {
               final isActive = _currentIndex == i;
               final item = items[i];
               return GestureDetector(
-                onTap: () => setState(() => _currentIndex = i),
+                onTap: () => _selectTab(i),
                 child: AnimatedContainer(
                   duration: AppConstants.animFast,
                   padding: EdgeInsets.symmetric(
@@ -268,7 +298,7 @@ class _ParentShellState extends ConsumerState<ParentShell> {
                                 : AppColors.onSurfaceVariant,
                             size: 22.w,
                           ),
-                          // Index 3 is الإشعارات; the pages list and the nav
+                          // Index 3 is ملاحظات; the pages list and the nav
                           // items are kept in the same order.
                           if (i == 3 && _unread > 0)
                             Positioned(

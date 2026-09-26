@@ -65,8 +65,7 @@ class _AdultStudentShellState extends ConsumerState<AdultStudentShell> {
     // the tab rather than wherever they last were.
     _onMessageOpened = FirebaseMessaging.onMessageOpenedApp.listen((_) {
       if (!mounted) return;
-      setState(() => _currentIndex = 3);
-      _loadUnread();
+      _selectTab(3);
     });
   }
 
@@ -83,6 +82,23 @@ class _AdultStudentShellState extends ConsumerState<AdultStudentShell> {
       if (mounted) setState(() => _unread = count);
     } catch (_) {
       // The badge is a nicety; a failure must not break the shell.
+    }
+  }
+
+  void _selectTab(int i) {
+    setState(() => _currentIndex = i);
+    if (i == 3) _clearUnread();
+  }
+
+  /// Opening ملاحظات counts as seeing them: the badge goes at once and the
+  /// server is told, so it does not come back on the next refresh. The cards
+  /// already on screen keep their unread tint until the list reloads.
+  Future<void> _clearUnread() async {
+    setState(() => _unread = 0);
+    try {
+      await NotificationRepository().markAllRead();
+    } catch (_) {
+      // Same as loading: the badge must not break the shell.
     }
   }
 
@@ -151,7 +167,7 @@ class _AdultStudentShellState extends ConsumerState<AdultStudentShell> {
       _NavItem(
         icon: Icons.notifications_outlined,
         activeIcon: Icons.notifications,
-        label: 'الإشعارات',
+        label: 'ملاحظات',
       ),
       _NavItem(
         icon: Icons.person_outline,
@@ -178,7 +194,7 @@ class _AdultStudentShellState extends ConsumerState<AdultStudentShell> {
               final isActive = _currentIndex == i;
               final item = items[i];
               return GestureDetector(
-                onTap: () => setState(() => _currentIndex = i),
+                onTap: () => _selectTab(i),
                 child: AnimatedContainer(
                   duration: AppConstants.animFast,
                   padding: EdgeInsets.symmetric(
@@ -204,7 +220,7 @@ class _AdultStudentShellState extends ConsumerState<AdultStudentShell> {
                                 : AppColors.onSurfaceVariant,
                             size: 22.w,
                           ),
-                          // Index 3 is الإشعارات; the pages list and the nav
+                          // Index 3 is ملاحظات; the pages list and the nav
                           // items are kept in the same order.
                           if (i == 3 && _unread > 0)
                             Positioned(

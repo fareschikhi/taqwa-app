@@ -4,7 +4,7 @@ import 'package:flutter_screenutil/flutter_screenutil.dart';
 import '../../../../core/theme/app_colors.dart';
 import '../../../../core/theme/app_text_styles.dart';
 import '../../../../core/constants/app_constants.dart';
-import '../../../../core/widgets/app_card.dart';
+import '../../../../core/widgets/note_timeline.dart';
 import '../../../../core/widgets/avatar_widget.dart';
 import '../../../../core/providers/auth_provider.dart';
 import '../../../../core/providers/selected_student_provider.dart';
@@ -12,13 +12,20 @@ import '../../../../core/utils/last_session.dart';
 import '../../../../core/widgets/last_session_card.dart';
 import '../../../data/repositories/student_repository.dart';
 import '../../../data/models/attendance_summary_model.dart';
+import '../../../data/models/parent/halaqa_manager_contact_model.dart';
 import '../../../data/models/parent/parent_child_model.dart';
+import '../../../data/models/student_note_model.dart';
+import '../widgets/halaqa_manager_contact_card.dart';
 import 'child_details_page.dart';
+import 'child_notes_page.dart';
 import 'package:taqwa/core/widgets/app_text.dart';
 import 'package:taqwa/core/widgets/halaqa_news_card.dart';
 import 'package:taqwa/features/data/models/halaqa/halaqa_announcement_model.dart';
 import 'package:taqwa/features/data/repositories/halaqa_announcement_repository.dart';
 import 'package:taqwa/features/shared/presentation/pages/halaqa_news_page.dart';
+
+/// How many of the child's latest notes the dashboard shows before "عرض الكل".
+const int kNotesPreviewCount = 3;
 
 class ParentDashboardPage extends ConsumerStatefulWidget {
   const ParentDashboardPage({super.key});
@@ -35,7 +42,8 @@ class _ParentDashboardPageState extends ConsumerState<ParentDashboardPage> {
   int? _loadedChildId;
   AttendanceSummaryModel? _attendance;
   Map<String, dynamic>? _progress;
-  List<Map<String, dynamic>> _notes = [];
+  List<StudentNoteModel> _notes = [];
+  List<HalaqaManagerContactModel> _managers = [];
   List<Map<String, dynamic>> _attendanceHistory = [];
   List<HalaqaAnnouncementModel> _news = [];
 
@@ -65,18 +73,28 @@ class _ParentDashboardPageState extends ConsumerState<ParentDashboardPage> {
       final news = await _newsRepo.myAnnouncements().catchError(
         (_) => <HalaqaAnnouncementModel>[],
       );
+      // The parent may have switched child while this was in flight. The
+      // newer load owns the page; this one must not paint the previous
+      // child's notes and figures under the new child's name.
+      if (childId != _loadedChildId) return;
       if (mounted) {
         setState(() {
           _attendance = results[0] as AttendanceSummaryModel;
           _progress = results[1] as Map<String, dynamic>;
-          _notes = rawNotes.cast<Map<String, dynamic>>();
+          _notes = rawNotes
+              .cast<Map<String, dynamic>>()
+              .map(StudentNoteModel.fromJson)
+              .toList();
+          _managers = HalaqaManagerContactModel.listFromProfile(profile);
           _attendanceHistory = results[3] as List<Map<String, dynamic>>;
           _news = news;
           _isLoading = false;
         });
       }
     } catch (_) {
-      if (mounted) setState(() => _isLoading = false);
+      if (mounted && childId == _loadedChildId) {
+        setState(() => _isLoading = false);
+      }
     }
   }
 
@@ -142,7 +160,7 @@ class _ParentDashboardPageState extends ConsumerState<ParentDashboardPage> {
                         ),
                         SizedBox(height: 20.h),
                       ],
-                      _buildTeacherNotes(),
+                      _buildTeacherNotes(child),
                     ],
                     SizedBox(height: 32.h),
                   ]),
@@ -361,13 +379,44 @@ class _ParentDashboardPageState extends ConsumerState<ParentDashboardPage> {
     );
   }
 
-  Widget _buildTeacherNotes() {
+  Widget _buildTeacherNotes(ParentChildModel child) {
+    // A short preview, like the news card: the dashboard is a summary, and
+    // the full history is one tap away on the child's own notes page.
+    final preview = _notes.take(kNotesPreviewCount).toList();
     return Column(
       crossAxisAlignment: CrossAxisAlignment.end,
       children: [
-        AppText(
-          'ملاحظات المعلم',
-          style: AppTextStyles.headlineSm.copyWith(color: AppColors.onSurface),
+        Row(
+          children: [
+            // The profile carries at most five notes, so any note beyond the
+            // preview may have more behind it; the page reads the history.
+            if (_notes.length > preview.length)
+              TextButton(
+                onPressed: () => Navigator.push(
+                  context,
+                  MaterialPageRoute(
+                    builder: (_) => ChildNotesPage(
+                      studentId: child.id,
+                      childName: child.fullName,
+                      managers: _managers,
+                    ),
+                  ),
+                ),
+                child: AppText(
+                  'عرض الكل',
+                  style: AppTextStyles.labelMdBold.copyWith(
+                    color: AppColors.primary,
+                  ),
+                ),
+              ),
+            const Spacer(),
+            AppText(
+              'ملاحظات المعلم',
+              style: AppTextStyles.headlineSm.copyWith(
+                color: AppColors.onSurface,
+              ),
+            ),
+          ],
         ),
         SizedBox(height: 12.h),
         if (_notes.isEmpty)
@@ -381,57 +430,20 @@ class _ParentDashboardPageState extends ConsumerState<ParentDashboardPage> {
             ),
           )
         else
-          ..._notes.map((n) {
-            String displayDate = '';
-            try {
-              final dt = DateTime.parse(n['createdAt'] as String);
-              displayDate = '${dt.day}/${dt.month}/${dt.year}';
-            } catch (_) {
-              displayDate = (n['createdAt'] ?? '').toString();
-            }
-            final teacherName =
-                (n['teacher'] as Map<String, dynamic>?)?['user']
-                    as Map<String, dynamic>? ??
-                {};
-
-            return Padding(
-              padding: EdgeInsets.only(bottom: 8.h),
-              child: AppCard(
-                padding: EdgeInsets.all(16.w),
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.end,
-                  children: [
-                    Row(
-                      children: [
-                        AppText(
-                          displayDate,
-                          style: AppTextStyles.labelSm.copyWith(
-                            color: AppColors.outline,
-                          ),
-                        ),
-                        const Spacer(),
-                        AppText(
-                          (teacherName['fullName'] as String?) ?? '',
-                          style: AppTextStyles.labelMdBold.copyWith(
-                            color: AppColors.primary,
-                          ),
-                        ),
-                      ],
-                    ),
-                    SizedBox(height: 8.h),
-                    AppText(
-                      (n['note'] as String?) ?? '',
-                      style: AppTextStyles.bodyMd.copyWith(
-                        color: AppColors.onSurface,
-                        height: 1.6,
-                      ),
-                      textAlign: TextAlign.end,
-                    ),
-                  ],
-                ),
-              ),
-            );
-          }),
+          NoteTimeline(notes: preview),
+        // A note is often what makes a parent want to talk to someone, so the
+        // halaqa's managers are one tap away right under it.
+        if (_managers.isNotEmpty) ...[
+          SizedBox(height: 16.h),
+          AppText(
+            'تواصل مع مشرف الحلقة',
+            style: AppTextStyles.labelMdBold.copyWith(
+              color: AppColors.onSurfaceVariant,
+            ),
+          ),
+          SizedBox(height: 8.h),
+          HalaqaManagerContactCard(managers: _managers),
+        ],
       ],
     );
   }

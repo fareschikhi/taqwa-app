@@ -176,6 +176,7 @@ export class AttendanceService {
           t.status === AttendanceStatus.ABSENT
             ? {
                 userId: recipientId,
+                studentId: t.studentId,
                 title: 'غياب',
                 body: isSelf
                   ? `تم تسجيل غيابك اليوم${fee}`
@@ -183,6 +184,7 @@ export class AttendanceService {
               }
             : {
                 userId: recipientId,
+                studentId: t.studentId,
                 title: 'تأخر',
                 body: isSelf
                   ? `تم تسجيل تأخرك اليوم${fee}`

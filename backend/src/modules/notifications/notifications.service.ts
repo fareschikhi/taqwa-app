@@ -34,16 +34,27 @@ export class NotificationsService {
     return notification;
   }
 
-  async findAllForUser(userId: number) {
+  /**
+   * With a studentId, narrows a parent's list to that child: the rows about
+   * him, plus the ones about no child in particular, which belong in every
+   * child's list rather than none.
+   */
+  private scope(userId: number, studentId?: number) {
+    return studentId === undefined
+      ? { userId }
+      : { userId, OR: [{ studentId }, { studentId: null }] };
+  }
+
+  async findAllForUser(userId: number, studentId?: number) {
     return this.prisma.notification.findMany({
-      where: { userId },
+      where: this.scope(userId, studentId),
       orderBy: { createdAt: 'desc' },
     });
   }
 
-  async getUnreadCount(userId: number) {
+  async getUnreadCount(userId: number, studentId?: number) {
     const count = await this.prisma.notification.count({
-      where: { userId, isRead: false },
+      where: { ...this.scope(userId, studentId), isRead: false },
     });
     return { count };
   }
@@ -60,9 +71,9 @@ export class NotificationsService {
     });
   }
 
-  async markAllAsRead(userId: number) {
+  async markAllAsRead(userId: number, studentId?: number) {
     return this.prisma.notification.updateMany({
-      where: { userId, isRead: false },
+      where: { ...this.scope(userId, studentId), isRead: false },
       data: { isRead: true },
     });
   }

@@ -4,6 +4,7 @@ class ParentChildModel {
   final int id;
   final String fullName;
   final String? avatar;
+  final int? halaqaId;
   final String? halaqaName;
   final int attendanceCount;
   final int memorizationCount;
@@ -12,6 +13,7 @@ class ParentChildModel {
     required this.id,
     required this.fullName,
     this.avatar,
+    this.halaqaId,
     this.halaqaName,
     this.attendanceCount = 0,
     this.memorizationCount = 0,
@@ -26,6 +28,7 @@ class ParentChildModel {
       id: (json['id'] as num?)?.toInt() ?? 0,
       fullName: (user?['fullName'] as String?) ?? '',
       avatar: user?['avatar'] as String?,
+      halaqaId: (halaqa?['id'] as num?)?.toInt(),
       halaqaName: halaqa?['name'] as String?,
       attendanceCount: (count?['attendance'] as num?)?.toInt() ?? 0,
       memorizationCount: (count?['memorization'] as num?)?.toInt() ?? 0,

@@ -445,6 +445,7 @@ describe('AttendanceService notifications', () => {
 
     expect(notifications.create).toHaveBeenCalledWith({
       userId: 9,
+      studentId: 2,
       title: 'غياب',
       body: 'تم تسجيل غياب Bilal اليوم',
     });
@@ -459,6 +460,7 @@ describe('AttendanceService notifications', () => {
 
     expect(notifications.create).toHaveBeenCalledWith({
       userId: 9,
+      studentId: 2,
       title: 'تأخر',
       body: 'تم تسجيل تأخر Bilal اليوم',
     });
@@ -655,6 +657,7 @@ describe('AttendanceService guardian notifications', () => {
 
     expect(notifications.create).toHaveBeenCalledWith({
       userId: 12,
+      studentId: 7,
       title: 'تأخر',
       body: 'تم تسجيل تأخر Bilal Cherguini اليوم',
     });
@@ -717,6 +720,7 @@ describe('AttendanceService guardian notifications', () => {
 
     expect(notifications.create).toHaveBeenCalledWith({
       userId: 12,
+      studentId: 7,
       title: 'غياب',
       body: 'تم تسجيل غياب Bilal Cherguini اليوم',
     });

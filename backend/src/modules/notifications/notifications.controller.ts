@@ -1,4 +1,4 @@
-import { Body, Controller, Get, Param, ParseIntPipe, Patch, Post, UseGuards } from '@nestjs/common';
+import { Body, Controller, Get, Param, ParseIntPipe, Patch, Post, Query, UseGuards } from '@nestjs/common';
 import { Role } from '@prisma/client';
 import { JwtAuthGuard } from '../../common/guards/jwt-auth.guard';
 import { RolesGuard } from '../../common/guards/roles.guard';
@@ -18,19 +18,30 @@ export class NotificationsController {
     return this.notificationsService.create(dto);
   }
 
+  // `studentId` narrows a parent's list to one child. The query stays scoped
+  // to the caller's own rows, so naming someone else's child returns nothing.
   @Get('me')
-  findAllForMe(@CurrentUser() user: any) {
-    return this.notificationsService.findAllForUser(user.id);
+  findAllForMe(
+    @CurrentUser() user: any,
+    @Query('studentId', new ParseIntPipe({ optional: true })) studentId?: number,
+  ) {
+    return this.notificationsService.findAllForUser(user.id, studentId);
   }
 
   @Get('me/unread')
-  getUnreadCount(@CurrentUser() user: any) {
-    return this.notificationsService.getUnreadCount(user.id);
+  getUnreadCount(
+    @CurrentUser() user: any,
+    @Query('studentId', new ParseIntPipe({ optional: true })) studentId?: number,
+  ) {
+    return this.notificationsService.getUnreadCount(user.id, studentId);
   }
 
   @Post('me/read-all')
-  markAllAsRead(@CurrentUser() user: any) {
-    return this.notificationsService.markAllAsRead(user.id);
+  markAllAsRead(
+    @CurrentUser() user: any,
+    @Query('studentId', new ParseIntPipe({ optional: true })) studentId?: number,
+  ) {
+    return this.notificationsService.markAllAsRead(user.id, studentId);
   }
 
   @Patch(':id/read')
