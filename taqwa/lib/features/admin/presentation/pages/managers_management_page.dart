@@ -11,6 +11,7 @@ import 'package:taqwa/core/widgets/confirm_status_dialog.dart';
 import '../../../../features/data/repositories/manager_repository.dart';
 import '../../../../features/data/models/manager_model.dart';
 import 'create_manager_page.dart';
+import 'manager_details_page.dart';
 import '../admin_shell.dart';
 import 'package:taqwa/core/widgets/app_text.dart';
 
@@ -81,7 +82,8 @@ class _ManagersManagementPageState extends State<ManagersManagementPage> {
     final confirmed = await ConfirmDeleteDialog.show(
       context,
       title: 'حذف المدير',
-      message: 'سيتم حذف حساب المدير نهائياً مع تعييناته للحلقات '
+      message:
+          'سيتم حذف حساب المدير نهائياً مع تعييناته للحلقات '
           'وتبريرات الغياب التي سجّلها. لتعطيل الحساب مؤقتاً '
           'استخدم زر إيقاف التنشيط بدلاً من الحذف.',
     );
@@ -89,9 +91,9 @@ class _ManagersManagementPageState extends State<ManagersManagementPage> {
     try {
       await _repo.deleteManager(m.id!);
       if (!mounted) return;
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: AppText('تم حذف المدير بنجاح')),
-      );
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(const SnackBar(content: AppText('تم حذف المدير بنجاح')));
       _load();
     } catch (e) {
       if (!mounted) return;
@@ -99,6 +101,14 @@ class _ManagersManagementPageState extends State<ManagersManagementPage> {
         SnackBar(content: AppText(ManagerRepository.errorMessage(e))),
       );
     }
+  }
+
+  Future<void> _openDetails(ManagerModel m) async {
+    final changed = await Navigator.push<bool>(
+      context,
+      MaterialPageRoute(builder: (_) => ManagerDetailsPage(manager: m)),
+    );
+    if (changed == true && mounted) _load();
   }
 
   Future<void> _toggleStatus(ManagerModel m) async {
@@ -188,32 +198,33 @@ class _ManagersManagementPageState extends State<ManagersManagementPage> {
                         ),
                       )
                     : _filtered.isEmpty
-                        ? SingleChildScrollView(
-                            physics: const AlwaysScrollableScrollPhysics(),
-                            child: Container(
-                              height: 300.h,
-                              alignment: Alignment.center,
-                              child: _buildEmpty(),
+                    ? SingleChildScrollView(
+                        physics: const AlwaysScrollableScrollPhysics(),
+                        child: Container(
+                          height: 300.h,
+                          alignment: Alignment.center,
+                          child: _buildEmpty(),
+                        ),
+                      )
+                    : ListView.separated(
+                        physics: const AlwaysScrollableScrollPhysics(),
+                        padding: EdgeInsets.symmetric(horizontal: 16.w),
+                        itemCount: _filtered.length,
+                        separatorBuilder: (_, _) => SizedBox(height: 12.h),
+                        itemBuilder: (_, i) => _ManagerCard(
+                          manager: _filtered[i],
+                          onOpenDetails: () => _openDetails(_filtered[i]),
+                          onEdit: () => Navigator.push(
+                            context,
+                            MaterialPageRoute(
+                              builder: (_) =>
+                                  CreateManagerPage(editManager: _filtered[i]),
                             ),
-                          )
-                        : ListView.separated(
-                            physics: const AlwaysScrollableScrollPhysics(),
-                            padding: EdgeInsets.symmetric(horizontal: 16.w),
-                            itemCount: _filtered.length,
-                            separatorBuilder: (_, _) => SizedBox(height: 12.h),
-                            itemBuilder: (_, i) => _ManagerCard(
-                              manager: _filtered[i],
-                              onEdit: () => Navigator.push(
-                                context,
-                                MaterialPageRoute(
-                                  builder: (_) =>
-                                      CreateManagerPage(editManager: _filtered[i]),
-                                ),
-                              ).then((_) => _load()),
-                              onToggleStatus: () => _toggleStatus(_filtered[i]),
-                              onDelete: () => _deleteManager(_filtered[i]),
-                            ),
-                          ),
+                          ).then((_) => _load()),
+                          onToggleStatus: () => _toggleStatus(_filtered[i]),
+                          onDelete: () => _deleteManager(_filtered[i]),
+                        ),
+                      ),
               ),
             ],
           ),
@@ -328,11 +339,13 @@ class _ManagersManagementPageState extends State<ManagersManagementPage> {
 class _ManagerCard extends StatelessWidget {
   const _ManagerCard({
     required this.manager,
+    required this.onOpenDetails,
     required this.onEdit,
     required this.onToggleStatus,
     required this.onDelete,
   });
   final ManagerModel manager;
+  final VoidCallback onOpenDetails;
   final VoidCallback onEdit;
   final VoidCallback onToggleStatus;
   final VoidCallback onDelete;
@@ -343,168 +356,177 @@ class _ManagerCard extends StatelessWidget {
     final halaqaName = manager.firstHalaqaName;
     final halaqasCount = manager.halaqasCount;
 
-    return Container(
-      decoration: BoxDecoration(
-        color: AppColors.surfaceContainerLowest,
-        borderRadius: BorderRadius.circular(AppConstants.radiusXl),
-        border: Border.all(color: AppColors.surfaceVariant),
-        boxShadow: const [
-          BoxShadow(
-            color: Color.fromRGBO(18, 52, 59, 0.04),
-            blurRadius: 20,
-            offset: Offset(0, 4),
-          ),
-        ],
-      ),
-      padding: EdgeInsets.all(16.w),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.end,
-        children: [
-          // Header row: avatar + name + status badge
-          Row(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            mainAxisAlignment: MainAxisAlignment.spaceBetween,
-            children: [
-              // Status badge
-              Container(
-                padding: EdgeInsets.symmetric(horizontal: 8.w, vertical: 4.h),
-                decoration: BoxDecoration(
-                  color: isActive
-                      ? AppColors.primary.withValues(alpha: 0.1)
-                      : AppColors.surfaceVariant,
-                  borderRadius: BorderRadius.circular(AppConstants.radiusMd),
-                ),
-                child: AppText(
-                  isActive ? 'نشط' : 'غير نشط',
-                  style: AppTextStyles.labelSm.copyWith(
+    return GestureDetector(
+      onTap: onOpenDetails,
+      child: Container(
+        decoration: BoxDecoration(
+          color: AppColors.surfaceContainerLowest,
+          borderRadius: BorderRadius.circular(AppConstants.radiusXl),
+          border: Border.all(color: AppColors.surfaceVariant),
+          boxShadow: const [
+            BoxShadow(
+              color: Color.fromRGBO(18, 52, 59, 0.04),
+              blurRadius: 20,
+              offset: Offset(0, 4),
+            ),
+          ],
+        ),
+        padding: EdgeInsets.all(16.w),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.end,
+          children: [
+            // Header row: avatar + name + status badge
+            Row(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+              children: [
+                // Status badge
+                Container(
+                  padding: EdgeInsets.symmetric(horizontal: 8.w, vertical: 4.h),
+                  decoration: BoxDecoration(
                     color: isActive
-                        ? AppColors.primary
-                        : AppColors.onSurfaceVariant,
+                        ? AppColors.primary.withValues(alpha: 0.1)
+                        : AppColors.surfaceVariant,
+                    borderRadius: BorderRadius.circular(AppConstants.radiusMd),
+                  ),
+                  child: AppText(
+                    isActive ? 'نشط' : 'غير نشط',
+                    style: AppTextStyles.labelSm.copyWith(
+                      color: isActive
+                          ? AppColors.primary
+                          : AppColors.onSurfaceVariant,
+                    ),
                   ),
                 ),
-              ),
-              // Avatar + name/phone
-              Row(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Column(
-                    crossAxisAlignment: CrossAxisAlignment.end,
-                    children: [
-                      AppText(
-                        manager.fullName,
-                        style: AppTextStyles.headlineSm.copyWith(
-                          color: AppColors.onSurface,
+                // Avatar + name/phone
+                Row(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Column(
+                      crossAxisAlignment: CrossAxisAlignment.end,
+                      children: [
+                        AppText(
+                          manager.fullName,
+                          style: AppTextStyles.headlineSm.copyWith(
+                            color: AppColors.onSurface,
+                          ),
                         ),
-                      ),
-                      if (manager.phone != null)
-                        Row(
-                          children: [
-                            AppText(
-                              manager.phone!,
-                              style: AppTextStyles.labelSm.copyWith(
+                        if (manager.phone != null)
+                          Row(
+                            children: [
+                              AppText(
+                                manager.phone!,
+                                style: AppTextStyles.labelSm.copyWith(
+                                  color: AppColors.onSurfaceVariant,
+                                ),
+                              ),
+                              SizedBox(width: 4.w),
+                              const Icon(
+                                Icons.call,
+                                size: 13,
                                 color: AppColors.onSurfaceVariant,
                               ),
-                            ),
-                            SizedBox(width: 4.w),
-                            const Icon(
-                              Icons.call,
-                              size: 13,
-                              color: AppColors.onSurfaceVariant,
-                            ),
-                          ],
+                            ],
+                          ),
+                      ],
+                    ),
+                    SizedBox(width: 12.w),
+                    // Avatar circle. Keeps the inactive-dimmed background the
+                    // card already used, so a deactivated manager still reads as
+                    // deactivated even when they have a photo.
+                    AvatarWidget(
+                      avatarUrl: manager.avatar,
+                      size: 52.w,
+                      backgroundColor: isActive
+                          ? AppColors.primaryContainer
+                          : AppColors.surfaceContainerHigh,
+                      fallback: AppText(
+                        manager.fullName.isNotEmpty ? manager.fullName[0] : '؟',
+                        style: AppTextStyles.headlineSm.copyWith(
+                          color: isActive
+                              ? AppColors.onPrimaryContainer
+                              : AppColors.onSurfaceVariant,
                         ),
-                    ],
-                  ),
-                  SizedBox(width: 12.w),
-                  // Avatar circle. Keeps the inactive-dimmed background the
-                  // card already used, so a deactivated manager still reads as
-                  // deactivated even when they have a photo.
-                  AvatarWidget(
-                    avatarUrl: manager.avatar,
-                    size: 52.w,
-                    backgroundColor: isActive
-                        ? AppColors.primaryContainer
-                        : AppColors.surfaceContainerHigh,
-                    fallback: AppText(
-                      manager.fullName.isNotEmpty ? manager.fullName[0] : '؟',
-                      style: AppTextStyles.headlineSm.copyWith(
-                        color: isActive
-                            ? AppColors.onPrimaryContainer
-                            : AppColors.onSurfaceVariant,
                       ),
-                    ),
-                  ),
-                ],
-              ),
-            ],
-          ),
-          SizedBox(height: 12.h),
-          // Info section
-          Container(
-            width: double.infinity,
-            padding: EdgeInsets.all(12.w),
-            decoration: BoxDecoration(
-              color: AppColors.surfaceContainerLow,
-              borderRadius: BorderRadius.circular(AppConstants.radiusMd),
-            ),
-            child: Column(
-              children: [
-                Row(
-                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                  children: [
-                    AppText(
-                      halaqaName,
-                      style: AppTextStyles.labelMd.copyWith(
-                        color: AppColors.onSurface,
-                        fontWeight: FontWeight.w600,
-                      ),
-                    ),
-                    AppText(
-                      'الحلقة المعينة',
-                      style: AppTextStyles.labelMd
-                          .copyWith(color: AppColors.onSurfaceVariant),
                     ),
                   ],
                 ),
-                if (halaqasCount > 1) ...[
-                  SizedBox(height: 6.h),
+              ],
+            ),
+            SizedBox(height: 12.h),
+            // Info section
+            Container(
+              width: double.infinity,
+              padding: EdgeInsets.all(12.w),
+              decoration: BoxDecoration(
+                color: AppColors.surfaceContainerLow,
+                borderRadius: BorderRadius.circular(AppConstants.radiusMd),
+              ),
+              child: Column(
+                children: [
                   Row(
                     mainAxisAlignment: MainAxisAlignment.spaceBetween,
                     children: [
-                      Container(
-                        padding: EdgeInsets.symmetric(
-                            horizontal: 8.w, vertical: 2.h),
-                        decoration: BoxDecoration(
-                          color: AppColors.surfaceContainerHigh,
-                          borderRadius: BorderRadius.circular(
-                              AppConstants.radiusMd),
-                        ),
-                        child: AppText(
-                          '$halaqasCount حلقات',
-                          style: AppTextStyles.labelSm.copyWith(
-                              color: AppColors.onSurface,
-                              fontWeight: FontWeight.w600),
+                      AppText(
+                        halaqaName,
+                        style: AppTextStyles.labelMd.copyWith(
+                          color: AppColors.onSurface,
+                          fontWeight: FontWeight.w600,
                         ),
                       ),
                       AppText(
-                        'إجمالي الحلقات',
-                        style: AppTextStyles.labelMd
-                            .copyWith(color: AppColors.onSurfaceVariant),
+                        'الحلقة المعينة',
+                        style: AppTextStyles.labelMd.copyWith(
+                          color: AppColors.onSurfaceVariant,
+                        ),
                       ),
                     ],
                   ),
+                  if (halaqasCount > 1) ...[
+                    SizedBox(height: 6.h),
+                    Row(
+                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                      children: [
+                        Container(
+                          padding: EdgeInsets.symmetric(
+                            horizontal: 8.w,
+                            vertical: 2.h,
+                          ),
+                          decoration: BoxDecoration(
+                            color: AppColors.surfaceContainerHigh,
+                            borderRadius: BorderRadius.circular(
+                              AppConstants.radiusMd,
+                            ),
+                          ),
+                          child: AppText(
+                            '$halaqasCount حلقات',
+                            style: AppTextStyles.labelSm.copyWith(
+                              color: AppColors.onSurface,
+                              fontWeight: FontWeight.w600,
+                            ),
+                          ),
+                        ),
+                        AppText(
+                          'إجمالي الحلقات',
+                          style: AppTextStyles.labelMd.copyWith(
+                            color: AppColors.onSurfaceVariant,
+                          ),
+                        ),
+                      ],
+                    ),
+                  ],
                 ],
-              ],
+              ),
             ),
-          ),
-          SizedBox(height: 12.h),
-          CardActionRow(
-            isActive: isActive,
-            onToggleActive: onToggleStatus,
-            onDelete: onDelete,
-            onEdit: onEdit,
-          ),
-        ],
+            SizedBox(height: 12.h),
+            CardActionRow(
+              isActive: isActive,
+              onToggleActive: onToggleStatus,
+              onDelete: onDelete,
+              onEdit: onEdit,
+            ),
+          ],
+        ),
       ),
     );
   }

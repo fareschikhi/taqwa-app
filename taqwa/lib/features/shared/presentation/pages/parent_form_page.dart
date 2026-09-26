@@ -6,12 +6,15 @@ import 'package:taqwa/features/data/services/image_upload_service.dart';
 import '../../../../core/theme/app_colors.dart';
 import '../../../../core/theme/app_text_styles.dart';
 import '../../../../core/widgets/app_button.dart';
+import '../../../../core/utils/account_validators.dart';
 import '../../../../core/widgets/app_text_field.dart';
+import '../../../data/models/parent/parent_child_model.dart';
 import '../../../data/models/parent/parent_model.dart';
 import '../../../data/models/parent/parent_payload_dto.dart';
 import '../../../data/repositories/parent_repository.dart';
 import '../widgets/avatar_picker_field.dart';
 import '../widgets/form_section.dart';
+import '../widgets/linked_student_tile.dart';
 import 'package:taqwa/core/widgets/app_text.dart';
 
 /// Create or edit a parent account. Shared by the admin and the manager
@@ -137,6 +140,10 @@ class _ParentFormPageState extends State<ParentFormPage> {
                     children: [
                       SizedBox(height: 24.h),
                       _buildCard(),
+                      if (_isEditing) ...[
+                        SizedBox(height: 16.h),
+                        _buildStudentsCard(widget.parent!.children),
+                      ],
                       SizedBox(height: 32.h),
                       AppButton(
                         label: _isEditing
@@ -165,10 +172,7 @@ class _ParentFormPageState extends State<ParentFormPage> {
     );
   }
 
-  Widget _buildCard() {
-    return Container(
-      padding: EdgeInsets.all(20.w),
-      decoration: BoxDecoration(
+  BoxDecoration get _cardDecoration => BoxDecoration(
         color: AppColors.surfaceContainerLowest,
         borderRadius: BorderRadius.circular(AppConstants.radiusXl),
         boxShadow: const [
@@ -178,7 +182,47 @@ class _ParentFormPageState extends State<ParentFormPage> {
             offset: Offset(0, 4),
           ),
         ],
+      );
+
+  /// The parent's linked students, as they came with the parent from
+  /// GET /parents. Tapping one opens its details page.
+  Widget _buildStudentsCard(List<ParentChildModel> students) {
+    return Container(
+      width: double.infinity,
+      padding: EdgeInsets.all(20.w),
+      decoration: _cardDecoration,
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.end,
+        children: [
+          FormSectionHeader(
+            icon: Icons.school_outlined,
+            title: 'الطلاب المرتبطون (${students.length})',
+          ),
+          SizedBox(height: 12.h),
+          if (students.isEmpty)
+            Align(
+              alignment: AlignmentDirectional.centerEnd,
+              child: AppText(
+                'لا يوجد طلاب مرتبطون بولي الأمر هذا.',
+                style: AppTextStyles.labelSm.copyWith(
+                  color: AppColors.onSurfaceVariant,
+                ),
+              ),
+            )
+          else
+            for (final student in students) ...[
+              LinkedStudentTile(student: student),
+              if (student != students.last) SizedBox(height: 8.h),
+            ],
+        ],
       ),
+    );
+  }
+
+  Widget _buildCard() {
+    return Container(
+      padding: EdgeInsets.all(20.w),
+      decoration: _cardDecoration,
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.end,
         children: [
@@ -201,8 +245,7 @@ class _ParentFormPageState extends State<ParentFormPage> {
               Icons.badge_outlined,
               color: AppColors.onSurfaceVariant,
             ),
-            validator: (v) =>
-                (v == null || v.trim().isEmpty) ? 'هذا الحقل مطلوب' : null,
+            validator: AccountValidators.fullName,
           ),
           SizedBox(height: 16.h),
           AppTextField(
@@ -225,6 +268,7 @@ class _ParentFormPageState extends State<ParentFormPage> {
             hint: '05X XXX XXXX',
             controller: _phoneController,
             keyboardType: TextInputType.phone,
+            validator: AccountValidators.phone,
             prefixIcon: const Icon(
               Icons.phone_outlined,
               color: AppColors.onSurfaceVariant,
@@ -236,6 +280,7 @@ class _ParentFormPageState extends State<ParentFormPage> {
             hint: 'example@email.com',
             controller: _emailController,
             keyboardType: TextInputType.emailAddress,
+            validator: AccountValidators.email,
             prefixIcon: const Icon(
               Icons.email_outlined,
               color: AppColors.onSurfaceVariant,
@@ -255,13 +300,8 @@ class _ParentFormPageState extends State<ParentFormPage> {
             ),
             // Editing keeps the current password when left blank, so only a
             // typed value is length-checked there.
-            validator: (v) {
-              final value = v?.trim() ?? '';
-              if (_isEditing && value.isEmpty) return null;
-              return value.length < 6
-                  ? 'كلمة المرور يجب أن تكون 6 أحرف على الأقل'
-                  : null;
-            },
+            validator: (v) =>
+                AccountValidators.password(v, optional: _isEditing),
           ),
           SizedBox(height: 4.h),
           Align(

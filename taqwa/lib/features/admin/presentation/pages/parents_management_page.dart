@@ -12,6 +12,7 @@ import 'package:taqwa/core/widgets/confirm_status_dialog.dart';
 import '../../../../features/data/models/parent/parent_model.dart';
 import '../../../../features/data/repositories/parent_repository.dart';
 import 'package:taqwa/features/data/repositories/user_repository.dart';
+import '../../../shared/presentation/pages/parent_details_page.dart';
 import '../../../shared/presentation/pages/parent_form_page.dart';
 import '../admin_shell.dart';
 import 'package:taqwa/core/widgets/app_text.dart';
@@ -89,11 +90,22 @@ class _ParentsManagementPageState extends State<ParentsManagementPage> {
     if (mounted) _load();
   }
 
+  Future<void> _openDetails(ParentModel parent) async {
+    final changed = await Navigator.push<bool>(
+      context,
+      MaterialPageRoute(
+        builder: (_) => ParentDetailsPage(parent: parent, canEdit: true),
+      ),
+    );
+    if (changed == true && mounted) _load();
+  }
+
   Future<void> _deleteParent(int id) async {
     final confirmed = await ConfirmDeleteDialog.show(
       context,
       title: 'حذف ولي الأمر',
-      message: 'سيتم حذف حساب ولي الأمر نهائياً. '
+      message:
+          'سيتم حذف حساب ولي الأمر نهائياً. '
           'سيبقى الأبناء في النظام دون ولي أمر مرتبط.',
     );
     if (!confirmed) return;
@@ -163,8 +175,9 @@ class _ParentsManagementPageState extends State<ParentsManagementPage> {
                             height: 40.w,
                             decoration: BoxDecoration(
                               color: AppColors.surfaceContainer,
-                              borderRadius:
-                                  BorderRadius.circular(AppConstants.radiusMd),
+                              borderRadius: BorderRadius.circular(
+                                AppConstants.radiusMd,
+                              ),
                             ),
                             child: const Icon(
                               Icons.menu,
@@ -226,35 +239,38 @@ class _ParentsManagementPageState extends State<ParentsManagementPage> {
               Expanded(
                 child: _isLoading
                     ? const Center(
-                        child:
-                            CircularProgressIndicator(color: AppColors.primary),
+                        child: CircularProgressIndicator(
+                          color: AppColors.primary,
+                        ),
                       )
                     : _filtered.isEmpty
-                        ? SingleChildScrollView(
-                            physics: const AlwaysScrollableScrollPhysics(),
-                            child: Container(
-                              height: 300.h,
-                              alignment: Alignment.center,
-                              child: AppText(
-                                'لا يوجد أولياء أمور',
-                                style: AppTextStyles.bodyMd
-                                    .copyWith(color: AppColors.onSurfaceVariant),
-                              ),
-                            ),
-                          )
-                        : ListView.separated(
-                            physics: const AlwaysScrollableScrollPhysics(),
-                            padding: EdgeInsets.symmetric(horizontal: 16.w),
-                            itemCount: _filtered.length,
-                            separatorBuilder: (_, _) => SizedBox(height: 16.h),
-                            itemBuilder: (_, i) => _ParentCard(
-                              parent: _filtered[i],
-                              isActive: _filtered[i].isActive ?? true,
-                              onEdit: () => _openForm(_filtered[i]),
-                              onDelete: () => _deleteParent(_filtered[i].id!),
-                              onToggleActive: () => _toggleStatus(_filtered[i]),
+                    ? SingleChildScrollView(
+                        physics: const AlwaysScrollableScrollPhysics(),
+                        child: Container(
+                          height: 300.h,
+                          alignment: Alignment.center,
+                          child: AppText(
+                            'لا يوجد أولياء أمور',
+                            style: AppTextStyles.bodyMd.copyWith(
+                              color: AppColors.onSurfaceVariant,
                             ),
                           ),
+                        ),
+                      )
+                    : ListView.separated(
+                        physics: const AlwaysScrollableScrollPhysics(),
+                        padding: EdgeInsets.symmetric(horizontal: 16.w),
+                        itemCount: _filtered.length,
+                        separatorBuilder: (_, _) => SizedBox(height: 16.h),
+                        itemBuilder: (_, i) => _ParentCard(
+                          parent: _filtered[i],
+                          isActive: _filtered[i].isActive ?? true,
+                          onOpenDetails: () => _openDetails(_filtered[i]),
+                          onEdit: () => _openForm(_filtered[i]),
+                          onDelete: () => _deleteParent(_filtered[i].id!),
+                          onToggleActive: () => _toggleStatus(_filtered[i]),
+                        ),
+                      ),
               ),
             ],
           ),
@@ -268,6 +284,7 @@ class _ParentCard extends StatelessWidget {
   const _ParentCard({
     required this.parent,
     required this.isActive,
+    required this.onOpenDetails,
     required this.onEdit,
     required this.onDelete,
     required this.onToggleActive,
@@ -275,135 +292,139 @@ class _ParentCard extends StatelessWidget {
 
   final ParentModel parent;
   final bool isActive;
+  final VoidCallback onOpenDetails;
   final VoidCallback onEdit;
   final VoidCallback onDelete;
   final VoidCallback onToggleActive;
 
   @override
   Widget build(BuildContext context) {
-    return Container(
-      decoration: BoxDecoration(
-        color: AppColors.surfaceContainerLowest,
-        borderRadius: BorderRadius.circular(AppConstants.radiusXl),
-        boxShadow: const [
-          BoxShadow(
-            color: Color.fromRGBO(18, 52, 59, 0.04),
-            blurRadius: 20,
-            offset: Offset(0, 4),
-          ),
-        ],
-      ),
-      padding: EdgeInsets.all(20.w),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.end,
-        children: [
-          Row(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Expanded(
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.end,
-                  children: [
-                    Row(
-                      mainAxisAlignment: MainAxisAlignment.end,
-                      children: [
-                        Container(
-                          padding: EdgeInsets.symmetric(
-                            horizontal: 8.w,
-                            vertical: 3.h,
-                          ),
-                          decoration: BoxDecoration(
-                            color:
-                                (isActive
-                                        ? AppColors.primary
-                                        : AppColors.outline)
-                                    .withValues(alpha: 0.1),
-                            borderRadius: BorderRadius.circular(
-                              AppConstants.radiusFull,
+    return GestureDetector(
+      onTap: onOpenDetails,
+      child: Container(
+        decoration: BoxDecoration(
+          color: AppColors.surfaceContainerLowest,
+          borderRadius: BorderRadius.circular(AppConstants.radiusXl),
+          boxShadow: const [
+            BoxShadow(
+              color: Color.fromRGBO(18, 52, 59, 0.04),
+              blurRadius: 20,
+              offset: Offset(0, 4),
+            ),
+          ],
+        ),
+        padding: EdgeInsets.all(20.w),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.end,
+          children: [
+            Row(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.end,
+                    children: [
+                      Row(
+                        mainAxisAlignment: MainAxisAlignment.end,
+                        children: [
+                          Container(
+                            padding: EdgeInsets.symmetric(
+                              horizontal: 8.w,
+                              vertical: 3.h,
+                            ),
+                            decoration: BoxDecoration(
+                              color:
+                                  (isActive
+                                          ? AppColors.primary
+                                          : AppColors.outline)
+                                      .withValues(alpha: 0.1),
+                              borderRadius: BorderRadius.circular(
+                                AppConstants.radiusFull,
+                              ),
+                            ),
+                            child: AppText(
+                              isActive ? 'نشط' : 'غير نشط',
+                              style: AppTextStyles.labelSm.copyWith(
+                                color: isActive
+                                    ? AppColors.primary
+                                    : AppColors.outline,
+                              ),
                             ),
                           ),
-                          child: AppText(
-                            isActive ? 'نشط' : 'غير نشط',
-                            style: AppTextStyles.labelSm.copyWith(
-                              color: isActive
-                                  ? AppColors.primary
-                                  : AppColors.outline,
+                        ],
+                      ),
+                      SizedBox(height: 8.h),
+                      AppText(
+                        parent.fullName,
+                        style: AppTextStyles.bodyMdBold.copyWith(
+                          color: AppColors.onSurface,
+                        ),
+                        textAlign: TextAlign.end,
+                      ),
+                      if ((parent.phone ?? '').isNotEmpty) ...[
+                        SizedBox(height: 4.h),
+                        Row(
+                          mainAxisAlignment: MainAxisAlignment.end,
+                          children: [
+                            AppText(
+                              parent.phone!,
+                              style: AppTextStyles.labelSm.copyWith(
+                                color: AppColors.onSurfaceVariant,
+                              ),
                             ),
-                          ),
+                            SizedBox(width: 4.w),
+                            const Icon(
+                              Icons.phone_outlined,
+                              size: 14,
+                              color: AppColors.onSurfaceVariant,
+                            ),
+                          ],
                         ),
                       ],
-                    ),
-                    SizedBox(height: 8.h),
-                    AppText(
-                      parent.fullName,
-                      style: AppTextStyles.bodyMdBold.copyWith(
-                        color: AppColors.onSurface,
-                      ),
-                      textAlign: TextAlign.end,
-                    ),
-                    if ((parent.phone ?? '').isNotEmpty) ...[
-                      SizedBox(height: 4.h),
+                      SizedBox(height: 8.h),
                       Row(
                         mainAxisAlignment: MainAxisAlignment.end,
                         children: [
                           AppText(
-                            parent.phone!,
+                            '${parent.children.length} طالب مرتبط',
                             style: AppTextStyles.labelSm.copyWith(
-                              color: AppColors.onSurfaceVariant,
+                              color: AppColors.primary,
                             ),
                           ),
                           SizedBox(width: 4.w),
                           const Icon(
-                            Icons.phone_outlined,
+                            Icons.group,
                             size: 14,
-                            color: AppColors.onSurfaceVariant,
+                            color: AppColors.primary,
                           ),
                         ],
                       ),
                     ],
-                    SizedBox(height: 8.h),
-                    Row(
-                      mainAxisAlignment: MainAxisAlignment.end,
-                      children: [
-                        AppText(
-                          '${parent.children.length} طالب مرتبط',
-                          style: AppTextStyles.labelSm.copyWith(
-                            color: AppColors.primary,
-                          ),
-                        ),
-                        SizedBox(width: 4.w),
-                        const Icon(
-                          Icons.group,
-                          size: 14,
-                          color: AppColors.primary,
-                        ),
-                      ],
-                    ),
-                  ],
-                ),
-              ),
-              SizedBox(width: 16.w),
-              AvatarWidget(
-                avatarUrl: parent.avatar,
-                size: 52.w,
-                backgroundColor: AppColors.tertiaryContainer,
-                fallback: AppText(
-                  parent.fullName.isNotEmpty ? parent.fullName[0] : '؟',
-                  style: AppTextStyles.headlineSm.copyWith(
-                    color: AppColors.onTertiaryContainer,
                   ),
                 ),
-              ),
-            ],
-          ),
-          SizedBox(height: 12.h),
-          CardActionRow(
-            isActive: isActive,
-            onToggleActive: onToggleActive,
-            onDelete: onDelete,
-            onEdit: onEdit,
-          ),
-        ],
+                SizedBox(width: 16.w),
+                AvatarWidget(
+                  avatarUrl: parent.avatar,
+                  size: 52.w,
+                  backgroundColor: AppColors.tertiaryContainer,
+                  fallback: AppText(
+                    parent.fullName.isNotEmpty ? parent.fullName[0] : '؟',
+                    style: AppTextStyles.headlineSm.copyWith(
+                      color: AppColors.onTertiaryContainer,
+                    ),
+                  ),
+                ),
+              ],
+            ),
+            SizedBox(height: 12.h),
+            CardActionRow(
+              isActive: isActive,
+              onToggleActive: onToggleActive,
+              onDelete: onDelete,
+              onEdit: onEdit,
+            ),
+          ],
+        ),
       ),
     );
   }
