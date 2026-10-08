@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:taqwa/features/data/network/api_endpoints.dart';
 import '../theme/app_colors.dart';
 
 /// Circular avatar that shows the student's photo when [avatarUrl] is set,
@@ -29,7 +30,7 @@ class AvatarWidget extends StatelessWidget {
       child: (url == null || url.isEmpty)
           ? Center(child: fallback)
           : Image.network(
-              url,
+              ApiEndpoints.mediaUrl(url),
               width: size,
               height: size,
               fit: BoxFit.cover,

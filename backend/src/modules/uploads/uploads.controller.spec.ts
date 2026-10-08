@@ -7,9 +7,8 @@ import { RolesGuard } from '../../common/guards/roles.guard';
 import { ROLES_KEY } from '../../common/decorators/roles.decorator';
 
 /**
- * The upload route signs requests with the server's Cloudinary secret, so an
- * edit that drops a guard would hand anonymous callers free storage on our
- * account. Lock the wiring down here rather than trusting review to catch it.
+ * The upload route writes to the server's own disk, so an edit that drops a
+ * guard would hand anonymous callers free storage on our server. Lock the wiring down here rather than trusting review to catch it.
  */
 describe('UploadsController decorator wiring', () => {
   const reflector = new Reflector();

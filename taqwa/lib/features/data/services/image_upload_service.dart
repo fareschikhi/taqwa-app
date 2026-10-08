@@ -3,16 +3,17 @@ import 'package:image_picker/image_picker.dart';
 import 'package:taqwa/features/data/network/api_endpoints.dart';
 import 'package:taqwa/features/data/network/dio_client.dart';
 
-/// Uploads images through our own API rather than straight to Cloudinary.
+/// Uploads images to our own API, which saves them on the server's disk.
 ///
-/// The backend holds the Cloudinary credentials and signs the upload, so no
-/// secret ships inside the app. Going through [DioClient] also means the
-/// request carries the caller's bearer token, and the API decides whether
-/// their role is allowed to upload at all.
+/// Going through [DioClient] means the request carries the caller's bearer
+/// token, and the API decides whether their role is allowed to upload at all.
 class ImageUploadService {
   ImageUploadService._();
 
-  /// Uploads [file] and returns the hosted URL to store on the user record.
+  /// Uploads [file] and returns the path to store on the user record.
+  ///
+  /// The path is relative to the API base URL; [ApiEndpoints.mediaUrl] turns
+  /// it into something loadable.
   ///
   /// Throws an [Exception] carrying a user-facing Arabic message on failure.
   static Future<String> uploadImage(XFile file) async {

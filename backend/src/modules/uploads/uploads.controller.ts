@@ -24,7 +24,8 @@ export class UploadsController {
   constructor(private uploadsService: UploadsService) {}
 
   /**
-   * Takes a multipart `file` field and returns the hosted URL for it.
+   * Takes a multipart `file` field and returns its path relative to the API
+   * base URL, which is what gets stored on the user record.
    *
    * Only the roles that can create or edit accounts may upload, since those
    * forms are the only place the app picks an image.

@@ -1,62 +1,69 @@
-import {
-  Injectable,
-  InternalServerErrorException,
-  Logger,
-  OnModuleInit,
-} from '@nestjs/common';
-import { v2 as cloudinary, UploadApiResponse } from 'cloudinary';
-import { requireEnv } from '../../common/config/env';
+import { BadRequestException, Injectable, OnModuleInit } from '@nestjs/common';
+import { randomUUID } from 'crypto';
+import { mkdirSync } from 'fs';
+import { writeFile } from 'fs/promises';
+import { join } from 'path';
+import { MEDIA_SEGMENT, uploadDir } from './upload-storage';
 
-/** Where avatars land inside the Cloudinary media library. */
-const AVATAR_FOLDER = 'taqwa/avatars';
+/** File extension for each accepted type; the controller filters on these. */
+const EXTENSIONS: Record<string, string> = {
+  'image/jpeg': 'jpg',
+  'image/png': 'png',
+  'image/webp': 'webp',
+};
 
 /**
- * Uploads images to Cloudinary on the server's behalf.
+ * Saves uploaded images to the server's own disk.
  *
- * The API secret lives here and only here: signing used to happen in the
- * Flutter client, which meant shipping the secret to every device.
+ * The files are served back from our own origin, so the client's declared
+ * MIME type is not trusted on its own: the leading bytes must match it too.
  */
 @Injectable()
 export class UploadsService implements OnModuleInit {
-  private readonly logger = new Logger(UploadsService.name);
+  private dir!: string;
 
   /**
-   * Fail at boot rather than on the first upload, so a half-configured
-   * deployment is obvious immediately.
+   * Create the folder at boot rather than on the first upload, so a path the
+   * process cannot write to fails the deployment immediately.
    */
   onModuleInit() {
-    cloudinary.config({
-      cloud_name: requireEnv('CLOUDINARY_CLOUD_NAME'),
-      api_key: requireEnv('CLOUDINARY_API_KEY'),
-      api_secret: requireEnv('CLOUDINARY_API_SECRET'),
-    });
+    this.dir = uploadDir();
+    mkdirSync(this.dir, { recursive: true });
   }
 
   /**
-   * Streams an in-memory file to Cloudinary and returns its public URL.
-   *
-   * `upload_stream` takes a callback rather than returning a promise, hence
-   * the manual wrapping.
+   * Writes an in-memory file to disk and returns its path relative to the API
+   * base URL, e.g. `media/3f2c….png`.
    */
   async uploadImage(file: Express.Multer.File): Promise<string> {
-    const result = await new Promise<UploadApiResponse>((resolve, reject) => {
-      const stream = cloudinary.uploader.upload_stream(
-        { folder: AVATAR_FOLDER, resource_type: 'image' },
-        (error, uploaded) => {
-          if (error || !uploaded) {
-            reject(error ?? new Error('Cloudinary returned no result'));
-            return;
-          }
-          resolve(uploaded);
-        },
-      );
-      stream.end(file.buffer);
-    }).catch((error: unknown) => {
-      // Log the real reason, but don't leak Cloudinary internals to the client.
-      this.logger.error('Cloudinary upload failed', error);
-      throw new InternalServerErrorException('Image upload failed');
-    });
+    const extension = EXTENSIONS[file.mimetype];
+    if (!extension || !matchesSignature(file.buffer, file.mimetype)) {
+      throw new BadRequestException('The file is not a valid image.');
+    }
 
-    return result.secure_url;
+    // A random name, never the client's, so nobody can overwrite or guess
+    // another user's photo.
+    const name = `${randomUUID()}.${extension}`;
+    await writeFile(join(this.dir, name), file.buffer);
+    return `${MEDIA_SEGMENT}/${name}`;
+  }
+}
+
+/** Checks the file's magic bytes against the type it claims to be. */
+function matchesSignature(buffer: Buffer, mimetype: string): boolean {
+  switch (mimetype) {
+    case 'image/jpeg':
+      return buffer.subarray(0, 3).equals(Buffer.from([0xff, 0xd8, 0xff]));
+    case 'image/png':
+      return buffer
+        .subarray(0, 8)
+        .equals(Buffer.from([0x89, 0x50, 0x4e, 0x47, 0x0d, 0x0a, 0x1a, 0x0a]));
+    case 'image/webp':
+      return (
+        buffer.subarray(0, 4).toString('ascii') === 'RIFF' &&
+        buffer.subarray(8, 12).toString('ascii') === 'WEBP'
+      );
+    default:
+      return false;
   }
 }

@@ -6,11 +6,12 @@ import '../../../../core/theme/app_colors.dart';
 import '../../../../core/theme/app_text_styles.dart';
 import '../../../../core/constants/app_constants.dart';
 import 'package:taqwa/core/widgets/app_text.dart';
+import 'package:taqwa/features/data/network/api_endpoints.dart';
 
 /// Circular avatar the user taps to pick a photo from the gallery or camera.
 ///
 /// Purely a picker: it hands the chosen [XFile] back through [onPicked] and
-/// never uploads anything. Callers upload to Cloudinary when the form is
+/// never uploads anything. Callers upload to the API when the form is
 /// submitted, so abandoning a form costs nothing.
 ///
 /// On an edit form pass [existingUrl] so the stored avatar shows until the
@@ -81,7 +82,7 @@ class AvatarPickerField extends StatelessWidget {
     }
     final url = existingUrl;
     if (url != null && url.isNotEmpty) {
-      return DecorationImage(image: NetworkImage(url), fit: BoxFit.cover);
+      return DecorationImage(image: NetworkImage(ApiEndpoints.mediaUrl(url)), fit: BoxFit.cover);
     }
     return null;
   }

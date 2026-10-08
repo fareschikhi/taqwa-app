@@ -10,6 +10,7 @@ import '../../../../core/utils/account_validators.dart';
 import '../../../../core/widgets/app_text_field.dart';
 import 'package:taqwa/features/data/models/teacher/teacher_payload_dto.dart';
 import 'package:taqwa/features/data/models/teacher/teacher_model.dart';
+import 'package:taqwa/features/data/network/api_endpoints.dart';
 import 'package:taqwa/features/data/services/image_upload_service.dart';
 import '../../../data/repositories/teacher_repository.dart';
 import 'package:taqwa/core/widgets/app_text.dart';
@@ -59,7 +60,7 @@ class _CreateTeacherPageState extends State<CreateTeacherPage> {
     }
     final existing = widget.editTeacher?.avatar;
     if (existing != null && existing.isNotEmpty) {
-      return DecorationImage(image: NetworkImage(existing), fit: BoxFit.cover);
+      return DecorationImage(image: NetworkImage(ApiEndpoints.mediaUrl(existing)), fit: BoxFit.cover);
     }
     return null;
   }

@@ -272,7 +272,7 @@ class _CreateManagerPageState extends State<CreateManagerPage> {
                             AppText(
                               _selectedImage != null
                                   ? 'تم اختيار صورة'
-                                  : 'انقر لاختيار صورة (Cloudinary)',
+                                  : 'انقر لاختيار صورة',
                               style: AppTextStyles.labelSm.copyWith(
                                 color: _selectedImage != null
                                     ? AppColors.primary

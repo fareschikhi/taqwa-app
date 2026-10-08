@@ -46,12 +46,10 @@ services:
         sync: false
       - key: JWT_SECRET
         sync: false
-      - key: CLOUDINARY_CLOUD_NAME
-        sync: false
-      - key: CLOUDINARY_API_KEY
-        sync: false
-      - key: CLOUDINARY_API_SECRET
-        sync: false
+
+      # Uploaded images go to ./uploads, and the free plan's disk is wiped on
+      # every restart and deploy, so they do not survive here. Attach a
+      # persistent disk (paid plans) and set UPLOAD_DIR to its mount path.
 
       # Not a secret, and the app has no default for it.
       - key: JWT_EXPIRES_IN

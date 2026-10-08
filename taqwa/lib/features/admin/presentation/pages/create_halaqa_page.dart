@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
+import 'package:taqwa/features/data/network/api_endpoints.dart';
 import 'package:taqwa/features/data/models/teacher/teacher_model.dart';
 import 'package:taqwa/features/data/models/student/student_model.dart';
 import 'package:taqwa/features/data/repositories/halaqa_repository.dart';
@@ -862,7 +863,7 @@ class StudentAvatar extends StatelessWidget {
     if (avatarUrl != null && avatarUrl!.isNotEmpty) {
       return CircleAvatar(
         radius: size / 2,
-        backgroundImage: NetworkImage(avatarUrl!),
+        backgroundImage: NetworkImage(ApiEndpoints.mediaUrl(avatarUrl!)),
         backgroundColor: AppColors.surfaceContainerHigh,
         onBackgroundImageError: (p0, p1) {},
       );

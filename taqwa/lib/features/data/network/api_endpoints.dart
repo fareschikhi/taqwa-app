@@ -33,4 +33,14 @@ class ApiEndpoints {
   static const String halaqaAnnouncements = '/halaqa-announcements';
   static const String uploads = '/uploads';
   static const String devices = '/devices';
+
+  /// Turns a stored image reference into a URL the app can load.
+  ///
+  /// The API stores uploads as a path relative to [baseUrl] (`media/…`), so a
+  /// move to another host never breaks them. Full URLs, such as avatars
+  /// uploaded before images moved off Cloudinary, pass through unchanged.
+  static String mediaUrl(String path) {
+    if (path.startsWith('http://') || path.startsWith('https://')) return path;
+    return '$baseUrl/$path';
+  }
 }
