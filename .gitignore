@@ -10,6 +10,8 @@ backend/coverage/
 # Images uploaded through the API while running locally.
 backend/uploads/
 backend/*.tsbuildinfo
+# Local archives of the backend folder.
+backend/*.rar
 
 # Flutter
 taqwa/.dart_tool/
