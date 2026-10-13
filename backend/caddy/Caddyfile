@@ -1,0 +1,9 @@
+{$DUCKDNS_SUBDOMAIN}.duckdns.org {
+	tls {
+		dns duckdns {env.DUCKDNS_TOKEN}
+	}
+	# One line per request in `docker compose logs caddy`, to see whether the
+	# app's requests reach this machine at all.
+	log
+	reverse_proxy backend:3000
+}

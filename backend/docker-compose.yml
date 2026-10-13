@@ -28,12 +28,58 @@ services:
         condition: service_healthy
     env_file:
       - .env
+    # Only reachable from this machine; the internet goes through caddy.
     ports:
-      - '3000:3000'
+      - '127.0.0.1:3000:3000'
     # Uploaded images live on disk, so they need a volume to outlive a rebuild.
     volumes:
       - uploads:/app/uploads
 
+  # Web UI for browsing the database. Bound to localhost only, since the
+  # database still uses the default passwords; reach it remotely over SSH:
+  #   ssh -L 8080:127.0.0.1:8080 you@server
+  phpmyadmin:
+    image: phpmyadmin:5.2
+    container_name: taqwa_phpmyadmin
+    restart: unless-stopped
+    depends_on:
+      - mysql
+    environment:
+      PMA_HOST: mysql
+    ports:
+      - '127.0.0.1:8080:80'
+
+  # HTTPS in front of the API, at https://<subdomain>.duckdns.org. The router
+  # forwards port 443 to this machine.
+  caddy:
+    build: ./caddy
+    container_name: taqwa_caddy
+    restart: unless-stopped
+    depends_on:
+      - backend
+    env_file:
+      - .env.duckdns
+    ports:
+      - '443:443'
+    volumes:
+      - ./caddy/Caddyfile:/etc/caddy/Caddyfile:ro
+      # Certificates; keeping them avoids Let's Encrypt's rate limits.
+      - caddy_data:/data
+
+  # The ISP changes the public IP, so this points the DuckDNS name at the
+  # current one every 5 minutes. Prints OK on success, KO on a bad token.
+  duckdns:
+    image: curlimages/curl:8.10.1
+    container_name: taqwa_duckdns
+    restart: unless-stopped
+    env_file:
+      - .env.duckdns
+    entrypoint:
+      - sh
+      - -c
+      - 'while true; do curl -fsS "https://www.duckdns.org/update?domains=$$DUCKDNS_SUBDOMAIN&token=$$DUCKDNS_TOKEN&ip="; echo; sleep 300; done'
+
 volumes:
   mysql_data:
   uploads:
+  caddy_data:
