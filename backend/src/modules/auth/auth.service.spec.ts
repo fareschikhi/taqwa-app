@@ -1,7 +1,11 @@
-import { UnauthorizedException } from '@nestjs/common';
+import { HttpStatus, UnauthorizedException } from '@nestjs/common';
 import { JwtService } from '@nestjs/jwt';
 import * as bcrypt from 'bcrypt';
 import { AuthService } from './auth.service';
+import {
+  LoginAttemptsService,
+  MAX_FAILED_ATTEMPTS,
+} from './login-attempts.service';
 
 // A low cost keeps the suite fast; the hash is still a real bcrypt hash so the
 // service's own `compare` call runs unmocked.
@@ -11,7 +15,11 @@ const PASSWORD_HASH = bcrypt.hashSync(PASSWORD, 4);
 const makeService = (user: Record<string, unknown> | null) => {
   const prisma = { user: { findFirst: jest.fn().mockResolvedValue(user) } };
   const jwt = { sign: jest.fn().mockReturnValue('signed.jwt.token') };
-  return new AuthService(prisma as any, jwt as unknown as JwtService);
+  return new AuthService(
+    prisma as any,
+    jwt as unknown as JwtService,
+    new LoginAttemptsService(),
+  );
 };
 
 describe('AuthService.login', () => {
@@ -42,7 +50,11 @@ describe('AuthService.login', () => {
       },
     };
     const jwt = { sign: jest.fn().mockReturnValue('signed.jwt.token') };
-    const service = new AuthService(prisma as any, jwt as unknown as JwtService);
+    const service = new AuthService(
+      prisma as any,
+      jwt as unknown as JwtService,
+      new LoginAttemptsService(),
+    );
 
     await expect(
       service.login({ phone: '4008', password: PASSWORD } as any),
@@ -117,7 +129,11 @@ describe('AuthService.changePassword', () => {
       },
     };
     const jwt = { sign: jest.fn() };
-    const service = new AuthService(prisma as any, jwt as unknown as JwtService);
+    const service = new AuthService(
+      prisma as any,
+      jwt as unknown as JwtService,
+      new LoginAttemptsService(),
+    );
     return { service, prisma };
   };
 
@@ -169,5 +185,56 @@ describe('AuthService.changePassword', () => {
 
     const { data } = prisma.user.update.mock.calls[0][0];
     expect(data.passwordHash).not.toBe('newpass1');
+  });
+});
+
+describe('AuthService.login lockout', () => {
+  const parent = {
+    id: 9,
+    fullName: 'Karim Cherguini',
+    phone: '3001',
+    role: 'PARENT',
+    passwordHash: PASSWORD_HASH,
+    parent: { id: 4 },
+  };
+
+  const failTimes = async (service: AuthService, times: number) => {
+    for (let i = 0; i < times; i++) {
+      await expect(
+        service.login({ phone: '3001', password: 'wrong-pass' } as any),
+      ).rejects.toBeInstanceOf(UnauthorizedException);
+    }
+  };
+
+  it('refuses even the right password once the account is locked', async () => {
+    const service = makeService(parent);
+    await failTimes(service, MAX_FAILED_ATTEMPTS);
+
+    await expect(
+      service.login({ phone: '3001', password: PASSWORD } as any),
+    ).rejects.toMatchObject({ status: HttpStatus.TOO_MANY_REQUESTS });
+  });
+
+  it('forgets earlier failures after a successful sign-in', async () => {
+    const service = makeService(parent);
+    await failTimes(service, MAX_FAILED_ATTEMPTS - 1);
+    await service.login({ phone: '3001', password: PASSWORD } as any);
+    await failTimes(service, MAX_FAILED_ATTEMPTS - 1);
+
+    const result = await service.login({
+      phone: '3001',
+      password: PASSWORD,
+    } as any);
+    expect(result.accessToken).toBe('signed.jwt.token');
+  });
+
+  // Otherwise the lock itself would reveal which phone numbers have accounts.
+  it('locks an unknown identifier exactly like a real one', async () => {
+    const service = makeService(null);
+    await failTimes(service, MAX_FAILED_ATTEMPTS);
+
+    await expect(
+      service.login({ phone: '3001', password: 'wrong-pass' } as any),
+    ).rejects.toMatchObject({ status: HttpStatus.TOO_MANY_REQUESTS });
   });
 });

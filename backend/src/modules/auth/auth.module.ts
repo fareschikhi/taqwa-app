@@ -6,6 +6,7 @@ import { TokenRefreshInterceptor } from '../../common/interceptors/token-refresh
 import { AuthController } from './auth.controller';
 import { AuthService } from './auth.service';
 import { JwtStrategy } from './jwt.strategy';
+import { LoginAttemptsService } from './login-attempts.service';
 import { requireEnv } from '../../common/config/env';
 
 @Module({
@@ -31,6 +32,7 @@ import { requireEnv } from '../../common/config/env';
   // module that configures it.
   providers: [
     AuthService,
+    LoginAttemptsService,
     JwtStrategy,
     { provide: APP_INTERCEPTOR, useClass: TokenRefreshInterceptor },
   ],
