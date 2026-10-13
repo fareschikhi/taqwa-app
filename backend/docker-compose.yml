@@ -3,17 +3,16 @@ services:
     image: mysql:8.4
     container_name: taqwa_mysql
     restart: unless-stopped
-    environment:
-      MYSQL_ROOT_PASSWORD: root_password
-      MYSQL_DATABASE: taqwa
-      MYSQL_USER: taqwa_user
-      MYSQL_PASSWORD: taqwa_password
+    # Passwords live in .env.mysql, outside git. They only set up a brand-new
+    # database; an existing one keeps its own until changed with ALTER USER.
+    env_file:
+      - .env.mysql
     volumes:
       - mysql_data:/var/lib/mysql
     # The backend migrates on start, so it must wait until MySQL accepts
     # connections, not just until the container exists.
     healthcheck:
-      test: ['CMD', 'mysqladmin', 'ping', '-h', '127.0.0.1', '-u', 'root', '-proot_password']
+      test: ['CMD-SHELL', 'MYSQL_PWD="$$MYSQL_ROOT_PASSWORD" mysqladmin ping -h 127.0.0.1 -u root']
       interval: 5s
       timeout: 5s
       retries: 20
@@ -35,8 +34,43 @@ services:
     volumes:
       - uploads:/app/uploads
 
-  # Web UI for browsing the database. Bound to localhost only, since the
-  # database still uses the default passwords; reach it remotely over SSH:
+  # Dumps the database to ./backups once a day and keeps the last 14 days.
+  # The folder is on this machine's disk, so copy it somewhere else from time
+  # to time: a backup on the same disk does not survive that disk dying.
+  # Restore one with:
+  #   gunzip -c backups/taqwa-<date>.sql.gz | docker exec -i -e MYSQL_PWD=<root password> taqwa_mysql mysql -uroot taqwa
+  backup:
+    image: mysql:8.4
+    container_name: taqwa_backup
+    restart: unless-stopped
+    depends_on:
+      mysql:
+        condition: service_healthy
+    env_file:
+      - .env.mysql
+    volumes:
+      - ./backups:/backups
+    entrypoint:
+      - sh
+      - -c
+      - |
+        while true; do
+          file=/backups/taqwa-$$(date +%Y-%m-%d_%H%M).sql.gz
+          if MYSQL_PWD="$$MYSQL_ROOT_PASSWORD" mysqldump -h mysql -u root \
+              --single-transaction --routines --no-tablespaces taqwa \
+              | gzip > "$$file.tmp"; then
+            mv "$$file.tmp" "$$file"
+            echo "backup written: $$file"
+          else
+            rm -f "$$file.tmp"
+            echo "backup FAILED"
+          fi
+          find /backups -name 'taqwa-*.sql.gz' -mtime +14 -delete
+          sleep 86400
+        done
+
+  # Web UI for browsing the database. Bound to localhost only, so it is never
+  # on the internet; reach it remotely over SSH:
   #   ssh -L 8080:127.0.0.1:8080 you@server
   phpmyadmin:
     image: phpmyadmin:5.2
