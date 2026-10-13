@@ -1,5 +1,8 @@
 class ApiEndpoints {
-  /// Where the app talks to the API. Defaults to production on Render, and is
+  /// Where the app talks to the API. Defaults to the self-hosted production
+  /// server, published through Tailscale Funnel: the ISP refuses every
+  /// incoming connection to that line, so port forwarding cannot reach it,
+  /// while Funnel only needs the server to connect out. It is
   /// overridden at build time so pointing at a local backend never means
   /// editing this file (and never means accidentally committing a localhost URL):
   ///
@@ -14,7 +17,7 @@ class ApiEndpoints {
   /// sits on the same network as the dev machine.
   static const String baseUrl = String.fromEnvironment(
     'API_BASE_URL',
-    defaultValue: 'https://taqwa-api-txbq.onrender.com/api',
+    defaultValue: 'https://fares.taile6d404.ts.net/api',
   );
   static const String login = '/auth/login';
   static const String changePassword = '/auth/password';

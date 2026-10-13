@@ -2,7 +2,7 @@
 backend/node_modules/
 backend/dist/
 backend/.env
-# Any local env variant (.env.aiven, .env.local, ...) holds real credentials.
+# Any local env variant (.env.local, .env.production, ...) holds real credentials.
 # The example file is the one deliberate exception.
 backend/.env.*
 !backend/.env.example
