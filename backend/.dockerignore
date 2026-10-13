@@ -7,5 +7,4 @@ coverage
 *.zip
 .git
 uploads
-caddy
 backups

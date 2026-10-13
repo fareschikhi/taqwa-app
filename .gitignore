@@ -6,7 +6,6 @@ backend/.env
 # The example file is the one deliberate exception.
 backend/.env.*
 !backend/.env.example
-!backend/.env.duckdns.example
 !backend/.env.mysql.example
 backend/coverage/
 # Images uploaded through the API while running locally.

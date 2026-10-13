@@ -8,8 +8,9 @@ import { MEDIA_SEGMENT, uploadDir } from './modules/uploads/upload-storage';
 
 async function bootstrap() {
   const app = await NestFactory.create<NestExpressApplication>(AppModule);
-  // Caddy forwards every request, so without this each client would share
-  // Caddy's address and the rate limits would throttle everyone at once.
+  // Tailscale Funnel forwards every request and names the real client in
+  // X-Forwarded-For; without this each client would share the proxy's
+  // address and the rate limits would throttle everyone at once.
   // Only private-network hops are trusted, so a client on the internet cannot
   // fake its address with its own X-Forwarded-For header.
   app.set('trust proxy', 'loopback, linklocal, uniquelocal');
