@@ -50,7 +50,14 @@ export class UsersService {
   async create(dto: CreateUserDto) {
     const hash = await bcrypt.hash(dto.password, 10);
     return this.prisma.user.create({
-      data: { ...dto, passwordHash: hash, password: undefined } as any,
+      data: {
+        ...dto,
+        passwordHash: hash,
+        password: undefined,
+        // An admin-set password is temporary, except on an admin account:
+        // admins manage their own.
+        mustChangePassword: dto.role !== 'ADMIN',
+      } as any,
       select: { id: true, fullName: true, email: true, role: true, createdAt: true },
     });
   }
@@ -101,6 +108,12 @@ export class UsersService {
     if (dto.password) {
       data.passwordHash = await bcrypt.hash(dto.password, 10);
       delete data.password;
+      // Temporary unless it is an admin's: admins manage their own.
+      const target = await this.prisma.user.findUnique({
+        where: { id },
+        select: { role: true },
+      });
+      data.mustChangePassword = target?.role !== 'ADMIN';
     }
     return this.prisma.user.update({ where: { id }, data });
   }

@@ -2,6 +2,7 @@ import {
   Injectable,
   UnauthorizedException,
   BadRequestException,
+  ForbiddenException,
 } from '@nestjs/common';
 import { JwtService } from '@nestjs/jwt';
 import { PrismaService } from '../../prisma/prisma.service';
@@ -88,6 +89,7 @@ export class AuthService {
         phone: user.phone,
         role: user.role,
         avatar: user.avatar,
+        mustChangePassword: user.mustChangePassword,
         student: user.student ? { id: user.student.id } : undefined,
         parent: user.parent ? { id: user.parent.id } : undefined,
         teacher: user.teacher ? { id: user.teacher.id } : undefined,
@@ -105,6 +107,12 @@ export class AuthService {
       throw new UnauthorizedException('كلمة المرور الحالية غير صحيحة');
     }
 
+    // Everyone but an admin has their password set by an admin. The one
+    // exception is replacing the temporary password they were handed.
+    if (user.role !== 'ADMIN' && !user.mustChangePassword) {
+      throw new ForbiddenException('تغيير كلمة المرور يتم عن طريق الإدارة');
+    }
+
     const valid = await bcrypt.compare(dto.currentPassword, user.passwordHash);
     if (!valid) {
       throw new UnauthorizedException('كلمة المرور الحالية غير صحيحة');
@@ -112,7 +120,10 @@ export class AuthService {
 
     await this.prisma.user.update({
       where: { id: userId },
-      data: { passwordHash: await bcrypt.hash(dto.newPassword, 10) },
+      data: {
+        passwordHash: await bcrypt.hash(dto.newPassword, 10),
+        mustChangePassword: false,
+      },
     });
 
     // The token deliberately survives: changing your own password on the
@@ -130,6 +141,7 @@ export class AuthService {
         phone: true,
         role: true,
         avatar: true,
+        mustChangePassword: true,
         student: { select: { id: true } },
         parent: { select: { id: true } },
         teacher: { select: { id: true } },

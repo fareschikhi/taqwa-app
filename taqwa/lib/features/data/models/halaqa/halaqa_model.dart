@@ -75,6 +75,25 @@ class HalaqaModel {
     );
   }
 
+  /// Everything [HalaqaModel.fromJson] reads, in the shape it reads it, so a
+  /// copy saved on the phone keeps the fine fields. [toJson] cannot serve
+  /// here: it is the create/update payload and carries only four fields.
+  Map<String, dynamic> toCacheJson() => {
+    'id': id,
+    'name': name,
+    'level': level,
+    'teacherId': teacherId,
+    if (teacherName != null)
+      'teacher': {
+        'user': {'fullName': teacherName},
+      },
+    '_count': {'students': studentCount},
+    'isAdult': isAdult,
+    'absenceFee': absenceFee,
+    'lateFee': lateFee,
+    'missedMemorizationFee': missedMemorizationFee,
+  };
+
   Map<String, dynamic> toJson() {
     return {
       'id': id,

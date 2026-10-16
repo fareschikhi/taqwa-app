@@ -102,6 +102,21 @@ describe('StudentsService.create', () => {
     expect(await bcrypt.compare('secret123', data.passwordHash)).toBe(true);
   });
 
+  // The admin typed that password, so it is a temporary one.
+  it('makes an adult student change the password on first login', async () => {
+    const prisma = makePrisma();
+    const service = new StudentsService(prisma as any);
+
+    await service.create({
+      ...payload,
+      isAdult: true,
+      password: 'secret123',
+    } as any);
+
+    const data = prisma.user.create.mock.calls[0][0].data;
+    expect(data.mustChangePassword).toBe(true);
+  });
+
   // An adult student with no password is an account nobody can ever use, and
   // the form would have no way to tell the admin why he cannot sign in.
   it('refuses an adult student without a password', async () => {

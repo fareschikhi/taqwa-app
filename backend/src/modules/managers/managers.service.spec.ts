@@ -36,3 +36,55 @@ describe('ManagersService.remove', () => {
     expect(prisma.user.delete).not.toHaveBeenCalled();
   });
 });
+
+// A password an admin sets is a temporary one: the manager replaces it on
+// their next login.
+describe('ManagersService passwords', () => {
+  const makePrisma = () => ({
+    user: {
+      create: jest.fn().mockResolvedValue({ id: 42 }),
+      update: jest.fn().mockResolvedValue({ id: 42 }),
+    },
+    manager: { findUnique: jest.fn().mockResolvedValue({ id: 3, userId: 42 }) },
+  });
+
+  const makeService = (prisma: ReturnType<typeof makePrisma>) => {
+    const service = new ManagersService(prisma as any);
+    jest.spyOn(service, 'findOne').mockResolvedValue({} as any);
+    return service;
+  };
+
+  it('makes a new manager change the password on first login', async () => {
+    const prisma = makePrisma();
+
+    await makeService(prisma).create({
+      fullName: 'Nadir Hamdi',
+      phone: '4300',
+      password: 'secret123',
+    } as any);
+
+    expect(prisma.user.create.mock.calls[0][0].data.mustChangePassword).toBe(
+      true,
+    );
+  });
+
+  it('makes the manager change a password an admin reset', async () => {
+    const prisma = makePrisma();
+
+    await makeService(prisma).update(3, { password: 'secret123' } as any);
+
+    expect(prisma.user.update.mock.calls[0][0].data.mustChangePassword).toBe(
+      true,
+    );
+  });
+
+  it('leaves the flag alone when the password is not touched', async () => {
+    const prisma = makePrisma();
+
+    await makeService(prisma).update(3, { fullName: 'Nadir H.' } as any);
+
+    expect(prisma.user.update.mock.calls[0][0].data).not.toHaveProperty(
+      'mustChangePassword',
+    );
+  });
+});

@@ -36,3 +36,55 @@ describe('TeachersService.remove', () => {
     expect(prisma.user.delete).not.toHaveBeenCalled();
   });
 });
+
+// A password an admin sets is a temporary one: the teacher replaces it on
+// their next login.
+describe('TeachersService passwords', () => {
+  const makePrisma = () => ({
+    user: {
+      create: jest.fn().mockResolvedValue({ id: 42, teacher: { id: 6 } }),
+      update: jest.fn().mockResolvedValue({ id: 42 }),
+    },
+    teacher: { findUnique: jest.fn().mockResolvedValue({ id: 6, userId: 42 }) },
+  });
+
+  const makeService = (prisma: ReturnType<typeof makePrisma>) => {
+    const service = new TeachersService(prisma as any);
+    jest.spyOn(service, 'findOne').mockResolvedValue({} as any);
+    return service;
+  };
+
+  it('makes a new teacher change the password on first login', async () => {
+    const prisma = makePrisma();
+
+    await makeService(prisma).create({
+      fullName: 'Amine Rahmani',
+      phone: '4400',
+      password: 'secret123',
+    } as any);
+
+    expect(prisma.user.create.mock.calls[0][0].data.mustChangePassword).toBe(
+      true,
+    );
+  });
+
+  it('makes the teacher change a password an admin reset', async () => {
+    const prisma = makePrisma();
+
+    await makeService(prisma).update(6, { password: 'secret123' } as any);
+
+    expect(prisma.user.update.mock.calls[0][0].data.mustChangePassword).toBe(
+      true,
+    );
+  });
+
+  it('leaves the flag alone when the password is not touched', async () => {
+    const prisma = makePrisma();
+
+    await makeService(prisma).update(6, { fullName: 'Amine R.' } as any);
+
+    expect(prisma.user.update.mock.calls[0][0].data).not.toHaveProperty(
+      'mustChangePassword',
+    );
+  });
+});

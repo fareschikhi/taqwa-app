@@ -71,6 +71,7 @@ export class ManagersService {
         email,
         phone,
         passwordHash: hash,
+        mustChangePassword: true,
         role: 'MANAGER',
         avatar: rest.avatar,
         manager: {
@@ -107,7 +108,10 @@ export class ManagersService {
     const { password, halaqaIds, canManageAccounts, canDeleteAccounts, ...rest } =
       dto;
     const userUpdate: any = { ...rest };
-    if (password) userUpdate.passwordHash = await bcrypt.hash(password, 10);
+    if (password) {
+      userUpdate.passwordHash = await bcrypt.hash(password, 10);
+      userUpdate.mustChangePassword = true;
+    }
 
     await this.prisma.user.update({
       where: { id: manager.userId },

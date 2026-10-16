@@ -1,4 +1,8 @@
-import { HttpStatus, UnauthorizedException } from '@nestjs/common';
+import {
+  ForbiddenException,
+  HttpStatus,
+  UnauthorizedException,
+} from '@nestjs/common';
 import { JwtService } from '@nestjs/jwt';
 import * as bcrypt from 'bcrypt';
 import { AuthService } from './auth.service';
@@ -118,6 +122,27 @@ describe('AuthService.login', () => {
     expect(result.accessToken).toBe('signed.jwt.token');
     expect(result.user.role).toBe('PARENT');
   });
+
+  // The app decides from this flag whether to hold the user on the
+  // set-a-new-password screen, so it has to survive into the response.
+  it('tells the client the password must be changed', async () => {
+    const service = makeService({
+      id: 9,
+      fullName: 'Karim Saidi',
+      phone: '4200',
+      role: 'PARENT',
+      passwordHash: PASSWORD_HASH,
+      mustChangePassword: true,
+      parent: { id: 4 },
+    });
+
+    const result = await service.login({
+      phone: '4200',
+      password: PASSWORD,
+    } as any);
+
+    expect(result.user.mustChangePassword).toBe(true);
+  });
 });
 
 describe('AuthService.changePassword', () => {
@@ -137,7 +162,7 @@ describe('AuthService.changePassword', () => {
     return { service, prisma };
   };
 
-  const active = { id: 7, passwordHash: PASSWORD_HASH };
+  const active = { id: 7, role: 'ADMIN', passwordHash: PASSWORD_HASH };
 
   it('rejects a wrong current password', async () => {
     const { service, prisma } = makeService(active);
@@ -185,6 +210,42 @@ describe('AuthService.changePassword', () => {
 
     const { data } = prisma.user.update.mock.calls[0][0];
     expect(data.passwordHash).not.toBe('newpass1');
+  });
+
+  it('clears the must-change flag once the password is replaced', async () => {
+    const { service, prisma } = makeService({
+      id: 7,
+      role: 'PARENT',
+      passwordHash: PASSWORD_HASH,
+      mustChangePassword: true,
+    });
+
+    await service.changePassword(7, {
+      currentPassword: PASSWORD,
+      newPassword: 'newpass1',
+    });
+
+    const { data } = prisma.user.update.mock.calls[0][0];
+    expect(data.mustChangePassword).toBe(false);
+  });
+
+  // Everyone but an admin has their password set by an admin; the one
+  // exception is replacing the temporary password they were handed.
+  it('refuses a non-admin whose password is not temporary', async () => {
+    const { service, prisma } = makeService({
+      id: 7,
+      role: 'TEACHER',
+      passwordHash: PASSWORD_HASH,
+      mustChangePassword: false,
+    });
+
+    await expect(
+      service.changePassword(7, {
+        currentPassword: PASSWORD,
+        newPassword: 'newpass1',
+      }),
+    ).rejects.toBeInstanceOf(ForbiddenException);
+    expect(prisma.user.update).not.toHaveBeenCalled();
   });
 });
 
