@@ -68,6 +68,7 @@ export class ParentsService {
         email,
         phone,
         passwordHash: hash,
+        mustChangePassword: true,
         role: 'PARENT',
         avatar: dto.avatar,
         parent: {
@@ -102,8 +103,10 @@ export class ParentsService {
       userUpdate.phone = dto.phone && dto.phone.trim() !== '' ? dto.phone.trim() : null;
     }
     if (dto.avatar) userUpdate.avatar = dto.avatar;
-    if (dto.password)
+    if (dto.password) {
       userUpdate.passwordHash = await bcrypt.hash(dto.password, 10);
+      userUpdate.mustChangePassword = true;
+    }
 
     const parentUpdate: any = {};
     if (dto.address !== undefined) parentUpdate.address = dto.address;

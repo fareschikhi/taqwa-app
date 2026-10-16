@@ -83,3 +83,69 @@ describe('UsersService.updateMe', () => {
     expect(data).toEqual({ fullName: 'Only Name' });
   });
 });
+
+// A password an admin sets is a temporary one, except on an admin account:
+// admins manage their own.
+describe('UsersService passwords', () => {
+  const makePrisma = (role = 'PARENT') => ({
+    user: {
+      create: jest.fn().mockResolvedValue({ id: 42 }),
+      update: jest.fn().mockResolvedValue({ id: 42 }),
+      findUnique: jest.fn().mockResolvedValue({ id: 42, role }),
+    },
+  });
+
+  it('flags a new non-admin account', async () => {
+    const prisma = makePrisma();
+
+    await new UsersService(prisma as any).create({
+      fullName: 'Karim Saidi',
+      phone: '4200',
+      password: 'secret123',
+      role: 'PARENT',
+    } as any);
+
+    expect(prisma.user.create.mock.calls[0][0].data.mustChangePassword).toBe(
+      true,
+    );
+  });
+
+  it('never flags a new admin account', async () => {
+    const prisma = makePrisma();
+
+    await new UsersService(prisma as any).create({
+      fullName: 'Second Admin',
+      phone: '4500',
+      password: 'secret123',
+      role: 'ADMIN',
+    } as any);
+
+    expect(prisma.user.create.mock.calls[0][0].data.mustChangePassword).toBe(
+      false,
+    );
+  });
+
+  it('flags a non-admin whose password an admin reset', async () => {
+    const prisma = makePrisma('TEACHER');
+
+    await new UsersService(prisma as any).update(42, {
+      password: 'secret123',
+    } as any);
+
+    expect(prisma.user.update.mock.calls[0][0].data.mustChangePassword).toBe(
+      true,
+    );
+  });
+
+  it('never flags an admin whose password is reset', async () => {
+    const prisma = makePrisma('ADMIN');
+
+    await new UsersService(prisma as any).update(42, {
+      password: 'secret123',
+    } as any);
+
+    expect(prisma.user.update.mock.calls[0][0].data.mustChangePassword).toBe(
+      false,
+    );
+  });
+});

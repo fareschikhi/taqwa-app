@@ -86,6 +86,7 @@ export class TeachersService {
         email,
         phone,
         passwordHash: hash,
+        mustChangePassword: true,
         role: 'TEACHER',
         avatar: dto.avatar,
         teacher: {
@@ -116,8 +117,10 @@ export class TeachersService {
         dto.phone && dto.phone.trim() !== '' ? dto.phone.trim() : null;
     }
     if (dto.avatar) userUpdate.avatar = dto.avatar;
-    if (dto.password)
+    if (dto.password) {
       userUpdate.passwordHash = await bcrypt.hash(dto.password, 10);
+      userUpdate.mustChangePassword = true;
+    }
 
     await this.prisma.user.update({
       where: { id: teacher.userId },

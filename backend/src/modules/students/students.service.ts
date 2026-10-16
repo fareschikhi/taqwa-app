@@ -179,6 +179,8 @@ export class StudentsService {
           passwordHash: dto.isAdult
             ? await bcrypt.hash(dto.password!, 10)
             : null,
+          // The admin typed that password, so it is a temporary one.
+          mustChangePassword: dto.isAdult ?? false,
           role: dto.isAdult ? 'ADULT_STUDENT' : 'STUDENT',
           avatar: dto.avatar,
           student: {
