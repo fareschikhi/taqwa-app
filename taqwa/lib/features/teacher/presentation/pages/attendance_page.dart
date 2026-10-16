@@ -7,7 +7,11 @@ import '../../../../core/theme/app_text_styles.dart';
 import '../../../../core/constants/app_constants.dart';
 import '../../../../core/utils/attendance_draft.dart';
 import '../../../../core/utils/attendance_queue.dart';
+import '../../../../core/utils/cache_then_server.dart';
+import '../../../../core/utils/queue_retry_timer.dart';
+import '../../../../core/utils/save_gate.dart';
 import '../../../data/local/attendance_queue_store.dart';
+import '../../../data/local/attendance_roster_cache.dart';
 import '../../../../core/widgets/app_button.dart';
 import '../../../../core/widgets/attendance_controls.dart';
 import '../../../../core/widgets/confirm_discard_attendance_dialog.dart';
@@ -96,6 +100,23 @@ class _AttendancePageState extends ConsumerState<AttendancePage>
   /// banner can render without an await.
   List<Map<String, dynamic>> _queued = [];
 
+  late final _retryTimer = QueueRetryTimer(onTick: _flushQueue);
+
+  final _rosterCache = AttendanceRosterCache();
+
+  /// When the sheet on screen was fetched, set only while it is the phone's
+  /// copy rather than the server's latest answer.
+  DateTime? _copySavedAt;
+
+  /// The server is being asked for a fresh sheet.
+  bool _isRefreshing = false;
+
+  late final _saveGate = SaveGate(
+    onChange: () {
+      if (mounted) setState(() {});
+    },
+  );
+
   int? get _teacherId => ref.read(authProvider).user?.teacherId;
 
   String get _todayStr {
@@ -139,6 +160,8 @@ class _AttendancePageState extends ConsumerState<AttendancePage>
   @override
   void dispose() {
     WidgetsBinding.instance.removeObserver(this);
+    _retryTimer.dispose();
+    _saveGate.dispose();
     super.dispose();
   }
 
@@ -150,7 +173,11 @@ class _AttendancePageState extends ConsumerState<AttendancePage>
     if (state == AppLifecycleState.resumed) _flushQueue();
   }
 
-  Future<void> _loadData() async {
+  /// Draws the phone's copy at once, then the server's answer over it.
+  ///
+  /// [fromCache] is false for pull-to-refresh: the screen already holds the
+  /// server's last answer, and drawing the older copy first would step back.
+  Future<void> _loadData({bool fromCache = true}) async {
     final tid = _teacherId;
     if (tid == null) {
       setState(() => _isLoading = false);
@@ -158,103 +185,176 @@ class _AttendancePageState extends ConsumerState<AttendancePage>
     }
 
     final stored = await _queueStore.read(tid);
-    if (mounted) setState(() => _queued = stored);
+    if (mounted) _setQueued(stored);
 
-    setState(() => _isLoading = true);
+    final today = _todayStr;
+    // The spinner is only for a screen with nothing on it yet. Otherwise the
+    // list stays up and the refresh line says the server is being asked.
+    setState(() {
+      if (_students.isEmpty) _isLoading = true;
+      _isRefreshing = true;
+    });
+    // A copy can be older than rows another device wrote since, so saves wait
+    // for the server's answer — briefly, see SaveGate.
+    if (fromCache) _saveGate.begin();
     try {
-      final results = await Future.wait([
-        _repo.getStudents(teacherId: tid, limit: 100),
-        _repo.getAttendanceByDate(_todayStr),
-        _repo.getMemorizationByDate(_todayStr), // NEW
-        _halaqaRepo.getAllHalaqas(),
-      ]);
-
-      final studentList = (results[0] as StudentListResponse).data;
-      final existingRecords = results[1] as List<Map<String, dynamic>>;
-      final memorizationRecords =
-          results[2] as List<Map<String, dynamic>>; // NEW
-      final halaqas = results[3] as List<HalaqaModel>;
-      final halaqasById = {for (final h in halaqas) h.id: h};
-
-      final existingMap = <int, String>{};
-      // The toggle a student's Attendance row carried the last time it was
-      // written. A student with no row at all has neither, which is exactly
-      // why both maps are read together below rather than one implying "no
-      // row means false" — that would be a coincidence of the default, not a
-      // rule this code should lean on.
-      final existingMissedMap = <int, bool>{};
-      for (final record in existingRecords) {
-        final sId = (record['studentId'] as num?)?.toInt();
-        final st = record['status'] as String?;
-        if (sId != null && st != null) existingMap[sId] = st;
-        final missed = record['missedMemorization'] as bool?;
-        if (sId != null && missed != null) existingMissedMap[sId] = missed;
+      await for (final update in cacheThenServer<AttendanceRoster>(
+        readCache: () async =>
+            fromCache ? await _rosterCache.read(tid, date: today) : null,
+        fetch: () => _fetchRoster(tid, today),
+        writeCache: (roster) => _rosterCache.write(
+          tid,
+          date: today,
+          students: roster.students,
+          halaqas: roster.halaqas,
+          attendance: roster.attendance,
+          memorization: roster.memorization,
+        ),
+      )) {
+        if (!mounted) return;
+        _applyRoster(update.value, today: today, fromCache: update.fromCache);
+        if (!update.fromCache) _saveGate.end();
       }
-
-      final memorizedByStudent = memorizationByStudent(memorizationRecords);
-
-      // Pull-to-refresh runs on a screen the teacher may have half-marked, and
-      // an unsaved chip exists nowhere else. Refreshing therefore updates what
-      // the server is known to hold without overwriting those chips.
-      final stillPending = _pendingIds;
-
-      setState(() {
-        _students = studentList;
-        _studentHalaqa.clear();
-        for (final s in studentList) {
-          final halaqa = s.halaqaId == null ? null : halaqasById[s.halaqaId];
-          if (halaqa != null) _studentHalaqa[s.id] = halaqa;
-        }
-        _memorizedStudentIds
-          ..clear()
-          ..addAll(memorizedByStudent.keys);
-        _todayMemorization
-          ..clear()
-          ..addAll(memorizedByStudent);
-        _savedAttendance.clear();
-        _initialAttendance.clear();
-        _initialMissed.clear();
-        _savedMissed.clear();
-        for (final s in studentList) {
-          final existing = attendanceStatusFromApi(existingMap[s.id]);
-          // A student with no row yet has nothing saved, and `unset` is not a
-          // state the server can hold — leaving it out of the saved map is
-          // what makes the first tap register as a pending change.
-          if (existing != AttendanceStatus.unset) {
-            _savedAttendance[s.id] = existing;
-          }
-          // A student the server has no row for starts on present: the sheet
-          // marks exceptions, so saving without touching him records him
-          // present rather than recording nothing at all.
-          final baseline = existing == AttendanceStatus.unset
-              ? AttendanceStatus.present
-              : existing;
-          _initialAttendance[s.id] = baseline;
-          if (!stillPending.contains(s.id)) {
-            _attendance[s.id] = baseline;
-          }
-          // A child never accrues a fine, so his id never enters either
-          // toggle map — that absence is what keeps the switch off his card
-          // and the key off his batch record.
-          if (_isAdultStudent(s.id)) {
-            final existingMissed = existingMissedMap[s.id] ?? false;
-            _savedMissed[s.id] = existingMissed;
-            _initialMissed[s.id] = existingMissed;
-            if (!stillPending.contains(s.id)) {
-              _missed[s.id] = existingMissed;
-            }
-          }
-        }
-        _isLoading = false;
-      });
-      // Runs after the roster is on screen, so a teacher who reopens the app
-      // with signal sees held marks go out without touching anything.
-      await _flushQueue();
     } catch (_) {
-      // Without this an empty screen reads as "this halaqa has no students".
+      if (!mounted) return;
       setState(() => _isLoading = false);
-      _showSnack('تعذّر تحميل قائمة الطلاب', isError: true);
+      // An empty screen alone would read as "this halaqa has no students";
+      // a list already up stays, and only the refresh attempt failed.
+      _showSnack(
+        _students.isEmpty
+            ? 'تعذّر تحميل قائمة الطلاب'
+            : 'تعذّر التحديث، لا يوجد اتصال',
+        isError: true,
+      );
+    } finally {
+      _saveGate.end();
+      if (mounted) setState(() => _isRefreshing = false);
     }
+
+    // Runs after the roster is on screen, so a teacher who reopens the app
+    // with signal sees held marks go out without touching anything.
+    if (mounted) await _flushQueue();
+  }
+
+  Future<AttendanceRoster> _fetchRoster(int teacherId, String date) async {
+    final results = await Future.wait([
+      _repo.getStudents(teacherId: teacherId, limit: 100),
+      _repo.getAttendanceByDate(date),
+      _repo.getMemorizationByDate(date),
+      _halaqaRepo.getAllHalaqas(),
+    ]);
+    return AttendanceRoster(
+      savedAt: DateTime.now(),
+      students: (results[0] as StudentListResponse).data,
+      attendance: results[1] as List<Map<String, dynamic>>,
+      memorization: results[2] as List<Map<String, dynamic>>,
+      halaqas: results[3] as List<HalaqaModel>,
+    );
+  }
+
+  /// Puts one sheet on screen. Runs twice on a normal open — the copy, then
+  /// the server — so it must never clobber what the teacher did in between.
+  void _applyRoster(
+    AttendanceRoster roster, {
+    required String today,
+    required bool fromCache,
+  }) {
+    final studentList = roster.students;
+    final existingRecords = roster.attendance;
+    final memorizationRecords = roster.memorization;
+    final halaqasById = {for (final h in roster.halaqas) h.id: h};
+
+    final existingMap = <int, String>{};
+    // The toggle a student's Attendance row carried the last time it was
+    // written. A student with no row at all has neither, which is exactly
+    // why both maps are read together below rather than one implying "no
+    // row means false" — that would be a coincidence of the default, not a
+    // rule this code should lean on.
+    final existingMissedMap = <int, bool>{};
+    for (final record in existingRecords) {
+      final sId = (record['studentId'] as num?)?.toInt();
+      final st = record['status'] as String?;
+      if (sId != null && st != null) existingMap[sId] = st;
+      final missed = record['missedMemorization'] as bool?;
+      if (sId != null && missed != null) existingMissedMap[sId] = missed;
+    }
+
+    final memorizedByStudent = memorizationByStudent(memorizationRecords);
+
+    // Pull-to-refresh runs on a screen the teacher may have half-marked, and
+    // an unsaved chip exists nowhere else. Refreshing therefore updates what
+    // the server is known to hold without overwriting those chips.
+    final stillPending = _pendingIds;
+
+    setState(() {
+      _students = studentList;
+      _studentHalaqa.clear();
+      for (final s in studentList) {
+        final halaqa = s.halaqaId == null ? null : halaqasById[s.halaqaId];
+        if (halaqa != null) _studentHalaqa[s.id] = halaqa;
+      }
+      _memorizedStudentIds
+        ..clear()
+        ..addAll(memorizedByStudent.keys);
+      _todayMemorization
+        ..clear()
+        ..addAll(memorizedByStudent);
+      _savedAttendance.clear();
+      _initialAttendance.clear();
+      _initialMissed.clear();
+      _savedMissed.clear();
+      for (final s in studentList) {
+        final existing = attendanceStatusFromApi(existingMap[s.id]);
+        // A student with no row yet has nothing saved, and `unset` is not a
+        // state the server can hold — leaving it out of the saved map is
+        // what makes the first tap register as a pending change.
+        if (existing != AttendanceStatus.unset) {
+          _savedAttendance[s.id] = existing;
+        }
+        // A student the server has no row for starts on present: the sheet
+        // marks exceptions, so saving without touching him records him
+        // present rather than recording nothing at all.
+        final baseline = existing == AttendanceStatus.unset
+            ? AttendanceStatus.present
+            : existing;
+        _initialAttendance[s.id] = baseline;
+        if (!stillPending.contains(s.id)) {
+          _attendance[s.id] = baseline;
+        }
+        // A child never accrues a fine, so his id never enters either
+        // toggle map — that absence is what keeps the switch off his card
+        // and the key off his batch record.
+        if (_isAdultStudent(s.id)) {
+          final existingMissed = existingMissedMap[s.id] ?? false;
+          _savedMissed[s.id] = existingMissed;
+          _initialMissed[s.id] = existingMissed;
+          if (!stillPending.contains(s.id)) {
+            _missed[s.id] = existingMissed;
+          }
+        }
+      }
+      // Held marks belong on the chips, not only in the banner. Reopened
+      // offline, the sheet would otherwise show the old rows, and a save
+      // from there would queue present for everyone over what was held.
+      // They stay pending, because the server has not taken them.
+      for (final record in _queued) {
+        final id = record['studentId'] as int;
+        if (record['date'] != today || stillPending.contains(id)) continue;
+        _attendance[id] = attendanceStatusFromApi(record['status'] as String);
+        if (record.containsKey('missedMemorization')) {
+          _missed[id] = record['missedMemorization'] as bool;
+        }
+      }
+      _copySavedAt = fromCache ? roster.savedAt : null;
+      _isLoading = false;
+    });
+  }
+
+  /// Every change to [_queued] goes through here, so the retry clock runs
+  /// exactly while something is waiting.
+  void _setQueued(List<Map<String, dynamic>> records) {
+    setState(() => _queued = records);
+    _retryTimer.sync(hasPending: records.isNotEmpty);
   }
 
   void _showSnack(String message, {required bool isError}) {
@@ -317,6 +417,15 @@ class _AttendancePageState extends ConsumerState<AttendancePage>
   /// write was attempted and failed, which is the case where opening the sheet
   /// would invite a save the server is bound to reject.
   Future<bool> _saveOne(int studentId) async {
+    // The chip may still be the phone's copy; the tile's spinner covers the
+    // wait so the tap does not look ignored.
+    if (_saveGate.waiting) {
+      setState(() => _savingStudentIds.add(studentId));
+      await _saveGate.ready;
+      if (!mounted) return false;
+      setState(() => _savingStudentIds.remove(studentId));
+    }
+
     final status = _attendance[studentId];
     final apiStatus = status == null ? null : attendanceStatusToApi(status);
     if (status == null || apiStatus == null) return true;
@@ -362,6 +471,13 @@ class _AttendancePageState extends ConsumerState<AttendancePage>
   }
 
   Future<void> _saveAttendance() async {
+    if (_isSaving) return;
+    setState(() => _isSaving = true);
+
+    // Measured after the wait, not before: the server's answer can change
+    // what counts as already saved, and so what this save must send.
+    await _saveGate.ready;
+    if (!mounted) return;
     final payload = attendanceBatchPayload(
       draft: _attendance,
       saved: _savedAttendance,
@@ -369,9 +485,11 @@ class _AttendancePageState extends ConsumerState<AttendancePage>
       missedDraft: _missed,
       missedSaved: _savedMissed,
     );
-    if (payload.isEmpty || _isSaving) return;
+    if (payload.isEmpty) {
+      setState(() => _isSaving = false);
+      return;
+    }
 
-    setState(() => _isSaving = true);
     try {
       await _repo.submitAttendanceBatch(payload);
       if (!mounted) return;
@@ -398,6 +516,45 @@ class _AttendancePageState extends ConsumerState<AttendancePage>
     } finally {
       if (mounted) setState(() => _isSaving = false);
     }
+  }
+
+  /// Says the list is the phone's copy: while the server is being asked, that
+  /// it is refreshing; once asking failed, how old the copy is, so a student
+  /// added since then is missing for a visible reason.
+  Widget _buildCopyNotice() {
+    final at = _copySavedAt!;
+    String two(int n) => n.toString().padLeft(2, '0');
+    return Padding(
+      padding: EdgeInsets.fromLTRB(16.w, 4.h, 16.w, 0),
+      child: Row(
+        mainAxisAlignment: MainAxisAlignment.end,
+        children: [
+          AppText(
+            _isRefreshing
+                ? 'جارٍ التحديث…'
+                : 'لا يوجد اتصال · آخر تحديث ${at.day}/${at.month} ${two(at.hour)}:${two(at.minute)}',
+            style: AppTextStyles.labelMd.copyWith(
+              color: AppColors.onSurfaceVariant,
+            ),
+          ),
+          SizedBox(width: 8.w),
+          _isRefreshing
+              ? SizedBox(
+                  width: 14.w,
+                  height: 14.w,
+                  child: const CircularProgressIndicator(
+                    strokeWidth: 2,
+                    color: AppColors.onSurfaceVariant,
+                  ),
+                )
+              : Icon(
+                  Icons.wifi_off_rounded,
+                  size: 18.w,
+                  color: AppColors.onSurfaceVariant,
+                ),
+        ],
+      ),
+    );
   }
 
   /// Shown only while marks are waiting, so a working connection costs the
@@ -446,7 +603,7 @@ class _AttendancePageState extends ConsumerState<AttendancePage>
 
     final merged = mergeQueued(_queued, records);
     await _queueStore.write(teacherId, merged);
-    if (mounted) setState(() => _queued = merged);
+    if (mounted) _setQueued(merged);
   }
 
   /// Sends everything waiting. All-or-nothing: the batch endpoint does not
@@ -461,8 +618,8 @@ class _AttendancePageState extends ConsumerState<AttendancePage>
       await _repo.submitAttendanceBatch(sending);
       await _queueStore.clear(teacherId);
       if (!mounted) return;
+      _setQueued([]);
       setState(() {
-        _queued = [];
         for (final record in sending) {
           final id = record['studentId'] as int;
           final status = attendanceStatusFromApi(record['status'] as String);
@@ -566,11 +723,12 @@ class _AttendancePageState extends ConsumerState<AttendancePage>
                 )
               : RefreshIndicator(
                   color: AppColors.primary,
-                  onRefresh: _loadData,
+                  onRefresh: () => _loadData(fromCache: false),
                   child: Column(
                     children: [
                       _buildHeader(),
                       _buildProgress(),
+                      if (_copySavedAt != null) _buildCopyNotice(),
                       if (_queued.isNotEmpty) _buildPendingBanner(),
                       Expanded(
                         child: _students.isEmpty

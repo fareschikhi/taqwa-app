@@ -39,6 +39,18 @@ class TeacherStudentModel {
       tracksHadith: (json['tracksHadith'] as bool?) ?? false,
     );
   }
+
+  /// The flat shape [TeacherStudentModel.fromJson] already falls back to, so
+  /// a roster saved on the phone reads back through the same parser.
+  Map<String, dynamic> toCacheJson() => {
+    'id': id,
+    'fullName': fullName,
+    'avatar': avatar,
+    'isActive': isActive,
+    'teacherId': teacherId,
+    'halaqaId': halaqaId,
+    'tracksHadith': tracksHadith,
+  };
 }
 
 /// Paginated response wrapper for student list.
