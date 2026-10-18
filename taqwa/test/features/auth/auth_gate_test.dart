@@ -5,7 +5,9 @@ import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:taqwa/core/providers/auth_provider.dart';
 import 'package:taqwa/features/auth/presentation/pages/auth_gate.dart';
+import 'package:taqwa/features/auth/presentation/pages/force_password_change_page.dart';
 import 'package:taqwa/features/auth/presentation/pages/login_page.dart';
+import 'package:taqwa/features/data/models/user_model.dart';
 
 /// Stands in for the real notifier so a test can name the state the gate sees,
 /// without a token store or an API behind it.
@@ -54,6 +56,27 @@ void main() {
     await tester.pump();
 
     expect(find.byType(LoginPage), findsOneWidget);
+  });
+
+  testWidgets('holds a temporary password on the change screen', (
+    tester,
+  ) async {
+    await tester.pumpWidget(
+      _host(
+        AuthState(
+          user: UserModel(
+            id: 1,
+            fullName: 'أم خالد',
+            role: UserRole.parent,
+            mustChangePassword: true,
+          ),
+          isAuthenticated: true,
+        ),
+      ),
+    );
+    await tester.pump();
+
+    expect(find.byType(ForcePasswordChangePage), findsOneWidget);
   });
 
   // The restored-session branch is not mounted here: every shell starts its

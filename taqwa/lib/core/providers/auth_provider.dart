@@ -194,6 +194,20 @@ class AuthNotifier extends Notifier<AuthState> {
     state = state.copyWith(user: updated);
   }
 
+  /// Called once the temporary password an admin set has been replaced, so
+  /// the gate lets the user through now and on every launch after. The server
+  /// has already cleared its flag; this keeps the session and cache in step.
+  Future<void> passwordChanged() async {
+    final user = state.user;
+    if (user == null) return;
+    final updated = user.copyWith(mustChangePassword: false);
+    await _storage.write(
+      key: 'cached_user',
+      value: jsonEncode(updated.toJson()),
+    );
+    state = state.copyWith(user: updated);
+  }
+
   Future<void> logout() async {
     // Released before the token goes, since the request needs it. A shared
     // phone would otherwise keep delivering this parent's notifications to

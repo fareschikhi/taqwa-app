@@ -6,6 +6,7 @@ import 'package:taqwa/core/theme/app_colors.dart';
 import 'package:taqwa/core/widgets/app_logo.dart';
 import 'package:taqwa/features/auth/presentation/role_home.dart';
 import 'package:taqwa/features/auth/presentation/startup_destination.dart';
+import 'force_password_change_page.dart';
 import 'login_page.dart';
 
 /// The app's first screen, and the only thing that decides whether a launch
@@ -28,6 +29,7 @@ class AuthGate extends ConsumerWidget {
       StartupDestination.restoring => const _RestoringSession(),
       StartupDestination.login => const LoginPage(),
       StartupDestination.home => homeForRole(auth.user!.role),
+      StartupDestination.changePassword => const ForcePasswordChangePage(),
     };
   }
 }

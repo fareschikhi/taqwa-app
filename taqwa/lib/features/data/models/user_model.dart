@@ -15,6 +15,10 @@ class UserModel {
   final bool canManageAccounts;
   final bool canDeleteAccounts;
 
+  /// The password was set by an admin and is temporary: the app holds the
+  /// user on the change-password screen until they replace it.
+  final bool mustChangePassword;
+
   UserModel({
     required this.id,
     required this.fullName,
@@ -29,7 +33,25 @@ class UserModel {
     this.managerId,
     this.canManageAccounts = false,
     this.canDeleteAccounts = false,
+    this.mustChangePassword = false,
   });
+
+  UserModel copyWith({bool? mustChangePassword}) => UserModel(
+    id: id,
+    fullName: fullName,
+    email: email,
+    phone: phone,
+    role: role,
+    avatar: avatar,
+    isActive: isActive,
+    studentId: studentId,
+    parentId: parentId,
+    teacherId: teacherId,
+    managerId: managerId,
+    canManageAccounts: canManageAccounts,
+    canDeleteAccounts: canDeleteAccounts,
+    mustChangePassword: mustChangePassword ?? this.mustChangePassword,
+  );
 
   factory UserModel.fromJson(Map<String, dynamic> json) {
     UserRole roleVal = UserRole.student;
@@ -91,6 +113,7 @@ class UserModel {
       managerId: mId,
       canManageAccounts: canManage,
       canDeleteAccounts: canDelete,
+      mustChangePassword: (json['mustChangePassword'] as bool?) ?? false,
     );
   }
 
@@ -113,6 +136,7 @@ class UserModel {
       },
       'avatar': avatar,
       'isActive': isActive,
+      'mustChangePassword': mustChangePassword,
       if (studentId != null) 'student': {'id': studentId},
       if (parentId != null) 'parent': {'id': parentId},
       if (teacherId != null) 'teacher': {'id': teacherId},

@@ -36,5 +36,29 @@ void main() {
 
       expect(user.role, UserRole.parent);
     });
+
+    // The cached copy is what a returning user's launch routes on, so the
+    // flag has to survive being written out and read back.
+    test('round-trips the must-change-password flag', () {
+      final user = UserModel.fromJson({
+        'id': 9,
+        'fullName': 'Amine Cherguini',
+        'role': 'PARENT',
+        'mustChangePassword': true,
+      });
+
+      expect(user.mustChangePassword, isTrue);
+      expect(UserModel.fromJson(user.toJson()).mustChangePassword, isTrue);
+    });
+
+    test('treats a missing flag as no change required', () {
+      final user = UserModel.fromJson({
+        'id': 9,
+        'fullName': 'Amine Cherguini',
+        'role': 'PARENT',
+      });
+
+      expect(user.mustChangePassword, isFalse);
+    });
   });
 }

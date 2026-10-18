@@ -37,4 +37,20 @@ void main() {
 
     expect(destination, StartupDestination.login);
   });
+
+  test('holds a user on a temporary password until they replace it', () {
+    final destination = startupDestinationFor(
+      AuthState(
+        user: UserModel(
+          id: 1,
+          fullName: 'أم خالد',
+          role: UserRole.parent,
+          mustChangePassword: true,
+        ),
+        isAuthenticated: true,
+      ),
+    );
+
+    expect(destination, StartupDestination.changePassword);
+  });
 }

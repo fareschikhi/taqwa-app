@@ -17,7 +17,7 @@ typedef ChangePasswordAction =
       required String newPassword,
     });
 
-class ChangePasswordSheet extends StatefulWidget {
+class ChangePasswordSheet extends StatelessWidget {
   const ChangePasswordSheet({super.key, this.onSubmit});
 
   /// Defaults to the repository. Injected in tests so a failure can be
@@ -46,10 +46,66 @@ class ChangePasswordSheet extends StatefulWidget {
       v != newPassword ? 'كلمتا المرور غير متطابقتين' : null;
 
   @override
-  State<ChangePasswordSheet> createState() => _ChangePasswordSheetState();
+  Widget build(BuildContext context) {
+    return Padding(
+      padding: EdgeInsets.only(
+        bottom: MediaQuery.of(context).viewInsets.bottom,
+      ),
+      child: Container(
+        decoration: BoxDecoration(
+          color: AppColors.surfaceContainerLowest,
+          borderRadius: BorderRadius.vertical(
+            top: Radius.circular(AppConstants.radiusXl),
+          ),
+        ),
+        padding: EdgeInsets.fromLTRB(16.w, 20.h, 16.w, 24.h),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.end,
+          children: [
+            AppText(
+              'تغيير كلمة المرور',
+              style: AppTextStyles.headlineSm.copyWith(
+                color: AppColors.onSurface,
+              ),
+            ),
+            SizedBox(height: 16.h),
+            ChangePasswordForm(
+              onSubmit: onSubmit,
+              onChanged: () {
+                // The sheet closes first, so this SnackBar lands on the page
+                // behind it.
+                Navigator.pop(context, true);
+                ScaffoldMessenger.of(context).showSnackBar(
+                  const SnackBar(
+                    content: AppText('تم تغيير كلمة المرور بنجاح'),
+                  ),
+                );
+              },
+            ),
+          ],
+        ),
+      ),
+    );
+  }
 }
 
-class _ChangePasswordSheetState extends State<ChangePasswordSheet> {
+/// The current / new / confirm fields and their save button, shared by the
+/// profile sheet and the screen that holds a user on a temporary password.
+class ChangePasswordForm extends StatefulWidget {
+  const ChangePasswordForm({super.key, this.onSubmit, required this.onChanged});
+
+  /// Defaults to the repository.
+  final ChangePasswordAction? onSubmit;
+
+  /// Runs only after the server accepted the new password.
+  final VoidCallback onChanged;
+
+  @override
+  State<ChangePasswordForm> createState() => _ChangePasswordFormState();
+}
+
+class _ChangePasswordFormState extends State<ChangePasswordForm> {
   final _repo = AuthRepository();
   final _formKey = GlobalKey<FormState>();
   final _currentController = TextEditingController();
@@ -57,7 +113,7 @@ class _ChangePasswordSheetState extends State<ChangePasswordSheet> {
   final _confirmController = TextEditingController();
   bool _isSaving = false;
 
-  /// Rendered inside the sheet: a failure leaves the sheet open, and a
+  /// Rendered inside the form: a failure leaves the sheet open, and a
   /// SnackBar would be drawn underneath it where nobody can see it.
   String? _error;
 
@@ -82,11 +138,7 @@ class _ChangePasswordSheetState extends State<ChangePasswordSheet> {
         newPassword: _newController.text,
       );
       if (!mounted) return;
-      // The sheet closes first, so this SnackBar lands on the page behind it.
-      Navigator.pop(context, true);
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: AppText('تم تغيير كلمة المرور بنجاح')),
-      );
+      widget.onChanged();
     } catch (e) {
       if (!mounted) return;
       setState(() => _error = AuthRepository.errorMessage(e));
@@ -97,71 +149,48 @@ class _ChangePasswordSheetState extends State<ChangePasswordSheet> {
 
   @override
   Widget build(BuildContext context) {
-    return Padding(
-      padding: EdgeInsets.only(
-        bottom: MediaQuery.of(context).viewInsets.bottom,
-      ),
-      child: Container(
-        decoration: BoxDecoration(
-          color: AppColors.surfaceContainerLowest,
-          borderRadius: BorderRadius.vertical(
-            top: Radius.circular(AppConstants.radiusXl),
+    return Form(
+      key: _formKey,
+      child: Column(
+        mainAxisSize: MainAxisSize.min,
+        crossAxisAlignment: CrossAxisAlignment.end,
+        children: [
+          AppTextField(
+            label: 'كلمة المرور الحالية',
+            controller: _currentController,
+            obscureText: true,
+            validator: ChangePasswordSheet.validateCurrent,
           ),
-        ),
-        padding: EdgeInsets.fromLTRB(16.w, 20.h, 16.w, 24.h),
-        child: Form(
-          key: _formKey,
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            crossAxisAlignment: CrossAxisAlignment.end,
-            children: [
-              AppText(
-                'تغيير كلمة المرور',
-                style: AppTextStyles.headlineSm.copyWith(
-                  color: AppColors.onSurface,
-                ),
-              ),
-              SizedBox(height: 16.h),
-              AppTextField(
-                label: 'كلمة المرور الحالية',
-                controller: _currentController,
-                obscureText: true,
-                validator: ChangePasswordSheet.validateCurrent,
-              ),
-              SizedBox(height: 12.h),
-              AppTextField(
-                label: 'كلمة المرور الجديدة',
-                controller: _newController,
-                obscureText: true,
-                validator: ChangePasswordSheet.validateNew,
-              ),
-              SizedBox(height: 12.h),
-              AppTextField(
-                label: 'تأكيد كلمة المرور الجديدة',
-                controller: _confirmController,
-                obscureText: true,
-                validator: (v) =>
-                    ChangePasswordSheet.validateConfirm(v, _newController.text),
-              ),
-              if (_error != null) ...[
-                SizedBox(height: 12.h),
-                AppText(
-                  _error!,
-                  style: AppTextStyles.labelMd.copyWith(
-                    color: AppColors.error,
-                  ),
-                ),
-              ],
-              SizedBox(height: 20.h),
-              AppButton(
-                label: 'حفظ',
-                variant: AppButtonVariant.gradient,
-                isLoading: _isSaving,
-                onPressed: _submit,
-              ),
-            ],
+          SizedBox(height: 12.h),
+          AppTextField(
+            label: 'كلمة المرور الجديدة',
+            controller: _newController,
+            obscureText: true,
+            validator: ChangePasswordSheet.validateNew,
           ),
-        ),
+          SizedBox(height: 12.h),
+          AppTextField(
+            label: 'تأكيد كلمة المرور الجديدة',
+            controller: _confirmController,
+            obscureText: true,
+            validator: (v) =>
+                ChangePasswordSheet.validateConfirm(v, _newController.text),
+          ),
+          if (_error != null) ...[
+            SizedBox(height: 12.h),
+            AppText(
+              _error!,
+              style: AppTextStyles.labelMd.copyWith(color: AppColors.error),
+            ),
+          ],
+          SizedBox(height: 20.h),
+          AppButton(
+            label: 'حفظ',
+            variant: AppButtonVariant.gradient,
+            isLoading: _isSaving,
+            onPressed: _submit,
+          ),
+        ],
       ),
     );
   }

@@ -10,6 +10,10 @@ enum StartupDestination {
 
   /// A session was restored: the user goes to the home their role gets.
   home,
+
+  /// Signed in on a password an admin set: the user replaces it before
+  /// anything else opens.
+  changePassword,
 }
 
 /// Where a launch with [state] belongs.
@@ -20,8 +24,11 @@ enum StartupDestination {
 /// screen rather than at a shell with nothing to draw.
 StartupDestination startupDestinationFor(AuthState state) {
   if (state.isLoading) return StartupDestination.restoring;
-  if (state.isAuthenticated && state.user != null) {
-    return StartupDestination.home;
+  final user = state.user;
+  if (state.isAuthenticated && user != null) {
+    return user.mustChangePassword
+        ? StartupDestination.changePassword
+        : StartupDestination.home;
   }
   return StartupDestination.login;
 }
