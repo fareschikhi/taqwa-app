@@ -49,7 +49,7 @@ class _StudentsManagementPageState extends State<StudentsManagementPage> {
       MaterialPageRoute(
         builder: (_) => StudentFormPage(
           student: student == null ? null : StudentModel.fromJson(student),
-          canSetTracksHadith: true,
+          canSetHadithBooks: true,
         ),
       ),
     );

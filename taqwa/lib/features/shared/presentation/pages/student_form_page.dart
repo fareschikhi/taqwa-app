@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:image_picker/image_picker.dart';
 import '../../../../core/constants/app_constants.dart';
+import '../../../../core/constants/hadith_books.dart';
 import 'package:taqwa/features/data/models/halaqa/halaqa_model.dart';
 import 'package:taqwa/features/data/services/image_upload_service.dart';
 import '../../../../core/theme/app_colors.dart';
@@ -28,15 +29,15 @@ import 'package:taqwa/core/widgets/app_text.dart';
 /// [managerId] for a manager and the options are scoped to that manager's
 /// halaqas, because GET /halaqas is ADMIN/TEACHER-only.
 ///
-/// The other is the hadith switch, shown and sent only when
-/// [canSetTracksHadith] is true — the backend refuses the key from any role
+/// The other is the hadith book checklist, shown and sent only when
+/// [canSetHadithBooks] is true — the backend refuses the key from any role
 /// but admin.
 class StudentFormPage extends StatefulWidget {
   const StudentFormPage({
     super.key,
     this.student,
     this.managerId,
-    this.canSetTracksHadith = false,
+    this.canSetHadithBooks = false,
   });
 
   /// Student being edited; null means "create a new one".
@@ -46,8 +47,8 @@ class StudentFormPage extends StatefulWidget {
   final int? managerId;
 
   /// Opt-in rather than derived from [managerId], so no caller other than
-  /// the admin section ever offers a switch the backend would reject.
-  final bool canSetTracksHadith;
+  /// the admin section ever offers a checklist the backend would reject.
+  final bool canSetHadithBooks;
 
   @override
   State<StudentFormPage> createState() => _StudentFormPageState();
@@ -92,10 +93,11 @@ class _StudentFormPageState extends State<StudentFormPage> {
   /// matters, and only ever renders, while creating.
   bool _isAdult = false;
 
-  /// Admin opt-in for this student's hadith tracking, editable on both
+  /// The hadith books the admin assigns this student, editable on both
   /// create and edit — unlike [_isAdult], nothing else on the form depends
-  /// on it, so there is no reason to lock it after creation.
-  bool _tracksHadith = false;
+  /// on it, so there is no reason to lock it after creation. None ticked
+  /// means Quran only.
+  final Set<String> _hadithBooks = {};
 
   bool get _isEditing => widget.student != null;
 
@@ -114,7 +116,7 @@ class _StudentFormPageState extends State<StudentFormPage> {
       _addressController.text = student.address;
       _selectedHalaqaId = student.halaqaId;
       _selectedParentId = student.parentId;
-      _tracksHadith = student.tracksHadith;
+      _hadithBooks.addAll(student.hadithBooks);
       _schoolLevelController.text = student.schoolLevel ?? '';
       _healthController.text = student.healthStatus ?? '';
       _familyStatusController.text = student.familyStatus ?? '';
@@ -236,7 +238,7 @@ class _StudentFormPageState extends State<StudentFormPage> {
           'halaqaId': ?_selectedHalaqaId,
           'parentId': ?_selectedParentId,
           'avatar': ?avatarUrl,
-          if (widget.canSetTracksHadith) 'tracksHadith': _tracksHadith,
+          if (widget.canSetHadithBooks) 'hadithBooks': _orderedHadithBooks,
           ..._registration(),
         });
       } else {
@@ -251,7 +253,7 @@ class _StudentFormPageState extends State<StudentFormPage> {
             avatar: avatarUrl,
             isAdult: _isAdult,
             password: _isAdult ? _passwordController.text : null,
-            tracksHadith: widget.canSetTracksHadith ? _tracksHadith : null,
+            hadithBooks: widget.canSetHadithBooks ? _orderedHadithBooks : null,
             registration: _registration(),
           ),
         );
@@ -459,9 +461,9 @@ class _StudentFormPageState extends State<StudentFormPage> {
           const FormFieldLabel(label: 'الحلقة القرآنية (اختياري)'),
           SizedBox(height: 6.h),
           _buildHalaqaDropdown(),
-          if (widget.canSetTracksHadith) ...[
+          if (widget.canSetHadithBooks) ...[
             SizedBox(height: 16.h),
-            _buildTracksHadithSwitch(),
+            _buildHadithBooks(),
           ],
         ],
       ),
@@ -587,21 +589,39 @@ class _StudentFormPageState extends State<StudentFormPage> {
     );
   }
 
-  /// Gates the Hadith subject on this student's recitation sheet. Unlike
-  /// [_buildAdultSwitch], this is meaningful on both create and edit, so it
-  /// is not hidden behind `_isEditing`.
-  Widget _buildTracksHadithSwitch() {
-    return SwitchListTile(
-      contentPadding: EdgeInsets.zero,
-      controlAffinity: ListTileControlAffinity.leading,
-      activeThumbColor: AppColors.primary,
-      value: _tracksHadith,
-      onChanged: (v) => setState(() => _tracksHadith = v),
-      title: AppText(
-        'مشارك في برنامج حفظ السنة النبوية',
-        style: AppTextStyles.labelMd.copyWith(color: AppColors.onSurface),
-        textAlign: TextAlign.end,
-      ),
+  /// The ticked books in list order, so the request reads the same way
+  /// however the boxes were ticked.
+  List<String> get _orderedHadithBooks =>
+      kHadithBooks.where(_hadithBooks.contains).toList();
+
+  /// Which hadith books this student memorizes — the teacher's recitation
+  /// sheet offers only these, alongside Quran. Unlike [_buildAdultSwitch],
+  /// this is meaningful on both create and edit, so it is not hidden behind
+  /// `_isEditing`. Laid out like that switch: box on the left, label right.
+  Widget _buildHadithBooks() {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.end,
+      children: [
+        const FormFieldLabel(label: 'حفظ الحديث (اختياري)'),
+        for (final book in kHadithBooks)
+          CheckboxListTile(
+            contentPadding: EdgeInsets.zero,
+            dense: true,
+            controlAffinity: ListTileControlAffinity.leading,
+            activeColor: AppColors.primary,
+            value: _hadithBooks.contains(book),
+            onChanged: (on) => setState(
+              () => on == true
+                  ? _hadithBooks.add(book)
+                  : _hadithBooks.remove(book),
+            ),
+            title: AppText(
+              book,
+              style: AppTextStyles.labelMd.copyWith(color: AppColors.onSurface),
+              textAlign: TextAlign.end,
+            ),
+          ),
+      ],
     );
   }
 

@@ -15,11 +15,11 @@ class StudentPayloadDto {
   /// the backend would either ignore or reject.
   final bool isAdult;
   final String? password;
-  // Admin opt-in: whether this student's recitation sheet offers a Hadith
-  // subject alongside Quran. Null means "not this caller's decision": the
-  // backend refuses the key from anyone but an admin, `false` included, so
-  // a manager's form leaves it out entirely.
-  final bool? tracksHadith;
+  // The hadith books the admin assigned; empty turns hadith off. Null means
+  // "not this caller's decision": the backend refuses the key from anyone
+  // but an admin, an empty list included, so a manager's form leaves it out
+  // entirely.
+  final List<String>? hadithBooks;
 
   /// Registration-form details (استمارة التسجيل) keyed as the backend names
   /// them — `schoolLevel`, `healthStatus`, `email`, `isMarried`… The form
@@ -37,7 +37,7 @@ class StudentPayloadDto {
     this.avatar,
     this.isAdult = false,
     this.password,
-    this.tracksHadith,
+    this.hadithBooks,
     this.registration = const {},
   });
 
@@ -49,7 +49,7 @@ class StudentPayloadDto {
     if (halaqaId != null) 'halaqaId': halaqaId,
     if (avatar != null && avatar!.isNotEmpty) 'avatar': avatar,
     'isAdult': isAdult,
-    'tracksHadith': ?tracksHadith,
+    'hadithBooks': ?hadithBooks,
     ...registration,
     // A child never logs in, so a password on his record would be exactly
     // the kind of lie the old hardcoded 'role' key used to tell; an adult

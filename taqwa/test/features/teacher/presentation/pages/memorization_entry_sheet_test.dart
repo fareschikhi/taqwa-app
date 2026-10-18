@@ -53,12 +53,12 @@ void _setPhoneViewport(WidgetTester tester) {
   addTearDown(tester.view.reset);
 }
 
-TeacherStudentModel _student({bool tracksHadith = false}) =>
+TeacherStudentModel _student({List<String> hadithBooks = const []}) =>
     TeacherStudentModel(
       id: 1,
       fullName: 'محمد بن صالح',
       isActive: true,
-      tracksHadith: tracksHadith,
+      hadithBooks: hadithBooks,
     );
 
 void main() {
@@ -79,7 +79,7 @@ void main() {
   ) async {
     _setPhoneViewport(tester);
     await tester.pumpWidget(
-      _host(MemorizationEntrySheet(student: _student(tracksHadith: false))),
+      _host(MemorizationEntrySheet(student: _student())),
     );
     await tester.pumpAndSettle();
 
@@ -93,7 +93,7 @@ void main() {
   ) async {
     _setPhoneViewport(tester);
     await tester.pumpWidget(
-      _host(MemorizationEntrySheet(student: _student(tracksHadith: true))),
+      _host(MemorizationEntrySheet(student: _student(hadithBooks: kHadithBooks))),
     );
     await tester.pumpAndSettle();
 
@@ -108,7 +108,7 @@ void main() {
   ) async {
     _setPhoneViewport(tester);
     await tester.pumpWidget(
-      _host(MemorizationEntrySheet(student: _student(tracksHadith: true))),
+      _host(MemorizationEntrySheet(student: _student(hadithBooks: kHadithBooks))),
     );
     await tester.pumpAndSettle();
 
@@ -126,6 +126,86 @@ void main() {
       expect(find.text(book), findsWidgets);
     }
   });
+
+  testWidgets('lists only the books the admin assigned to the student', (
+    tester,
+  ) async {
+    _setPhoneViewport(tester);
+    final assigned = [kHadithBooks[0], kHadithBooks[3]];
+    await tester.pumpWidget(
+      _host(MemorizationEntrySheet(student: _student(hadithBooks: assigned))),
+    );
+    await tester.pumpAndSettle();
+
+    await tester.tap(find.text('الحديث'));
+    await tester.pumpAndSettle();
+    await tester.tap(find.text('اختر الكتاب...'));
+    await tester.pumpAndSettle();
+
+    for (final book in kHadithBooks) {
+      expect(
+        find.text(book),
+        assigned.contains(book) ? findsWidgets : findsNothing,
+      );
+    }
+  });
+
+  testWidgets('selects the only assigned book without asking', (
+    tester,
+  ) async {
+    _setPhoneViewport(tester);
+    await tester.pumpWidget(
+      _host(
+        MemorizationEntrySheet(
+          student: _student(hadithBooks: [kHadithBooks[2]]),
+        ),
+      ),
+    );
+    await tester.pumpAndSettle();
+
+    await tester.tap(find.text('الحديث'));
+    await tester.pumpAndSettle();
+
+    expect(find.text(kHadithBooks[2]), findsOneWidget);
+    expect(find.text('اختر الكتاب...'), findsNothing);
+  });
+
+  testWidgets(
+    'leaves the book picker empty when the last book is no longer assigned',
+    (tester) async {
+      _setPhoneViewport(tester);
+      DioClient.instance.httpClientAdapter = _StubAdapter(
+        jsonEncode([
+          {
+            'id': 1,
+            'studentId': 1,
+            'surahNumber': null,
+            'amountDone': 1,
+            'memorizationType': 'MEMORIZING',
+            'subject': 'HADITH',
+            'hadithReference': kHadithBooks[2],
+            'date': '2026-08-20T00:00:00.000Z',
+            'recordedAt': '2026-08-20T10:00:00.000Z',
+          },
+        ]),
+      );
+
+      await tester.pumpWidget(
+        _host(
+          MemorizationEntrySheet(
+            student: _student(hadithBooks: [kHadithBooks[0], kHadithBooks[1]]),
+          ),
+        ),
+      );
+      await tester.pumpAndSettle();
+
+      await tester.tap(find.text('الحديث'));
+      await tester.pumpAndSettle();
+
+      expect(find.text(kHadithBooks[2]), findsNothing);
+      expect(find.text('اختر الكتاب...'), findsOneWidget);
+    },
+  );
 
   testWidgets(
     'leaves the book picker empty when the last hadith was free text',
@@ -148,7 +228,7 @@ void main() {
       );
 
       await tester.pumpWidget(
-        _host(MemorizationEntrySheet(student: _student(tracksHadith: true))),
+        _host(MemorizationEntrySheet(student: _student(hadithBooks: kHadithBooks))),
       );
       await tester.pumpAndSettle();
 
@@ -181,7 +261,7 @@ void main() {
       );
 
       await tester.pumpWidget(
-        _host(MemorizationEntrySheet(student: _student(tracksHadith: true))),
+        _host(MemorizationEntrySheet(student: _student(hadithBooks: kHadithBooks))),
       );
       await tester.pumpAndSettle();
 
@@ -206,7 +286,7 @@ void main() {
       addTearDown(tester.view.reset);
 
       await tester.pumpWidget(
-        _host(MemorizationEntrySheet(student: _student(tracksHadith: true))),
+        _host(MemorizationEntrySheet(student: _student(hadithBooks: kHadithBooks))),
       );
       await tester.pumpAndSettle();
 

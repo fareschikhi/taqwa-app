@@ -4,7 +4,6 @@ import 'package:taqwa/features/teacher/presentation/pages/segmented_selector.dar
 import '../../../../core/theme/app_colors.dart';
 import '../../../../core/theme/app_text_styles.dart';
 import '../../../../core/constants/app_constants.dart';
-import '../../../../core/constants/hadith_books.dart';
 import '../../../../core/constants/surahs.dart';
 import '../../../../core/enums/memorization_subject.dart';
 import '../../../../core/enums/memorization_type.dart';
@@ -59,11 +58,20 @@ class _MemorizationEntrySheetState extends State<MemorizationEntrySheet> {
   }
 
   /// Preselects the book of the student's most recent hadith entry, so
-  /// continuing the same book is a no-op. An older free-text reference that
-  /// is not one of [kHadithBooks] leaves the dropdown empty. Best-effort: a
-  /// failed fetch is the same as a student with no prior hadith entries.
+  /// continuing the same book is a no-op. A reference that is not one of the
+  /// student's assigned books (an older free-text entry, or a book the admin
+  /// has since unticked) leaves the dropdown empty. Best-effort: a failed
+  /// fetch is the same as a student with no prior hadith entries.
+  ///
+  /// A student assigned a single book needs no choosing at all, so that one
+  /// is selected straight away.
   Future<void> _loadHadithPrefill() async {
     _hadithPrefillLoaded = true;
+    final books = widget.student.hadithBooks;
+    if (books.length == 1) {
+      setState(() => _selectedHadithBook = books.single);
+      return;
+    }
     try {
       final history = await _studentRepo.getMemorizationHistory(
         widget.student.id,
@@ -74,7 +82,7 @@ class _MemorizationEntrySheetState extends State<MemorizationEntrySheet> {
       final latest = recentMemorization(hadithRecords, limit: 1);
       if (!mounted || latest.isEmpty) return;
       final reference = latest.first['hadithReference'] as String?;
-      if (kHadithBooks.contains(reference) && _selectedHadithBook == null) {
+      if (books.contains(reference) && _selectedHadithBook == null) {
         setState(() => _selectedHadithBook = reference);
       }
     } catch (_) {
@@ -245,7 +253,9 @@ class _MemorizationEntrySheetState extends State<MemorizationEntrySheet> {
                                 color: AppColors.inputPlaceholder,
                               ),
                             ),
-                            items: kHadithBooks
+                            // Only the books the admin assigned this student;
+                            // the server refuses any other.
+                            items: widget.student.hadithBooks
                                 .map(
                                   (b) => DropdownMenuItem(
                                     value: b,

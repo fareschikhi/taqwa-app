@@ -1,6 +1,7 @@
 import { NotFoundException, BadRequestException } from '@nestjs/common';
 import * as bcrypt from 'bcrypt';
 import { StudentsService } from './students.service';
+import { HADITH_BOOKS } from './hadith-books';
 
 describe('StudentsService.remove', () => {
   const makePrisma = (student: { id: number; userId: number } | null) => ({
@@ -128,23 +129,31 @@ describe('StudentsService.create', () => {
     ).rejects.toBeInstanceOf(BadRequestException);
   });
 
-  it('stores tracksHadith on the student row', async () => {
+  it('stores the books in list order and turns tracksHadith on', async () => {
     const prisma = makePrisma();
     const service = new StudentsService(prisma as any);
 
-    await service.create({ ...payload, tracksHadith: true } as any);
+    await service.create({
+      ...payload,
+      hadithBooks: [HADITH_BOOKS[4], HADITH_BOOKS[1]],
+    } as any);
 
     const data = prisma.user.create.mock.calls[0][0].data;
+    expect(data.student.create.hadithBooks).toEqual([
+      HADITH_BOOKS[1],
+      HADITH_BOOKS[4],
+    ]);
     expect(data.student.create.tracksHadith).toBe(true);
   });
 
-  it('defaults tracksHadith to false when omitted', async () => {
+  it('defaults to no books and tracksHadith false when omitted', async () => {
     const prisma = makePrisma();
     const service = new StudentsService(prisma as any);
 
     await service.create(payload as any);
 
     const data = prisma.user.create.mock.calls[0][0].data;
+    expect(data.student.create.hadithBooks).toEqual([]);
     expect(data.student.create.tracksHadith).toBe(false);
   });
 });
@@ -207,18 +216,31 @@ describe('StudentsService.update', () => {
     });
   });
 
-  it('persists tracksHadith on update', async () => {
+  it('persists hadithBooks and the derived flag on update', async () => {
     const prisma = makePrisma();
     const service = new StudentsService(prisma as any);
 
-    await service.update(7, { tracksHadith: true });
+    await service.update(7, { hadithBooks: [HADITH_BOOKS[2]] });
 
     expect(prisma.student.update.mock.calls[0][0].data).toEqual({
+      hadithBooks: [HADITH_BOOKS[2]],
       tracksHadith: true,
     });
   });
 
-  it('leaves tracksHadith untouched when absent from the update', async () => {
+  it('turns hadith off when the books are cleared', async () => {
+    const prisma = makePrisma();
+    const service = new StudentsService(prisma as any);
+
+    await service.update(7, { hadithBooks: [] });
+
+    expect(prisma.student.update.mock.calls[0][0].data).toEqual({
+      hadithBooks: [],
+      tracksHadith: false,
+    });
+  });
+
+  it('leaves hadith untouched when absent from the update', async () => {
     const prisma = makePrisma();
     const service = new StudentsService(prisma as any);
 

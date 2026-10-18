@@ -142,8 +142,13 @@ model Student {
   currentRating  String?
   // Admin-set opt-in: gates both whether the teacher's recitation sheet
   // offers a Hadith subject for this student and whether the server accepts
-  // a HADITH-subject write for him.
+  // a HADITH-subject write for him. Derived from hadithBooks on every write:
+  // true exactly when at least one book is assigned.
   tracksHadith   Boolean   @default(false)
+  // The hadith books (names from HADITH_BOOKS) the admin assigned, as a JSON
+  // string array in list order. The teacher picks only from these, and a
+  // HADITH write naming any other book is refused.
+  hadithBooks    Json?
 
   // Registration-form details (استمارة التسجيل). All optional: students
   // enrolled before the form existed carry none of them. schoolLevel is the

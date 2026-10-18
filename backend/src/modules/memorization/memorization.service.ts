@@ -25,6 +25,7 @@ function startOfUtcDay(instant: Date): Date {
 export const MEMORIZATION_ERROR = {
   STUDENT_ABSENT: 'STUDENT_ABSENT',
   HADITH_NOT_ENABLED: 'HADITH_NOT_ENABLED',
+  HADITH_BOOK_NOT_ASSIGNED: 'HADITH_BOOK_NOT_ASSIGNED',
 } as const;
 
 @Injectable()
@@ -82,11 +83,14 @@ export class MemorizationService {
   // Hadith tracking is opt-in per student, set by the admin. A HADITH write
   // for a student without it enabled would create progress for a track the
   // admin never turned on, so this is checked at write time rather than
-  // trusted from the client.
-  private async assertHadithEnabled(studentId: number) {
+  // trusted from the client. A write that names a book must also name one the
+  // admin assigned. `book` is undefined when an edit keeps the row's existing
+  // reference, so an entry typed as free text before the book list existed
+  // can still have its amount corrected.
+  private async assertHadithEnabled(studentId: number, book?: string | null) {
     const student = await this.prisma.student.findUnique({
       where: { id: studentId },
-      select: { tracksHadith: true },
+      select: { tracksHadith: true, hadithBooks: true },
     });
     if (!student?.tracksHadith) {
       throw new BadRequestException({
@@ -94,6 +98,17 @@ export class MemorizationService {
         error: 'Bad Request',
         code: MEMORIZATION_ERROR.HADITH_NOT_ENABLED,
         message: 'This student does not have hadith memorization enabled',
+      });
+    }
+    const assigned = Array.isArray(student.hadithBooks)
+      ? student.hadithBooks
+      : [];
+    if (book != null && !assigned.includes(book)) {
+      throw new BadRequestException({
+        statusCode: 400,
+        error: 'Bad Request',
+        code: MEMORIZATION_ERROR.HADITH_BOOK_NOT_ASSIGNED,
+        message: 'This hadith book is not assigned to this student',
       });
     }
   }
@@ -134,7 +149,7 @@ export class MemorizationService {
     this.assertSubjectFields(subject, dto.surahNumber, dto.hadithReference);
     this.assertAmountFitsUnit(subject, type, dto.amountDone);
     if (subject === MemorizationSubject.HADITH) {
-      await this.assertHadithEnabled(dto.studentId);
+      await this.assertHadithEnabled(dto.studentId, dto.hadithReference);
     }
 
     // Attendance.date is a bare DATE, so the timestamp has to be floored to
@@ -185,7 +200,7 @@ export class MemorizationService {
       dto.amountDone ?? existing.amountDone,
     );
     if (subject === MemorizationSubject.HADITH) {
-      await this.assertHadithEnabled(existing.studentId);
+      await this.assertHadithEnabled(existing.studentId, dto.hadithReference);
     }
 
     return this.prisma.memorizationProgress.update({

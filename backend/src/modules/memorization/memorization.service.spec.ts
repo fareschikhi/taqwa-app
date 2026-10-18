@@ -5,6 +5,7 @@ import {
   MemorizationSubject,
 } from '@prisma/client';
 import { MEMORIZATION_ERROR, MemorizationService } from './memorization.service';
+import { HADITH_BOOKS } from '../students/hadith-books';
 
 describe('MemorizationService.create attendance gate', () => {
   const makePrisma = (status: AttendanceStatus | null) => ({
@@ -99,6 +100,7 @@ describe('MemorizationService hadith subject', () => {
     opts: {
       attendanceStatus?: AttendanceStatus | null;
       tracksHadith?: boolean;
+      hadithBooks?: string[];
     } = {},
   ) => ({
     attendance: {
@@ -111,12 +113,23 @@ describe('MemorizationService hadith subject', () => {
         ),
     },
     student: {
-      findUnique: jest
-        .fn()
-        .mockResolvedValue({ tracksHadith: opts.tracksHadith ?? true }),
+      findUnique: jest.fn().mockResolvedValue({
+        tracksHadith: opts.tracksHadith ?? true,
+        hadithBooks: opts.hadithBooks ?? [HADITH_BOOKS[0]],
+      }),
     },
     memorizationProgress: {
       create: jest.fn().mockResolvedValue({ id: 20 }),
+      findUnique: jest.fn().mockResolvedValue({
+        id: 20,
+        studentId: 7,
+        subject: MemorizationSubject.HADITH,
+        surahNumber: null,
+        hadithReference: 'حديث النية',
+        memorizationType: Memorization.MEMORIZING,
+        amountDone: 1,
+      }),
+      update: jest.fn().mockResolvedValue({ id: 20 }),
     },
   });
 
@@ -125,8 +138,42 @@ describe('MemorizationService hadith subject', () => {
     amountDone: 1,
     memorizationType: Memorization.MEMORIZING,
     subject: MemorizationSubject.HADITH,
-    hadithReference: 'حديث النية',
+    hadithReference: HADITH_BOOKS[0],
   };
+
+  it('refuses a book the admin did not assign to the student', async () => {
+    const prisma = makePrisma({ attendanceStatus: AttendanceStatus.PRESENT });
+    const service = new MemorizationService(prisma as any);
+
+    await expect(
+      service.create({ ...hadithDto, hadithReference: HADITH_BOOKS[1] } as any),
+    ).rejects.toMatchObject({
+      response: { code: MEMORIZATION_ERROR.HADITH_BOOK_NOT_ASSIGNED },
+    });
+    expect(prisma.memorizationProgress.create).not.toHaveBeenCalled();
+  });
+
+  // Entries typed as free text before the book list existed name no book;
+  // correcting their amount must not be blocked by the assignment check.
+  it('lets an edit keep a legacy free-text reference', async () => {
+    const prisma = makePrisma();
+    const service = new MemorizationService(prisma as any);
+
+    await service.update(20, { amountDone: 2 } as any);
+
+    expect(prisma.memorizationProgress.update).toHaveBeenCalled();
+  });
+
+  it('refuses an edit that moves the entry to an unassigned book', async () => {
+    const prisma = makePrisma();
+    const service = new MemorizationService(prisma as any);
+
+    await expect(
+      service.update(20, { hadithReference: HADITH_BOOKS[2] } as any),
+    ).rejects.toMatchObject({
+      response: { code: MEMORIZATION_ERROR.HADITH_BOOK_NOT_ASSIGNED },
+    });
+  });
 
   it('records a hadith entry for a student with hadith enabled', async () => {
     const prisma = makePrisma({ attendanceStatus: AttendanceStatus.PRESENT });

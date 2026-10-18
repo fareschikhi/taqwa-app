@@ -1,6 +1,9 @@
 import {
+  ArrayUnique,
+  IsArray,
   IsBoolean,
   IsDateString,
+  IsIn,
   IsInt,
   IsOptional,
   IsString,
@@ -12,6 +15,7 @@ import {
   IsOptionalPhone,
   IsPassword,
 } from '../../../common/validators/account-fields';
+import { HADITH_BOOKS } from '../hadith-books';
 
 /// The registration-form (استمارة التسجيل) details, shared by create and
 /// update. Every one is optional; lengths match the `students` columns.
@@ -37,9 +41,14 @@ export class CreateStudentDto extends StudentRegistrationDto {
   @IsOptional() @IsInt() halaqaId?: number;
   @IsOptional() @IsString() avatar?: string;
   @IsOptional() @IsBoolean() isAdult?: boolean;
-  // Admin opt-in gating the Hadith subject on this student's recitation
-  // sheet and the server-side hadith write path.
-  @IsOptional() @IsBoolean() tracksHadith?: boolean;
+  // The admin's pick of hadith books for this student; an empty list turns
+  // hadith off. Gates the Hadith subject on the recitation sheet and the
+  // server-side hadith write path.
+  @IsOptional()
+  @IsArray()
+  @ArrayUnique()
+  @IsIn(HADITH_BOOKS, { each: true })
+  hadithBooks?: string[];
   // Only meaningful with isAdult; the service rejects the pairing that makes
   // an account nobody can sign into.
   @IsOptional() @IsPassword() password?: string;
@@ -55,5 +64,9 @@ export class UpdateStudentDto extends StudentRegistrationDto {
   @IsOptional() @IsInt() parentId?: number;
   @IsOptional() @IsInt() halaqaId?: number;
   @IsOptional() @IsString() avatar?: string;
-  @IsOptional() @IsBoolean() tracksHadith?: boolean;
+  @IsOptional()
+  @IsArray()
+  @ArrayUnique()
+  @IsIn(HADITH_BOOKS, { each: true })
+  hadithBooks?: string[];
 }

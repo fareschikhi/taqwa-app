@@ -11,6 +11,7 @@ import {
   StudentRegistrationDto,
   UpdateStudentDto,
 } from './dto/student.dto';
+import { normalizeHadithBooks } from './hadith-books';
 
 @Injectable()
 export class StudentsService {
@@ -143,6 +144,13 @@ export class StudentsService {
     return data;
   }
 
+  /// The stored book list and the flag derived from it, written together so
+  /// the two can never disagree.
+  private hadithFields(books: string[]) {
+    const hadithBooks = normalizeHadithBooks(books);
+    return { hadithBooks, tracksHadith: hadithBooks.length > 0 };
+  }
+
   /// Phone and email are both unique on `users`; name the one that clashed.
   private conflict(error: any) {
     const target = String(error?.meta?.target ?? '');
@@ -190,7 +198,7 @@ export class StudentsService {
               // An adult student has no parent by construction.
               parentId: dto.isAdult ? undefined : (dto.parentId ?? undefined),
               halaqaId: dto.halaqaId ?? undefined,
-              tracksHadith: dto.tracksHadith ?? false,
+              ...this.hadithFields(dto.hadithBooks ?? []),
               ...this.registrationFields(dto),
             },
           },
@@ -257,8 +265,8 @@ export class StudentsService {
     // a rating, and a falsy check would silently drop that.
     if (dto.currentRating !== undefined)
       studentUpdate.currentRating = dto.currentRating;
-    if (dto.tracksHadith !== undefined)
-      studentUpdate.tracksHadith = dto.tracksHadith;
+    if (dto.hadithBooks !== undefined)
+      Object.assign(studentUpdate, this.hadithFields(dto.hadithBooks));
 
     try {
       if (Object.keys(userUpdate).length > 0) {

@@ -8,6 +8,10 @@ const String kStudentAbsentCode = 'STUDENT_ABSENT';
 /// Mirrors `MEMORIZATION_ERROR.HADITH_NOT_ENABLED` in the backend.
 const String kHadithNotEnabledCode = 'HADITH_NOT_ENABLED';
 
+/// Reason code the API attaches when the book is not one the admin assigned
+/// to the student. Mirrors `MEMORIZATION_ERROR.HADITH_BOOK_NOT_ASSIGNED`.
+const String kHadithBookNotAssignedCode = 'HADITH_BOOK_NOT_ASSIGNED';
+
 const String _genericFailure = 'فشل حفظ التسميع';
 
 /// The message the teacher sees when saving a recitation fails.
@@ -27,6 +31,9 @@ String memorizationErrorMessage(Object error) {
     }
     if (data['code'] == kHadithNotEnabledCode) {
       return 'لم يتم تفعيل تتبع الحديث لهذا الطالب';
+    }
+    if (data['code'] == kHadithBookNotAssignedCode) {
+      return 'هذا الكتاب غير مسند لهذا الطالب';
     }
   }
 

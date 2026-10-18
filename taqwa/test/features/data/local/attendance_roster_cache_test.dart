@@ -1,4 +1,5 @@
 import 'package:flutter_test/flutter_test.dart';
+import 'package:taqwa/core/constants/hadith_books.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:taqwa/features/data/local/attendance_roster_cache.dart';
 import 'package:taqwa/features/data/models/halaqa/halaqa_model.dart';
@@ -13,7 +14,7 @@ final student = TeacherStudentModel(
   isActive: true,
   teacherId: 4,
   halaqaId: 2,
-  tracksHadith: true,
+  hadithBooks: [kHadithBooks[1]],
 );
 
 final halaqa = HalaqaModel(
@@ -70,7 +71,7 @@ void main() {
     expect(s.isActive, isTrue);
     expect(s.teacherId, 4);
     expect(s.halaqaId, 2);
-    expect(s.tracksHadith, isTrue);
+    expect(s.hadithBooks, [kHadithBooks[1]]);
 
     // The fine fields are what decide whether the toggle renders and what it
     // charges, so losing them offline would silently turn adults into kids.

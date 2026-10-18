@@ -1,3 +1,5 @@
+import 'package:taqwa/core/constants/hadith_books.dart';
+
 class StudentModel {
   final int? id;
   final int? userId;
@@ -17,9 +19,10 @@ class StudentModel {
   /// guessing wrong in the direction that could enrol him where he does not
   /// belong.
   final bool isAdult;
-  // Admin opt-in: whether this student's recitation sheet offers a Hadith
-  // subject alongside Quran.
-  final bool tracksHadith;
+  // The hadith books the admin assigned, in [kHadithBooks] order. Empty means
+  // the recitation sheet offers Quran only.
+  final List<String> hadithBooks;
+  bool get tracksHadith => hadithBooks.isNotEmpty;
 
   // Registration-form details (استمارة التسجيل), all optional. [schoolLevel]
   // is a child's school grade or an adult's education level; the parents'
@@ -47,7 +50,7 @@ class StudentModel {
     this.avatar,
     this.isActive,
     this.isAdult = false,
-    this.tracksHadith = false,
+    this.hadithBooks = const [],
     this.email,
     this.schoolLevel,
     this.healthStatus,
@@ -97,10 +100,13 @@ class StudentModel {
       isAdult:
           ((json['role'] as String?) ?? (userMap?['role'] as String?)) ==
           'ADULT_STUDENT',
-      tracksHadith:
-          (json['tracksHadith'] as bool?) ??
-          (studentMap?['tracksHadith'] as bool?) ??
-          false,
+      hadithBooks: parseHadithBooks(
+        json['hadithBooks'] ?? studentMap?['hadithBooks'],
+        tracksHadith:
+            (json['tracksHadith'] as bool?) ??
+            (studentMap?['tracksHadith'] as bool?) ??
+            false,
+      ),
       email: (json['email'] as String?) ?? (userMap?['email'] as String?),
       schoolLevel: text('schoolLevel'),
       healthStatus: text('healthStatus'),

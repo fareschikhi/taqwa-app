@@ -1,3 +1,5 @@
+import 'package:taqwa/core/constants/hadith_books.dart';
+
 /// Lightweight student model for teacher-facing lists.
 /// Backend returns this from GET /students?teacherId=...
 class TeacherStudentModel {
@@ -12,9 +14,10 @@ class TeacherStudentModel {
   /// halaqa yet (or an older payload) simply has no id to read here, and
   /// nothing downstream can treat him as belonging to an adults' halaqa.
   final int? halaqaId;
-  // Admin opt-in: whether this student's recitation sheet offers a Hadith
-  // subject alongside Quran.
-  final bool tracksHadith;
+  // The hadith books the admin assigned — the only ones the recitation
+  // sheet offers. Empty means the sheet offers Quran only.
+  final List<String> hadithBooks;
+  bool get tracksHadith => hadithBooks.isNotEmpty;
 
   const TeacherStudentModel({
     required this.id,
@@ -23,7 +26,7 @@ class TeacherStudentModel {
     required this.isActive,
     this.teacherId,
     this.halaqaId,
-    this.tracksHadith = false,
+    this.hadithBooks = const [],
   });
 
   factory TeacherStudentModel.fromJson(Map<String, dynamic> json) {
@@ -36,7 +39,10 @@ class TeacherStudentModel {
       isActive: (user?['isActive'] as bool?) ?? (json['isActive'] as bool?) ?? true,
       teacherId: (json['teacherId'] as num?)?.toInt(),
       halaqaId: (halaqa?['id'] as num?)?.toInt() ?? (json['halaqaId'] as num?)?.toInt(),
-      tracksHadith: (json['tracksHadith'] as bool?) ?? false,
+      hadithBooks: parseHadithBooks(
+        json['hadithBooks'],
+        tracksHadith: (json['tracksHadith'] as bool?) ?? false,
+      ),
     );
   }
 
@@ -49,7 +55,7 @@ class TeacherStudentModel {
     'isActive': isActive,
     'teacherId': teacherId,
     'halaqaId': halaqaId,
-    'tracksHadith': tracksHadith,
+    'hadithBooks': hadithBooks,
   };
 }
 

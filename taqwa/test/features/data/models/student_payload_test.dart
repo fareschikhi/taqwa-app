@@ -67,19 +67,29 @@ void main() {
       expect(json.containsKey('parentId'), isFalse);
     });
 
-    test('sends tracksHadith when set', () {
+    test('sends hadithBooks when set, an empty list included', () {
       final json = const StudentPayloadDto(
         fullName: 'بلال شرقيني',
         phone: '0550000000',
         birthDate: '1998-01-01',
         address: 'الجزائر العاصمة',
-        tracksHadith: true,
+        hadithBooks: ['عُمدة الأحكام'],
       ).toJson();
 
-      expect(json['tracksHadith'], true);
+      expect(json['hadithBooks'], ['عُمدة الأحكام']);
+
+      final cleared = const StudentPayloadDto(
+        fullName: 'بلال شرقيني',
+        phone: '0550000000',
+        birthDate: '1998-01-01',
+        address: 'الجزائر العاصمة',
+        hadithBooks: [],
+      ).toJson();
+
+      expect(cleared['hadithBooks'], isEmpty);
     });
 
-    test('omits tracksHadith when unset, since only an admin may send it', () {
+    test('omits hadithBooks when unset, since only an admin may send it', () {
       final json = const StudentPayloadDto(
         fullName: 'بلال شرقيني',
         phone: '0550000000',
@@ -87,7 +97,7 @@ void main() {
         address: 'الجزائر العاصمة',
       ).toJson();
 
-      expect(json.containsKey('tracksHadith'), isFalse);
+      expect(json.containsKey('hadithBooks'), isFalse);
     });
   });
 }

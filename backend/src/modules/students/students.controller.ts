@@ -25,16 +25,16 @@ import {
 import { StudentsService } from './students.service';
 import { CreateStudentDto, UpdateStudentDto } from './dto/student.dto';
 
-/// Hadith tracking is the admin's call alone. A manager (and, on PATCH, a
-/// teacher) reaches the same routes for everything else on the student, so
-/// the flag is refused by role here rather than trusted to the app hiding
-/// its switch. Any presence counts, `false` included — clearing the flag is
-/// as much a decision as setting it.
-function assertMaySetTracksHadith(
-  dto: { tracksHadith?: boolean },
+/// Which hadith books a student memorizes is the admin's call alone. A
+/// manager (and, on PATCH, a teacher) reaches the same routes for everything
+/// else on the student, so the list is refused by role here rather than
+/// trusted to the app hiding its checkboxes. Any presence counts, an empty
+/// list included — clearing the books is as much a decision as setting them.
+function assertMaySetHadithBooks(
+  dto: { hadithBooks?: string[] },
   user: { role?: string },
 ) {
-  if (dto.tracksHadith !== undefined && user?.role !== Role.ADMIN) {
+  if (dto.hadithBooks !== undefined && user?.role !== Role.ADMIN) {
     throw new ForbiddenException('غير مصرح لك بهذا الإجراء');
   }
 }
@@ -80,7 +80,7 @@ export class StudentsController {
   @Roles(Role.ADMIN, Role.MANAGER)
   @RequirePermission(ManagerPermission.MANAGE_ACCOUNTS)
   create(@Body() dto: CreateStudentDto, @CurrentUser() user: any) {
-    assertMaySetTracksHadith(dto, user);
+    assertMaySetHadithBooks(dto, user);
     return this.studentsService.create(dto);
   }
 
@@ -92,7 +92,7 @@ export class StudentsController {
     @Body() dto: UpdateStudentDto,
     @CurrentUser() user: any,
   ) {
-    assertMaySetTracksHadith(dto, user);
+    assertMaySetHadithBooks(dto, user);
     return this.studentsService.update(id, dto);
   }
 
