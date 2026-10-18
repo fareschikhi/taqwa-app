@@ -266,6 +266,10 @@ class _AdminDashboardPageState extends ConsumerState<AdminDashboardPage> {
     );
   }
 
+  /// Each KPI card jumps to the drawer tab that lists what it counts; the
+  /// indexes match AdminShell._pages.
+  void _openTab(int index) => AdminShellScope.of(context)?.selectTab(index);
+
   Widget _buildKpiGrid() {
     if (_isLoading) {
       return SizedBox(
@@ -289,6 +293,7 @@ class _AdminDashboardPageState extends ConsumerState<AdminDashboardPage> {
         StatCard(
           value: '$_studentsCount',
           label: 'إجمالي الطلاب',
+          onTap: () => _openTab(1),
           icon: Icons.group,
           iconColor: AppColors.primary,
           iconBgColor: AppColors.primaryContainer,
@@ -297,6 +302,7 @@ class _AdminDashboardPageState extends ConsumerState<AdminDashboardPage> {
         StatCard(
           value: '$_teachersCount',
           label: 'المعلمين',
+          onTap: () => _openTab(3),
           icon: Icons.badge,
           iconColor: AppColors.secondary,
           iconBgColor: AppColors.secondaryContainer,
@@ -314,6 +320,7 @@ class _AdminDashboardPageState extends ConsumerState<AdminDashboardPage> {
         StatCard(
           value: '$_halaqasCount',
           label: 'الحلقات النشطة',
+          onTap: () => _openTab(2),
           icon: Icons.menu_book,
           iconColor: AppColors.tertiary,
           iconBgColor: AppColors.tertiaryContainer,
@@ -322,6 +329,7 @@ class _AdminDashboardPageState extends ConsumerState<AdminDashboardPage> {
         StatCard(
           value: '$_managersCount',
           label: 'المديرون',
+          onTap: () => _openTab(4),
           icon: Icons.manage_accounts,
           iconColor: AppColors.secondary,
           iconBgColor: AppColors.secondaryContainer,
