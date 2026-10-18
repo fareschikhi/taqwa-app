@@ -1,11 +1,13 @@
 import 'package:firebase_core/firebase_core.dart';
 import 'package:firebase_messaging/firebase_messaging.dart';
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_localizations/flutter_localizations.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'core/theme/app_theme.dart';
+import 'core/widgets/mobile_frame.dart';
 import 'features/auth/presentation/pages/auth_gate.dart';
 
 /// Runs in its own isolate when a message arrives with the app closed, so it
@@ -24,8 +26,11 @@ void main() async {
 
   // No generated options file: the google-services Gradle plugin puts the
   // project's identity into the Android build, and this reads it from there.
-  await Firebase.initializeApp();
-  FirebaseMessaging.onBackgroundMessage(_onBackgroundMessage);
+  // The web build has no such file and no push, so Firebase stays off there.
+  if (!kIsWeb) {
+    await Firebase.initializeApp();
+    FirebaseMessaging.onBackgroundMessage(_onBackgroundMessage);
+  }
 
   SystemChrome.setSystemUIOverlayStyle(
     const SystemUiOverlayStyle(
@@ -47,6 +52,7 @@ class TaqwaApp extends StatelessWidget {
         minTextAdapt: true,
         splitScreenMode: true,
         builder: (context, child) {
+          configureScreenUtilForMobileFrame(context);
           return MaterialApp(
             title: 'تقوى',
             debugShowCheckedModeBanner: false,
@@ -61,7 +67,7 @@ class TaqwaApp extends StatelessWidget {
             builder: (context, widget) {
               return Directionality(
                 textDirection: TextDirection.ltr,
-                child: widget!,
+                child: MobileFrame(child: widget!),
               );
             },
             home: const AuthGate(),

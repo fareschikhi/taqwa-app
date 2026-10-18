@@ -2,6 +2,7 @@ import 'dart:async';
 import 'dart:convert';
 import 'package:dio/dio.dart';
 import 'package:firebase_messaging/firebase_messaging.dart';
+import 'package:flutter/foundation.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 import 'package:taqwa/core/storage/secure_storage.dart';
@@ -52,6 +53,7 @@ class AuthNotifier extends Notifier<AuthState> {
   /// a real prompt the parent can refuse. Refusing costs them only the tray
   /// notification — the notifications tab reads the same rows either way.
   Future<void> _registerDevice() async {
+    if (kIsWeb) return;
     try {
       final messaging = FirebaseMessaging.instance;
       await messaging.requestPermission();
@@ -196,11 +198,13 @@ class AuthNotifier extends Notifier<AuthState> {
     // Released before the token goes, since the request needs it. A shared
     // phone would otherwise keep delivering this parent's notifications to
     // whoever signs in next.
-    try {
-      final token = await FirebaseMessaging.instance.getToken();
-      if (token != null) await _deviceRepository.unregister(token);
-    } catch (_) {
-      // Signing out must succeed even with no network.
+    if (!kIsWeb) {
+      try {
+        final token = await FirebaseMessaging.instance.getToken();
+        if (token != null) await _deviceRepository.unregister(token);
+      } catch (_) {
+        // Signing out must succeed even with no network.
+      }
     }
 
     await _storage.delete(key: 'jwt_token');

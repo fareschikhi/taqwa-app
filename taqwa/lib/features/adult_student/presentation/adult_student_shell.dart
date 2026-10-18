@@ -1,5 +1,6 @@
 import 'dart:async';
 import 'package:firebase_messaging/firebase_messaging.dart';
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
@@ -59,6 +60,8 @@ class _AdultStudentShellState extends ConsumerState<AdultStudentShell> {
     // Android shows nothing in the tray while the app is in the foreground,
     // by design. Refreshing the badge is the honest equivalent: the student is
     // already looking at the screen the notification would have sent them to.
+    // The web build never starts Firebase, so there is nothing to listen to.
+    if (kIsWeb) return;
     _onMessage = FirebaseMessaging.onMessage.listen((_) => _loadUnread());
 
     // Tapping a notification that opened the app from the background lands on
