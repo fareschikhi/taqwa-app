@@ -3,6 +3,7 @@ import 'package:flutter_screenutil/flutter_screenutil.dart';
 import '../../../../core/constants/app_constants.dart';
 import '../../../../core/theme/app_colors.dart';
 import '../../../../core/theme/app_text_styles.dart';
+import '../../../../core/utils/telegram.dart';
 import '../../../data/models/manager_model.dart';
 import '../../../data/repositories/manager_repository.dart';
 import '../../../shared/presentation/widgets/profile_detail_widgets.dart';
@@ -98,6 +99,10 @@ class _ManagerDetailsPageState extends State<ManagerDetailsPage> {
                             value: _manager.phone,
                             isLtr: true,
                           ),
+                          if (telegramUri(_manager.phone) != null) ...[
+                            SizedBox(height: 12.h),
+                            TelegramButton(phone: _manager.phone),
+                          ],
                           SizedBox(height: 12.h),
                           DetailInfoRow(
                             icon: Icons.email_outlined,

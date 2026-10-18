@@ -307,7 +307,7 @@ export class StudentsService {
             level: true,
             teacher: { select: { user: { select: { fullName: true } } } },
             // A parent's point of contact for the halaqa. Only managers who
-            // can still sign in and have a phone are worth a WhatsApp button.
+            // can still sign in and have a phone are worth a Telegram button.
             managers: {
               where: { manager: { user: { isActive: true, phone: { not: null } } } },
               orderBy: { assignedAt: 'asc' },

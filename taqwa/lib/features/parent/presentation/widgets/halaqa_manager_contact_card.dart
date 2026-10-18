@@ -2,13 +2,13 @@ import 'package:flutter/material.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
 import '../../../../core/theme/app_colors.dart';
 import '../../../../core/theme/app_text_styles.dart';
-import '../../../../core/utils/whatsapp.dart';
+import '../../../../core/utils/telegram.dart';
 import '../../../../core/widgets/app_card.dart';
 import '../../../../core/widgets/app_text.dart';
 import '../../../data/models/parent/halaqa_manager_contact_model.dart';
 
 /// One row per manager of the child's halaqa: their name and a button that
-/// opens a WhatsApp chat with them. Renders nothing when there is no one to
+/// opens a Telegram chat with them. Renders nothing when there is no one to
 /// contact, so callers can drop it in unconditionally.
 class HalaqaManagerContactCard extends StatelessWidget {
   const HalaqaManagerContactCard({super.key, required this.managers});
@@ -28,7 +28,7 @@ class HalaqaManagerContactCard extends StatelessWidget {
             if (i > 0) Divider(height: 1, color: AppColors.surfaceVariant),
             _ManagerRow(
               manager: managers[i],
-              onContact: () => openWhatsapp(context, managers[i].phone),
+              onContact: () => openTelegram(context, managers[i].phone),
             ),
           ],
         ],
@@ -52,13 +52,13 @@ class _ManagerRow extends StatelessWidget {
           FilledButton.icon(
             onPressed: onContact,
             style: FilledButton.styleFrom(
-              backgroundColor: kWhatsappGreen,
+              backgroundColor: kTelegramBlue,
               foregroundColor: Colors.white,
               padding: EdgeInsets.symmetric(horizontal: 14.w),
             ),
-            icon: Icon(Icons.chat, size: 18.w),
+            icon: Icon(Icons.telegram, size: 18.w),
             label: AppText(
-              'واتساب',
+              'تيليجرام',
               style: AppTextStyles.labelMdBold.copyWith(color: Colors.white),
             ),
           ),

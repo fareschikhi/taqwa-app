@@ -60,4 +60,26 @@ void main() {
     expect(find.byIcon(Icons.delete_outline), findsOneWidget);
     expect(find.text('تعديل'), findsOneWidget);
   });
+
+  testWidgets('shows a Telegram button only when onTelegram is given',
+      (tester) async {
+    var messaged = false;
+    await tester.pumpWidget(_host(CardActionRow(
+      onDelete: () {},
+      onEdit: () {},
+      onTelegram: () => messaged = true,
+    )));
+    await tester.pumpAndSettle();
+
+    await tester.tap(find.byTooltip('تيليجرام'));
+    expect(messaged, isTrue);
+
+    await tester.pumpWidget(_host(CardActionRow(
+      onDelete: () {},
+      onEdit: () {},
+    )));
+    await tester.pumpAndSettle();
+
+    expect(find.byTooltip('تيليجرام'), findsNothing);
+  });
 }

@@ -1,7 +1,7 @@
-import '../../../../core/utils/whatsapp.dart' as wa;
+import '../../../../core/utils/telegram.dart' as tg;
 
 /// A manager of the child's halaqa, as nested in GET /students/:id/profile
-/// under `halaqa.managers[].manager`. The parent reaches them on WhatsApp.
+/// under `halaqa.managers[].manager`. The parent reaches them on Telegram.
 class HalaqaManagerContactModel {
   final int id;
   final String fullName;
@@ -32,10 +32,10 @@ class HalaqaManagerContactModel {
             phone: (user?['phone'] as String?) ?? '',
           );
         })
-        .where((m) => m.whatsappUri != null)
+        .where((m) => m.telegramUri != null)
         .toList();
   }
 
-  /// The wa.me link for [phone], or null when it cannot be dialled.
-  Uri? get whatsappUri => wa.whatsappUri(phone);
+  /// The t.me link for [phone], or null when it cannot be dialled.
+  Uri? get telegramUri => tg.telegramUri(phone);
 }

@@ -60,6 +60,22 @@ void main() {
     expect(find.text('غير مسموح'), findsOneWidget);
     expect(find.text('5'), findsOneWidget);
     expect(find.byIcon(Icons.edit_outlined), findsOneWidget);
+    // No number, so nothing to open Telegram with.
+    expect(find.text('تواصل عبر تيليجرام'), findsNothing);
+  });
+
+  testWidgets('offers Telegram when the manager has a phone', (tester) async {
+    _phoneScreen(tester);
+    final manager = ManagerModel.fromJson({
+      'id': 6,
+      'user': {'fullName': 'مدير', 'phone': '0551234567'},
+      'halaqas': [],
+    });
+
+    await tester.pumpWidget(_host(ManagerDetailsPage(manager: manager)));
+    await tester.pumpAndSettle();
+
+    expect(find.text('تواصل عبر تيليجرام'), findsOneWidget);
   });
 
   testWidgets('a manager with no halaqas says so', (tester) async {

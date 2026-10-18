@@ -2,7 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
 import '../../../../core/theme/app_colors.dart';
 import '../../../../core/theme/app_text_styles.dart';
-import '../../../../core/utils/whatsapp.dart';
+import '../../../../core/utils/telegram.dart';
 import '../../../data/models/parent/parent_model.dart';
 import '../../../data/repositories/parent_repository.dart';
 import '../widgets/linked_student_tile.dart';
@@ -103,27 +103,12 @@ class _ParentDetailsPageState extends State<ParentDetailsPage> {
                             value: _parent.phone,
                             isLtr: true,
                           ),
-                          // Staff usually reach a parent on WhatsApp, so the
+                          // Staff usually reach a parent on Telegram, so the
                           // number opens a chat directly instead of being
                           // copied by hand.
-                          if (whatsappUri(_parent.phone) != null) ...[
+                          if (telegramUri(_parent.phone) != null) ...[
                             SizedBox(height: 12.h),
-                            FilledButton.icon(
-                              onPressed: () =>
-                                  openWhatsapp(context, _parent.phone),
-                              style: FilledButton.styleFrom(
-                                backgroundColor: kWhatsappGreen,
-                                foregroundColor: Colors.white,
-                                minimumSize: Size.fromHeight(44.h),
-                              ),
-                              icon: Icon(Icons.chat, size: 18.w),
-                              label: AppText(
-                                'تواصل عبر واتساب',
-                                style: AppTextStyles.labelMdBold.copyWith(
-                                  color: Colors.white,
-                                ),
-                              ),
-                            ),
+                            TelegramButton(phone: _parent.phone),
                           ],
                           SizedBox(height: 12.h),
                           DetailInfoRow(
