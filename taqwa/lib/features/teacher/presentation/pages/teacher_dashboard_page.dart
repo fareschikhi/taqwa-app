@@ -12,6 +12,7 @@ import '../../../data/models/attendance_summary_model.dart';
 import '../../../data/models/revision_needed_model.dart';
 import '../../../data/models/memorization_progress_summary_model.dart';
 import 'package:taqwa/core/widgets/app_text.dart';
+import 'package:taqwa/core/widgets/app_logo.dart';
 import 'package:taqwa/core/widgets/halaqa_news_card.dart';
 import 'package:taqwa/features/data/models/halaqa/halaqa_announcement_model.dart';
 import 'package:taqwa/features/data/repositories/halaqa_announcement_repository.dart';
@@ -85,9 +86,9 @@ class _TeacherDashboardPageState extends ConsumerState<TeacherDashboardPage> {
   Future<void> _loadData() => loadData();
 
   Future<void> _openNews() async {
-    await Navigator.of(context).push(
-      MaterialPageRoute(builder: (_) => const HalaqaNewsPage()),
-    );
+    await Navigator.of(
+      context,
+    ).push(MaterialPageRoute(builder: (_) => const HalaqaNewsPage()));
   }
 
   @override
@@ -203,6 +204,8 @@ class _TeacherDashboardPageState extends ConsumerState<TeacherDashboardPage> {
                 color: AppColors.primary,
               ),
             ),
+            SizedBox(width: 6.w),
+            AppLogo(height: 30.w),
           ],
         ),
       ),
@@ -249,7 +252,9 @@ class _TeacherDashboardPageState extends ConsumerState<TeacherDashboardPage> {
                 child: CircularProgressWidget(
                   // The ring stays a visual; the figure inside it is the
                   // number of days, which is what the teacher is being told.
-                  fillFraction: markedDays > 0 ? attendedDays / markedDays : 0.0,
+                  fillFraction: markedDays > 0
+                      ? attendedDays / markedDays
+                      : 0.0,
                   centerText: '$attendedDays',
                   label: 'أيام الحضور هذا الشهر',
                   size: 80.w,

@@ -1,11 +1,11 @@
 {
-    "name": "taqwa",
-    "short_name": "taqwa",
+    "name": "تقوى",
+    "short_name": "تقوى",
     "start_url": ".",
     "display": "standalone",
-    "background_color": "#0175C2",
-    "theme_color": "#0175C2",
-    "description": "A new Flutter project.",
+    "background_color": "#FFFFFF",
+    "theme_color": "#006B57",
+    "description": "منصة إدارة طلاب القرآن الكريم",
     "orientation": "portrait-primary",
     "prefer_related_applications": false,
     "icons": [

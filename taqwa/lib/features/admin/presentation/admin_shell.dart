@@ -5,6 +5,7 @@ import '../../../core/providers/auth_provider.dart';
 import '../../../core/theme/app_colors.dart';
 import '../../../core/theme/app_text_styles.dart';
 import '../../../core/constants/app_constants.dart';
+import '../../../core/widgets/app_logo.dart';
 import '../../../core/widgets/confirm_logout_dialog.dart';
 import 'pages/admin_dashboard_page.dart';
 import 'pages/students_management_page.dart';
@@ -159,16 +160,14 @@ class _AdminShellState extends ConsumerState<AdminShell> {
                   Container(
                     width: 44.w,
                     height: 44.w,
+                    alignment: Alignment.center,
                     decoration: BoxDecoration(
-                      color: AppColors.primaryContainer,
-                      borderRadius:
-                          BorderRadius.circular(AppConstants.radiusMd),
+                      color: AppColors.surfaceContainerLowest,
+                      borderRadius: BorderRadius.circular(
+                        AppConstants.radiusMd,
+                      ),
                     ),
-                    child: Icon(
-                      Icons.admin_panel_settings,
-                      color: AppColors.primary,
-                      size: 24.w,
-                    ),
+                    child: AppLogo(height: 30.w),
                   ),
                   SizedBox(width: 12.w),
                   Expanded(
@@ -222,8 +221,9 @@ class _AdminShellState extends ConsumerState<AdminShell> {
                         color: isActive
                             ? AppColors.primaryContainer
                             : Colors.transparent,
-                        borderRadius:
-                            BorderRadius.circular(AppConstants.radiusMd),
+                        borderRadius: BorderRadius.circular(
+                          AppConstants.radiusMd,
+                        ),
                       ),
                       child: Row(
                         children: [
@@ -269,11 +269,7 @@ class _AdminShellState extends ConsumerState<AdminShell> {
                   ),
                   child: Row(
                     children: [
-                      Icon(
-                        Icons.logout,
-                        color: AppColors.error,
-                        size: 22.w,
-                      ),
+                      Icon(Icons.logout, color: AppColors.error, size: 22.w),
                       SizedBox(width: 14.w),
                       AppText(
                         'تسجيل الخروج',

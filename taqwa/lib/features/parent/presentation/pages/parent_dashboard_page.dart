@@ -19,6 +19,7 @@ import '../widgets/halaqa_manager_contact_card.dart';
 import 'child_details_page.dart';
 import 'child_notes_page.dart';
 import 'package:taqwa/core/widgets/app_text.dart';
+import 'package:taqwa/core/widgets/app_logo.dart';
 import 'package:taqwa/core/widgets/halaqa_news_card.dart';
 import 'package:taqwa/features/data/models/halaqa/halaqa_announcement_model.dart';
 import 'package:taqwa/features/data/repositories/halaqa_announcement_repository.dart';
@@ -99,9 +100,9 @@ class _ParentDashboardPageState extends ConsumerState<ParentDashboardPage> {
   }
 
   Future<void> _openNews() async {
-    await Navigator.of(context).push(
-      MaterialPageRoute(builder: (_) => const HalaqaNewsPage()),
-    );
+    await Navigator.of(
+      context,
+    ).push(MaterialPageRoute(builder: (_) => const HalaqaNewsPage()));
   }
 
   @override
@@ -205,6 +206,8 @@ class _ParentDashboardPageState extends ConsumerState<ParentDashboardPage> {
                 color: AppColors.primary,
               ),
             ),
+            SizedBox(width: 6.w),
+            AppLogo(height: 30.w),
           ],
         ),
       ),

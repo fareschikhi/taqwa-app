@@ -1,7 +1,9 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:taqwa/core/providers/auth_provider.dart';
 import 'package:taqwa/core/theme/app_colors.dart';
+import 'package:taqwa/core/widgets/app_logo.dart';
 import 'package:taqwa/features/auth/presentation/role_home.dart';
 import 'package:taqwa/features/auth/presentation/startup_destination.dart';
 import 'login_page.dart';
@@ -38,9 +40,18 @@ class _RestoringSession extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return const Scaffold(
+    return Scaffold(
       backgroundColor: AppColors.background,
-      body: Center(child: CircularProgressIndicator(color: AppColors.primary)),
+      body: Center(
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            AppLogo(height: 112.w),
+            SizedBox(height: 32.h),
+            const CircularProgressIndicator(color: AppColors.primary),
+          ],
+        ),
+      ),
     );
   }
 }

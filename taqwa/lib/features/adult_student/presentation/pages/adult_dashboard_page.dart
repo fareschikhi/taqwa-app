@@ -9,6 +9,7 @@ import 'package:taqwa/core/theme/app_text_styles.dart';
 import 'package:taqwa/core/utils/last_session.dart';
 import 'package:taqwa/core/widgets/app_card.dart';
 import 'package:taqwa/core/widgets/app_text.dart';
+import 'package:taqwa/core/widgets/app_logo.dart';
 import 'package:taqwa/core/widgets/fine_balance_card.dart';
 import 'package:taqwa/core/widgets/halaqa_news_card.dart';
 import 'package:taqwa/core/widgets/last_session_card.dart';
@@ -29,8 +30,7 @@ class AdultDashboardPage extends ConsumerStatefulWidget {
   const AdultDashboardPage({super.key});
 
   @override
-  ConsumerState<AdultDashboardPage> createState() =>
-      _AdultDashboardPageState();
+  ConsumerState<AdultDashboardPage> createState() => _AdultDashboardPageState();
 }
 
 class _AdultDashboardPageState extends ConsumerState<AdultDashboardPage> {
@@ -68,7 +68,9 @@ class _AdultDashboardPageState extends ConsumerState<AdultDashboardPage> {
         _studentRepo.getAttendanceHistory(studentId),
         // If the profile fetch fails, return an empty map so the dashboard still
         // loads with balance and attendance; notes will be empty, not missing.
-        _studentRepo.getProfile(studentId).catchError((_) => <String, dynamic>{}),
+        _studentRepo
+            .getProfile(studentId)
+            .catchError((_) => <String, dynamic>{}),
         _fineRepo.forStudent(studentId),
       ]);
       final profile = results[3] as Map<String, dynamic>;
@@ -93,9 +95,9 @@ class _AdultDashboardPageState extends ConsumerState<AdultDashboardPage> {
   }
 
   Future<void> _openNews() async {
-    await Navigator.of(context).push(
-      MaterialPageRoute(builder: (_) => const HalaqaNewsPage()),
-    );
+    await Navigator.of(
+      context,
+    ).push(MaterialPageRoute(builder: (_) => const HalaqaNewsPage()));
   }
 
   @override
@@ -201,6 +203,8 @@ class _AdultDashboardPageState extends ConsumerState<AdultDashboardPage> {
                 color: AppColors.primary,
               ),
             ),
+            SizedBox(width: 6.w),
+            AppLogo(height: 30.w),
           ],
         ),
       ),
@@ -263,11 +267,7 @@ class _AdultDashboardPageState extends ConsumerState<AdultDashboardPage> {
               value: '$monthAttendedDays',
             ),
           ),
-          Container(
-            width: 1,
-            height: 40.h,
-            color: AppColors.outlineVariant,
-          ),
+          Container(width: 1, height: 40.h, color: AppColors.outlineVariant),
           Expanded(
             child: _StatChip(label: 'حفظ', value: '$pagesDone صفحة'),
           ),

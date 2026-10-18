@@ -7,6 +7,7 @@ import '../../../../core/constants/app_constants.dart';
 import '../../../../core/widgets/app_button.dart';
 import '../../../../core/widgets/app_text_field.dart';
 import '../../../../core/providers/auth_provider.dart';
+import 'package:taqwa/core/widgets/app_logo.dart';
 import 'package:taqwa/core/widgets/app_text.dart';
 import 'package:taqwa/core/widgets/forgot_password_dialog.dart';
 
@@ -70,7 +71,9 @@ class _LoginPageState extends ConsumerState<LoginPage>
     // stack a second copy of that shell on top of the one already shown.
     if (!success) {
       final msg = ref.read(authProvider).errorMessage ?? 'حدث خطأ، حاول مجدداً';
-      ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: AppText(msg)));
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(SnackBar(content: AppText(msg)));
     }
   }
 
@@ -91,29 +94,7 @@ class _LoginPageState extends ConsumerState<LoginPage>
                   crossAxisAlignment: CrossAxisAlignment.center,
                   children: [
                     SizedBox(height: 48.h),
-                    // Logo
-                    Container(
-                      width: 100.w,
-                      height: 100.w,
-                      decoration: BoxDecoration(
-                        gradient: AppColors.brandGradient,
-                        borderRadius: BorderRadius.circular(
-                          AppConstants.radiusXl,
-                        ),
-                        boxShadow: [
-                          BoxShadow(
-                            color: AppColors.primary.withValues(alpha: 0.3),
-                            blurRadius: 24,
-                            offset: const Offset(0, 8),
-                          ),
-                        ],
-                      ),
-                      child: Icon(
-                        Icons.menu_book,
-                        color: AppColors.onPrimary,
-                        size: 52.w,
-                      ),
-                    ),
+                    AppLogo(height: 112.w),
                     SizedBox(height: 24.h),
                     AppText(
                       'تقوى',

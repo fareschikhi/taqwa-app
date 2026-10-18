@@ -10,6 +10,7 @@ import 'package:taqwa/features/data/repositories/manager_repository.dart';
 import 'package:taqwa/features/data/repositories/absence_justification_repository.dart';
 import '../widgets/justification_form_card.dart';
 import 'package:taqwa/core/widgets/app_text.dart';
+import 'package:taqwa/core/widgets/app_logo.dart';
 import 'package:taqwa/core/widgets/halaqa_news_card.dart';
 import 'package:taqwa/features/data/models/halaqa/halaqa_announcement_model.dart';
 import 'package:taqwa/features/data/repositories/halaqa_announcement_repository.dart';
@@ -133,8 +134,7 @@ class _ManagerDashboardPageState extends ConsumerState<ManagerDashboardPage> {
                               onEdit: _managerId != null
                                   ? (a) => _composeNews(existing: a)
                                   : null,
-                              onDelete:
-                                  _managerId != null ? _deleteNews : null,
+                              onDelete: _managerId != null ? _deleteNews : null,
                               onSeeAll: _openNews,
                             ),
                             SizedBox(height: 24.h),
@@ -209,6 +209,8 @@ class _ManagerDashboardPageState extends ConsumerState<ManagerDashboardPage> {
             'تقوى',
             style: AppTextStyles.headlineMd.copyWith(color: AppColors.primary),
           ),
+          SizedBox(width: 6.w),
+          AppLogo(height: 30.w),
         ],
       ),
     );

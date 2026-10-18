@@ -14,6 +14,7 @@ import 'package:taqwa/features/data/repositories/halaqa_repository.dart';
 import 'package:taqwa/features/data/repositories/manager_repository.dart';
 import '../admin_shell.dart';
 import 'package:taqwa/core/widgets/app_text.dart';
+import 'package:taqwa/core/widgets/app_logo.dart';
 import 'package:taqwa/core/widgets/halaqa_news_card.dart';
 import 'package:taqwa/features/data/models/halaqa/halaqa_announcement_model.dart';
 import 'package:taqwa/features/data/repositories/halaqa_announcement_repository.dart';
@@ -235,6 +236,8 @@ class _AdminDashboardPageState extends ConsumerState<AdminDashboardPage> {
                 color: AppColors.primary,
               ),
             ),
+            SizedBox(width: 6.w),
+            AppLogo(height: 30.w),
           ],
         ),
       ),
@@ -364,7 +367,9 @@ class _AdminDashboardPageState extends ConsumerState<AdminDashboardPage> {
               padding: EdgeInsets.symmetric(vertical: 32.h),
               child: Center(
                 child: AppText(
-                  _isLoading ? 'جارٍ التحميل...' : 'لا يوجد سجل حضور هذا الأسبوع',
+                  _isLoading
+                      ? 'جارٍ التحميل...'
+                      : 'لا يوجد سجل حضور هذا الأسبوع',
                   style: AppTextStyles.bodyMd.copyWith(
                     color: AppColors.onSurfaceVariant,
                   ),
@@ -372,7 +377,10 @@ class _AdminDashboardPageState extends ConsumerState<AdminDashboardPage> {
               ),
             )
           else
-            SizedBox(height: 120.h, child: _AttendanceBarChart(days: _week)),
+            SizedBox(
+              height: 120.h,
+              child: _AttendanceBarChart(days: _week),
+            ),
         ],
       ),
     );
@@ -439,9 +447,7 @@ class _AttendanceBarChart extends StatelessWidget {
             child: Container(
               decoration: BoxDecoration(
                 color: AppColors.outlineVariant.withValues(alpha: 0.3),
-                borderRadius: BorderRadius.vertical(
-                  top: Radius.circular(4.r),
-                ),
+                borderRadius: BorderRadius.vertical(top: Radius.circular(4.r)),
               ),
               child: FractionallySizedBox(
                 heightFactor: marked > 0 ? day.present / marked : 0,
