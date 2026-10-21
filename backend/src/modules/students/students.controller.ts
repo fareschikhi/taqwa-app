@@ -52,6 +52,8 @@ export class StudentsController {
     @Query('page') page?: string,
     @Query('limit') limit?: string,
     @Query('isActive') isActive?: string,
+    @Query('halaqaId') halaqaId?: string,
+    @Query('groupByHalaqa') groupByHalaqa?: string,
   ) {
     return this.studentsService.findAll({
       teacherId: teacherId ? parseInt(teacherId, 10) : undefined,
@@ -59,6 +61,8 @@ export class StudentsController {
       page: page ? parseInt(page, 10) : undefined,
       limit: limit ? parseInt(limit, 10) : undefined,
       isActive: isActive !== undefined ? isActive === 'true' : undefined,
+      halaqaId: halaqaId ? parseInt(halaqaId, 10) : undefined,
+      groupByHalaqa: groupByHalaqa === 'true',
     });
   }
 

@@ -23,7 +23,15 @@ class HalaqaGroup {
 /// Groups come back sorted by halaqa name, with the unassigned bucket pinned
 /// last; within a group the caller's order is left alone, which keeps the
 /// alphabetical order the API already sorts by.
-List<HalaqaGroup> groupStudentsByHalaqa(List<Map<String, dynamic>> students) {
+///
+/// With [sortGroups] false the groups keep the order their first student
+/// arrived in instead — for a list the server already sent section by
+/// section, where re-sorting here could disagree with the database's
+/// collation and drop a freshly loaded page into a section above.
+List<HalaqaGroup> groupStudentsByHalaqa(
+  List<Map<String, dynamic>> students, {
+  bool sortGroups = true,
+}) {
   final byHalaqa = <int?, List<Map<String, dynamic>>>{};
   final names = <int?, String>{};
 
@@ -37,12 +45,14 @@ List<HalaqaGroup> groupStudentsByHalaqa(List<Map<String, dynamic>> students) {
     names[id] = id == null ? unassignedHalaqaLabel : name;
   }
 
-  final ids = byHalaqa.keys.toList()
-    ..sort((a, b) {
+  final ids = byHalaqa.keys.toList();
+  if (sortGroups) {
+    ids.sort((a, b) {
       if (a == null) return 1;
       if (b == null) return -1;
       return names[a]!.compareTo(names[b]!);
     });
+  }
 
   return [
     for (final id in ids)

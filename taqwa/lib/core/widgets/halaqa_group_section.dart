@@ -25,10 +25,16 @@ class HalaqaGroupSection extends StatelessWidget {
     required this.onToggle,
     required this.children,
     this.isUnassigned = false,
+    this.loaded,
   });
 
   final String title;
   final int count;
+
+  /// How many of the [count] students are on screen yet, for a list that
+  /// pages in as it scrolls. While short of [count] the header reads
+  /// "30 من 166 طالباً"; null or caught up, it shows the total alone.
+  final int? loaded;
   final bool isExpanded;
   final VoidCallback onToggle;
   final List<Widget> children;
@@ -63,7 +69,9 @@ class HalaqaGroupSection extends StatelessWidget {
                 ),
                 const Spacer(),
                 AppText(
-                  studentCountLabel(count),
+                  loaded != null && loaded! < count
+                      ? '$loaded من ${studentCountLabel(count)}'
+                      : studentCountLabel(count),
                   style: AppTextStyles.labelSm.copyWith(
                     color: AppColors.onSurfaceVariant,
                   ),

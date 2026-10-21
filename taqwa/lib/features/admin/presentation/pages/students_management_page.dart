@@ -5,9 +5,9 @@ import '../../../../core/theme/app_text_styles.dart';
 import '../../../../core/constants/app_constants.dart';
 import '../../../../core/widgets/search_bar_widget.dart';
 import '../../../../core/widgets/confirm_delete_dialog.dart';
-import 'package:taqwa/features/data/network/dio_client.dart';
-import 'package:taqwa/features/data/network/api_endpoints.dart';
+import 'package:taqwa/features/data/datasources/student_remote_datasource.dart';
 import '../../../../features/data/models/student/student_model.dart';
+import '../../../../features/data/repositories/halaqa_repository.dart';
 import '../../../../features/data/repositories/student_repository.dart';
 import '../../../shared/presentation/pages/student_details_page.dart';
 import '../../../shared/presentation/pages/student_form_page.dart';
@@ -29,11 +29,34 @@ class StudentsManagementPage extends StatefulWidget {
 
 class _StudentsManagementPageState extends State<StudentsManagementPage> {
   final _searchController = TextEditingController();
+  final _scrollController = ScrollController();
+  final _datasource = StudentRemoteDatasource();
+  final _halaqaRepo = HalaqaRepository();
   List<Map<String, dynamic>> _students = [];
   List<HalaqaGroup> _groups = [];
+
+  /// Chip labels and the halaqa each one filters to, index for index; the
+  /// first chip (الكل) has no halaqa. Read from the halaqa list rather than
+  /// the loaded students, so a halaqa whose students sit on a later page
+  /// still has its chip.
   List<String> _halaqaFilters = ['الكل'];
+  List<int?> _halaqaFilterIds = [null];
   int _filterIndex = 0;
   bool _isLoading = true;
+
+  /// Paging, the same 30-at-a-time scheme as the teacher's roster.
+  static const _limit = 30;
+  int _nextPage = 1;
+  bool _hasMore = true;
+  bool _isLoadingMore = false;
+
+  /// Each section's full size from the server, keyed by halaqa id (null for
+  /// the unassigned bucket), so a header shows 166 while 30 have loaded.
+  Map<int?, int> _sectionTotals = {};
+
+  /// Bumped by every reset so a page still in flight from an older search or
+  /// filter is dropped instead of appended to the new list.
+  int _generation = 0;
 
   /// Halaqa ids the user folded away, kept across reloads and filter changes.
   /// Null stands for the unassigned bucket.
@@ -128,54 +151,107 @@ class _StudentsManagementPageState extends State<StudentsManagementPage> {
   @override
   void initState() {
     super.initState();
+    _scrollController.addListener(_onScroll);
+    _loadHalaqaFilters();
     _load();
   }
 
   @override
   void dispose() {
     _searchController.dispose();
+    _scrollController.dispose();
     super.dispose();
   }
 
-  Future<void> _load() async {
+  Future<void> _loadHalaqaFilters() async {
     try {
-      final dio = DioClient.instance;
-      final res = await dio.get(ApiEndpoints.students);
-      final list = (res.data['data'] as List).cast<Map<String, dynamic>>();
-      final halaqaNames = <String>{};
-      for (final s in list) {
-        final halaqa = s['halaqa'] as Map<String, dynamic>?;
-        final name = halaqa?['name'] as String?;
-        if (name != null) halaqaNames.add(name);
-      }
-      if (mounted) {
-        setState(() {
-          _students = list;
-          _halaqaFilters = ['الكل', ...halaqaNames];
-          _applyFilter();
-          _isLoading = false;
-        });
-      }
+      final halaqas = await _halaqaRepo.getAllHalaqas();
+      halaqas.sort((a, b) => a.name.compareTo(b.name));
+      if (!mounted) return;
+      setState(() {
+        _halaqaFilters = ['الكل', for (final h in halaqas) h.name];
+        _halaqaFilterIds = [null, for (final h in halaqas) h.id];
+      });
     } catch (_) {
-      if (mounted) setState(() => _isLoading = false);
+      // Without the halaqa list the roster still loads; only the chips are
+      // missing, and a pull-to-refresh tries again.
     }
   }
 
-  void _applyFilter() {
-    final q = _searchController.text.toLowerCase();
-    var list = _students.where((s) {
-      final user = s['user'] as Map<String, dynamic>? ?? {};
-      final name = (user['fullName'] ?? '').toString().toLowerCase();
-      return q.isEmpty || name.contains(q);
-    }).toList();
-    if (_filterIndex > 0 && _filterIndex < _halaqaFilters.length) {
-      final target = _halaqaFilters[_filterIndex];
-      list = list.where((s) {
-        final halaqa = s['halaqa'] as Map<String, dynamic>?;
-        return halaqa?['name'] == target;
-      }).toList();
+  /// Starts over from the first page: on open, refresh, a new search or
+  /// filter, and after any edit so the changed row lands in its new place.
+  Future<void> _load() async {
+    _generation++;
+    _nextPage = 1;
+    _hasMore = true;
+    _isLoadingMore = false;
+    if (_halaqaFilters.length <= 1) _loadHalaqaFilters();
+    await _loadMore(reset: true);
+  }
+
+  Future<void> _loadMore({bool reset = false}) async {
+    if (!reset && (_isLoadingMore || !_hasMore)) return;
+    final generation = _generation;
+    _isLoadingMore = true;
+    if (!reset && mounted) setState(() {});
+    try {
+      final search = _searchController.text.trim();
+      final res = await _datasource.getGroupedPage(
+        page: _nextPage,
+        limit: _limit,
+        search: search.isEmpty ? null : search,
+        halaqaId: _filterIndex < _halaqaFilterIds.length
+            ? _halaqaFilterIds[_filterIndex]
+            : null,
+      );
+      if (!mounted || generation != _generation) return;
+      final page = (res['data'] as List).cast<Map<String, dynamic>>();
+      final total = (res['total'] as num?)?.toInt() ?? 0;
+      final counts = <int?, int>{
+        for (final c in (res['halaqaCounts'] as List? ?? const []))
+          (c['halaqaId'] as num?)?.toInt(): (c['count'] as num).toInt(),
+      };
+      setState(() {
+        _students = reset ? page : [..._students, ...page];
+        _sectionTotals = counts;
+        _groups = groupStudentsByHalaqa(_students, sortGroups: false);
+        _nextPage++;
+        _hasMore = page.isNotEmpty && _students.length < total;
+        _isLoading = false;
+        _isLoadingMore = false;
+      });
+      _fillViewport();
+    } catch (_) {
+      if (!mounted || generation != _generation) return;
+      setState(() {
+        _isLoading = false;
+        _isLoadingMore = false;
+      });
     }
-    _groups = groupStudentsByHalaqa(list);
+  }
+
+  void _onScroll() {
+    final position = _scrollController.position;
+    if (position.pixels >= position.maxScrollExtent - 200) _loadMore();
+  }
+
+  /// A short first page — or sections folded away — can leave nothing to
+  /// scroll, and then the scroll listener never fires. Keep loading until
+  /// the list overflows the screen or the roster runs out.
+  void _fillViewport() {
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (!mounted || !_scrollController.hasClients) return;
+      if (_scrollController.position.maxScrollExtent <= 0) _loadMore();
+    });
+  }
+
+  DateTime? _lastSearch;
+  void _onSearchChanged(String _) {
+    final now = DateTime.now();
+    _lastSearch = now;
+    Future.delayed(const Duration(milliseconds: 400), () {
+      if (mounted && _lastSearch == now) _load();
+    });
   }
 
   /// A collapsed section would hide a search hit, so searching overrides the
@@ -258,15 +334,15 @@ class _StudentsManagementPageState extends State<StudentsManagementPage> {
                     SearchBarWidget(
                       hint: 'ابحث باسم الطالب...',
                       controller: _searchController,
-                      onChanged: (_) => setState(() => _applyFilter()),
+                      onChanged: _onSearchChanged,
                     ),
                     SizedBox(height: 12.h),
                     FilterChipGroup(
                       filters: _halaqaFilters,
-                      onChanged: (i) => setState(() {
+                      onChanged: (i) {
                         _filterIndex = i;
-                        _applyFilter();
-                      }),
+                        _load();
+                      },
                     ),
                   ],
                 ),
@@ -290,15 +366,30 @@ class _StudentsManagementPageState extends State<StudentsManagementPage> {
                             ),
                           )
                         : ListView.separated(
+                            controller: _scrollController,
                             physics: const AlwaysScrollableScrollPhysics(),
                             padding: EdgeInsets.symmetric(horizontal: 16.w),
-                            itemCount: _groups.length,
+                            // One extra row at the end for the spinner while
+                            // the next page is on its way.
+                            itemCount: _groups.length + (_hasMore ? 1 : 0),
                             separatorBuilder: (_, _) => SizedBox(height: 20.h),
                             itemBuilder: (_, i) {
+                              if (i == _groups.length) {
+                                return Padding(
+                                  padding: EdgeInsets.only(bottom: 24.h),
+                                  child: const Center(
+                                    child: CircularProgressIndicator(
+                                      color: AppColors.primary,
+                                    ),
+                                  ),
+                                );
+                              }
                               final group = _groups[i];
                               return HalaqaGroupSection(
                                 title: group.name,
-                                count: group.students.length,
+                                count: _sectionTotals[group.halaqaId] ??
+                                    group.students.length,
+                                loaded: group.students.length,
                                 isUnassigned: group.isUnassigned,
                                 isExpanded: _isExpanded(group),
                                 onToggle: () => setState(() {

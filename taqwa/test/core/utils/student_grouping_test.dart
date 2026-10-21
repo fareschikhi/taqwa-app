@@ -68,6 +68,16 @@ void main() {
       expect(groups.single.name, unassignedHalaqaLabel);
     });
 
+    test('keeps the arrival order of groups when told not to sort', () {
+      final groups = groupStudentsByHalaqa([
+        student('أحمد', halaqaId: 1, halaqaName: 'حلقة الفجر'),
+        student('عمر', halaqaId: 2, halaqaName: 'حلقة العصر'),
+        student('خالد'),
+      ], sortGroups: false);
+
+      expect(groups.map((g) => g.halaqaId), [1, 2, null]);
+    });
+
     test('emits nothing for an empty roster', () {
       expect(groupStudentsByHalaqa(const []), isEmpty);
     });

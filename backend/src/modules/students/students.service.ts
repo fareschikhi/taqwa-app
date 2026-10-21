@@ -54,6 +54,7 @@ export class StudentsService {
     page?: number;
     limit?: number;
     isActive?: boolean;
+    groupByHalaqa?: boolean;
   }) {
     const page = params?.page ?? 1;
     const limit = params?.limit ?? 50;
@@ -78,6 +79,10 @@ export class StudentsService {
 
     const where = whereConditions.length > 0 ? { AND: whereConditions } : {};
 
+    if (params?.groupByHalaqa) {
+      return this.findAllGroupedByHalaqa(whereConditions, page, limit, skip);
+    }
+
     const [data, total] = await Promise.all([
       this.prisma.student.findMany({
         where,
@@ -90,6 +95,79 @@ export class StudentsService {
     ]);
 
     return { data, total, page, limit };
+  }
+
+  /// Pages through students in the order the admin roster draws them: every
+  /// enrolled student by halaqa name then student name, and the unassigned
+  /// bucket after all of them. A plain name sort would scatter each new page
+  /// across sections already on screen instead of extending the last one.
+  /// The two buckets are read separately because MySQL sorts the missing
+  /// halaqa first, and the roster pins it last.
+  ///
+  /// `halaqaCounts` carries each section's full size so a header can say 166
+  /// while only the first 30 of them have loaded.
+  private async findAllGroupedByHalaqa(
+    whereConditions: any[],
+    page: number,
+    limit: number,
+    skip: number,
+  ) {
+    const assignedWhere = {
+      AND: [...whereConditions, { halaqaId: { not: null } }],
+    };
+    const unassignedWhere = { AND: [...whereConditions, { halaqaId: null }] };
+
+    const [assignedTotal, unassignedTotal, counts] = await Promise.all([
+      this.prisma.student.count({ where: assignedWhere }),
+      this.prisma.student.count({ where: unassignedWhere }),
+      this.prisma.student.groupBy({
+        by: ['halaqaId'],
+        where: { AND: whereConditions },
+        _count: { _all: true },
+      }),
+    ]);
+
+    const data: any[] = [];
+    if (skip < assignedTotal) {
+      data.push(
+        ...(await this.prisma.student.findMany({
+          where: assignedWhere,
+          include: this.include,
+          // halaqaId breaks a tie between two halaqas sharing a name, so each
+          // still comes back as one unbroken run.
+          orderBy: [
+            { halaqa: { name: 'asc' } },
+            { halaqaId: 'asc' },
+            { user: { fullName: 'asc' } },
+          ],
+          skip,
+          take: limit,
+        })),
+      );
+    }
+    const remaining = limit - data.length;
+    if (remaining > 0) {
+      data.push(
+        ...(await this.prisma.student.findMany({
+          where: unassignedWhere,
+          include: this.include,
+          orderBy: { user: { fullName: 'asc' } },
+          skip: Math.max(0, skip - assignedTotal),
+          take: remaining,
+        })),
+      );
+    }
+
+    return {
+      data,
+      total: assignedTotal + unassignedTotal,
+      page,
+      limit,
+      halaqaCounts: counts.map((c) => ({
+        halaqaId: c.halaqaId,
+        count: c._count._all,
+      })),
+    };
   }
 
   async findOne(id: number) {

@@ -10,10 +10,50 @@ class StudentRemoteDatasource {
   final Dio _dio = DioClient.instance;
 
   Future<List<StudentModel>> getAll() async {
-    final res = await _dio.get('/students');
-    return (res.data['data'] as List)
-        .map((e) => StudentModel.fromJson(e))
-        .toList();
+    final rows = await getAllRaw();
+    return rows.map(StudentModel.fromJson).toList();
+  }
+
+  /// Every student, not just the first page: `/students` paginates (50 by
+  /// default), so this walks the pages until it has collected `total` rows.
+  /// Callers that group or filter the whole roster client-side need this —
+  /// a single unpaged call silently drops everyone past the first page.
+  Future<List<Map<String, dynamic>>> getAllRaw() async {
+    const pageSize = 200;
+    final rows = <Map<String, dynamic>>[];
+    for (var page = 1; ; page++) {
+      final res = await _dio.get(
+        '/students',
+        queryParameters: {'page': page, 'limit': pageSize},
+      );
+      final data = (res.data['data'] as List).cast<Map<String, dynamic>>();
+      rows.addAll(data);
+      final total = (res.data['total'] as num?)?.toInt() ?? rows.length;
+      if (data.isEmpty || rows.length >= total) return rows;
+    }
+  }
+
+  /// One page of the roster in section order — enrolled students by halaqa,
+  /// then the unassigned — for a list that loads more as it scrolls. The raw
+  /// response also carries `total` and `halaqaCounts`, each section's full
+  /// size, so a header need not wait for every page to know its count.
+  Future<Map<String, dynamic>> getGroupedPage({
+    required int page,
+    required int limit,
+    String? search,
+    int? halaqaId,
+  }) async {
+    final res = await _dio.get(
+      '/students',
+      queryParameters: {
+        'groupByHalaqa': 'true',
+        'page': page,
+        'limit': limit,
+        if (search != null && search.isNotEmpty) 'search': search,
+        if (halaqaId != null) 'halaqaId': halaqaId,
+      },
+    );
+    return res.data as Map<String, dynamic>;
   }
 
   /// The backend paginates `/students` and caps `data` at the page's

@@ -39,6 +39,64 @@ describe('StudentsService.remove', () => {
   });
 });
 
+describe('StudentsService.findAll grouped by halaqa', () => {
+  // The admin roster pages through students section by section, so a page
+  // must continue where the last one stopped: every enrolled student (by
+  // halaqa, then name) first, the unassigned bucket after them.
+  const makePrisma = (assigned: number, unassigned: number) => {
+    const rows = (prefix: string, n: number) =>
+      Array.from({ length: n }, (_, i) => ({ id: `${prefix}${i}` }));
+    const all = { assigned: rows('a', assigned), unassigned: rows('u', unassigned) };
+    const bucket = (where: any) =>
+      where.AND.some((c: any) => c.halaqaId === null) ? 'unassigned' : 'assigned';
+    return {
+      student: {
+        count: jest.fn(({ where }) => Promise.resolve(all[bucket(where)].length)),
+        findMany: jest.fn(({ where, skip, take }) =>
+          Promise.resolve(all[bucket(where)].slice(skip, skip + take)),
+        ),
+        groupBy: jest.fn().mockResolvedValue([
+          { halaqaId: 3, _count: { _all: assigned } },
+          { halaqaId: null, _count: { _all: unassigned } },
+        ]),
+      },
+    };
+  };
+
+  it('fills a page with enrolled students before unassigned ones', async () => {
+    const service = new StudentsService(makePrisma(25, 100) as any);
+
+    const res = await service.findAll({ groupByHalaqa: true, page: 1, limit: 30 });
+
+    expect(res.data.map((s: any) => s.id)).toEqual([
+      ...Array.from({ length: 25 }, (_, i) => `a${i}`),
+      ...Array.from({ length: 5 }, (_, i) => `u${i}`),
+    ]);
+    expect(res.total).toBe(125);
+  });
+
+  it('continues the unassigned bucket where the previous page stopped', async () => {
+    const service = new StudentsService(makePrisma(25, 100) as any);
+
+    const res = await service.findAll({ groupByHalaqa: true, page: 2, limit: 30 });
+
+    expect(res.data.map((s: any) => s.id)).toEqual(
+      Array.from({ length: 30 }, (_, i) => `u${i + 5}`),
+    );
+  });
+
+  it('reports each section total, not just the loaded rows', async () => {
+    const service = new StudentsService(makePrisma(25, 100) as any);
+
+    const res = await service.findAll({ groupByHalaqa: true, page: 1, limit: 30 });
+
+    expect((res as any).halaqaCounts).toEqual([
+      { halaqaId: 3, count: 25 },
+      { halaqaId: null, count: 100 },
+    ]);
+  });
+});
+
 describe('StudentsService.create', () => {
   // A password alone means nothing: only isAdult turns a student into an
   // account, so a password arriving without it is ignored rather than
