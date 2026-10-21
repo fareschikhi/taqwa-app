@@ -382,15 +382,13 @@ class _StudentFormPageState extends State<StudentFormPage> {
           ),
           SizedBox(height: 16.h),
           AppTextField(
-            label: 'العنوان *',
+            label: 'العنوان',
             hint: 'أدخل العنوان',
             controller: _addressController,
             prefixIcon: const Icon(
               Icons.location_on_outlined,
               color: AppColors.onSurfaceVariant,
             ),
-            validator: (v) =>
-                (v == null || v.trim().isEmpty) ? 'هذا الحقل مطلوب' : null,
           ),
           SizedBox(height: 24.h),
           const FormSectionHeader(

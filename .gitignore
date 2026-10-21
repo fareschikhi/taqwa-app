@@ -33,3 +33,8 @@ backups/
 
 # Local scratch notes (may contain test credentials).
 taqwa_note.txt
+
+# Real student/parent sheets and the passwords the importer hands out.
+# The empty *_template.xlsx files are the only spreadsheets that belong here.
+*_filled*.xlsx
+import_passwords*.xlsx

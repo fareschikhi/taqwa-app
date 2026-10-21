@@ -131,8 +131,10 @@ model Parent {
 model Student {
   id             Int       @id @default(autoincrement())
   userId         Int       @unique
-  birthDate      DateTime? 
-  address        String
+  birthDate      DateTime?
+  // Optional: families sign in by phone, and many registration sheets leave
+  // the address blank.
+  address        String?
   halaqaId       Int?
   enrollmentDate DateTime  @default(now())
   parentId      Int?

@@ -194,7 +194,7 @@ export class StudentsService {
           student: {
             create: {
               birthDate: dto.birthDate ? new Date(dto.birthDate) : undefined,
-              address: dto.address,
+              address: dto.address?.trim() || undefined,
               // An adult student has no parent by construction.
               parentId: dto.isAdult ? undefined : (dto.parentId ?? undefined),
               halaqaId: dto.halaqaId ?? undefined,
@@ -248,7 +248,9 @@ export class StudentsService {
 
     const studentUpdate: any = { ...this.registrationFields(dto) };
     if (dto.birthDate) studentUpdate.birthDate = new Date(dto.birthDate);
-    if (dto.address !== undefined) studentUpdate.address = dto.address;
+    if (dto.address !== undefined) {
+      studentUpdate.address = dto.address.trim() === '' ? null : dto.address.trim();
+    }
     if (dto.parentId !== undefined) studentUpdate.parentId = dto.parentId;
     if (dto.halaqaId !== undefined) {
       // Clearing the halaqa (null) has nothing to mismatch against, so only a

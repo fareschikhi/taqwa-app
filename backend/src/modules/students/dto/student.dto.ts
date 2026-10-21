@@ -35,7 +35,7 @@ export class CreateStudentDto extends StudentRegistrationDto {
   @IsOptionalPhone() phone?: string;
   // The adults' form asks for it; a child's record has no use for one.
   @IsOptionalEmail() email?: string;
-  @IsString() address: string;
+  @IsOptional() @IsString() address?: string;
   @IsDateString() birthDate: string;
   @IsOptional() @IsInt() parentId?: number;
   @IsOptional() @IsInt() halaqaId?: number;
