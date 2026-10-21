@@ -39,14 +39,20 @@ export class AuthService {
     ];
     this.loginAttempts.assertNotLocked(attemptKeys);
 
-    const user = await this.prisma.user.findFirst({
-      where: {
-        OR: [
-          dto.email ? { email: dto.email } : {},
-          dto.phone ? { phone: dto.phone } : {},
-        ],
-        isActive: true,
-      },
+    // Phone and email are not unique: one person can hold two accounts (a
+    // teacher who is also an adult student), so every holder is a candidate
+    // and the password picks between them. Only the identifiers actually sent
+    // go into the filter — an empty `{}` in OR would match every user.
+    const identifiers = [
+      ...(dto.email ? [{ email: dto.email }] : []),
+      ...(dto.phone ? [{ phone: dto.phone }] : []),
+    ];
+    const candidates = await this.prisma.user.findMany({
+      where: { OR: identifiers, isActive: true },
+      // A temporary password first: if an admin's reset happens to equal the
+      // sibling account's password, the account waiting for it is the one
+      // meant. Its holder must then pick a password the sibling does not use.
+      orderBy: [{ mustChangePassword: 'desc' }, { id: 'asc' }],
       include: {
         student: { select: { id: true } },
         parent: { select: { id: true } },
@@ -64,14 +70,23 @@ export class AuthService {
     // Students are records in Taqwa, not accounts — no screen exists for a
     // child to log into. An adult student is the exception: he is his own
     // guardian, so his account is real. Every refusal below shares one
-    // message and runs one bcrypt compare, so a probe cannot tell a blocked
-    // or missing account apart from a wrong password.
-    const hash = user?.role !== 'STUDENT' ? user?.passwordHash : null;
-    const valid = await bcrypt.compare(
-      dto.password,
-      hash ?? DUMMY_PASSWORD_HASH,
+    // message, and with no account able to log in one bcrypt compare still
+    // runs, so a probe cannot tell a blocked or missing account apart from a
+    // wrong password.
+    const loginable = candidates.filter(
+      (c) => c.role !== 'STUDENT' && c.passwordHash,
     );
-    if (!user || !hash || !valid) {
+    let user: (typeof candidates)[number] | undefined;
+    for (const candidate of loginable) {
+      if (await bcrypt.compare(dto.password, candidate.passwordHash!)) {
+        user = candidate;
+        break;
+      }
+    }
+    if (loginable.length === 0) {
+      await bcrypt.compare(dto.password, DUMMY_PASSWORD_HASH);
+    }
+    if (!user) {
       this.loginAttempts.recordFailure(attemptKeys);
       throw new UnauthorizedException('بيانات الدخول غير صحيحة');
     }
@@ -116,6 +131,32 @@ export class AuthService {
     const valid = await bcrypt.compare(dto.currentPassword, user.passwordHash);
     if (!valid) {
       throw new UnauthorizedException('كلمة المرور الحالية غير صحيحة');
+    }
+
+    if (dto.newPassword === dto.currentPassword) {
+      throw new BadRequestException(
+        'كلمة المرور الجديدة يجب أن تختلف عن الحالية',
+      );
+    }
+
+    // Login tells accounts that share a phone or email apart by password
+    // alone, so a password one of them already uses would hide the other.
+    const shared = [
+      ...(user.phone ? [{ phone: user.phone }] : []),
+      ...(user.email ? [{ email: user.email }] : []),
+    ];
+    if (shared.length > 0) {
+      const siblings = await this.prisma.user.findMany({
+        where: { OR: shared, NOT: { id: userId }, passwordHash: { not: null } },
+        select: { passwordHash: true },
+      });
+      for (const sibling of siblings) {
+        if (await bcrypt.compare(dto.newPassword, sibling.passwordHash!)) {
+          throw new BadRequestException(
+            'كلمة المرور هذه مستخدمة في حساب آخر بنفس رقم الهاتف أو البريد الإلكتروني، اختر كلمة مرور مختلفة',
+          );
+        }
+      }
     }
 
     await this.prisma.user.update({

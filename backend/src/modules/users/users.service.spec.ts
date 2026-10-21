@@ -1,13 +1,12 @@
-import { ConflictException } from '@nestjs/common';
 import { UsersService } from './users.service';
 
-/// `PATCH /users/me` lets a signed-in user edit their own account. Phone is
-/// the login identifier and both phone and email are unique columns, so a
-/// value already belonging to somebody else has to be refused before writing.
+/// `PATCH /users/me` lets a signed-in user edit their own account. Phone and
+/// email may be shared with another account (one person can hold two), so the
+/// values are written as given — the form only warns.
 describe('UsersService.updateMe', () => {
-  const makePrisma = (conflictingUser: { id: number } | null = null) => ({
+  const makePrisma = () => ({
     user: {
-      findFirst: jest.fn().mockResolvedValue(conflictingUser),
+      findFirst: jest.fn(),
       update: jest.fn().mockResolvedValue({ id: 7 }),
       findUnique: jest.fn().mockResolvedValue({ id: 7, fullName: 'x' }),
     },
@@ -30,35 +29,16 @@ describe('UsersService.updateMe', () => {
     expect(data.email).toBe('a@b.test');
   });
 
-  it('rejects a phone that belongs to somebody else', async () => {
-    const prisma = makePrisma({ id: 99 });
-    const service = new UsersService(prisma as any);
-
-    await expect(service.updateMe(7, { phone: '2001' })).rejects.toBeInstanceOf(
-      ConflictException,
-    );
-    expect(prisma.user.update).not.toHaveBeenCalled();
-  });
-
-  it('rejects an email that belongs to somebody else', async () => {
-    const prisma = makePrisma({ id: 99 });
-    const service = new UsersService(prisma as any);
-
-    await expect(
-      service.updateMe(7, { email: 'taken@b.test' }),
-    ).rejects.toBeInstanceOf(ConflictException);
-    expect(prisma.user.update).not.toHaveBeenCalled();
-  });
-
-  it('excludes the caller from the uniqueness check', async () => {
-    // Saving your own unchanged phone must not collide with yourself.
+  it('saves a phone or email another account already holds', async () => {
     const prisma = makePrisma();
     const service = new UsersService(prisma as any);
 
-    await service.updateMe(7, { phone: '2001' });
+    await service.updateMe(7, { phone: '2001', email: 'shared@b.test' });
 
-    const { where } = prisma.user.findFirst.mock.calls[0][0];
-    expect(where.NOT).toEqual({ id: 7 });
+    const { data } = prisma.user.update.mock.calls[0][0];
+    expect(data.phone).toBe('2001');
+    expect(data.email).toBe('shared@b.test');
+    expect(prisma.user.findFirst).not.toHaveBeenCalled();
   });
 
   it('clears the phone when given an empty string', async () => {
@@ -69,8 +49,6 @@ describe('UsersService.updateMe', () => {
 
     const { data } = prisma.user.update.mock.calls[0][0];
     expect(data.phone).toBeNull();
-    // An empty phone cannot collide, so no lookup is needed.
-    expect(prisma.user.findFirst).not.toHaveBeenCalled();
   });
 
   it('leaves untouched fields alone', async () => {
@@ -147,5 +125,53 @@ describe('UsersService passwords', () => {
     expect(prisma.user.update.mock.calls[0][0].data.mustChangePassword).toBe(
       false,
     );
+  });
+});
+
+/// Feeds the "already used by …" hint under account forms' phone and email.
+describe('UsersService.contactOwners', () => {
+  const makePrisma = () => ({
+    user: {
+      findMany: jest
+        .fn()
+        .mockResolvedValue([{ id: 3, fullName: 'Karim Saidi', role: 'TEACHER' }]),
+    },
+  });
+
+  it('names the accounts holding each value', async () => {
+    const prisma = makePrisma();
+
+    const result = await new UsersService(prisma as any).contactOwners({
+      phone: ' 2001 ',
+      email: 'a@b.test',
+    });
+
+    expect(result.phone).toEqual([
+      { id: 3, fullName: 'Karim Saidi', role: 'TEACHER' },
+    ]);
+    expect(result.email).toHaveLength(1);
+    expect(prisma.user.findMany.mock.calls[0][0].where.phone).toBe('2001');
+  });
+
+  it('leaves out the account being edited', async () => {
+    const prisma = makePrisma();
+
+    await new UsersService(prisma as any).contactOwners({
+      phone: '2001',
+      excludeUserId: 7,
+    });
+
+    expect(prisma.user.findMany.mock.calls[0][0].where.NOT).toEqual({ id: 7 });
+  });
+
+  it('looks nothing up for an empty value', async () => {
+    const prisma = makePrisma();
+
+    const result = await new UsersService(prisma as any).contactOwners({
+      phone: '  ',
+    });
+
+    expect(result).toEqual({ phone: [], email: [] });
+    expect(prisma.user.findMany).not.toHaveBeenCalled();
   });
 });

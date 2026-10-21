@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:taqwa/features/shared/presentation/widgets/contact_owners_hint.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
 import '../../../../core/theme/app_colors.dart';
@@ -296,6 +297,11 @@ class _ProfilePageState extends ConsumerState<ProfilePage> {
                         color: AppColors.onSurfaceVariant,
                       ),
                     ),
+                    if (_editMode) ContactOwnersHint(
+                      controller: _phoneController,
+                      field: ContactField.phone,
+                      excludeUserId: user.id,
+                    ),
                     SizedBox(height: 14.h),
                     AppTextField(
                       label: 'البريد الإلكتروني',
@@ -307,6 +313,11 @@ class _ProfilePageState extends ConsumerState<ProfilePage> {
                         Icons.email_outlined,
                         color: AppColors.onSurfaceVariant,
                       ),
+                    ),
+                    if (_editMode) ContactOwnersHint(
+                      controller: _emailController,
+                      field: ContactField.email,
+                      excludeUserId: user.id,
                     ),
                     if (_editMode) ...[
                       SizedBox(height: 24.h),

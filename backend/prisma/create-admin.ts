@@ -25,7 +25,7 @@ async function main() {
   }
 
   // Refuse rather than overwrite, so a rerun can't silently reset a password.
-  const existing = await prisma.user.findUnique({ where: { email } });
+  const existing = await prisma.user.findFirst({ where: { email } });
   if (existing) {
     throw new Error(`a user with email ${email} already exists`);
   }

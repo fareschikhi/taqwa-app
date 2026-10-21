@@ -1,13 +1,18 @@
-import { Body, Controller, Delete, Get, Param, ParseIntPipe, Patch, Post, UseGuards } from '@nestjs/common';
+import { Body, Controller, Delete, Get, Param, ParseIntPipe, Patch, Post, Query, UseGuards } from '@nestjs/common';
 import { Role } from '@prisma/client';
 import { JwtAuthGuard } from '../../common/guards/jwt-auth.guard';
 import { RolesGuard } from '../../common/guards/roles.guard';
+import { ManagerPermissionGuard } from '../../common/guards/manager-permission.guard';
 import { Roles } from '../../common/decorators/roles.decorator';
+import {
+  ManagerPermission,
+  RequirePermission,
+} from '../../common/decorators/permissions.decorator';
 import { CurrentUser } from '../../common/decorators/current-user.decorator';
 import { UsersService } from './users.service';
 import { CreateUserDto, UpdateMeDto, UpdateUserDto } from './dto/user.dto';
 
-@UseGuards(JwtAuthGuard, RolesGuard)
+@UseGuards(JwtAuthGuard, RolesGuard, ManagerPermissionGuard)
 @Controller('users')
 export class UsersController {
   constructor(private usersService: UsersService) {}
@@ -23,6 +28,23 @@ export class UsersController {
   @Get('me')
   getMe(@CurrentUser() user: any) {
     return this.usersService.findOne(user.id);
+  }
+
+  // Above @Get(':id') like 'me'. Open to whoever fills in account forms.
+  @Get('contact-owners')
+  @Roles(Role.ADMIN, Role.MANAGER)
+  @RequirePermission(ManagerPermission.MANAGE_ACCOUNTS)
+  contactOwners(
+    @Query('phone') phone?: string,
+    @Query('email') email?: string,
+    @Query('excludeUserId') excludeUserId?: string,
+  ) {
+    const exclude = Number(excludeUserId);
+    return this.usersService.contactOwners({
+      phone,
+      email,
+      excludeUserId: Number.isInteger(exclude) && exclude > 0 ? exclude : undefined,
+    });
   }
 
   @Get(':id')

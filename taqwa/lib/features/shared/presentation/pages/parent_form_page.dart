@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:taqwa/features/shared/presentation/widgets/contact_owners_hint.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:image_picker/image_picker.dart';
 import '../../../../core/constants/app_constants.dart';
@@ -274,6 +275,11 @@ class _ParentFormPageState extends State<ParentFormPage> {
               color: AppColors.onSurfaceVariant,
             ),
           ),
+          ContactOwnersHint(
+            controller: _phoneController,
+            field: ContactField.phone,
+            excludeUserId: widget.parent?.userId,
+          ),
           SizedBox(height: 16.h),
           AppTextField(
             label: 'البريد الإلكتروني (اختياري)',
@@ -285,6 +291,11 @@ class _ParentFormPageState extends State<ParentFormPage> {
               Icons.email_outlined,
               color: AppColors.onSurfaceVariant,
             ),
+          ),
+          ContactOwnersHint(
+            controller: _emailController,
+            field: ContactField.email,
+            excludeUserId: widget.parent?.userId,
           ),
           SizedBox(height: 16.h),
           AppTextField(

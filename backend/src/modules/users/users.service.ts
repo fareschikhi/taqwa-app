@@ -1,8 +1,4 @@
-import {
-  ConflictException,
-  Injectable,
-  NotFoundException,
-} from '@nestjs/common';
+import { Injectable, NotFoundException } from '@nestjs/common';
 import { PrismaService } from '../../prisma/prisma.service';
 import { CreateUserDto, UpdateMeDto, UpdateUserDto } from './dto/user.dto';
 import * as bcrypt from 'bcrypt';
@@ -62,9 +58,9 @@ export class UsersService {
     });
   }
 
-  /// A user editing their own account. Phone and email are unique columns and
-  /// phone is the login identifier, so a value already held by somebody else
-  /// is refused before anything is written.
+  /// A user editing their own account. Phone and email may be shared with
+  /// another account (one person can hold two), so nothing is refused here;
+  /// the form warns through `contactOwners` instead.
   async updateMe(userId: number, dto: UpdateMeDto) {
     const data: {
       fullName?: string;
@@ -79,28 +75,35 @@ export class UsersService {
       if (raw === undefined) continue;
 
       const value = raw.trim();
-      if (value === '') {
-        // Nothing to collide with, so no lookup.
-        data[field] = null;
-        continue;
-      }
-
-      const taken = await this.prisma.user.findFirst({
-        where: { [field]: value, NOT: { id: userId } },
-        select: { id: true },
-      });
-      if (taken) {
-        throw new ConflictException(
-          field === 'phone'
-            ? 'رقم الهاتف مستخدم بالفعل'
-            : 'البريد الإلكتروني مستخدم بالفعل',
-        );
-      }
-      data[field] = value;
+      data[field] = value === '' ? null : value;
     }
 
     await this.prisma.user.update({ where: { id: userId }, data });
     return this.findOne(userId);
+  }
+
+  /// The accounts already holding a phone or email, for the warning an
+  /// account form shows while it is typed. Sharing is allowed, so this only
+  /// informs; `excludeUserId` keeps the account being edited out of it.
+  async contactOwners(query: {
+    phone?: string;
+    email?: string;
+    excludeUserId?: number;
+  }) {
+    const owners = async (field: 'phone' | 'email') => {
+      const value = query[field]?.trim();
+      if (!value) return [];
+      return this.prisma.user.findMany({
+        where: {
+          [field]: value,
+          ...(query.excludeUserId ? { NOT: { id: query.excludeUserId } } : {}),
+        },
+        select: { id: true, fullName: true, role: true },
+        orderBy: { id: 'asc' },
+      });
+    };
+    const [phone, email] = await Promise.all([owners('phone'), owners('email')]);
+    return { phone, email };
   }
 
   async update(id: number, dto: UpdateUserDto) {

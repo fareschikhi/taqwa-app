@@ -66,8 +66,8 @@ enum FineSource {
 model User {
   id           Int       @id @default(autoincrement())
   fullName     String    @db.VarChar(100)
-  phone        String?   @unique @db.VarChar(20)
-  email        String?   @unique @db.VarChar(150)
+  phone        String?   @db.VarChar(20)
+  email        String?   @db.VarChar(150)
   passwordHash String?   @db.VarChar(255)
   // Set whenever an admin sets the password (new account or reset), so the
   // holder replaces it on their next login. Never set for an ADMIN.
@@ -87,6 +87,8 @@ model User {
   finesCreated  FineEntry[]
   announcements HalaqaAnnouncement[]
 
+  @@index([phone])
+  @@index([email])
   @@index([role])
   @@index([isActive])
   @@map("users")

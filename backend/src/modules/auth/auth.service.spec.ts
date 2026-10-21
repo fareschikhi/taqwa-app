@@ -1,4 +1,5 @@
 import {
+  BadRequestException,
   ForbiddenException,
   HttpStatus,
   UnauthorizedException,
@@ -17,7 +18,9 @@ const PASSWORD = '123456';
 const PASSWORD_HASH = bcrypt.hashSync(PASSWORD, 4);
 
 const makeService = (user: Record<string, unknown> | null) => {
-  const prisma = { user: { findFirst: jest.fn().mockResolvedValue(user) } };
+  const prisma = {
+    user: { findMany: jest.fn().mockResolvedValue(user ? [user] : []) },
+  };
   const jwt = { sign: jest.fn().mockReturnValue('signed.jwt.token') };
   return new AuthService(
     prisma as any,
@@ -45,12 +48,12 @@ describe('AuthService.login', () => {
   it('does not issue a token to a STUDENT', async () => {
     const prisma = {
       user: {
-        findFirst: jest.fn().mockResolvedValue({
+        findMany: jest.fn().mockResolvedValue([{
           id: 5,
           role: 'STUDENT',
           passwordHash: PASSWORD_HASH,
           student: { id: 3 },
-        }),
+        }]),
       },
     };
     const jwt = { sign: jest.fn().mockReturnValue('signed.jwt.token') };
@@ -143,13 +146,76 @@ describe('AuthService.login', () => {
 
     expect(result.user.mustChangePassword).toBe(true);
   });
+
+  // One person can hold two accounts on the same phone; the password is what
+  // tells them apart.
+  it('opens the shared-phone account the password belongs to', async () => {
+    const teacher = {
+      id: 12,
+      fullName: 'Yacine Belkacem',
+      phone: '4100',
+      role: 'TEACHER',
+      passwordHash: bcrypt.hashSync('teacher-pass', 4),
+      teacher: { id: 2 },
+    };
+    const adult = {
+      id: 11,
+      fullName: 'Yacine Belkacem',
+      phone: '4100',
+      role: 'ADULT_STUDENT',
+      passwordHash: PASSWORD_HASH,
+      student: { id: 21 },
+    };
+    const prisma = {
+      user: { findMany: jest.fn().mockResolvedValue([teacher, adult]) },
+    };
+    const service = new AuthService(
+      prisma as any,
+      { sign: jest.fn().mockReturnValue('t') } as unknown as JwtService,
+      new LoginAttemptsService(),
+    );
+
+    const asTeacher = await service.login({
+      phone: '4100',
+      password: 'teacher-pass',
+    } as any);
+    const asStudent = await service.login({
+      phone: '4100',
+      password: PASSWORD,
+    } as any);
+
+    expect(asTeacher.user.role).toBe('TEACHER');
+    expect(asStudent.user.role).toBe('ADULT_STUDENT');
+  });
+
+  // An empty `{}` inside OR would match every user in the table.
+  it('filters only by the identifiers sent', async () => {
+    const prisma = { user: { findMany: jest.fn().mockResolvedValue([]) } };
+    const service = new AuthService(
+      prisma as any,
+      { sign: jest.fn() } as unknown as JwtService,
+      new LoginAttemptsService(),
+    );
+
+    await expect(
+      service.login({ phone: '4100', password: PASSWORD } as any),
+    ).rejects.toBeInstanceOf(UnauthorizedException);
+
+    expect(prisma.user.findMany.mock.calls[0][0].where.OR).toEqual([
+      { phone: '4100' },
+    ]);
+  });
 });
 
 describe('AuthService.changePassword', () => {
-  const makeService = (user: Record<string, unknown> | null) => {
+  const makeService = (
+    user: Record<string, unknown> | null,
+    siblings: Record<string, unknown>[] = [],
+  ) => {
     const prisma = {
       user: {
         findUnique: jest.fn().mockResolvedValue(user),
+        findMany: jest.fn().mockResolvedValue(siblings),
         update: jest.fn().mockResolvedValue({ id: 7 }),
       },
     };
@@ -227,6 +293,48 @@ describe('AuthService.changePassword', () => {
 
     const { data } = prisma.user.update.mock.calls[0][0];
     expect(data.mustChangePassword).toBe(false);
+  });
+
+  it('refuses keeping the temporary password', async () => {
+    const { service, prisma } = makeService({
+      id: 7,
+      role: 'PARENT',
+      passwordHash: PASSWORD_HASH,
+      mustChangePassword: true,
+    });
+
+    await expect(
+      service.changePassword(7, {
+        currentPassword: PASSWORD,
+        newPassword: PASSWORD,
+      }),
+    ).rejects.toBeInstanceOf(BadRequestException);
+    expect(prisma.user.update).not.toHaveBeenCalled();
+  });
+
+  // Login tells shared-phone accounts apart by password alone.
+  it('refuses a password the other account on the same phone uses', async () => {
+    const { service, prisma } = makeService(
+      {
+        id: 7,
+        role: 'ADULT_STUDENT',
+        phone: '4100',
+        passwordHash: PASSWORD_HASH,
+        mustChangePassword: true,
+      },
+      [{ passwordHash: bcrypt.hashSync('teacher-pass', 4) }],
+    );
+
+    await expect(
+      service.changePassword(7, {
+        currentPassword: PASSWORD,
+        newPassword: 'teacher-pass',
+      }),
+    ).rejects.toBeInstanceOf(BadRequestException);
+    expect(prisma.user.update).not.toHaveBeenCalled();
+    const { where } = prisma.user.findMany.mock.calls[0][0];
+    expect(where.OR).toEqual([{ phone: '4100' }]);
+    expect(where.NOT).toEqual({ id: 7 });
   });
 
   // Everyone but an admin has their password set by an admin; the one

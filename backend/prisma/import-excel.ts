@@ -248,8 +248,8 @@ async function main() {
   const counts = { parentsCreated: 0, parentsExisting: 0, parentsSkipped: 0, studentsCreated: 0, adultsCreated: 0, studentsSkipped: 0, linked: 0, unlinked: 0, inHalaqa: 0 };
 
   const run = async (tx: Prisma.TransactionClient) => {
-    const takenPhone = async (phone: string) => tx.user.findUnique({ where: { phone }, select: { id: true, role: true, parent: { select: { id: true } } } });
-    const takenEmail = async (email: string) => !!(await tx.user.findUnique({ where: { email }, select: { id: true } }));
+    const takenPhone = async (phone: string) => tx.user.findFirst({ where: { phone }, select: { id: true, role: true, parent: { select: { id: true } } } });
+    const takenEmail = async (email: string) => !!(await tx.user.findFirst({ where: { email }, select: { id: true } }));
 
     // parent id by phone and by name, for linking the students sheet
     const parentByPhone = new Map<string, number>();

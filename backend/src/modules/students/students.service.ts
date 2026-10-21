@@ -1,7 +1,6 @@
 import {
   Injectable,
   NotFoundException,
-  ConflictException,
   BadRequestException,
 } from '@nestjs/common';
 import * as bcrypt from 'bcrypt';
@@ -229,16 +228,6 @@ export class StudentsService {
     return { hadithBooks, tracksHadith: hadithBooks.length > 0 };
   }
 
-  /// Phone and email are both unique on `users`; name the one that clashed.
-  private conflict(error: any) {
-    const target = String(error?.meta?.target ?? '');
-    return new ConflictException(
-      target.includes('email')
-        ? 'البريد الإلكتروني مستخدم بالفعل'
-        : 'رقم الهاتف مستخدم بالفعل',
-    );
-  }
-
   async create(dto: CreateStudentDto) {
     const phone =
       dto.phone && dto.phone.trim() !== '' ? dto.phone.trim() : undefined;
@@ -253,45 +242,40 @@ export class StudentsService {
       await this.assertHalaqaMatches(dto.halaqaId, dto.isAdult ?? false);
     }
 
-    try {
-      const user = await this.prisma.user.create({
-        data: {
-          fullName: dto.fullName,
-          phone,
-          email,
-          // A child student is a record, not an account: the role classifies
-          // the row while the null hash keeps the login door shut. An adult
-          // student is his own guardian, so his account is real.
-          passwordHash: dto.isAdult
-            ? await bcrypt.hash(dto.password!, 10)
-            : null,
-          // The admin typed that password, so it is a temporary one.
-          mustChangePassword: dto.isAdult ?? false,
-          role: dto.isAdult ? 'ADULT_STUDENT' : 'STUDENT',
-          avatar: dto.avatar,
-          student: {
-            create: {
-              birthDate: dto.birthDate ? new Date(dto.birthDate) : undefined,
-              address: dto.address?.trim() || undefined,
-              // An adult student has no parent by construction.
-              parentId: dto.isAdult ? undefined : (dto.parentId ?? undefined),
-              halaqaId: dto.halaqaId ?? undefined,
-              ...this.hadithFields(dto.hadithBooks ?? []),
-              ...this.registrationFields(dto),
-            },
+    const user = await this.prisma.user.create({
+      data: {
+        fullName: dto.fullName,
+        phone,
+        email,
+        // A child student is a record, not an account: the role classifies
+        // the row while the null hash keeps the login door shut. An adult
+        // student is his own guardian, so his account is real.
+        passwordHash: dto.isAdult
+          ? await bcrypt.hash(dto.password!, 10)
+          : null,
+        // The admin typed that password, so it is a temporary one.
+        mustChangePassword: dto.isAdult ?? false,
+        role: dto.isAdult ? 'ADULT_STUDENT' : 'STUDENT',
+        avatar: dto.avatar,
+        student: {
+          create: {
+            birthDate: dto.birthDate ? new Date(dto.birthDate) : undefined,
+            address: dto.address?.trim() || undefined,
+            // An adult student has no parent by construction.
+            parentId: dto.isAdult ? undefined : (dto.parentId ?? undefined),
+            halaqaId: dto.halaqaId ?? undefined,
+            ...this.hadithFields(dto.hadithBooks ?? []),
+            ...this.registrationFields(dto),
           },
         },
-        include: { student: true },
-      });
+      },
+      include: { student: true },
+    });
 
-      if (user.student) {
-        return await this.findOne(user.student.id);
-      }
-      return user;
-    } catch (error: any) {
-      if (error?.code === 'P2002') throw this.conflict(error);
-      throw error;
+    if (user.student) {
+      return this.findOne(user.student.id);
     }
+    return user;
   }
 
   async update(id: number, dto: UpdateStudentDto) {
@@ -304,18 +288,11 @@ export class StudentsService {
     const userUpdate: any = {};
     if (dto.fullName) userUpdate.fullName = dto.fullName;
 
+    // Phone and email may be shared with another account (one person can
+    // hold two); the form warns about that, nothing here refuses it.
     if (dto.phone !== undefined) {
-      const phone =
+      userUpdate.phone =
         dto.phone && dto.phone.trim() !== '' ? dto.phone.trim() : null;
-      if (phone !== null) {
-        const existing = await this.prisma.user.findFirst({
-          where: { phone, NOT: { id: student.userId } },
-        });
-        if (existing) {
-          throw new ConflictException('رقم الهاتف مستخدم بالفعل');
-        }
-      }
-      userUpdate.phone = phone;
     }
 
     if (dto.email !== undefined) {
@@ -348,22 +325,17 @@ export class StudentsService {
     if (dto.hadithBooks !== undefined)
       Object.assign(studentUpdate, this.hadithFields(dto.hadithBooks));
 
-    try {
-      if (Object.keys(userUpdate).length > 0) {
-        await this.prisma.user.update({
-          where: { id: student.userId },
-          data: userUpdate,
-        });
-      }
-      return await this.prisma.student.update({
-        where: { id },
-        data: studentUpdate,
-        include: this.include,
+    if (Object.keys(userUpdate).length > 0) {
+      await this.prisma.user.update({
+        where: { id: student.userId },
+        data: userUpdate,
       });
-    } catch (error: any) {
-      if (error?.code === 'P2002') throw this.conflict(error);
-      throw error;
     }
+    return this.prisma.student.update({
+      where: { id },
+      data: studentUpdate,
+      include: this.include,
+    });
   }
 
   async getStudentProfile(id: number) {

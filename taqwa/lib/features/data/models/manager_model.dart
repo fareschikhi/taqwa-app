@@ -1,5 +1,6 @@
 class ManagerModel {
   final int? id;
+  final int? userId;
   final String fullName;
   final String? phone;
   final String? email;
@@ -16,6 +17,7 @@ class ManagerModel {
 
   const ManagerModel({
     this.id,
+    this.userId,
     required this.fullName,
     this.phone,
     this.email,
@@ -39,6 +41,7 @@ class ManagerModel {
 
     return ManagerModel(
       id: json['id'],
+      userId: (user?['id'] as num?)?.toInt() ?? (json['userId'] as num?)?.toInt(),
       fullName: user?['fullName'] ?? json['fullName'] ?? '',
       phone: user?['phone'] ?? json['phone'],
       email: user?['email'] ?? json['email'],

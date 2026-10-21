@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:taqwa/features/shared/presentation/widgets/contact_owners_hint.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:image_picker/image_picker.dart';
 import '../../../../core/constants/app_constants.dart';
@@ -407,6 +408,11 @@ class _StudentFormPageState extends State<StudentFormPage> {
             ),
             validator: (v) => AccountValidators.phone(v, required: true),
           ),
+          ContactOwnersHint(
+            controller: _phoneController,
+            field: ContactField.phone,
+            excludeUserId: widget.student?.userId,
+          ),
           SizedBox(height: 24.h),
           const FormSectionHeader(
             icon: Icons.school_outlined,
@@ -542,12 +548,28 @@ class _StudentFormPageState extends State<StudentFormPage> {
         ),
         health,
         familyStatus,
-        field(
-          'البريد الإلكتروني',
-          _emailController,
-          Icons.email_outlined,
-          keyboardType: TextInputType.emailAddress,
-          validator: AccountValidators.email,
+        Padding(
+          padding: EdgeInsets.only(bottom: 16.h),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.stretch,
+            children: [
+              AppTextField(
+                label: 'البريد الإلكتروني',
+                controller: _emailController,
+                keyboardType: TextInputType.emailAddress,
+                prefixIcon: const Icon(
+                  Icons.email_outlined,
+                  color: AppColors.onSurfaceVariant,
+                ),
+                validator: AccountValidators.email,
+              ),
+              ContactOwnersHint(
+                controller: _emailController,
+                field: ContactField.email,
+                excludeUserId: widget.student?.userId,
+              ),
+            ],
+          ),
         ),
         activities,
         _buildMaritalStatus(),

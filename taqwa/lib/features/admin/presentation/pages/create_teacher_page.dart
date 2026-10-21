@@ -1,5 +1,6 @@
 import 'dart:io';
 import 'package:flutter/material.dart';
+import 'package:taqwa/features/shared/presentation/widgets/contact_owners_hint.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:image_picker/image_picker.dart';
 import '../../../../core/theme/app_colors.dart';
@@ -351,6 +352,11 @@ class _CreateTeacherPageState extends State<CreateTeacherPage> {
                           color: AppColors.onSurfaceVariant,
                         ),
                       ),
+                      ContactOwnersHint(
+                        controller: _phoneController,
+                        field: ContactField.phone,
+                        excludeUserId: widget.editTeacher?.userId,
+                      ),
                       SizedBox(height: 16.h),
                       AppTextField(
                         label: 'البريد الإلكتروني',
@@ -362,6 +368,11 @@ class _CreateTeacherPageState extends State<CreateTeacherPage> {
                           Icons.email_outlined,
                           color: AppColors.onSurfaceVariant,
                         ),
+                      ),
+                      ContactOwnersHint(
+                        controller: _emailController,
+                        field: ContactField.email,
+                        excludeUserId: widget.editTeacher?.userId,
                       ),
                       SizedBox(height: 16.h),
                       AppTextField(
