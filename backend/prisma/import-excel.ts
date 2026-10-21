@@ -9,15 +9,16 @@ import * as JSZip from 'jszip';
 // Imports the parents and students sheets (filled from parents_template.xlsx
 // and students_template.xlsx) into the database.
 //
-//   npx ts-node prisma/import-excel.ts <parents.xlsx> <students.xlsx> [--commit]
+//   npx ts-node prisma/import-excel.ts <parents.xlsx> <students.xlsx> [--password=<shared>] [--commit]
 //
 // Without --commit it is a dry run: every row is written inside a transaction
 // that is then rolled back, so the report reflects the real constraints but
 // nothing is kept. The report names sheet rows and reasons only — never a
 // value from the sheets — so it is safe to paste or share.
 //
-// On --commit, parents and adult students get a random temporary password
-// (they must change it on first login). Those are written to an
+// On --commit, parents and adult students get a temporary password — random
+// for each, or the one given with --password= for all — and must change it on
+// first login. Those are written to an
 // import_passwords_<time>.xlsx next to the students file and nowhere else.
 
 const prisma = new PrismaClient();
@@ -201,8 +202,16 @@ async function main() {
   const commit = args.includes('--commit');
   const [parentsFile, studentsFile] = args.filter((a) => !a.startsWith('--'));
   if (!parentsFile || !studentsFile) {
-    throw new UsageError('usage: npx ts-node prisma/import-excel.ts <parents.xlsx> <students.xlsx> [--commit]');
+    throw new UsageError('usage: npx ts-node prisma/import-excel.ts <parents.xlsx> <students.xlsx> [--password=<shared>] [--commit]');
   }
+  // One temporary password for every new account instead of a random one
+  // each. It is still temporary: mustChangePassword makes each holder
+  // replace it on first login.
+  const passwordArg = args.find((a) => a.startsWith('--password'));
+  const shared = passwordArg?.startsWith('--password=') ? passwordArg.slice('--password='.length) : undefined;
+  if (passwordArg && shared === undefined) throw new UsageError('write the password as --password=<shared>, with no space');
+  // Login rejects passwords shorter than this, so the accounts would be unusable.
+  if (shared !== undefined && shared.length < 6) throw new UsageError('the shared password must be at least 6 characters');
   for (const f of [parentsFile, studentsFile]) {
     if (!fs.existsSync(f)) throw new UsageError(`file not found: ${f}`);
   }
@@ -227,12 +236,13 @@ async function main() {
   // Hashing is the slow part, so it happens before the transaction opens and
   // only for real runs; a dry run's rows are rolled back anyway.
   const placeholder = commit ? null : await bcrypt.hash('dry-run', 4);
+  const sharedHash = commit && shared !== undefined ? await bcrypt.hash(shared, 10) : null;
   const credentials: { role: string; fullName: string; phone: string; email: string; password: string }[] = [];
   const issue = async (role: string, fullName: string, phone?: string, email?: string) => {
     if (!commit) return placeholder!;
-    const password = tempPassword();
+    const password = shared ?? tempPassword();
     credentials.push({ role, fullName, phone: phone ?? '', email: email ?? '', password });
-    return bcrypt.hash(password, 10);
+    return sharedHash ?? bcrypt.hash(password, 10);
   };
 
   const counts = { parentsCreated: 0, parentsExisting: 0, parentsSkipped: 0, studentsCreated: 0, adultsCreated: 0, studentsSkipped: 0, linked: 0, unlinked: 0, inHalaqa: 0 };
