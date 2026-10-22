@@ -1,0 +1,14 @@
+services:
+  # Serves the Flutter web build and forwards /api to the backend, so the
+  # site and the API share one origin behind Tailscale Funnel.
+  web:
+    image: nginx:1.27-alpine
+    container_name: taqwa_web
+    restart: unless-stopped
+    depends_on:
+      - backend
+    ports:
+      - '127.0.0.1:8081:80'
+    volumes:
+      - ./web:/usr/share/nginx/html:ro
+      - ./nginx.conf:/etc/nginx/conf.d/default.conf:ro

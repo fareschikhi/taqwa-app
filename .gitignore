@@ -13,6 +13,8 @@ backend/uploads/
 backend/*.tsbuildinfo
 # Local archives of the backend folder.
 backend/*.rar
+# Flutter web build copied in for nginx to serve; rebuilt from taqwa/.
+backend/web/
 
 # Flutter
 taqwa/.dart_tool/
