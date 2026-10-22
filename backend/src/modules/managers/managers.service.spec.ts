@@ -88,3 +88,69 @@ describe('ManagersService passwords', () => {
     );
   });
 });
+
+// Students outside every halaqa have no ManagerHalaqa row, so a manager
+// reaches them only through the canAccessUnassigned flag.
+describe('ManagersService unassigned students', () => {
+  const makePrisma = (canAccessUnassigned: boolean) => ({
+    manager: {
+      findUnique: jest.fn().mockResolvedValue({
+        id: 3,
+        userId: 42,
+        canAccessUnassigned,
+        halaqas: [{ halaqaId: 5 }],
+      }),
+      update: jest.fn(),
+    },
+    user: { create: jest.fn(), update: jest.fn() },
+    student: { findMany: jest.fn().mockResolvedValue([]) },
+  });
+
+  it('adds the unassigned students when the flag is on', async () => {
+    const prisma = makePrisma(true);
+
+    await new ManagersService(prisma as any).getStudents(3);
+
+    expect(prisma.student.findMany.mock.calls[0][0].where).toEqual({
+      OR: [{ halaqaId: { in: [5] } }, { halaqaId: null }],
+    });
+  });
+
+  it('keeps to the assigned halaqas when the flag is off', async () => {
+    const prisma = makePrisma(false);
+
+    await new ManagersService(prisma as any).getStudents(3);
+
+    expect(prisma.student.findMany.mock.calls[0][0].where).toEqual({
+      OR: [{ halaqaId: { in: [5] } }],
+    });
+  });
+
+  it('stores the flag when a manager is created', async () => {
+    const prisma = makePrisma(false);
+
+    await new ManagersService(prisma as any).create({
+      fullName: 'Nadir Hamdi',
+      password: 'secret123',
+      canAccessUnassigned: true,
+    } as any);
+
+    expect(
+      prisma.user.create.mock.calls[0][0].data.manager.create
+        .canAccessUnassigned,
+    ).toBe(true);
+  });
+
+  it('updates the flag on its own', async () => {
+    const prisma = makePrisma(false);
+    const service = new ManagersService(prisma as any);
+    jest.spyOn(service, 'findOne').mockResolvedValue({} as any);
+
+    await service.update(3, { canAccessUnassigned: true } as any);
+
+    expect(prisma.manager.update).toHaveBeenCalledWith({
+      where: { id: 3 },
+      data: { canAccessUnassigned: true },
+    });
+  });
+});

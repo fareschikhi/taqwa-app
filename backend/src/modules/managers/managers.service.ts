@@ -57,8 +57,14 @@ export class ManagersService {
 
   async create(dto: CreateManagerDto) {
     const hash = await bcrypt.hash(dto.password, 10);
-    const { password, halaqaIds, canManageAccounts, canDeleteAccounts, ...rest } =
-      dto;
+    const {
+      password,
+      halaqaIds,
+      canManageAccounts,
+      canDeleteAccounts,
+      canAccessUnassigned,
+      ...rest
+    } = dto;
 
     const phone =
       rest.phone && rest.phone.trim() !== '' ? rest.phone.trim() : undefined;
@@ -78,6 +84,7 @@ export class ManagersService {
           create: {
             canManageAccounts: canManageAccounts ?? false,
             canDeleteAccounts: canDeleteAccounts ?? false,
+            canAccessUnassigned: canAccessUnassigned ?? false,
             ...(halaqaIds && halaqaIds.length > 0
               ? {
                   halaqas: {
@@ -105,8 +112,14 @@ export class ManagersService {
     const manager = await this.prisma.manager.findUnique({ where: { id } });
     if (!manager) throw new NotFoundException('المدير غير موجود');
 
-    const { password, halaqaIds, canManageAccounts, canDeleteAccounts, ...rest } =
-      dto;
+    const {
+      password,
+      halaqaIds,
+      canManageAccounts,
+      canDeleteAccounts,
+      canAccessUnassigned,
+      ...rest
+    } = dto;
     const userUpdate: any = { ...rest };
     if (password) {
       userUpdate.passwordHash = await bcrypt.hash(password, 10);
@@ -118,12 +131,17 @@ export class ManagersService {
       data: userUpdate,
     });
 
-    if (canManageAccounts !== undefined || canDeleteAccounts !== undefined) {
+    if (
+      canManageAccounts !== undefined ||
+      canDeleteAccounts !== undefined ||
+      canAccessUnassigned !== undefined
+    ) {
       await this.prisma.manager.update({
         where: { id },
         data: {
           ...(canManageAccounts !== undefined ? { canManageAccounts } : {}),
           ...(canDeleteAccounts !== undefined ? { canDeleteAccounts } : {}),
+          ...(canAccessUnassigned !== undefined ? { canAccessUnassigned } : {}),
         },
       });
     }
@@ -171,7 +189,10 @@ export class ManagersService {
 
     return this.prisma.student.findMany({
       where: {
-        halaqaId: { in: halaqaIds },
+        OR: [
+          { halaqaId: { in: halaqaIds } },
+          ...(manager.canAccessUnassigned ? [{ halaqaId: null }] : []),
+        ],
       },
       include: {
         user: {

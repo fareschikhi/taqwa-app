@@ -53,7 +53,12 @@ export class AbsenceJustificationService {
       where: {
         status: { in: [AttendanceStatus.ABSENT, AttendanceStatus.LATE] },
         justification: { is: null },
-        student: { halaqaId: { in: halaqaIds } },
+        student: {
+          OR: [
+            { halaqaId: { in: halaqaIds } },
+            ...(manager.canAccessUnassigned ? [{ halaqaId: null }] : []),
+          ],
+        },
       },
       include: {
         student: {

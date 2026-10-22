@@ -21,6 +21,7 @@ export class CreateManagerDto {
   @IsOptional() @IsArray() @IsInt({ each: true }) halaqaIds?: number[];
   @IsOptional() @IsBoolean() canManageAccounts?: boolean;
   @IsOptional() @IsBoolean() canDeleteAccounts?: boolean;
+  @IsOptional() @IsBoolean() canAccessUnassigned?: boolean;
 }
 
 export class UpdateManagerDto {
@@ -32,6 +33,7 @@ export class UpdateManagerDto {
   @IsOptional() @IsArray() @IsInt({ each: true }) halaqaIds?: number[];
   @IsOptional() @IsBoolean() canManageAccounts?: boolean;
   @IsOptional() @IsBoolean() canDeleteAccounts?: boolean;
+  @IsOptional() @IsBoolean() canAccessUnassigned?: boolean;
 }
 
 export class UpdateManagerStatusDto {

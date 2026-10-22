@@ -398,6 +398,9 @@ model Manager {
   userId            Int      @unique
   canManageAccounts Boolean  @default(false)
   canDeleteAccounts Boolean  @default(false)
+  // Students with no halaqa have no ManagerHalaqa row to reach them through,
+  // so the admin grants them to a manager with this flag instead.
+  canAccessUnassigned Boolean @default(false)
   createdAt         DateTime @default(now())
   updatedAt         DateTime @updatedAt
 
