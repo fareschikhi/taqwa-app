@@ -391,10 +391,14 @@ export class StudentsService {
           },
         },
         notes: {
-          orderBy: { createdAt: 'desc' },
+          orderBy: { note: { createdAt: 'desc' } },
           take: 5,
           include: {
-            teacher: { include: { user: { select: { fullName: true } } } },
+            note: {
+              include: {
+                teacher: { include: { user: { select: { fullName: true } } } },
+              },
+            },
           },
         },
         _count: { select: { attendance: true } },
@@ -413,7 +417,11 @@ export class StudentsService {
         ? Math.round((attendedCount / totalAttendance) * 100)
         : 0;
 
-    return { ...student, attendanceRate };
+    // A student reaches their notes through recipient rows; the profile hands
+    // back the notes themselves, as it did when each note named one student.
+    const notes = student.notes.map(({ note, studentId }) => ({ ...note, studentId }));
+
+    return { ...student, notes, attendanceRate };
   }
 
   async remove(id: number) {

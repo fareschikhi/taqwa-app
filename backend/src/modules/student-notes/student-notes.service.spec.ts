@@ -7,14 +7,21 @@ describe('StudentNotesService notifications', () => {
     role?: string;
   }) => ({
     studentNote: {
-      create: jest
-        .fn()
-        .mockImplementation(({ data }: any) => Promise.resolve({ id: 1, ...data })),
+      // Echoes the nested recipient create back the way Prisma includes it.
+      create: jest.fn().mockImplementation(({ data }: any) => {
+        const { recipients, ...rest } = data;
+        return Promise.resolve({
+          id: 1,
+          ...rest,
+          recipients: recipients.create.map((r: any) => ({ ...r, student: {} })),
+        });
+      }),
       findUnique: jest.fn().mockResolvedValue({ id: 1, note: 'قديم' }),
-      update: jest.fn().mockResolvedValue({ id: 1, note: 'جديد' }),
+      update: jest
+        .fn()
+        .mockResolvedValue({ id: 1, note: 'جديد', recipients: [{ studentId: 7, student: {} }] }),
       delete: jest.fn().mockResolvedValue({ id: 1 }),
     },
-    $transaction: jest.fn((ops: Promise<unknown>[]) => Promise.all(ops)),
     student: {
       findUnique: jest.fn().mockResolvedValue(
         opts.parentUserId == null
@@ -155,24 +162,23 @@ describe('StudentNotesService notifications', () => {
   describe('bulk notes', () => {
     const bulk = (studentIds: number[]) => ({ studentIds, teacherId: 2, note: 'غداً مراجعة' });
 
-    it('writes one note per student, all in one transaction', async () => {
+    it('writes the note once, addressed to every student', async () => {
       const prisma = makePrisma({ parentUserId: 9 });
       const service = new StudentNotesService(prisma as any, notificationsMock() as any);
 
-      const notes = await service.createBulk(bulk([7, 8, 9]));
+      const note = await service.createBulk(bulk([7, 8, 9]));
 
-      expect(notes.map((n: any) => n.studentId)).toEqual([7, 8, 9]);
-      expect(prisma.studentNote.create).toHaveBeenCalledTimes(3);
-      expect(prisma.$transaction).toHaveBeenCalledTimes(1);
+      expect(prisma.studentNote.create).toHaveBeenCalledTimes(1);
+      expect(note.recipients.map((r: any) => r.studentId)).toEqual([7, 8, 9]);
     });
 
-    it('writes a repeated student only once', async () => {
+    it('addresses a repeated student only once', async () => {
       const prisma = makePrisma({ parentUserId: 9 });
       const service = new StudentNotesService(prisma as any, notificationsMock() as any);
 
-      await service.createBulk(bulk([7, 7, 8]));
+      const note = await service.createBulk(bulk([7, 7, 8]));
 
-      expect(prisma.studentNote.create).toHaveBeenCalledTimes(2);
+      expect(note.recipients.map((r: any) => r.studentId)).toEqual([7, 8]);
     });
 
     it("tells each student's parent", async () => {
@@ -183,6 +189,40 @@ describe('StudentNotesService notifications', () => {
       await service.createBulk(bulk([7, 8]));
 
       expect(notifications.create).toHaveBeenCalledTimes(2);
+    });
+  });
+
+  describe('reading notes', () => {
+    const recipient = (studentId: number) => ({ studentId, student: { id: studentId } });
+
+    it("shows a student only their own place on a note sent to many", async () => {
+      const prisma: any = makePrisma({});
+      prisma.studentNote.findMany = jest.fn().mockResolvedValue([
+        { id: 1, note: 'غداً مراجعة', recipients: [recipient(8)] },
+      ]);
+      const service = new StudentNotesService(prisma, notificationsMock() as any);
+
+      const [note] = await service.findByStudent(8);
+
+      const args = prisma.studentNote.findMany.mock.calls[0][0];
+      expect(args.where).toEqual({ recipients: { some: { studentId: 8 } } });
+      expect(args.include.recipients.where).toEqual({ studentId: 8 });
+      expect(note.studentId).toBe(8);
+    });
+
+    it("lists a teacher's bulk note once, with all its students", async () => {
+      const prisma: any = makePrisma({});
+      prisma.studentNote.findMany = jest.fn().mockResolvedValue([
+        { id: 1, note: 'غداً مراجعة', recipients: [recipient(7), recipient(8)] },
+      ]);
+      const service = new StudentNotesService(prisma, notificationsMock() as any);
+
+      const notes = await service.findByTeacher(2);
+
+      expect(notes).toHaveLength(1);
+      expect(notes[0].recipients).toHaveLength(2);
+      // The first recipient, for app builds that read one student per note.
+      expect(notes[0].studentId).toBe(7);
     });
   });
 });

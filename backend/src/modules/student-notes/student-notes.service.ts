@@ -15,10 +15,27 @@ export class StudentNotesService {
     private notifications: NotificationsService,
   ) {}
 
+  private readonly student = {
+    include: { user: { select: { fullName: true, avatar: true } } },
+  };
+
   private readonly include = {
-    student: { include: { user: { select: { fullName: true, avatar: true } } } },
+    recipients: { include: { student: this.student }, orderBy: { studentId: 'asc' as const } },
     teacher: { include: { user: { select: { fullName: true } } } },
   };
+
+  /**
+   * Keeps the shape a note had when it named one student: `studentId` and
+   * `student` are the first recipient (the only one, for most notes), and
+   * `recipients` lists them all. Builds of the app already on phones read the
+   * flat fields, so they still show every note.
+   */
+  private flatten<T extends { recipients: { studentId: number; student: unknown }[] }>(
+    note: T,
+  ) {
+    const first = note.recipients[0];
+    return { ...note, studentId: first?.studentId ?? null, student: first?.student ?? null };
+  }
 
   /**
    * Tells whoever answers for the student that a note was written: the parent
@@ -63,60 +80,63 @@ export class StudentNotesService {
     }
   }
 
-  async create(dto: CreateStudentNoteDto) {
+  private async write(studentIds: number[], teacherId: number, text: string) {
+    // One row and its recipients in a single insert, so a note never exists
+    // with only some of its students attached.
     const note = await this.prisma.studentNote.create({
       data: {
-        studentId: dto.studentId,
-        teacherId: dto.teacherId,
-        note: dto.note,
+        teacherId,
+        note: text,
+        recipients: { create: studentIds.map((studentId) => ({ studentId })) },
       },
       include: this.include,
     });
-    await this.notifyStudent(dto.studentId, dto.note);
-    return note;
+    await Promise.all(studentIds.map((id) => this.notifyStudent(id, text)));
+    return this.flatten(note);
+  }
+
+  async create(dto: CreateStudentNoteDto) {
+    return this.write([dto.studentId], dto.teacherId, dto.note);
   }
 
   async createBulk(dto: CreateBulkStudentNoteDto) {
-    // A repeated id would write the same note twice to one child.
-    const studentIds = [...new Set(dto.studentIds)];
-    // All or nothing: a teacher who sent a note to the class should not have
-    // to work out which half of it landed.
-    const notes = await this.prisma.$transaction(
-      studentIds.map((studentId) =>
-        this.prisma.studentNote.create({
-          data: { studentId, teacherId: dto.teacherId, note: dto.note },
-          include: this.include,
-        }),
-      ),
-    );
-    await Promise.all(studentIds.map((id) => this.notifyStudent(id, dto.note)));
-    return notes;
+    // A repeated id would address the note twice to one child.
+    return this.write([...new Set(dto.studentIds)], dto.teacherId, dto.note);
   }
 
   async findByTeacher(teacherId: number) {
-    return this.prisma.studentNote.findMany({
-      where: { teacherId },
+    const notes = await this.prisma.studentNote.findMany({
+      // A note whose students have all been deleted is about no one now.
+      where: { teacherId, recipients: { some: {} } },
       include: this.include,
       orderBy: { createdAt: 'desc' },
     });
+    return notes.map((n) => this.flatten(n));
   }
 
   async findByStudent(studentId: number) {
-    return this.prisma.studentNote.findMany({
-      where: { studentId },
-      include: this.include,
+    const notes = await this.prisma.studentNote.findMany({
+      where: { recipients: { some: { studentId } } },
+      include: {
+        ...this.include,
+        // Only this student's own row: a parent reading a note sent to the
+        // whole halaqa must not get the names of everyone else's children.
+        recipients: { where: { studentId }, include: { student: this.student } },
+      },
       orderBy: { createdAt: 'desc' },
     });
+    return notes.map((n) => this.flatten(n));
   }
 
   async update(id: number, dto: UpdateStudentNoteDto) {
     const note = await this.prisma.studentNote.findUnique({ where: { id } });
     if (!note) throw new NotFoundException('الملاحظة غير موجودة');
-    return this.prisma.studentNote.update({
+    const updated = await this.prisma.studentNote.update({
       where: { id },
       data: dto,
       include: this.include,
     });
+    return this.flatten(updated);
   }
 
   async remove(id: number) {

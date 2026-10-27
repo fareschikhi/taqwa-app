@@ -173,7 +173,7 @@ model Student {
   attendance     Attendance[]
   memorization   MemorizationProgress[]
   evaluations    Evaluation[]
-  notes          StudentNote[]
+  notes          StudentNoteRecipient[]
   justifications AbsenceJustification[]
   fines          FineEntry[]
   notifications  Notification[]
@@ -288,22 +288,36 @@ model Evaluation {
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
-// Student Note (teacher → student)
+// Student Note (teacher → one student, or to all of them at once)
 // ─────────────────────────────────────────────────────────────────────────────
 
+// Written once however many students it is for: a note to "all students" is
+// one row here and a recipient row per student, so the teacher edits or
+// deletes it in one place, and a student who joins the halaqa later does not
+// inherit it.
 model StudentNote {
   id        Int      @id @default(autoincrement())
-  studentId Int
   teacherId Int
   note      String   @db.Text
   createdAt DateTime @default(now())
 
-  student Student @relation(fields: [studentId], references: [id], onDelete: Cascade)
-  teacher Teacher @relation(fields: [teacherId], references: [id], onDelete: Cascade)
+  teacher    Teacher                @relation(fields: [teacherId], references: [id], onDelete: Cascade)
+  recipients StudentNoteRecipient[]
 
-  @@index([studentId])
   @@index([teacherId])
   @@map("student_notes")
+}
+
+model StudentNoteRecipient {
+  noteId    Int
+  studentId Int
+
+  note    StudentNote @relation(fields: [noteId], references: [id], onDelete: Cascade)
+  student Student     @relation(fields: [studentId], references: [id], onDelete: Cascade)
+
+  @@id([noteId, studentId])
+  @@index([studentId])
+  @@map("student_note_recipients")
 }
 
 // ─────────────────────────────────────────────────────────────────────────────

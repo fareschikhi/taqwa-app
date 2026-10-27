@@ -261,9 +261,9 @@ async function main() {
   for (const [i, student] of students.slice(0, 4).entries()) {
     await prisma.studentNote.create({
       data: {
-        studentId: student.id,
         teacherId: teachers[i % teachers.length].id,
         note: 'الطالب ملتزم ومجتهد، يحتاج إلى تشجيع أكثر في المراجعة',
+        recipients: { create: { studentId: student.id } },
       },
     });
   }
@@ -273,7 +273,7 @@ async function main() {
   await prisma.notification.createMany({
     data: allUsers.map((user) => ({
       userId: user.id,
-      title: 'مرحباً بك في تقوى',
+      title: 'مرحباً بك في التقوى',
       body: 'تم تفعيل حسابك بنجاح، يمكنك الآن متابعة التقدم.',
     })),
   });
