@@ -66,9 +66,11 @@ export class UsersService {
       fullName?: string;
       phone?: string | null;
       email?: string | null;
+      avatar?: string;
     } = {};
 
     if (dto.fullName !== undefined) data.fullName = dto.fullName.trim();
+    if (dto.avatar) data.avatar = dto.avatar;
 
     for (const field of ['phone', 'email'] as const) {
       const raw = dto[field];

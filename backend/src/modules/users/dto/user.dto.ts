@@ -1,4 +1,4 @@
-import { IsBoolean, IsEmail, IsEnum, IsOptional, IsString, ValidateIf } from 'class-validator';
+import { IsBoolean, IsEmail, IsEnum, IsOptional, IsString, MaxLength, ValidateIf } from 'class-validator';
 import { Role } from '@prisma/client';
 import {
   IsFullName,
@@ -66,4 +66,7 @@ export class UpdateMeDto {
   @ValidateIf((o: UpdateMeDto) => o.email !== '')
   @IsEmail()
   email?: string;
+
+  /// The path /uploads returned for a freshly picked photo.
+  @IsOptional() @IsString() @MaxLength(500) avatar?: string;
 }

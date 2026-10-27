@@ -60,6 +60,16 @@ describe('UsersService.updateMe', () => {
     const { data } = prisma.user.update.mock.calls[0][0];
     expect(data).toEqual({ fullName: 'Only Name' });
   });
+
+  it('saves a newly uploaded avatar', async () => {
+    const prisma = makePrisma();
+    const service = new UsersService(prisma as any);
+
+    await service.updateMe(7, { avatar: '/uploads/me.jpg' });
+
+    const { data } = prisma.user.update.mock.calls[0][0];
+    expect(data).toEqual({ avatar: '/uploads/me.jpg' });
+  });
 });
 
 // A password an admin sets is a temporary one, except on an admin account:
