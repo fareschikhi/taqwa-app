@@ -3,6 +3,7 @@ import 'package:flutter_screenutil/flutter_screenutil.dart';
 import '../../../../core/constants/app_constants.dart';
 import '../../../../core/theme/app_colors.dart';
 import '../../../../core/theme/app_text_styles.dart';
+import '../../../../core/utils/student_grouping.dart';
 import '../../../../core/utils/telegram.dart';
 import '../../../data/models/manager_model.dart';
 import '../../../data/repositories/manager_repository.dart';
@@ -116,18 +117,25 @@ class _ManagerDetailsPageState extends State<ManagerDetailsPage> {
                       DetailSectionCard(
                         title: 'الحلقات المعينة (${halaqas.length})',
                         children: [
-                          if (halaqas.isEmpty)
+                          if (halaqas.isEmpty && !_manager.canAccessUnassigned)
                             AppText(
                               'لم تُعيَّن أي حلقة لهذا المدير.',
                               style: AppTextStyles.bodyMd.copyWith(
                                 color: AppColors.onSurfaceVariant,
                               ),
                             )
-                          else
+                          else ...[
                             for (final halaqa in halaqas) ...[
                               _HalaqaTile(halaqa: halaqa),
                               if (halaqa != halaqas.last) SizedBox(height: 8.h),
                             ],
+                            if (_manager.canAccessUnassigned) ...[
+                              if (halaqas.isNotEmpty) SizedBox(height: 8.h),
+                              const _HalaqaTile(
+                                halaqa: {'name': unassignedHalaqaLabel},
+                              ),
+                            ],
+                          ],
                         ],
                       ),
                       SizedBox(height: 16.h),

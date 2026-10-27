@@ -54,7 +54,7 @@ class TaqwaApp extends StatelessWidget {
         builder: (context, child) {
           configureScreenUtilForMobileFrame(context);
           return MaterialApp(
-            title: 'تقوى',
+            title: 'التقوى',
             debugShowCheckedModeBanner: false,
             theme: AppTheme.light,
             locale: const Locale('ar'),

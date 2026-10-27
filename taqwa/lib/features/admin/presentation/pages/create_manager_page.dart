@@ -15,6 +15,7 @@ import '../../../../features/data/repositories/manager_repository.dart';
 import '../../../../features/data/repositories/halaqa_repository.dart';
 import '../../../../features/data/models/manager_model.dart';
 import 'package:taqwa/core/widgets/app_text.dart';
+import 'package:taqwa/core/utils/student_grouping.dart';
 
 class CreateManagerPage extends StatefulWidget {
   /// Pass [editManager] to pre-fill the form for editing an existing manager.
@@ -40,6 +41,7 @@ class _CreateManagerPageState extends State<CreateManagerPage> {
   final Set<int> _selectedHalaqaIds = {};
   bool _canManageAccounts = false;
   bool _canDeleteAccounts = false;
+  bool _canAccessUnassigned = false;
   bool get _isEditing => widget.editManager != null;
 
   @override
@@ -53,6 +55,7 @@ class _CreateManagerPageState extends State<CreateManagerPage> {
       _emailController.text = m.email ?? '';
       _canManageAccounts = m.canManageAccounts;
       _canDeleteAccounts = m.canDeleteAccounts;
+      _canAccessUnassigned = m.canAccessUnassigned;
       if (m.halaqas != null) {
         for (final h in m.halaqas!) {
           final id = h['id'];
@@ -142,6 +145,7 @@ class _CreateManagerPageState extends State<CreateManagerPage> {
         if (avatarUrl != null) 'avatar': avatarUrl,
         'canManageAccounts': _canManageAccounts,
         'canDeleteAccounts': _canDeleteAccounts,
+        'canAccessUnassigned': _canAccessUnassigned,
         // Always send the list when editing, so clearing every toggle actually
         // unassigns: the API only rewrites assignments when halaqaIds is present,
         // and an omitted key would silently keep the old ones.
@@ -170,7 +174,10 @@ class _CreateManagerPageState extends State<CreateManagerPage> {
         _phoneController.clear();
         _emailController.clear();
         _passwordController.clear();
-        setState(() => _selectedHalaqaIds.clear());
+        setState(() {
+          _selectedHalaqaIds.clear();
+          _canAccessUnassigned = false;
+        });
       } else {
         Navigator.pop(context, true);
       }
@@ -305,9 +312,11 @@ class _CreateManagerPageState extends State<CreateManagerPage> {
                       SizedBox(height: 16.h),
                       AppTextField(
                         label: 'رقم الهاتف',
-                        hint: '05X XXX XXXX',
+                        hint: '05XXXXXXXX',
                         controller: _phoneController,
                         keyboardType: TextInputType.phone,
+                        maxLength: AccountValidators.phoneLength,
+                        inputFormatters: AccountValidators.phoneInputFormatters,
                         validator: AccountValidators.phone,
                         prefixIcon: const Icon(
                           Icons.phone_outlined,
@@ -373,10 +382,11 @@ class _CreateManagerPageState extends State<CreateManagerPage> {
                       else
                         ..._allHalaqas.map((h) {
                           final id = h.id;
-                          final name = h.name;
-                          final level = h.level ?? '';
                           final isSelected = _selectedHalaqaIds.contains(id);
-                          return GestureDetector(
+                          return _HalaqaOption(
+                            name: h.name,
+                            subtitle: h.level,
+                            isSelected: isSelected,
                             onTap: () => setState(() {
                               if (isSelected) {
                                 _selectedHalaqaIds.remove(id);
@@ -384,63 +394,18 @@ class _CreateManagerPageState extends State<CreateManagerPage> {
                                 _selectedHalaqaIds.add(id);
                               }
                             }),
-                            child: Container(
-                              margin: EdgeInsets.only(bottom: 8.h),
-                              padding: EdgeInsets.all(12.w),
-                              decoration: BoxDecoration(
-                                color: isSelected
-                                    ? AppColors.primaryContainer
-                                        .withValues(alpha: 0.3)
-                                    : AppColors.surfaceContainerLowest,
-                                borderRadius: BorderRadius.circular(
-                                    AppConstants.radiusMd),
-                                border: Border.all(
-                                  color: isSelected
-                                      ? AppColors.primaryContainer
-                                      : AppColors.outlineVariant,
-                                ),
-                              ),
-                              child: Row(
-                                mainAxisAlignment:
-                                    MainAxisAlignment.spaceBetween,
-                                children: [
-                                  Icon(
-                                    isSelected
-                                        ? Icons.check_circle
-                                        : Icons.circle_outlined,
-                                    color: isSelected
-                                        ? AppColors.primary
-                                        : AppColors.outline,
-                                    size: 20.w,
-                                  ),
-                                  Column(
-                                    crossAxisAlignment:
-                                        CrossAxisAlignment.end,
-                                    children: [
-                                      AppText(
-                                        name,
-                                        style: AppTextStyles.bodyMd.copyWith(
-                                          color: AppColors.onSurface,
-                                          fontWeight: isSelected
-                                              ? FontWeight.w600
-                                              : FontWeight.w400,
-                                        ),
-                                      ),
-                                      if (level.isNotEmpty)
-                                        AppText(
-                                          level,
-                                          style: AppTextStyles.labelSm
-                                              .copyWith(
-                                                  color: AppColors
-                                                      .onSurfaceVariant),
-                                        ),
-                                    ],
-                                  ),
-                                ],
-                              ),
-                            ),
                           );
                         }),
+                      // Shown even with no halaqas: the students outside any
+                      // halaqa still need someone to follow them up.
+                      _HalaqaOption(
+                        name: unassignedHalaqaLabel,
+                        subtitle: 'الطلاب غير المسجلين في أي حلقة',
+                        isSelected: _canAccessUnassigned,
+                        onTap: () => setState(
+                          () => _canAccessUnassigned = !_canAccessUnassigned,
+                        ),
+                      ),
                       SizedBox(height: 24.h),
                       _SectionHeader(
                         icon: Icons.shield_outlined,
@@ -512,7 +477,7 @@ class _CreateManagerPageState extends State<CreateManagerPage> {
               ),
               const Spacer(),
               AppText(
-                'تقوى',
+                'التقوى',
                 style: AppTextStyles.headlineMd.copyWith(
                   color: AppColors.primary,
                 ),
@@ -580,6 +545,72 @@ class _SectionHeader extends StatelessWidget {
         SizedBox(width: 8.w),
         Icon(icon, color: AppColors.primary, size: 22.w),
       ],
+    );
+  }
+}
+
+/// One selectable entry in the halaqa assignment list.
+class _HalaqaOption extends StatelessWidget {
+  const _HalaqaOption({
+    required this.name,
+    required this.isSelected,
+    required this.onTap,
+    this.subtitle,
+  });
+  final String name;
+  final String? subtitle;
+  final bool isSelected;
+  final VoidCallback onTap;
+
+  @override
+  Widget build(BuildContext context) {
+    return GestureDetector(
+      onTap: onTap,
+      child: Container(
+        margin: EdgeInsets.only(bottom: 8.h),
+        padding: EdgeInsets.all(12.w),
+        decoration: BoxDecoration(
+          color: isSelected
+              ? AppColors.primaryContainer.withValues(alpha: 0.3)
+              : AppColors.surfaceContainerLowest,
+          borderRadius: BorderRadius.circular(AppConstants.radiusMd),
+          border: Border.all(
+            color: isSelected
+                ? AppColors.primaryContainer
+                : AppColors.outlineVariant,
+          ),
+        ),
+        child: Row(
+          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+          children: [
+            Icon(
+              isSelected ? Icons.check_circle : Icons.circle_outlined,
+              color: isSelected ? AppColors.primary : AppColors.outline,
+              size: 20.w,
+            ),
+            Column(
+              crossAxisAlignment: CrossAxisAlignment.end,
+              children: [
+                AppText(
+                  name,
+                  style: AppTextStyles.bodyMd.copyWith(
+                    color: AppColors.onSurface,
+                    fontWeight:
+                        isSelected ? FontWeight.w600 : FontWeight.w400,
+                  ),
+                ),
+                if (subtitle != null && subtitle!.isNotEmpty)
+                  AppText(
+                    subtitle!,
+                    style: AppTextStyles.labelSm.copyWith(
+                      color: AppColors.onSurfaceVariant,
+                    ),
+                  ),
+              ],
+            ),
+          ],
+        ),
+      ),
     );
   }
 }

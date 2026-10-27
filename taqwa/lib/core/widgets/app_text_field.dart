@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
 import '../theme/app_colors.dart';
 import '../theme/app_text_styles.dart';
@@ -25,6 +26,8 @@ class AppTextField extends StatefulWidget {
     this.onTap,
     this.textInputAction,
     this.autofocus = false,
+    this.maxLength,
+    this.inputFormatters,
   });
 
   final String? label;
@@ -44,6 +47,8 @@ class AppTextField extends StatefulWidget {
   final VoidCallback? onTap;
   final TextInputAction? textInputAction;
   final bool autofocus;
+  final int? maxLength;
+  final List<TextInputFormatter>? inputFormatters;
 
   @override
   State<AppTextField> createState() => _AppTextFieldState();
@@ -54,6 +59,12 @@ class _AppTextFieldState extends State<AppTextField> {
   bool _isFocused = false;
   late FocusNode _focusNode;
 
+  /// Follows the content rather than being forced to RTL: a Latin name, an
+  /// email or a phone number inside an RTL paragraph makes its end offset
+  /// ambiguous, and a tap at the visual end lands one character early.
+  /// Empty stays RTL so the Arabic hint and the caret sit on the right.
+  late TextDirection _textDirection;
+
   @override
   void initState() {
     super.initState();
@@ -62,12 +73,35 @@ class _AppTextFieldState extends State<AppTextField> {
     _focusNode.addListener(() {
       setState(() => _isFocused = _focusNode.hasFocus);
     });
+    _textDirection = _directionOf(widget.controller?.text ?? '');
+    widget.controller?.addListener(_onControllerChanged);
+  }
+
+  @override
+  void didUpdateWidget(covariant AppTextField oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    if (oldWidget.controller != widget.controller) {
+      oldWidget.controller?.removeListener(_onControllerChanged);
+      widget.controller?.addListener(_onControllerChanged);
+      _textDirection = _directionOf(widget.controller?.text ?? '');
+    }
   }
 
   @override
   void dispose() {
+    widget.controller?.removeListener(_onControllerChanged);
     _focusNode.dispose();
     super.dispose();
+  }
+
+  static TextDirection _directionOf(String text) =>
+      text.isEmpty ? TextDirection.rtl : AppText.directionOf(text);
+
+  void _onControllerChanged() => _updateDirection(widget.controller!.text);
+
+  void _updateDirection(String text) {
+    final next = _directionOf(text);
+    if (next != _textDirection) setState(() => _textDirection = next);
   }
 
   @override
@@ -103,7 +137,11 @@ class _AppTextFieldState extends State<AppTextField> {
             controller: widget.controller,
             obscureText: _obscureText,
             keyboardType: widget.keyboardType,
-            onChanged: widget.onChanged,
+            onChanged: (value) {
+              // Fields without a controller only report edits here.
+              if (widget.controller == null) _updateDirection(value);
+              widget.onChanged?.call(value);
+            },
             onFieldSubmitted: widget.onSubmitted,
             validator: widget.validator,
             enabled: widget.enabled,
@@ -114,8 +152,10 @@ class _AppTextFieldState extends State<AppTextField> {
             focusNode: _focusNode,
             textInputAction: widget.textInputAction,
             autofocus: widget.autofocus,
+            maxLength: widget.maxLength,
+            inputFormatters: widget.inputFormatters,
             textAlign: TextAlign.right,
-            textDirection: TextDirection.rtl,
+            textDirection: _textDirection,
             style: AppTextStyles.bodyMd.copyWith(color: AppColors.onSurface),
             decoration: InputDecoration(
               hintText: widget.hint,

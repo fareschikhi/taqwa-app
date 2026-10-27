@@ -180,7 +180,7 @@ class _ManagerStudentsPageState extends ConsumerState<ManagerStudentsPage> {
                   children: [
                     const Spacer(),
                     AppText(
-                      'تقوى',
+                      'التقوى',
                       style: AppTextStyles.headlineMd.copyWith(
                         color: AppColors.primary,
                       ),

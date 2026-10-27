@@ -199,7 +199,7 @@ class _TeacherDashboardPageState extends ConsumerState<TeacherDashboardPage> {
             ),
             const Spacer(),
             AppText(
-              'تقوى',
+              'التقوى',
               style: AppTextStyles.headlineMd.copyWith(
                 color: AppColors.primary,
               ),

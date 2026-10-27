@@ -22,8 +22,8 @@ class NotesPage extends ConsumerStatefulWidget {
 class _NotesPageState extends ConsumerState<NotesPage> {
   final _noteController = TextEditingController();
   TeacherStudentModel? _selectedStudent;
-  // Picked "all students": the note goes to every student in _students, one
-  // row each. Mutually exclusive with _selectedStudent.
+  // Picked "all students": one note addressed to every student in _students.
+  // Mutually exclusive with _selectedStudent.
   bool _allStudents = false;
   bool _showForm = false;
   bool _isSaving = false;
@@ -76,21 +76,19 @@ class _NotesPageState extends ConsumerState<NotesPage> {
 
     setState(() => _isSaving = true);
     try {
-      final newNotes = _allStudents
+      final newNote = _allStudents
           ? await _repo.createBulkNote(
               studentIds: _students.map((s) => s.id).toList(),
               teacherId: tid,
               note: text,
             )
-          : [
-              await _repo.createNote(
-                studentId: _selectedStudent!.id,
-                teacherId: tid,
-                note: text,
-              ),
-            ];
+          : await _repo.createNote(
+              studentId: _selectedStudent!.id,
+              teacherId: tid,
+              note: text,
+            );
       setState(() {
-        _notes = [...newNotes, ..._notes];
+        _notes = [newNote, ..._notes];
         _showForm = false;
         _selectedStudent = null;
         _allStudents = false;
@@ -308,7 +306,7 @@ class _NotesPageState extends ConsumerState<NotesPage> {
                               ),
                               const Spacer(),
                               AppText(
-                                'تقوى',
+                                'التقوى',
                                 style: AppTextStyles.headlineMd.copyWith(
                                   color: AppColors.primary,
                                 ),
@@ -511,6 +509,9 @@ class _NoteCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final title = note.isBulk
+        ? 'جميع الطلاب (${note.recipientIds.length})'
+        : note.studentName ?? '';
     final initial = (note.studentName?.isNotEmpty ?? false)
         ? note.studentName![0]
         : '؟';
@@ -564,7 +565,7 @@ class _NoteCard extends StatelessWidget {
                 ),
                 const Spacer(),
                 AppText(
-                  note.studentName ?? '',
+                  title,
                   style: AppTextStyles.labelMdBold.copyWith(
                     color: AppColors.onSurface,
                   ),
@@ -578,12 +579,18 @@ class _NoteCard extends StatelessWidget {
                     shape: BoxShape.circle,
                   ),
                   child: Center(
-                    child: AppText(
-                      initial,
-                      style: AppTextStyles.labelMdBold.copyWith(
-                        color: AppColors.onPrimaryContainer,
-                      ),
-                    ),
+                    child: note.isBulk
+                        ? Icon(
+                            Icons.group,
+                            size: 18.w,
+                            color: AppColors.onPrimaryContainer,
+                          )
+                        : AppText(
+                            initial,
+                            style: AppTextStyles.labelMdBold.copyWith(
+                              color: AppColors.onPrimaryContainer,
+                            ),
+                          ),
                   ),
                 ),
               ],
@@ -612,8 +619,9 @@ class _NoteCard extends StatelessWidget {
                         final confirmed = await ConfirmDeleteDialog.show(
                           context,
                           title: 'حذف الملاحظة',
-                          message:
-                              'هل أنت متأكد من حذف هذه الملاحظة؟ لا يمكن التراجع عن هذا الإجراء.',
+                          message: note.isBulk
+                              ? 'ستُحذف هذه الملاحظة من جميع الطلاب (${note.recipientIds.length}). لا يمكن التراجع عن هذا الإجراء.'
+                              : 'هل أنت متأكد من حذف هذه الملاحظة؟ لا يمكن التراجع عن هذا الإجراء.',
                         );
                         if (confirmed) onDelete();
                       },

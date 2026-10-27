@@ -247,7 +247,7 @@ class _StudentFormPageState extends State<StudentFormPage> {
           StudentPayloadDto(
             fullName: _nameController.text.trim(),
             phone: _phoneController.text.trim(),
-            birthDate: _isoDate(birthDate!),
+            birthDate: birthDate == null ? null : _isoDate(birthDate),
             address: _addressController.text.trim(),
             halaqaId: _selectedHalaqaId,
             parentId: _selectedParentId,
@@ -365,7 +365,7 @@ class _StudentFormPageState extends State<StudentFormPage> {
           ),
           SizedBox(height: 16.h),
           AppTextField(
-            label: 'تاريخ الميلاد *',
+            label: 'تاريخ الميلاد',
             hint: 'dd/mm/yyyy',
             controller: _dobController,
             readOnly: true,
@@ -378,8 +378,6 @@ class _StudentFormPageState extends State<StudentFormPage> {
               Icons.calendar_month,
               color: AppColors.onSurfaceVariant,
             ),
-            validator: (v) =>
-                (v == null || v.trim().isEmpty) ? 'هذا الحقل مطلوب' : null,
           ),
           SizedBox(height: 16.h),
           AppTextField(
@@ -398,15 +396,20 @@ class _StudentFormPageState extends State<StudentFormPage> {
           ),
           SizedBox(height: 16.h),
           AppTextField(
-            label: 'رقم الهاتف *',
-            hint: '05 51 23 45 67',
+            label: _isAdult ? 'رقم الهاتف *' : 'رقم الهاتف',
+            hint: '05XXXXXXXX',
             controller: _phoneController,
             keyboardType: TextInputType.phone,
+            maxLength: AccountValidators.phoneLength,
+            inputFormatters: AccountValidators.phoneInputFormatters,
             prefixIcon: const Icon(
               Icons.phone_outlined,
               color: AppColors.onSurfaceVariant,
             ),
-            validator: (v) => AccountValidators.phone(v, required: true),
+            // Only a new adult signs in with it; a child is a record with no
+            // login, and many were imported with a name alone, so requiring
+            // it would block every later edit (such as picking a halaqa).
+            validator: (v) => AccountValidators.phone(v, required: _isAdult),
           ),
           ContactOwnersHint(
             controller: _phoneController,
@@ -649,7 +652,7 @@ class _StudentFormPageState extends State<StudentFormPage> {
     final picked = await showDatePicker(
       context: context,
       initialDate: _selectedBirthDate ?? DateTime(2012),
-      firstDate: DateTime(1990),
+      firstDate: DateTime(1900),
       lastDate: DateTime.now(),
       locale: const Locale('fr'),
     );

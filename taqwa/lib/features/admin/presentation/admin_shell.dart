@@ -175,7 +175,7 @@ class _AdminShellState extends ConsumerState<AdminShell> {
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
                         AppText(
-                          'تقوى',
+                          'التقوى',
                           style: AppTextStyles.headlineMd.copyWith(
                             color: AppColors.primary,
                             fontWeight: FontWeight.bold,

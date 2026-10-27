@@ -17,10 +17,16 @@ class UserRemoteDatasource {
     required String fullName,
     required String phone,
     required String email,
+    String? avatar,
   }) async {
     final response = await _dio.patch(
       '${ApiEndpoints.users}/me',
-      data: {'fullName': fullName, 'phone': phone, 'email': email},
+      data: {
+        'fullName': fullName,
+        'phone': phone,
+        'email': email,
+        'avatar': ?avatar,
+      },
     );
     return UserModel.fromJson(response.data);
   }

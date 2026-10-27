@@ -15,6 +15,9 @@ class ManagerModel {
   final bool canManageAccounts;
   final bool canDeleteAccounts;
 
+  /// Whether this manager also reaches the students who are in no halaqa.
+  final bool canAccessUnassigned;
+
   const ManagerModel({
     this.id,
     this.userId,
@@ -27,6 +30,7 @@ class ManagerModel {
     this.justificationsCount,
     this.canManageAccounts = false,
     this.canDeleteAccounts = false,
+    this.canAccessUnassigned = false,
   });
 
   factory ManagerModel.fromJson(Map<String, dynamic> json) {
@@ -51,6 +55,7 @@ class ManagerModel {
       justificationsCount: count?['justifications'],
       canManageAccounts: (json['canManageAccounts'] as bool?) ?? false,
       canDeleteAccounts: (json['canDeleteAccounts'] as bool?) ?? false,
+      canAccessUnassigned: (json['canAccessUnassigned'] as bool?) ?? false,
     );
   }
 

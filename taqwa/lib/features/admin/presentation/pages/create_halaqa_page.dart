@@ -767,7 +767,7 @@ class _CreateHalaqaPageState extends State<CreateHalaqaPage> {
           Icon(Icons.home, color: AppColors.primary, size: 22.w),
           SizedBox(width: 8.w),
           AppText(
-            'تقوى',
+            'التقوى',
             style: AppTextStyles.labelMd.copyWith(color: AppColors.primary),
           ),
         ],

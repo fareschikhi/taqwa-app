@@ -270,7 +270,7 @@ class _ManagersManagementPageState extends State<ManagersManagementPage> {
               ),
               const Spacer(),
               AppText(
-                'تقوى',
+                'التقوى',
                 style: AppTextStyles.headlineMd.copyWith(
                   color: AppColors.primary,
                 ),

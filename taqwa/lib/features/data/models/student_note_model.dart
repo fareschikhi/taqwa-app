@@ -7,6 +7,10 @@ class StudentNoteModel {
   final String? studentName;
   final String? studentAvatar;
   final String? teacherName;
+  // Everyone the note is addressed to. On a student's own page this is just
+  // that student; the teacher sees the whole list. studentId/studentName are
+  // its first entry.
+  final List<int> recipientIds;
 
   const StudentNoteModel({
     required this.id,
@@ -17,7 +21,11 @@ class StudentNoteModel {
     this.studentName,
     this.studentAvatar,
     this.teacherName,
+    this.recipientIds = const [],
   });
+
+  /// Sent to several students at once ("all students" on the teacher's page).
+  bool get isBulk => recipientIds.length > 1;
 
   factory StudentNoteModel.fromJson(Map<String, dynamic> json) {
     final student = json['student'] as Map<String, dynamic>?;
@@ -34,6 +42,9 @@ class StudentNoteModel {
       studentName: studentUser?['fullName'] as String?,
       studentAvatar: studentUser?['avatar'] as String?,
       teacherName: teacherUser?['fullName'] as String?,
+      recipientIds: ((json['recipients'] as List?) ?? const [])
+          .map((r) => ((r as Map<String, dynamic>)['studentId'] as num).toInt())
+          .toList(),
     );
   }
 }

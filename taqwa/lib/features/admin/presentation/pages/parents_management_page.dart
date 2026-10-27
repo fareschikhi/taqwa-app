@@ -187,7 +187,7 @@ class _ParentsManagementPageState extends State<ParentsManagementPage> {
                         ),
                         const Spacer(),
                         AppText(
-                          'تقوى',
+                          'التقوى',
                           style: AppTextStyles.headlineMd.copyWith(
                             color: AppColors.primary,
                           ),

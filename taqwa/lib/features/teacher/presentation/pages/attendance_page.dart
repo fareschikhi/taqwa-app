@@ -807,7 +807,7 @@ class _AttendancePageState extends ConsumerState<AttendancePage>
               ),
               const Spacer(),
               AppText(
-                'تقوى',
+                'التقوى',
                 style: AppTextStyles.headlineMd.copyWith(
                   color: AppColors.primary,
                 ),

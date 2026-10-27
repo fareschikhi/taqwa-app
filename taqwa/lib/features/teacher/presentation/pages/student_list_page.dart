@@ -217,7 +217,7 @@ class _StudentListPageState extends ConsumerState<StudentListPage> {
                       ),
                       const Spacer(),
                       AppText(
-                        'تقوى',
+                        'التقوى',
                         style: AppTextStyles.headlineMd.copyWith(
                           color: AppColors.primary,
                         ),

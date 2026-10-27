@@ -99,7 +99,7 @@ class _ChildProgressPageState extends ConsumerState<ChildProgressPage> {
                       children: [
                         const Spacer(),
                         AppText(
-                          'تقوى',
+                          'التقوى',
                           style: AppTextStyles.headlineMd.copyWith(
                             color: AppColors.primary,
                           ),

@@ -18,7 +18,7 @@ class AppLogo extends StatelessWidget {
       height: height,
       fit: BoxFit.contain,
       filterQuality: FilterQuality.medium,
-      semanticLabel: 'تقوى',
+      semanticLabel: 'التقوى',
     );
   }
 }

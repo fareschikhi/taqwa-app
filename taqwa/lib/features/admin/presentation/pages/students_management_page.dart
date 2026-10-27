@@ -235,13 +235,13 @@ class _StudentsManagementPageState extends State<StudentsManagementPage> {
     if (position.pixels >= position.maxScrollExtent - 200) _loadMore();
   }
 
-  /// A short first page — or sections folded away — can leave nothing to
-  /// scroll, and then the scroll listener never fires. Keep loading until
-  /// the list overflows the screen or the roster runs out.
+  /// A short first page — or sections folded away — can bring the end of the
+  /// list into view without any scrolling, and then the scroll listener never
+  /// fires. Keep loading until the end is off screen or the roster runs out.
   void _fillViewport() {
     WidgetsBinding.instance.addPostFrameCallback((_) {
       if (!mounted || !_scrollController.hasClients) return;
-      if (_scrollController.position.maxScrollExtent <= 0) _loadMore();
+      _onScroll();
     });
   }
 
@@ -310,7 +310,7 @@ class _StudentsManagementPageState extends State<StudentsManagementPage> {
                         ),
                         SizedBox(width: 8.w),
                         AppText(
-                          'تقوى',
+                          'التقوى',
                           style: AppTextStyles.headlineMd.copyWith(
                             color: AppColors.primary,
                           ),
@@ -392,11 +392,14 @@ class _StudentsManagementPageState extends State<StudentsManagementPage> {
                                 loaded: group.students.length,
                                 isUnassigned: group.isUnassigned,
                                 isExpanded: _isExpanded(group),
-                                onToggle: () => setState(() {
-                                  if (!_collapsed.remove(group.halaqaId)) {
-                                    _collapsed.add(group.halaqaId);
-                                  }
-                                }),
+                                onToggle: () {
+                                  setState(() {
+                                    if (!_collapsed.remove(group.halaqaId)) {
+                                      _collapsed.add(group.halaqaId);
+                                    }
+                                  });
+                                  _fillViewport();
+                                },
                                 children: [
                                   for (final student in group.students)
                                     Padding(

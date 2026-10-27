@@ -97,7 +97,7 @@ class _LoginPageState extends ConsumerState<LoginPage>
                     AppLogo(height: 112.w),
                     SizedBox(height: 24.h),
                     AppText(
-                      'تقوى',
+                      'التقوى',
                       style: AppTextStyles.displayLg.copyWith(
                         color: AppColors.primary,
                         fontWeight: FontWeight.w700,

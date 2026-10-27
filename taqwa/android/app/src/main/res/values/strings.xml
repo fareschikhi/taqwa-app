@@ -1,0 +1,5 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <!-- Launcher name. Arabic is the base; values-en overrides it on English devices. -->
+    <string name="app_name">التقوى</string>
+</resources>

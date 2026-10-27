@@ -198,7 +198,7 @@ class _AdultDashboardPageState extends ConsumerState<AdultDashboardPage> {
             ),
             SizedBox(width: 8.w),
             AppText(
-              'تقوى',
+              'التقوى',
               style: AppTextStyles.headlineMd.copyWith(
                 color: AppColors.primary,
               ),

@@ -181,11 +181,13 @@ class AuthNotifier extends Notifier<AuthState> {
     required String fullName,
     required String phone,
     required String email,
+    String? avatar,
   }) async {
     final updated = await _userDatasource.updateMe(
       fullName: fullName,
       phone: phone,
       email: email,
+      avatar: avatar,
     );
     await _storage.write(
       key: 'cached_user',

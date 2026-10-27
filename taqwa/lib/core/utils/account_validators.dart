@@ -1,3 +1,5 @@
+import 'package:flutter/services.dart';
+
 /// Form validators for the account screens (manager, teacher, parent,
 /// student). They mirror the backend's `common/validators/account-fields.ts`,
 /// so a form never lets through what the API will reject — and the messages
@@ -11,6 +13,12 @@ class AccountValidators {
   // Deliberately loose: one @, no spaces, a dot in the domain. The server's
   // IsEmail is the final word; this only catches obvious typos early.
   static final _email = RegExp(r'^[^\s@]+@[^\s@]+\.[^\s@]+$');
+
+  /// Phone fields stop at the stored form's 10 digits and take digits only,
+  /// so the admin can't type past a full number. +213 can't be typed there;
+  /// the server still folds it for other API callers.
+  static const phoneLength = 10;
+  static final phoneInputFormatters = [FilteringTextInputFormatter.digitsOnly];
 
   static const phoneError =
       'رقم الهاتف غير صالح: 10 أرقام تبدأ بـ 05 أو 06 أو 07';

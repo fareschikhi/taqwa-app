@@ -201,7 +201,7 @@ class _ParentDashboardPageState extends ConsumerState<ParentDashboardPage> {
             ),
             SizedBox(width: 8.w),
             AppText(
-              'تقوى',
+              'التقوى',
               style: AppTextStyles.headlineMd.copyWith(
                 color: AppColors.primary,
               ),

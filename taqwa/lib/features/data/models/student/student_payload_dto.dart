@@ -1,7 +1,7 @@
 class StudentPayloadDto {
   final String fullName;
   final String phone;
-  final String birthDate;
+  final String? birthDate;
   final String address;
   final int? halaqaId;
   final int? parentId;
@@ -30,7 +30,7 @@ class StudentPayloadDto {
   const StudentPayloadDto({
     required this.fullName,
     required this.phone,
-    required this.birthDate,
+    this.birthDate,
     required this.address,
     this.halaqaId,
     this.parentId,
@@ -44,7 +44,7 @@ class StudentPayloadDto {
   Map<String, dynamic> toJson() => {
     'fullName': fullName,
     'phone': phone,
-    'birthDate': birthDate,
+    'birthDate': ?birthDate,
     'address': address,
     if (halaqaId != null) 'halaqaId': halaqaId,
     if (avatar != null && avatar!.isNotEmpty) 'avatar': avatar,

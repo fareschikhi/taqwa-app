@@ -17,7 +17,7 @@ class ApiEndpoints {
   /// sits on the same network as the dev machine.
   static const String baseUrl = String.fromEnvironment(
     'API_BASE_URL',
-    defaultValue: 'https://fares.taile6d404.ts.net/api',
+    defaultValue: 'https://taqwa.taile6d404.ts.net/api',
   );
   static const String login = '/auth/login';
   static const String changePassword = '/auth/password';

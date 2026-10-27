@@ -343,9 +343,11 @@ class _CreateTeacherPageState extends State<CreateTeacherPage> {
                       SizedBox(height: 16.h),
                       AppTextField(
                         label: 'رقم الهاتف',
-                        hint: '05X XXX XXXX',
+                        hint: '05XXXXXXXX',
                         controller: _phoneController,
                         keyboardType: TextInputType.phone,
+                        maxLength: AccountValidators.phoneLength,
+                        inputFormatters: AccountValidators.phoneInputFormatters,
                         validator: AccountValidators.phone,
                         prefixIcon: const Icon(
                           Icons.phone_outlined,
@@ -434,7 +436,7 @@ class _CreateTeacherPageState extends State<CreateTeacherPage> {
               ),
               const Spacer(),
               AppText(
-                'تقوى',
+                'التقوى',
                 style: AppTextStyles.headlineMd.copyWith(
                   color: AppColors.primary,
                 ),

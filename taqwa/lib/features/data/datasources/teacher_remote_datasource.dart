@@ -173,7 +173,7 @@ class TeacherRemoteDatasource {
     return StudentNoteModel.fromJson(response.data as Map<String, dynamic>);
   }
 
-  Future<List<StudentNoteModel>> createBulkNote({
+  Future<StudentNoteModel> createBulkNote({
     required List<int> studentIds,
     required int teacherId,
     required String note,
@@ -182,9 +182,7 @@ class TeacherRemoteDatasource {
       '${ApiEndpoints.studentNotes}/bulk',
       data: {'studentIds': studentIds, 'teacherId': teacherId, 'note': note},
     );
-    return (response.data as List)
-        .map((e) => StudentNoteModel.fromJson(e as Map<String, dynamic>))
-        .toList();
+    return StudentNoteModel.fromJson(response.data as Map<String, dynamic>);
   }
 
   Future<void> deleteNote(int id) async {

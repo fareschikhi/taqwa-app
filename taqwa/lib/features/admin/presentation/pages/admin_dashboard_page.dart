@@ -47,10 +47,23 @@ class _AdminDashboardPageState extends ConsumerState<AdminDashboardPage> {
   String _attendanceToday = '—';
   List<DayAttendance> _week = const [];
 
+  /// The shell's tab as of the last dependency change. The IndexedStack keeps
+  /// this page alive, so initState runs once per login; coming back to it
+  /// from another tab is what picks up students or teachers added there.
+  int? _shellIndex;
+
   @override
   void initState() {
     super.initState();
     _loadStats();
+  }
+
+  @override
+  void didChangeDependencies() {
+    super.didChangeDependencies();
+    final index = AdminShellScope.of(context)?.currentIndex;
+    if (index == 0 && _shellIndex != null && _shellIndex != 0) _loadStats();
+    _shellIndex = index;
   }
 
   Future<void> _loadStats() async {
@@ -231,7 +244,7 @@ class _AdminDashboardPageState extends ConsumerState<AdminDashboardPage> {
             ),
             SizedBox(width: 8.w),
             AppText(
-              'تقوى',
+              'التقوى',
               style: AppTextStyles.headlineMd.copyWith(
                 color: AppColors.primary,
               ),

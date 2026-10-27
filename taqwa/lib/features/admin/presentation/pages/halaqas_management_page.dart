@@ -132,7 +132,7 @@ class _HalaqasManagementPageState extends State<HalaqasManagementPage> {
                         ),
                         const Spacer(),
                         AppText(
-                          'تقوى',
+                          'التقوى',
                           style: AppTextStyles.headlineMd.copyWith(
                             color: AppColors.primary,
                           ),

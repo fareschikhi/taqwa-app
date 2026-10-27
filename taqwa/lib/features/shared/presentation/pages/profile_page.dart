@@ -1,4 +1,7 @@
+import 'dart:typed_data';
 import 'package:flutter/material.dart';
+import 'package:image_picker/image_picker.dart';
+import 'package:taqwa/features/data/services/image_upload_service.dart';
 import 'package:taqwa/features/shared/presentation/widgets/contact_owners_hint.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
@@ -7,6 +10,8 @@ import '../../../../core/theme/app_text_styles.dart';
 import '../../../../core/constants/app_constants.dart';
 import '../../../../core/widgets/app_button.dart';
 import '../../../../core/widgets/app_text_field.dart';
+import '../../../../core/widgets/avatar_widget.dart';
+import '../../../../core/utils/account_validators.dart';
 import '../../../../core/providers/auth_provider.dart';
 import 'package:taqwa/core/widgets/app_text.dart';
 import '../widgets/change_password_sheet.dart';
@@ -65,6 +70,76 @@ class _ProfilePageState extends ConsumerState<ProfilePage> {
   final _emailController = TextEditingController();
   bool _editMode = false;
   bool _isSaving = false;
+  final ImagePicker _picker = ImagePicker();
+
+  /// A photo picked in edit mode. It is only uploaded on save, and its bytes
+  /// drive the preview, which works on the web build where dart:io does not.
+  XFile? _selectedImage;
+  Uint8List? _selectedImageBytes;
+
+  void _toggleEditMode() => setState(() {
+    _editMode = !_editMode;
+    // Cancelling drops a photo that was picked but never saved.
+    if (!_editMode) {
+      _selectedImage = null;
+      _selectedImageBytes = null;
+    }
+  });
+
+  Future<void> _pickFrom(ImageSource source) async {
+    final img = await _picker.pickImage(
+      source: source,
+      imageQuality: 80,
+      maxWidth: AppConstants.pickedImageMaxDimension,
+      maxHeight: AppConstants.pickedImageMaxDimension,
+    );
+    if (img == null) return;
+    final bytes = await img.readAsBytes();
+    if (!mounted) return;
+    setState(() {
+      _selectedImage = img;
+      _selectedImageBytes = bytes;
+    });
+  }
+
+  void _pickImage() {
+    showModalBottomSheet(
+      context: context,
+      shape: RoundedRectangleBorder(
+        borderRadius: BorderRadius.vertical(
+          top: Radius.circular(AppConstants.radiusXl),
+        ),
+      ),
+      builder: (ctx) => SafeArea(
+        child: Wrap(
+          children: [
+            ListTile(
+              leading: const Icon(
+                Icons.photo_library,
+                color: AppColors.primary,
+              ),
+              title: AppText('اختيار من المعرض', style: AppTextStyles.bodyMd),
+              onTap: () {
+                Navigator.pop(ctx);
+                _pickFrom(ImageSource.gallery);
+              },
+            ),
+            ListTile(
+              leading: const Icon(Icons.camera_alt, color: AppColors.primary),
+              title: AppText(
+                'التقاط صورة بالكاميرا',
+                style: AppTextStyles.bodyMd,
+              ),
+              onTap: () {
+                Navigator.pop(ctx);
+                _pickFrom(ImageSource.camera);
+              },
+            ),
+          ],
+        ),
+      ),
+    );
+  }
 
   /// Set once the controllers have been seeded, so a rebuild while the user is
   /// typing does not overwrite what they have entered.
@@ -81,15 +156,24 @@ class _ProfilePageState extends ConsumerState<ProfilePage> {
   Future<void> _save() async {
     setState(() => _isSaving = true);
     try {
+      String? avatarUrl;
+      if (_selectedImage != null) {
+        avatarUrl = await ImageUploadService.uploadImage(_selectedImage!);
+      }
       await ref
           .read(authProvider.notifier)
           .updateProfile(
             fullName: _nameController.text.trim(),
             phone: _phoneController.text.trim(),
             email: _emailController.text.trim(),
+            avatar: avatarUrl,
           );
       if (!mounted) return;
-      setState(() => _editMode = false);
+      setState(() {
+        _editMode = false;
+        _selectedImage = null;
+        _selectedImageBytes = null;
+      });
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(content: AppText('تم حفظ التغييرات')),
       );
@@ -153,7 +237,7 @@ class _ProfilePageState extends ConsumerState<ProfilePage> {
                       children: [
                         if (canEditProfile(user.role))
                         GestureDetector(
-                          onTap: () => setState(() => _editMode = !_editMode),
+                          onTap: _toggleEditMode,
                           child: Container(
                             padding: EdgeInsets.symmetric(
                               horizontal: 12.w,
@@ -195,27 +279,40 @@ class _ProfilePageState extends ConsumerState<ProfilePage> {
                     ),
                     SizedBox(height: 20.h),
                     // Avatar
-                    Stack(
+                    GestureDetector(
+                      onTap: _editMode ? _pickImage : null,
+                      child: Stack(
                       children: [
+                        // The ring is drawn around the photo, so the image
+                        // itself is the circle inside the 3px border.
                         Container(
                           width: 90.w,
                           height: 90.w,
                           decoration: BoxDecoration(
-                            color: AppColors.onPrimary.withValues(alpha: 0.2),
                             shape: BoxShape.circle,
                             border: Border.all(
                               color: AppColors.onPrimary.withValues(alpha: 0.5),
                               width: 3,
                             ),
                           ),
-                          child: Center(
-                            child: AppText(
-                              initialFor(user.fullName),
-                              style: AppTextStyles.headlineLgMobile.copyWith(
-                                color: AppColors.onPrimary,
-                              ),
-                            ),
-                          ),
+                          child: _selectedImageBytes != null
+                              ? ClipOval(
+                                  child: Image.memory(
+                                    _selectedImageBytes!,
+                                    fit: BoxFit.cover,
+                                  ),
+                                )
+                              : AvatarWidget(
+                                  avatarUrl: user.avatar,
+                                  size: 90.w - 6,
+                                  backgroundColor: AppColors.onPrimary
+                                      .withValues(alpha: 0.2),
+                                  fallback: AppText(
+                                    initialFor(user.fullName),
+                                    style: AppTextStyles.headlineLgMobile
+                                        .copyWith(color: AppColors.onPrimary),
+                                  ),
+                                ),
                         ),
                         if (_editMode)
                           Positioned(
@@ -236,6 +333,7 @@ class _ProfilePageState extends ConsumerState<ProfilePage> {
                             ),
                           ),
                       ],
+                      ),
                     ),
                     SizedBox(height: 12.h),
                     AppText(
@@ -288,9 +386,11 @@ class _ProfilePageState extends ConsumerState<ProfilePage> {
                     SizedBox(height: 14.h),
                     AppTextField(
                       label: 'رقم الهاتف',
-                      hint: '05X XXX XXXX',
+                      hint: '05XXXXXXXX',
                       controller: _phoneController,
                       keyboardType: TextInputType.phone,
+                      maxLength: AccountValidators.phoneLength,
+                      inputFormatters: AccountValidators.phoneInputFormatters,
                       enabled: _editMode,
                       prefixIcon: const Icon(
                         Icons.phone_outlined,

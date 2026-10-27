@@ -206,7 +206,7 @@ class _ManagerDashboardPageState extends ConsumerState<ManagerDashboardPage> {
           ),
           const Spacer(),
           AppText(
-            'تقوى',
+            'التقوى',
             style: AppTextStyles.headlineMd.copyWith(color: AppColors.primary),
           ),
           SizedBox(width: 6.w),

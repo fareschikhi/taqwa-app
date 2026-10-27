@@ -115,7 +115,7 @@ class TeacherRepository {
     );
   }
 
-  Future<List<StudentNoteModel>> createBulkNote({
+  Future<StudentNoteModel> createBulkNote({
     required List<int> studentIds,
     required int teacherId,
     required String note,
