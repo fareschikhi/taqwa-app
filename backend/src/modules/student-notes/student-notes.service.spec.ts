@@ -4,6 +4,7 @@ describe('StudentNotesService notifications', () => {
   const makePrisma = (opts: {
     parentUserId?: number | null;
     fullName?: string;
+    role?: string;
   }) => ({
     studentNote: {
       create: jest
@@ -17,10 +18,15 @@ describe('StudentNotesService notifications', () => {
     student: {
       findUnique: jest.fn().mockResolvedValue(
         opts.parentUserId == null
-          ? { parentId: null, user: { fullName: opts.fullName ?? 'Bilal' } }
+          ? {
+              userId: 40,
+              parentId: null,
+              user: { fullName: opts.fullName ?? 'Bilal', role: opts.role ?? 'STUDENT' },
+            }
           : {
+              userId: 40,
               parentId: 1,
-              user: { fullName: opts.fullName ?? 'Bilal' },
+              user: { fullName: opts.fullName ?? 'Bilal', role: opts.role ?? 'STUDENT' },
               parent: { userId: opts.parentUserId },
             },
       ),
@@ -95,6 +101,22 @@ describe('StudentNotesService notifications', () => {
     await service.create(dto('أحسن اليوم'));
 
     expect(notifications.create).not.toHaveBeenCalled();
+  });
+
+  it('notifies an adult student himself, since he has no parent', async () => {
+    const prisma = makePrisma({ parentUserId: null, role: 'ADULT_STUDENT' });
+    const notifications = notificationsMock();
+    const service = new StudentNotesService(prisma as any, notifications as any);
+
+    await service.create(dto('أحسن اليوم'));
+
+    // The note is about him, so his own name would only crowd the preview.
+    expect(notifications.create).toHaveBeenCalledWith({
+      userId: 40,
+      studentId: 7,
+      title: 'ملاحظة من المعلم',
+      body: 'أحسن اليوم',
+    });
   });
 
   it('keeps the note when notifying fails', async () => {

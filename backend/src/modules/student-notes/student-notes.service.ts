@@ -21,37 +21,42 @@ export class StudentNotesService {
   };
 
   /**
-   * Tells the student's parent that a note was written. Writing the note is
-   * the whole event, so unlike attendance there is no prior state to compare
-   * against — every created note announces itself once.
+   * Tells whoever answers for the student that a note was written: the parent
+   * for a child, and the adult student himself, who has no parent row by
+   * construction. Writing the note is the whole event, so unlike attendance
+   * there is no prior state to compare against — every created note announces
+   * itself once.
    *
-   * The body carries a preview rather than the note in full: the parent reads
+   * The body carries a preview rather than the note in full: the reader sees
    * the whole thing on their dashboard, and a body short enough for a list row
    * is also short enough for the lock screen once this delivers over push.
    */
-  private async notifyParent(studentId: number, note: string) {
+  private async notifyStudent(studentId: number, note: string) {
     // Runs after the note is written, and its failures are swallowed: a
     // notification that does not send must not cost the note that prompted it.
     try {
       const student = await this.prisma.student.findUnique({
         where: { id: studentId },
         select: {
-          parentId: true,
-          user: { select: { fullName: true } },
+          userId: true,
+          user: { select: { fullName: true, role: true } },
           parent: { select: { userId: true } },
         },
       });
-      const parentUserId = student?.parent?.userId;
-      if (!parentUserId) return;
+      const isSelf = student?.user.role === 'ADULT_STUDENT';
+      const recipientId =
+        student?.parent?.userId ?? (isSelf ? student.userId : null);
+      if (!recipientId) return;
 
       // A parent may have several children, and a note's text will not
-      // reliably name the one it is about.
+      // reliably name the one it is about. An adult reads a note about
+      // himself, so his own name would only crowd the preview.
       const name = student?.user?.fullName ?? '';
       await this.notifications.create({
-        userId: parentUserId,
+        userId: recipientId,
         studentId,
         title: 'ملاحظة من المعلم',
-        body: `${name}: ${notePreview(note)}`,
+        body: isSelf ? notePreview(note) : `${name}: ${notePreview(note)}`,
       });
     } catch (_) {
       // Deliberately silent — see above.
@@ -67,7 +72,7 @@ export class StudentNotesService {
       },
       include: this.include,
     });
-    await this.notifyParent(dto.studentId, dto.note);
+    await this.notifyStudent(dto.studentId, dto.note);
     return note;
   }
 
@@ -84,7 +89,7 @@ export class StudentNotesService {
         }),
       ),
     );
-    await Promise.all(studentIds.map((id) => this.notifyParent(id, dto.note)));
+    await Promise.all(studentIds.map((id) => this.notifyStudent(id, dto.note)));
     return notes;
   }
 
