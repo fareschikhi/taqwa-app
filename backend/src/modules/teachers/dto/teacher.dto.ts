@@ -1,4 +1,4 @@
-import { IsDateString, IsOptional, IsString } from 'class-validator';
+import { IsBoolean, IsDateString, IsOptional, IsString } from 'class-validator';
 import {
   IsFullName,
   IsOptionalEmail,
@@ -13,6 +13,7 @@ export class CreateTeacherDto {
   @IsPassword() password: string;
   @IsOptional() @IsDateString() hireDate?: string;
   @IsOptional() @IsString() avatar?: string;
+  @IsOptional() @IsBoolean() canPostNews?: boolean;
 }
 
 export class UpdateTeacherDto {
@@ -22,4 +23,5 @@ export class UpdateTeacherDto {
   @IsOptional() @IsPassword() password?: string;
   @IsOptional() @IsDateString() hireDate?: string;
   @IsOptional() @IsString() avatar?: string;
+  @IsOptional() @IsBoolean() canPostNews?: boolean;
 }

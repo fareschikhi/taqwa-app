@@ -17,6 +17,7 @@ import { Roles } from '../../common/decorators/roles.decorator';
 import { HalaqaFrom } from '../../common/decorators/halaqa-source.decorator';
 import { CurrentUser } from '../../common/decorators/current-user.decorator';
 import { HalaqaAnnouncementsService } from './halaqa-announcements.service';
+import { TeacherNewsGuard } from './teacher-news.guard';
 import type { ScopedUser } from '../../common/guards/halaqa-scope';
 import {
   CreateAllHalaqasAnnouncementDto,
@@ -33,6 +34,13 @@ const READERS = [
   Role.STUDENT,
   Role.ADULT_STUDENT,
 ] as const;
+
+/**
+ * Who may post, edit and delete. A teacher only with the admin's
+ * `canPostNews` grant (TeacherNewsGuard), only on their own halaqas
+ * (HalaqaAccessGuard), and only their own posts (the service).
+ */
+const WRITERS = [Role.ADMIN, Role.MANAGER, Role.TEACHER] as const;
 
 @UseGuards(JwtAuthGuard, RolesGuard)
 @Controller('halaqa-announcements')
@@ -55,9 +63,9 @@ export class HalaqaAnnouncementsController {
   }
 
   @Post()
-  @Roles(Role.ADMIN, Role.MANAGER)
+  @Roles(...WRITERS)
   @HalaqaFrom('body')
-  @UseGuards(HalaqaAccessGuard)
+  @UseGuards(TeacherNewsGuard, HalaqaAccessGuard)
   create(
     @Body() dto: CreateHalaqaAnnouncementDto,
     @CurrentUser() user: { id: number },
@@ -68,7 +76,8 @@ export class HalaqaAnnouncementsController {
   // No access guard, like `mine`: there is no one halaqa to check. The
   // service picks the halaqas from the caller's own scope instead.
   @Post('all')
-  @Roles(Role.ADMIN, Role.MANAGER)
+  @Roles(...WRITERS)
+  @UseGuards(TeacherNewsGuard)
   createForAll(
     @Body() dto: CreateAllHalaqasAnnouncementDto,
     @CurrentUser() user: ScopedUser & { id: number },
@@ -77,24 +86,24 @@ export class HalaqaAnnouncementsController {
   }
 
   @Patch(':id')
-  @Roles(Role.ADMIN, Role.MANAGER)
+  @Roles(...WRITERS)
   @HalaqaFrom('announcement')
-  @UseGuards(HalaqaAccessGuard)
+  @UseGuards(TeacherNewsGuard, HalaqaAccessGuard)
   update(
     @Param('id', ParseIntPipe) id: number,
     @Body() dto: UpdateHalaqaAnnouncementDto,
-    @CurrentUser() user: ScopedUser,
+    @CurrentUser() user: ScopedUser & { id: number },
   ) {
     return this.service.update(id, dto, user);
   }
 
   @Delete(':id')
-  @Roles(Role.ADMIN, Role.MANAGER)
+  @Roles(...WRITERS)
   @HalaqaFrom('announcement')
-  @UseGuards(HalaqaAccessGuard)
+  @UseGuards(TeacherNewsGuard, HalaqaAccessGuard)
   remove(
     @Param('id', ParseIntPipe) id: number,
-    @CurrentUser() user: ScopedUser,
+    @CurrentUser() user: ScopedUser & { id: number },
   ) {
     return this.service.remove(id, user);
   }

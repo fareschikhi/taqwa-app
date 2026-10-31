@@ -126,9 +126,9 @@ export class HalaqasService {
     const nextIsAdult = dto.isAdult ?? halaqa.isAdult;
 
     // `assertEnrolmentMatches` only checks the roster it is handed, and it is
-    // handed nothing whenever the edit form omits `studentIds` (which it
-    // always does — the update endpoint replaces the whole roster, so a
-    // partial list would disconnect everyone the admin did not re-pick).
+    // handed nothing whenever the edit form omits `studentIds` (which it does
+    // until it has loaded the current roster — the update endpoint replaces
+    // the whole roster, so a list built blind would disconnect everyone).
     // That is fine when the halaqa's type isn't changing. But if `isAdult`
     // IS flipping and no new roster was sent, the *existing* roster is about
     // to become mismatched with nobody having ever checked it — so load who

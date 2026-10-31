@@ -69,4 +69,7 @@ export class UpdateStudentDto extends StudentRegistrationDto {
   @ArrayUnique()
   @IsIn(HADITH_BOOKS, { each: true })
   hadithBooks?: string[];
+  // Resets an adult student's password. A child's record has no login, so
+  // the service ignores it there.
+  @IsOptional() @IsPassword() password?: string;
 }

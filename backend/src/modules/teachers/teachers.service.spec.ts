@@ -88,3 +88,39 @@ describe('TeachersService passwords', () => {
     );
   });
 });
+
+// A teacher with several halaqas looks at one at a time; the dashboard
+// aggregates narrow to it, and still only within the teacher's own halaqas.
+describe('TeachersService dashboard scoped to one halaqa', () => {
+  const makePrisma = () => ({
+    student: { findMany: jest.fn().mockResolvedValue([]) },
+    attendance: { count: jest.fn().mockResolvedValue(0) },
+  });
+
+  const cases: [string, (s: TeachersService, h?: number) => Promise<unknown>][] =
+    [
+      ['attendance summary', (s, h) => s.getTeacherAttendanceSummary(3, h)],
+      ['revision needed', (s, h) => s.getRevisionNeeded(3, h)],
+      ['memorization progress', (s, h) => s.getMemorizationProgress(3, h)],
+    ];
+
+  it.each(cases)('%s keeps to the given halaqa', async (_, call) => {
+    const prisma = makePrisma();
+
+    await call(new TeachersService(prisma as any), 9);
+
+    expect(prisma.student.findMany.mock.calls[0][0].where).toEqual({
+      halaqa: { teacherId: 3, id: 9 },
+    });
+  });
+
+  it.each(cases)('%s covers every halaqa without one', async (_, call) => {
+    const prisma = makePrisma();
+
+    await call(new TeachersService(prisma as any));
+
+    expect(prisma.student.findMany.mock.calls[0][0].where).toEqual({
+      halaqa: { teacherId: 3 },
+    });
+  });
+});

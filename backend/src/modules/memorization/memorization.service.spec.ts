@@ -52,11 +52,12 @@ describe('MemorizationService.create attendance gate', () => {
     const prisma = makePrisma(AttendanceStatus.PRESENT);
     const service = new MemorizationService(prisma as any);
 
-    // Revision is counted in hizbs, of which there are only 60.
+    // Revision is counted in pages, of which the mushaf has 604. The DTO's
+    // coarse ceiling is not applied here, so the service is what refuses it.
     const tooMany = {
       ...dto,
       memorizationType: Memorization.SMALLREVISION,
-      amountDone: 61,
+      amountDone: 605,
     };
 
     await expect(service.create(tooMany)).rejects.toBeInstanceOf(
@@ -285,6 +286,7 @@ describe('MemorizationService.getStudentProgress subject scoping', () => {
           }),
         ]),
       },
+      student: { findUnique: jest.fn().mockResolvedValue(null) },
     };
     const service = new MemorizationService(prisma as any);
 
@@ -293,5 +295,96 @@ describe('MemorizationService.getStudentProgress subject scoping', () => {
     expect(progress.totalPagesDone).toBe(3);
     expect(progress.totalSurahs).toBe(1);
     expect(progress.totalHadithsDone).toBe(5);
+  });
+
+  it('counts hadith rows by type separately from the Quran type counts', async () => {
+    const prisma = {
+      memorizationProgress: {
+        findMany: jest.fn().mockResolvedValue([
+          record({ memorizationType: Memorization.MEMORIZING }),
+          record({
+            surahNumber: null,
+            subject: MemorizationSubject.HADITH,
+            hadithReference: 'حديث النية',
+            memorizationType: Memorization.MEMORIZING,
+          }),
+          record({
+            surahNumber: null,
+            subject: MemorizationSubject.HADITH,
+            hadithReference: 'حديث النية',
+            memorizationType: Memorization.BIGREVISION,
+          }),
+        ]),
+      },
+      student: {
+        findUnique: jest.fn().mockResolvedValue({ tracksHadith: true }),
+      },
+    };
+    const service = new MemorizationService(prisma as any);
+
+    const progress = await service.getStudentProgress(7);
+
+    expect(progress.typeCounts).toEqual({
+      MEMORIZING: 1,
+      SMALLREVISION: 0,
+      BIGREVISION: 0,
+    });
+    expect(progress.hadithTypeCounts).toEqual({
+      MEMORIZING: 1,
+      SMALLREVISION: 0,
+      BIGREVISION: 1,
+    });
+    expect(progress.tracksHadith).toBe(true);
+  });
+});
+
+describe('MemorizationService half-page amounts', () => {
+  const makeService = () => {
+    const prisma = {
+      attendance: { findUnique: jest.fn().mockResolvedValue(null) },
+      memorizationProgress: {
+        create: jest.fn().mockResolvedValue({ id: 10 }),
+      },
+    };
+    return { prisma, service: new MemorizationService(prisma as any) };
+  };
+
+  const pages = (amountDone: number) => ({
+    studentId: 7,
+    surahNumber: 2,
+    amountDone,
+    memorizationType: Memorization.MEMORIZING,
+  });
+
+  it.each([0.5, 1.5, 3.5, 10])('records %p pages of new memorization', async (amount) => {
+    const { prisma, service } = makeService();
+    await service.create(pages(amount));
+    expect(prisma.memorizationProgress.create).toHaveBeenCalled();
+  });
+
+  it.each([1.3, 1.2, 2.25, 0.3])('refuses %p pages, which is not a half step', async (amount) => {
+    const { service } = makeService();
+    await expect(service.create(pages(amount))).rejects.toBeInstanceOf(
+      BadRequestException,
+    );
+  });
+
+  // Revision is counted in pages too, so it takes the same half step.
+  it.each([Memorization.SMALLREVISION, Memorization.BIGREVISION])(
+    'records a half page of %s',
+    async (memorizationType) => {
+      const { prisma, service } = makeService();
+      await service.create({ ...pages(1.5), memorizationType });
+      expect(prisma.memorizationProgress.create).toHaveBeenCalled();
+    },
+  );
+
+  it('records a whole hizb of revision as ten pages', async () => {
+    const { prisma, service } = makeService();
+    await service.create({
+      ...pages(10),
+      memorizationType: Memorization.BIGREVISION,
+    });
+    expect(prisma.memorizationProgress.create).toHaveBeenCalled();
   });
 });

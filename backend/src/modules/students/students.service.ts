@@ -301,6 +301,14 @@ export class StudentsService {
 
     if (dto.avatar) userUpdate.avatar = dto.avatar;
 
+    // Only an adult student signs in; a child's record keeps its null hash
+    // so the login door stays shut whatever a client sends.
+    if (dto.password && student.user.role === 'ADULT_STUDENT') {
+      userUpdate.passwordHash = await bcrypt.hash(dto.password, 10);
+      // The admin typed it, so it is a temporary one — as on create.
+      userUpdate.mustChangePassword = true;
+    }
+
     const studentUpdate: any = { ...this.registrationFields(dto) };
     if (dto.birthDate) studentUpdate.birthDate = new Date(dto.birthDate);
     if (dto.address !== undefined) {

@@ -11,19 +11,29 @@ import {
   ValidateIf,
 } from 'class-validator';
 
-/** An Algerian mobile in its stored form: 05/06/07 followed by 8 digits. */
-export const ALGERIAN_MOBILE = /^0[567]\d{8}$/;
+/**
+ * A phone in its stored form: an Algerian number in local form ("0551234567",
+ * how every existing account is stored and matched at login), or any other
+ * country's number in international form ("+33612345678"). The length is
+ * loose on purpose, since numbering plans differ, but stays within E.164's 15
+ * digits.
+ */
+export const STORED_PHONE = /^(?:0\d{6,14}|\+[1-9]\d{6,14})$/;
+
+export const PHONE_ERROR = 'رقم الهاتف غير صالح';
 
 /**
- * Strips spacing/punctuation and folds +213/00213 into the local 0 prefix, so
- * "+213 551 23 45 67" and "0551234567" are stored — and matched at login — as
- * the same string. Anything else is left for the format check to judge.
+ * Strips spacing/punctuation, turns a 00 prefix into +, and folds +213 into
+ * the local 0 prefix (dropping a trunk 0 typed after the code), so
+ * "+213 551 23 45 67", "+213 0551..." and "0551234567" are stored — and
+ * matched at login — as the same string. Anything else is left for the format
+ * check to judge.
  */
 export function normalizePhone(value: unknown): unknown {
   if (typeof value !== 'string') return value;
-  const compact = value.replace(/[\s\-.()]/g, '');
-  const international = /^(?:\+|00)213(\d{9})$/.exec(compact);
-  return international ? `0${international[1]}` : compact;
+  const compact = value.replace(/[\s\-.()]/g, '').replace(/^00/, '+');
+  const algerian = /^\+2130?(\d+)$/.exec(compact);
+  return algerian ? `0${algerian[1]}` : compact;
 }
 
 const trim = () =>
@@ -54,9 +64,7 @@ export const IsOptionalPhone = () =>
     Transform(({ value }) => normalizePhone(value)),
     ValidateIf((_, value) => value !== ''),
     IsString(),
-    Matches(ALGERIAN_MOBILE, {
-      message: 'رقم الهاتف غير صالح: 10 أرقام تبدأ بـ 05 أو 06 أو 07',
-    }),
+    Matches(STORED_PHONE, { message: PHONE_ERROR }),
   );
 
 export const IsOptionalEmail = () =>

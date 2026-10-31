@@ -61,6 +61,11 @@ export class ParentsController {
     if (user.role === 'PARENT' && user.parent?.id !== id) {
       throw new ForbiddenException('غير مصرح لك بالوصول إلى بيانات هذا الحساب');
     }
+    // A parent may edit his own profile but never pick his children: that
+    // would hand him any student's records.
+    if (user.role === 'PARENT' && dto.studentIds !== undefined) {
+      throw new ForbiddenException('لا يمكنك تعديل الأبناء المرتبطين بحسابك');
+    }
     return this.parentsService.update(id, dto);
   }
 

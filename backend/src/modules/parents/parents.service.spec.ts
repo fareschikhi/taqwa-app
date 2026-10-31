@@ -1,4 +1,4 @@
-import { NotFoundException } from '@nestjs/common';
+import { BadRequestException, NotFoundException } from '@nestjs/common';
 import { ParentsService } from './parents.service';
 
 describe('ParentsService.remove', () => {
@@ -87,5 +87,100 @@ describe('ParentsService passwords', () => {
     expect(prisma.user.update.mock.calls[0][0].data).not.toHaveProperty(
       'mustChangePassword',
     );
+  });
+});
+
+// The parent form picks the parent's children. A student carries one parent
+// (Student.parentId), so linking is done from the parent row's side.
+describe('ParentsService children', () => {
+  const makePrisma = (roles: Record<number, string>) => ({
+    user: { create: jest.fn().mockResolvedValue({ id: 42 }), update: jest.fn() },
+    parent: {
+      findUnique: jest.fn().mockResolvedValue({ id: 4, userId: 42 }),
+      update: jest.fn().mockResolvedValue({ id: 4 }),
+    },
+    student: {
+      findMany: jest.fn().mockImplementation(({ where }) =>
+        Promise.resolve(
+          (where.id.in as number[])
+            .filter((id) => roles[id])
+            .map((id) => ({ id, user: { role: roles[id] } })),
+        ),
+      ),
+    },
+  });
+
+  it('links the picked students to a new parent', async () => {
+    const prisma = makePrisma({ 7: 'STUDENT', 8: 'STUDENT' });
+
+    await new ParentsService(prisma as any).create({
+      fullName: 'Karim Saidi',
+      password: 'secret123',
+      studentIds: [7, 8],
+    } as any);
+
+    expect(
+      prisma.user.create.mock.calls[0][0].data.parent.create.students,
+    ).toEqual({ connect: [{ id: 7 }, { id: 8 }] });
+  });
+
+  it('replaces the children on update', async () => {
+    const prisma = makePrisma({ 7: 'STUDENT' });
+
+    await new ParentsService(prisma as any).update(4, {
+      studentIds: [7],
+    } as any);
+
+    expect(prisma.parent.update.mock.calls[0][0].data.students).toEqual({
+      set: [{ id: 7 }],
+    });
+  });
+
+  it('unlinks every child when given an empty list', async () => {
+    const prisma = makePrisma({});
+
+    await new ParentsService(prisma as any).update(4, {
+      studentIds: [],
+    } as any);
+
+    expect(prisma.parent.update.mock.calls[0][0].data.students).toEqual({
+      set: [],
+    });
+  });
+
+  it('leaves the children alone when studentIds is omitted', async () => {
+    const prisma = makePrisma({});
+
+    await new ParentsService(prisma as any).update(4, {
+      fullName: 'Karim S.',
+    } as any);
+
+    expect(prisma.parent.update.mock.calls[0][0].data).not.toHaveProperty(
+      'students',
+    );
+  });
+
+  it('refuses an adult student', async () => {
+    const prisma = makePrisma({ 7: 'STUDENT', 9: 'ADULT_STUDENT' });
+
+    await expect(
+      new ParentsService(prisma as any).update(4, {
+        studentIds: [7, 9],
+      } as any),
+    ).rejects.toBeInstanceOf(BadRequestException);
+    expect(prisma.parent.update).not.toHaveBeenCalled();
+  });
+
+  it('refuses a student that does not exist', async () => {
+    const prisma = makePrisma({ 7: 'STUDENT' });
+
+    await expect(
+      new ParentsService(prisma as any).create({
+        fullName: 'Karim Saidi',
+        password: 'secret123',
+        studentIds: [7, 99],
+      } as any),
+    ).rejects.toBeInstanceOf(BadRequestException);
+    expect(prisma.user.create).not.toHaveBeenCalled();
   });
 });

@@ -90,7 +90,7 @@ export class TeachersService {
         role: 'TEACHER',
         avatar: dto.avatar,
         teacher: {
-          create: {},
+          create: { canPostNews: dto.canPostNews ?? false },
         },
       },
       include: { teacher: true },
@@ -121,6 +121,9 @@ export class TeachersService {
       userUpdate.passwordHash = await bcrypt.hash(dto.password, 10);
       userUpdate.mustChangePassword = true;
     }
+    if (dto.canPostNews !== undefined) {
+      userUpdate.teacher = { update: { canPostNews: dto.canPostNews } };
+    }
 
     await this.prisma.user.update({
       where: { id: teacher.userId },
@@ -140,7 +143,16 @@ export class TeachersService {
 
   // ─── Teacher Dashboard Aggregates ───────────────────────────────────────────
 
-  async getTeacherAttendanceSummary(teacherId: number) {
+  /// The students a dashboard aggregate covers: every halaqa the teacher owns,
+  /// or just [halaqaId] when they are looking at one. The id sits inside the
+  /// teacher check, so another teacher's halaqa matches nothing.
+  private studentsOf(teacherId: number, halaqaId?: number) {
+    return {
+      halaqa: { teacherId, ...(halaqaId !== undefined && { id: halaqaId }) },
+    };
+  }
+
+  async getTeacherAttendanceSummary(teacherId: number, halaqaId?: number) {
     const now = new Date();
     // Attendance.date is a bare DATE that Prisma stores at UTC midnight, so
     // the window is built in UTC too. A local-time window sits hours off those
@@ -154,7 +166,7 @@ export class TeachersService {
     );
 
     const students = await this.prisma.student.findMany({
-      where: { halaqa: { teacherId } },
+      where: this.studentsOf(teacherId, halaqaId),
       select: { id: true },
     });
     const studentIds = students.map((s) => s.id);
@@ -189,9 +201,9 @@ export class TeachersService {
     return { present, absent, rate, month: now.getUTCMonth() + 1 };
   }
 
-  async getRevisionNeeded(teacherId: number) {
+  async getRevisionNeeded(teacherId: number, halaqaId?: number) {
     const students = await this.prisma.student.findMany({
-      where: { halaqa: { teacherId } },
+      where: this.studentsOf(teacherId, halaqaId),
       include: {
         user: { select: { fullName: true, avatar: true } },
         halaqa: { select: { name: true } },
@@ -237,9 +249,9 @@ export class TeachersService {
     );
   }
 
-  async getMemorizationProgress(teacherId: number) {
+  async getMemorizationProgress(teacherId: number, halaqaId?: number) {
     const students = await this.prisma.student.findMany({
-      where: { halaqa: { teacherId } },
+      where: this.studentsOf(teacherId, halaqaId),
       select: {
         id: true,
         finishedMemo: true,

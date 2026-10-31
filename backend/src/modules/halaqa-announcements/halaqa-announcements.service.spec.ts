@@ -11,7 +11,11 @@ import {
 const makePrisma = (opts: {
   managerHalaqas?: { halaqaId: number }[];
   halaqas?: { id: number }[];
-  existing?: { id: number; batchId?: string | null } | null;
+  existing?: {
+    id: number;
+    batchId?: string | null;
+    authorId?: number;
+  } | null;
   rows?: unknown[];
 } = {}) => ({
   managerHalaqa: {
@@ -41,6 +45,7 @@ const makePrisma = (opts: {
 
 const ADMIN = { role: 'ADMIN', id: 1 };
 const MANAGER = { role: 'MANAGER', id: 2, manager: { id: 5 } };
+const TEACHER = { role: 'TEACHER', id: 3, teacher: { id: 7 } };
 
 const row = (id: number, halaqaId: number, batchId: string | null) => ({
   id,
@@ -310,6 +315,49 @@ describe('HalaqaAnnouncementsService', () => {
 
       await expect(service.remove(31, ADMIN)).rejects.toBeInstanceOf(NotFoundException);
       expect(prisma.halaqaAnnouncement.delete).not.toHaveBeenCalled();
+    });
+  });
+
+  // The guard put the teacher in their own halaqa; what the manager or the
+  // admin posted there is still not theirs to change.
+  describe('a teacher', () => {
+    it('edits and deletes their own news', async () => {
+      const prisma = makePrisma({ existing: { id: 31, authorId: TEACHER.id } });
+      const service = new HalaqaAnnouncementsService(prisma as never);
+
+      await service.update(31, { title: 'x' }, TEACHER);
+      await service.remove(31, TEACHER);
+
+      expect(prisma.halaqaAnnouncement.update).toHaveBeenCalled();
+      expect(prisma.halaqaAnnouncement.delete).toHaveBeenCalled();
+    });
+
+    it("cannot edit or delete someone else's news", async () => {
+      const prisma = makePrisma({ existing: { id: 31, authorId: MANAGER.id } });
+      const service = new HalaqaAnnouncementsService(prisma as never);
+
+      await expect(service.update(31, { title: 'x' }, TEACHER)).rejects.toBeInstanceOf(
+        ForbiddenException,
+      );
+      await expect(service.remove(31, TEACHER)).rejects.toBeInstanceOf(
+        ForbiddenException,
+      );
+      expect(prisma.halaqaAnnouncement.update).not.toHaveBeenCalled();
+      expect(prisma.halaqaAnnouncement.delete).not.toHaveBeenCalled();
+    });
+
+    it('posts to all their halaqas and no others', async () => {
+      const prisma = makePrisma({ halaqas: [{ id: 4 }, { id: 6 }] });
+      const service = new HalaqaAnnouncementsService(prisma as never);
+      prisma.halaqaAnnouncement.findMany.mockResolvedValue([row(1, 4, 'b')]);
+
+      await service.createForAll({ title: 't', body: 'b' }, TEACHER);
+
+      expect(prisma.halaqa.findMany).toHaveBeenCalledWith(
+        expect.objectContaining({ where: { teacherId: 7 } }),
+      );
+      const { data } = prisma.halaqaAnnouncement.createMany.mock.calls[0][0];
+      expect(data.map((d: { halaqaId: number }) => d.halaqaId)).toEqual([4, 6]);
     });
   });
 });

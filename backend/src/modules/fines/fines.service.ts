@@ -112,7 +112,8 @@ export class FinesService {
         studentId: dto.studentId,
         kind: dto.kind,
         amount: dto.amount,
-        reason: dto.reason ?? null,
+        // A blank reason says nothing, so it is stored as no reason at all.
+        reason: dto.reason?.trim() || null,
         source: 'MANUAL',
         date: null,
         createdById: actor.id,

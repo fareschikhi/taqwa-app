@@ -1,5 +1,6 @@
 import {
   IsInt,
+  IsNumber,
   IsEnum,
   IsOptional,
   IsString,
@@ -21,11 +22,11 @@ export class CreateMemorizationDto {
   @Max(114)
   surahNumber?: number;
 
-  // Pages for MEMORIZING Quran, hizbs for Quran revision, hadiths for any
-  // hadith entry. This is only the coarse ceiling; the service applies the
-  // tighter per-unit bound once it knows the subject and type.
-  @IsInt()
-  @Min(1)
+  // Pages for any Quran entry, hadiths for any hadith entry. This is only the
+  // coarse ceiling; the service applies the tighter per-unit bound once it
+  // knows the subject, including which units may take a half (only pages do).
+  @IsNumber({ allowNaN: false, allowInfinity: false })
+  @Min(0.5)
   @Max(MAX_AMOUNT.PAGE)
   amountDone: number;
 
@@ -54,8 +55,8 @@ export class UpdateMemorizationDto {
   surahNumber?: number;
 
   @IsOptional()
-  @IsInt()
-  @Min(1)
+  @IsNumber({ allowNaN: false, allowInfinity: false })
+  @Min(0.5)
   @Max(MAX_AMOUNT.PAGE)
   amountDone?: number;
 

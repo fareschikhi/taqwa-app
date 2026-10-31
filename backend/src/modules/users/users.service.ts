@@ -29,7 +29,7 @@ export class UsersService {
         createdAt: true,
         student: { select: { id: true } },
         parent: { select: { id: true } },
-        teacher: { select: { id: true } },
+        teacher: { select: { id: true, canPostNews: true } },
         manager: {
           select: {
             id: true,

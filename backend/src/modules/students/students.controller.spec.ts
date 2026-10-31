@@ -114,4 +114,36 @@ describe('StudentsController hadithBooks gate', () => {
     await controller.update(7, { address: 'Oran' }, { role: 'MANAGER' });
     expect(service.update).toHaveBeenCalledWith(7, { address: 'Oran' });
   });
+
+  it('lets an admin or manager reset a student password', async () => {
+    const { controller, service } = makeController();
+    for (const role of ['ADMIN', 'MANAGER']) {
+      await controller.update(7, { password: 'NewPass123' }, { role });
+    }
+    expect(service.update).toHaveBeenCalledTimes(2);
+  });
+
+  it('rejects a teacher resetting a student password', () => {
+    const { controller, service } = makeController();
+    expect(() =>
+      controller.update(7, { password: 'NewPass123' }, { role: 'TEACHER' }),
+    ).toThrow(ForbiddenException);
+    expect(service.update).not.toHaveBeenCalled();
+  });
+
+  it('lets an admin or teacher set the rating', async () => {
+    const { controller, service } = makeController();
+    for (const role of ['ADMIN', 'TEACHER']) {
+      await controller.update(7, { currentRating: 'ممتاز' }, { role });
+    }
+    expect(service.update).toHaveBeenCalledTimes(2);
+  });
+
+  it('rejects a manager setting the rating', () => {
+    const { controller, service } = makeController();
+    expect(() =>
+      controller.update(7, { currentRating: 'ممتاز' }, { role: 'MANAGER' }),
+    ).toThrow(ForbiddenException);
+    expect(service.update).not.toHaveBeenCalled();
+  });
 });

@@ -1,4 +1,8 @@
-import { Injectable, NotFoundException } from '@nestjs/common';
+import {
+  BadRequestException,
+  Injectable,
+  NotFoundException,
+} from '@nestjs/common';
 import { PrismaService } from '../../prisma/prisma.service';
 import { CreateParentDto, UpdateParentDto } from './dto/parent.dto';
 import * as bcrypt from 'bcrypt';
@@ -57,7 +61,27 @@ export class ParentsService {
     });
   }
 
+  // Only a child student has a parent — an adult student holds his own
+  // account — and every id must name a real student.
+  private async assertChildStudents(studentIds: number[] | undefined) {
+    if (!studentIds || studentIds.length === 0) return;
+
+    const ids = [...new Set(studentIds)];
+    const students = await this.prisma.student.findMany({
+      where: { id: { in: ids } },
+      select: { id: true, user: { select: { role: true } } },
+    });
+
+    if (students.length !== ids.length) {
+      throw new BadRequestException('بعض الطلاب المختارين غير موجودين');
+    }
+    if (students.some((s) => s.user.role !== 'STUDENT')) {
+      throw new BadRequestException('لا يمكن ربط طالب بالغ بولي أمر');
+    }
+  }
+
   async create(dto: CreateParentDto) {
+    await this.assertChildStudents(dto.studentIds);
     const hash = await bcrypt.hash(dto.password, 10);
     const phone = dto.phone && dto.phone.trim() !== '' ? dto.phone.trim() : undefined;
     const email = dto.email && dto.email.trim() !== '' ? dto.email.trim() : undefined;
@@ -74,6 +98,10 @@ export class ParentsService {
         parent: {
           create: {
             address: dto.address,
+            students:
+              dto.studentIds && dto.studentIds.length > 0
+                ? { connect: dto.studentIds.map((id) => ({ id })) }
+                : undefined,
           },
         },
       },
@@ -93,6 +121,7 @@ export class ParentsService {
   async update(id: number, dto: UpdateParentDto) {
     const parent = await this.prisma.parent.findUnique({ where: { id } });
     if (!parent) throw new NotFoundException('ولي الأمر غير موجود');
+    await this.assertChildStudents(dto.studentIds);
 
     const userUpdate: any = {};
     if (dto.fullName) userUpdate.fullName = dto.fullName;
@@ -110,6 +139,10 @@ export class ParentsService {
 
     const parentUpdate: any = {};
     if (dto.address !== undefined) parentUpdate.address = dto.address;
+    // `set` unlinks every child left out of the list (parentId -> null).
+    if (dto.studentIds !== undefined) {
+      parentUpdate.students = { set: dto.studentIds.map((id) => ({ id })) };
+    }
 
     if (Object.keys(userUpdate).length > 0) {
       await this.prisma.user.update({

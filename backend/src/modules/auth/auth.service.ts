@@ -56,7 +56,7 @@ export class AuthService {
       include: {
         student: { select: { id: true } },
         parent: { select: { id: true } },
-        teacher: { select: { id: true } },
+        teacher: { select: { id: true, canPostNews: true } },
         manager: {
           select: {
             id: true,
@@ -107,7 +107,7 @@ export class AuthService {
         mustChangePassword: user.mustChangePassword,
         student: user.student ? { id: user.student.id } : undefined,
         parent: user.parent ? { id: user.parent.id } : undefined,
-        teacher: user.teacher ? { id: user.teacher.id } : undefined,
+        teacher: user.teacher ?? undefined,
         manager: user.manager ?? undefined,
       },
     };
@@ -185,7 +185,7 @@ export class AuthService {
         mustChangePassword: true,
         student: { select: { id: true } },
         parent: { select: { id: true } },
-        teacher: { select: { id: true } },
+        teacher: { select: { id: true, canPostNews: true } },
         manager: {
           select: {
             id: true,

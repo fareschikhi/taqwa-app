@@ -102,6 +102,9 @@ model Teacher {
   id             Int       @id @default(autoincrement())
   userId         Int       @unique
   hireDate       DateTime  @default(now())
+  // Granted by the admin: lets the teacher post news to their own halaqas,
+  // the way a manager does to the halaqas assigned to them.
+  canPostNews    Boolean   @default(false)
 
   user        User          @relation(fields: [userId], references: [id], onDelete: Cascade)
   halaqas     Halaqa[]
@@ -245,7 +248,9 @@ model MemorizationProgress {
   studentId        Int
   // QURAN-only: which surah. Nullable because a HADITH row has none.
   surahNumber      Int?
-  amountDone       Int
+  // Float so Quran entries can record half pages (1.5); the service keeps
+  // every Quran value on a 0.5 step, and whole for hadiths.
+  amountDone       Float
   memorizationType Memorization        @default(MEMORIZING)
   subject          MemorizationSubject @default(QURAN)
   // HADITH-only free-text identity (a name, a number in whichever collection

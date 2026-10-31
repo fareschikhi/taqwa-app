@@ -39,6 +39,30 @@ function assertMaySetHadithBooks(
   }
 }
 
+/// Resetting an adult student's password belongs to whoever manages
+/// accounts — the admin, or a manager holding MANAGE_ACCOUNTS. A teacher
+/// reaches PATCH for the rating, not for logins.
+function assertMaySetPassword(
+  dto: { password?: string },
+  user: { role?: string },
+) {
+  if (dto.password !== undefined && user?.role === Role.TEACHER) {
+    throw new ForbiddenException('غير مصرح لك بهذا الإجراء');
+  }
+}
+
+/// The overall rating is the teacher's (and the admin's) judgement. A manager
+/// holding MANAGE_ACCOUNTS reaches PATCH to edit the student's account, and
+/// may read the rating, but not word it.
+function assertMaySetRating(
+  dto: { currentRating?: string },
+  user: { role?: string },
+) {
+  if (dto.currentRating !== undefined && user?.role === Role.MANAGER) {
+    throw new ForbiddenException('غير مصرح لك بهذا الإجراء');
+  }
+}
+
 @UseGuards(JwtAuthGuard, RolesGuard, ManagerPermissionGuard)
 @Controller('students')
 export class StudentsController {
@@ -97,6 +121,8 @@ export class StudentsController {
     @CurrentUser() user: any,
   ) {
     assertMaySetHadithBooks(dto, user);
+    assertMaySetPassword(dto, user);
+    assertMaySetRating(dto, user);
     return this.studentsService.update(id, dto);
   }
 

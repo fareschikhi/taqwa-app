@@ -1,4 +1,4 @@
-import { Body, Controller, Delete, Get, Param, ParseIntPipe, Patch, Post, UseGuards } from '@nestjs/common';
+import { Body, Controller, Delete, Get, Param, ParseIntPipe, Patch, Post, Query, UseGuards } from '@nestjs/common';
 import { Role } from '@prisma/client';
 import { JwtAuthGuard } from '../../common/guards/jwt-auth.guard';
 import { RolesGuard } from '../../common/guards/roles.guard';
@@ -19,22 +19,33 @@ export class TeachersController {
   @Roles(Role.ADMIN, Role.TEACHER)
   findOne(@Param('id', ParseIntPipe) id: number) { return this.teachersService.findOne(id); }
 
+  // `halaqaId` narrows the three dashboard aggregates to one of the teacher's
+  // halaqas; without it they cover all of them.
   @Get(':id/attendance-summary')
   @Roles(Role.ADMIN, Role.TEACHER)
-  getAttendanceSummary(@Param('id', ParseIntPipe) id: number) {
-    return this.teachersService.getTeacherAttendanceSummary(id);
+  getAttendanceSummary(
+    @Param('id', ParseIntPipe) id: number,
+    @Query('halaqaId', new ParseIntPipe({ optional: true })) halaqaId?: number,
+  ) {
+    return this.teachersService.getTeacherAttendanceSummary(id, halaqaId);
   }
 
   @Get(':id/revision-needed')
   @Roles(Role.ADMIN, Role.TEACHER)
-  getRevisionNeeded(@Param('id', ParseIntPipe) id: number) {
-    return this.teachersService.getRevisionNeeded(id);
+  getRevisionNeeded(
+    @Param('id', ParseIntPipe) id: number,
+    @Query('halaqaId', new ParseIntPipe({ optional: true })) halaqaId?: number,
+  ) {
+    return this.teachersService.getRevisionNeeded(id, halaqaId);
   }
 
   @Get(':id/memorization-progress')
   @Roles(Role.ADMIN, Role.TEACHER)
-  getMemorizationProgress(@Param('id', ParseIntPipe) id: number) {
-    return this.teachersService.getMemorizationProgress(id);
+  getMemorizationProgress(
+    @Param('id', ParseIntPipe) id: number,
+    @Query('halaqaId', new ParseIntPipe({ optional: true })) halaqaId?: number,
+  ) {
+    return this.teachersService.getMemorizationProgress(id, halaqaId);
   }
 
   @Post()

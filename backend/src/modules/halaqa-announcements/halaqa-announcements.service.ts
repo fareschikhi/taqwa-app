@@ -155,6 +155,7 @@ export class HalaqaAnnouncementsService {
       where: { id },
     });
     if (!existing) throw new NotFoundException('الخبر غير موجود');
+    this.assertTeacherOwns(existing.authorId, user);
 
     if (existing.batchId) {
       await this.assertBatchInScope(existing.batchId, user);
@@ -181,6 +182,7 @@ export class HalaqaAnnouncementsService {
       where: { id },
     });
     if (!existing) throw new NotFoundException('الخبر غير موجود');
+    this.assertTeacherOwns(existing.authorId, user);
 
     if (existing.batchId) {
       await this.assertBatchInScope(existing.batchId, user);
@@ -190,6 +192,17 @@ export class HalaqaAnnouncementsService {
     }
 
     return this.prisma.halaqaAnnouncement.delete({ where: { id } });
+  }
+
+  /**
+   * A teacher answers for their own news only. Their halaqa also carries what
+   * its manager and the admin posted, and the grant to post is not a grant to
+   * rewrite or erase that.
+   */
+  private assertTeacherOwns(authorId: number, user: ScopedUser) {
+    if (user.role === 'TEACHER' && authorId !== user.id) {
+      throw new ForbiddenException('لا يمكنك تعديل أو حذف خبر نشره غيرك');
+    }
   }
 
   /**

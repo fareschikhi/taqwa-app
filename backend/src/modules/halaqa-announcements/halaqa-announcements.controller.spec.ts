@@ -4,6 +4,7 @@ import { HalaqaAnnouncementsController } from './halaqa-announcements.controller
 import { ROLES_KEY } from '../../common/decorators/roles.decorator';
 import { HALAQA_SOURCE_KEY } from '../../common/decorators/halaqa-source.decorator';
 import { HalaqaAccessGuard } from '../../common/guards/halaqa-access.guard';
+import { TeacherNewsGuard } from './teacher-news.guard';
 
 /**
  * Says out loud who may reach each route, and what each route's `:id` means.
@@ -46,14 +47,26 @@ describe('HalaqaAnnouncementsController wiring', () => {
     ).toEqual(readers.sort());
   });
 
-  it('keeps writes with the manager and the admin', () => {
-    for (const handler of [
-      HalaqaAnnouncementsController.prototype.create,
-      HalaqaAnnouncementsController.prototype.createForAll,
-      HalaqaAnnouncementsController.prototype.update,
-      HalaqaAnnouncementsController.prototype.remove,
-    ]) {
-      expect(rolesFor(handler).sort()).toEqual([Role.ADMIN, Role.MANAGER].sort());
+  const writes = [
+    HalaqaAnnouncementsController.prototype.create,
+    HalaqaAnnouncementsController.prototype.createForAll,
+    HalaqaAnnouncementsController.prototype.update,
+    HalaqaAnnouncementsController.prototype.remove,
+  ];
+
+  it('keeps writes with the admin, the manager and the teacher', () => {
+    for (const handler of writes) {
+      expect(rolesFor(handler).sort()).toEqual(
+        [Role.ADMIN, Role.MANAGER, Role.TEACHER].sort(),
+      );
+    }
+  });
+
+  // TEACHER in @Roles is only safe with this guard behind it: without it,
+  // every teacher could post, not just the ones the admin granted.
+  it('checks the teacher grant on every write', () => {
+    for (const handler of writes) {
+      expect(guardsFor(handler)).toContain(TeacherNewsGuard);
     }
   });
 

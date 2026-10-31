@@ -34,10 +34,19 @@ export class MemorizationService {
 
   private assertAmountFitsUnit(
     subject: MemorizationSubject,
-    type: Memorization,
     amountDone: number,
   ) {
-    const unit = unitFor(subject, type);
+    const unit = unitFor(subject);
+    // A half page is a real recitation; a half hadith is not recorded, and
+    // nothing finer than a half is ever meant (1.3 is a typo).
+    const step = unit === 'PAGE' ? 0.5 : 1;
+    if (!Number.isInteger(amountDone / step) || amountDone < step) {
+      throw new BadRequestException(
+        unit === 'PAGE'
+          ? 'PAGE amounts go in steps of 0.5, so amountDone must be like 1, 1.5 or 2'
+          : `${unit} amounts are whole numbers, so amountDone must be a whole number of at least 1`,
+      );
+    }
     const max = MAX_AMOUNT[unit];
     if (amountDone > max) {
       throw new BadRequestException(
@@ -142,12 +151,9 @@ export class MemorizationService {
     // The column defaults to QURAN when the client omits the subject, so
     // every existing caller keeps recording Quran progress unchanged.
     const subject = dto.subject ?? MemorizationSubject.QURAN;
-    // The column defaults to MEMORIZING when the client omits the type, so the
-    // bound has to be checked against that same fallback.
-    const type = dto.memorizationType ?? Memorization.MEMORIZING;
 
     this.assertSubjectFields(subject, dto.surahNumber, dto.hadithReference);
-    this.assertAmountFitsUnit(subject, type, dto.amountDone);
+    this.assertAmountFitsUnit(subject, dto.amountDone);
     if (subject === MemorizationSubject.HADITH) {
       await this.assertHadithEnabled(dto.studentId, dto.hadithReference);
     }
@@ -194,11 +200,7 @@ export class MemorizationService {
         : existing.hadithReference;
 
     this.assertSubjectFields(subject, surahNumber, hadithReference);
-    this.assertAmountFitsUnit(
-      subject,
-      dto.memorizationType ?? existing.memorizationType,
-      dto.amountDone ?? existing.amountDone,
-    );
+    this.assertAmountFitsUnit(subject, dto.amountDone ?? existing.amountDone);
     if (subject === MemorizationSubject.HADITH) {
       await this.assertHadithEnabled(existing.studentId, dto.hadithReference);
     }
@@ -219,9 +221,10 @@ export class MemorizationService {
       (r) => r.subject === MemorizationSubject.QURAN,
     );
 
-    // Revision amounts are hizbs, so they cannot be added to page counts.
-    // Only new Quran memorization contributes to the page total, and hadith
-    // rows are excluded entirely — there is no "% of Quran" meaning for them.
+    // Revision re-reads pages already memorized, so adding it would count
+    // them twice. Only new Quran memorization contributes to the page total,
+    // and hadith rows are excluded entirely — there is no "% of Quran"
+    // meaning for them.
     const totalPagesDone = quranRecords
       .filter((r) => r.memorizationType === Memorization.MEMORIZING)
       .reduce((sum, r) => sum + r.amountDone, 0);
@@ -235,17 +238,37 @@ export class MemorizationService {
       )
       .reduce((sum, r) => sum + r.amountDone, 0);
 
-    const typeCounts = quranRecords.reduce(
-      (acc, r) => {
-        acc[r.memorizationType]++;
-        return acc;
-      },
-      { MEMORIZING: 0, SMALLREVISION: 0, BIGREVISION: 0 } as Record<
-        Memorization,
-        number
-      >,
+    const countTypes = (rows: typeof records) =>
+      rows.reduce(
+        (acc, r) => {
+          acc[r.memorizationType]++;
+          return acc;
+        },
+        { MEMORIZING: 0, SMALLREVISION: 0, BIGREVISION: 0 } as Record<
+          Memorization,
+          number
+        >,
+      );
+    const typeCounts = countTypes(quranRecords);
+    const hadithTypeCounts = countTypes(
+      records.filter((r) => r.subject === MemorizationSubject.HADITH),
     );
 
-    return { records, totalPagesDone, totalHadithsDone, totalSurahs, typeCounts };
+    // Lets the app show the hadith counters for a student who tracks hadith
+    // but has no hadith entry yet.
+    const student = await this.prisma.student.findUnique({
+      where: { id: studentId },
+      select: { tracksHadith: true },
+    });
+
+    return {
+      records,
+      totalPagesDone,
+      totalHadithsDone,
+      totalSurahs,
+      typeCounts,
+      hadithTypeCounts,
+      tracksHadith: student?.tracksHadith ?? false,
+    };
   }
 }

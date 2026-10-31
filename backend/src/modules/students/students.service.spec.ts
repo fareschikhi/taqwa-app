@@ -228,13 +228,36 @@ describe('StudentsService.update', () => {
     halaqa: { findUnique: jest.fn() },
   });
 
-  it('ignores a password a stale client still sends', async () => {
+  it('ignores a password sent for a child student', async () => {
     const prisma = makePrisma();
     const service = new StudentsService(prisma as any);
 
     await service.update(7, { password: 'hunter2' } as any);
 
     expect(prisma.user.update).not.toHaveBeenCalled();
+  });
+
+  it('resets an adult student\'s password as a temporary one', async () => {
+    const prisma = makePrisma('ADULT_STUDENT');
+    const service = new StudentsService(prisma as any);
+
+    await service.update(7, { password: 'NewPass123' });
+
+    const data = prisma.user.update.mock.calls[0][0].data;
+    expect(await bcrypt.compare('NewPass123', data.passwordHash)).toBe(true);
+    expect(data.mustChangePassword).toBe(true);
+    expect(data.password).toBeUndefined();
+  });
+
+  it('leaves an adult student\'s password alone when none is sent', async () => {
+    const prisma = makePrisma('ADULT_STUDENT');
+    const service = new StudentsService(prisma as any);
+
+    await service.update(7, { fullName: 'أحمد بن علي' });
+
+    const data = prisma.user.update.mock.calls[0][0].data;
+    expect(data.passwordHash).toBeUndefined();
+    expect(data.mustChangePassword).toBeUndefined();
   });
 
   // The overall rating is free text the teacher writes on the student profile,

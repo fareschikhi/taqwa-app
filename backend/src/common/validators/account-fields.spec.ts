@@ -5,7 +5,7 @@ import {
 } from '@nestjs/common';
 import { CreateParentDto, UpdateParentDto } from '../../modules/parents/dto/parent.dto';
 import { LoginDto } from '../../modules/auth/dto/login.dto';
-import { normalizePhone } from './account-fields';
+import { normalizePhone, PHONE_ERROR } from './account-fields';
 
 // Same configuration main.ts installs globally, so these exercise the real
 // request path rather than class-validator in isolation.
@@ -37,6 +37,9 @@ describe('normalizePhone', () => {
     ['055-123-4567', '0551234567'],
     ['+213 551 23 45 67', '0551234567'],
     ['00213661234567', '0661234567'],
+    ['+213 0551 23 45 67', '0551234567'],
+    ['+33 6 12 34 56 78', '+33612345678'],
+    ['0033612345678', '+33612345678'],
     ['1001', '1001'],
   ])('%s -> %s', (input, expected) => {
     expect(normalizePhone(input)).toBe(expected);
@@ -56,12 +59,25 @@ describe('account fields on create', () => {
     expect(dto.phone).toBe('0771234567');
   });
 
-  it.each(['0451234567', '055123456', '05512345678', '1001', 'abc'])(
+  it('stores a foreign phone in international form', async () => {
+    const dto = (await pipe.transform(
+      { ...valid, phone: '+966 50 123 4567' },
+      body(CreateParentDto),
+    )) as CreateParentDto;
+    expect(dto.phone).toBe('+966501234567');
+  });
+
+  it.each(['0451234567', '05512345678', '+33612345678', '+12025550123'])(
+    'accepts the phone %s whatever its country or length',
+    async (phone) => {
+      expect(await errorsFor(CreateParentDto, { ...valid, phone })).toEqual([]);
+    },
+  );
+
+  it.each(['1001', 'abc', '+0612345678', '+1234567890123456', '05512'])(
     'rejects the phone %s',
     async (phone) => {
-      expect(await errorsFor(CreateParentDto, { ...valid, phone })).toEqual([
-        'رقم الهاتف غير صالح: 10 أرقام تبدأ بـ 05 أو 06 أو 07',
-      ]);
+      expect(await errorsFor(CreateParentDto, { ...valid, phone })).toEqual([PHONE_ERROR]);
     },
   );
 
