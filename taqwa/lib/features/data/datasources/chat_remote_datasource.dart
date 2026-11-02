@@ -23,7 +23,7 @@ class ChatRemoteDatasource {
     final res = await _dio.get(
       '${_thread(t)}/messages',
       queryParameters: {
-        if (beforeId != null) 'before': beforeId,
+        'before': ?beforeId,
         if (since != null) 'since': since.toUtc().toIso8601String(),
       },
     );
@@ -42,7 +42,7 @@ class ChatRemoteDatasource {
     } else {
       final name = photo.name.isNotEmpty ? photo.name : 'photo.jpg';
       data = FormData.fromMap({
-        if (body != null) 'body': body,
+        'body': ?body,
         // Dio labels raw bytes application/octet-stream, which the API
         // refuses; the API then checks the real bytes against this type.
         'photo': MultipartFile.fromBytes(
