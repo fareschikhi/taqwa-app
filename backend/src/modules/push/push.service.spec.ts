@@ -129,6 +129,38 @@ describe('PushService', () => {
       expect.objectContaining({ where: { userId: 9 } }),
     );
   });
+
+  it('sends to many users in one batch with the route given', async () => {
+    const prisma = makePrisma(['tok-a', 'tok-b']);
+    sendEach().mockResolvedValue(batch({ success: true }, { success: true }));
+    const service = configured(prisma);
+
+    await service.sendToUsers([4, 5], 'محمد', 'كان مريضاً', {
+      route: 'chat',
+      parentId: '9',
+    });
+
+    expect(prisma.deviceToken.findMany).toHaveBeenCalledWith({
+      where: { userId: { in: [4, 5] } },
+      select: { token: true },
+    });
+    const [messages] = sendEach().mock.calls[0];
+    expect(messages).toHaveLength(2);
+    expect(messages[0]).toMatchObject({
+      notification: { title: 'محمد', body: 'كان مريضاً' },
+      data: { route: 'chat', parentId: '9' },
+    });
+  });
+
+  it('does not query devices when there is nobody to send to', async () => {
+    const prisma = makePrisma(['tok-a']);
+    const service = configured(prisma);
+
+    await service.sendToUsers([], 't', 'b', { route: 'chat' });
+
+    expect(prisma.deviceToken.findMany).not.toHaveBeenCalled();
+    expect(sendEach()).not.toHaveBeenCalled();
+  });
 });
 
 describe('PushService configuration', () => {

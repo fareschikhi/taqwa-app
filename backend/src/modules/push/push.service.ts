@@ -70,21 +70,54 @@ export class PushService implements OnModuleInit {
     this.enabled = true;
   }
 
-  async sendToUser(userId: number, title: string, body: string) {
+  /**
+   * `data` is read by the app's tap handler to open the right screen; the
+   * default opens the notifications tab, which every existing caller means.
+   */
+  async sendToUser(
+    userId: number,
+    title: string,
+    body: string,
+    data: Record<string, string> = { route: 'notifications' },
+  ) {
     if (!this.enabled) return;
 
     const devices = await this.prisma.deviceToken.findMany({
       where: { userId },
       select: { token: true },
     });
+    await this.sendToDevices(devices, title, body, data);
+  }
+
+  /** The same message to several users' devices, in one FCM batch. */
+  async sendToUsers(
+    userIds: number[],
+    title: string,
+    body: string,
+    data: Record<string, string>,
+  ) {
+    if (!this.enabled || !userIds.length) return;
+
+    const devices = await this.prisma.deviceToken.findMany({
+      where: { userId: { in: userIds } },
+      select: { token: true },
+    });
+    await this.sendToDevices(devices, title, body, data);
+  }
+
+  private async sendToDevices(
+    devices: Array<{ token: string }>,
+    title: string,
+    body: string,
+    data: Record<string, string>,
+  ) {
     if (!devices.length) return;
 
     const result = await getMessaging().sendEach(
       devices.map(({ token }) => ({
         token,
         notification: { title, body },
-        // Read by the app's tap handler to open the notifications tab.
-        data: { route: 'notifications' },
+        data,
         android: { priority: 'high' as const },
       })),
     );
