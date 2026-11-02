@@ -59,6 +59,14 @@ enum FineSource {
   MANUAL
 }
 
+enum PointSource {
+  MEMORIZATION
+  PRESENT
+  ABSENCE
+  MISSED_MEMORIZATION
+  MANUAL
+}
+
 // ─────────────────────────────────────────────────────────────────────────────
 // User — core identity, owns auth credentials
 // ─────────────────────────────────────────────────────────────────────────────
@@ -85,6 +93,8 @@ model User {
   notifications Notification[]
   deviceTokens  DeviceToken[]
   finesCreated  FineEntry[]
+  points        PointEntry[] @relation("PointOwner")
+  pointsCreated PointEntry[] @relation("PointCreator")
   announcements HalaqaAnnouncement[]
   chatMessages  ChatMessage[] @relation("ChatMessageSender")
   chatReads     ChatRead[]
@@ -510,6 +520,36 @@ model FineEntry {
   @@index([studentId])
   @@index([createdById])
   @@map("fine_entries")
+}
+
+// One row per automatic day entry or manual adjustment. The total is the sum
+// of rows, never a stored column. Keyed by user rather than student because
+// teachers and managers have points too.
+//
+// Automatic rows are keyed by the day and reason they follow from, so the
+// teacher re-saving a sheet can never add a second one. Manual rows leave
+// `date` null, which MySQL treats as always distinct, so they never collide.
+model PointEntry {
+  id          Int         @id @default(autoincrement())
+  userId      Int
+  // Exact to a thousandth: a half page of revision is worth 0.125.
+  amount      Decimal     @db.Decimal(10, 3)
+  source      PointSource
+  date        DateTime?   @db.Date
+  reason      String?     @db.VarChar(300)
+  // Null on automatic rows, which no one in particular created.
+  createdById Int?
+  createdAt   DateTime    @default(now())
+
+  user      User  @relation("PointOwner", fields: [userId], references: [id], onDelete: Cascade)
+  // Restrict, as on fines: removing a staff account must not erase the
+  // adjustments it made.
+  createdBy User? @relation("PointCreator", fields: [createdById], references: [id], onDelete: Restrict)
+
+  @@unique([userId, date, source])
+  @@index([userId])
+  @@index([createdById])
+  @@map("point_entries")
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
