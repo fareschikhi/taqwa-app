@@ -96,14 +96,8 @@ class TeacherRepository {
     required int studentId,
     required String date,
     required String status,
-    bool? missedMemorization,
   }) async {
-    await _ds.upsertAttendance(
-      studentId: studentId,
-      date: date,
-      status: status,
-      missedMemorization: missedMemorization,
-    );
+    await _ds.upsertAttendance(studentId: studentId, date: date, status: status);
   }
 
   // ─── Notes ─────────────────────────────────────────────────────────────────

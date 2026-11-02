@@ -8,16 +8,23 @@ import { MEMORIZATION_ERROR, MemorizationService } from './memorization.service'
 import { HADITH_BOOKS } from '../students/hadith-books';
 
 describe('MemorizationService.create attendance gate', () => {
-  const makePrisma = (status: AttendanceStatus | null) => ({
-    attendance: {
-      findUnique: jest
-        .fn()
-        .mockResolvedValue(status === null ? null : { id: 1, status }),
-    },
-    memorizationProgress: {
-      create: jest.fn().mockResolvedValue({ id: 10 }),
-    },
-  });
+  const makePrisma = (status: AttendanceStatus | null) => {
+    const prisma: any = {
+      attendance: {
+        findUnique: jest
+          .fn()
+          .mockResolvedValue(status === null ? null : { id: 1, status }),
+      },
+      memorizationProgress: {
+        create: jest.fn().mockResolvedValue({ id: 10 }),
+      },
+      // A child student: the day's fine reconciliation is a no-op for him,
+      // which keeps this block about the attendance gate alone.
+      student: { findUnique: jest.fn().mockResolvedValue(null) },
+    };
+    prisma.$transaction = jest.fn((cb: any) => cb(prisma));
+    return prisma;
+  };
 
   const dto = {
     studentId: 7,
@@ -96,6 +103,75 @@ describe('MemorizationService.create attendance gate', () => {
   });
 });
 
+/// "Did not memorize" is derived, so recording a recitation is what withdraws
+/// the fee roll call put on an adult student.
+describe('MemorizationService.create clears the missed-memorization fee', () => {
+  const makePrisma = (attendance: AttendanceStatus | null) => {
+    const prisma: any = {
+      attendance: {
+        findUnique: jest
+          .fn()
+          .mockResolvedValue(attendance === null ? null : { id: 1, status: attendance }),
+        updateMany: jest.fn().mockResolvedValue({ count: 1 }),
+      },
+      memorizationProgress: {
+        create: jest.fn().mockResolvedValue({ id: 10 }),
+        // The row just created inside the same transaction.
+        count: jest.fn().mockResolvedValue(1),
+      },
+      student: {
+        findUnique: jest.fn().mockResolvedValue({
+          userId: 30,
+          user: { role: 'ADULT_STUDENT' },
+          halaqa: {
+            isAdult: true,
+            absenceFee: 50,
+            lateFee: 20,
+            missedMemorizationFee: 30,
+          },
+        }),
+      },
+      fineEntry: {
+        findMany: jest
+          .fn()
+          .mockResolvedValue([{ id: 99, source: 'MISSED_MEMORIZATION' }]),
+        deleteMany: jest.fn().mockResolvedValue({ count: 1 }),
+        create: jest.fn(),
+      },
+    };
+    prisma.$transaction = jest.fn((cb: any) => cb(prisma));
+    return prisma;
+  };
+
+  const dto = {
+    studentId: 7,
+    surahNumber: 2,
+    amountDone: 1,
+    memorizationType: Memorization.MEMORIZING,
+  };
+
+  it('withdraws the day\'s missed-memorization charge', async () => {
+    const prisma = makePrisma(AttendanceStatus.PRESENT);
+    await new MemorizationService(prisma).create(dto);
+
+    expect(prisma.fineEntry.deleteMany).toHaveBeenCalledWith({
+      where: { id: { in: [99] } },
+    });
+    expect(prisma.attendance.updateMany).toHaveBeenCalledWith(
+      expect.objectContaining({ data: { missedMemorization: false } }),
+    );
+    expect(prisma.fineEntry.create).not.toHaveBeenCalled();
+  });
+
+  it('reconciles nothing before roll call has been taken', async () => {
+    const prisma = makePrisma(null);
+    await new MemorizationService(prisma).create(dto);
+
+    expect(prisma.memorizationProgress.create).toHaveBeenCalled();
+    expect(prisma.fineEntry.findMany).not.toHaveBeenCalled();
+  });
+});
+
 describe('MemorizationService hadith subject', () => {
   const makePrisma = (
     opts: {
@@ -132,6 +208,11 @@ describe('MemorizationService hadith subject', () => {
       }),
       update: jest.fn().mockResolvedValue({ id: 20 }),
     },
+    // Runs the callback against this same mock, as the real client would
+    // against its transaction.
+    $transaction: jest.fn(function (this: any, cb: any) {
+      return cb(this);
+    }),
   });
 
   const hadithDto = {
@@ -251,7 +332,13 @@ describe('MemorizationService hadith subject', () => {
       memorizationType: Memorization.MEMORIZING,
     } as any);
 
-    expect(prisma.student.findUnique).not.toHaveBeenCalled();
+    // The day's fine reconciliation reads the student too, so the check is on
+    // the hadith-eligibility lookup specifically, not on any student read.
+    expect(prisma.student.findUnique).not.toHaveBeenCalledWith(
+      expect.objectContaining({
+        select: expect.objectContaining({ tracksHadith: true }),
+      }),
+    );
     expect(prisma.memorizationProgress.create).toHaveBeenCalled();
   });
 });
@@ -345,6 +432,9 @@ describe('MemorizationService half-page amounts', () => {
       memorizationProgress: {
         create: jest.fn().mockResolvedValue({ id: 10 }),
       },
+      $transaction: jest.fn(function (this: any, cb: any) {
+        return cb(this);
+      }),
     };
     return { prisma, service: new MemorizationService(prisma as any) };
   };

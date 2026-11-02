@@ -10,6 +10,7 @@ import {
   MemorizationSubject,
 } from '@prisma/client';
 import { MAX_AMOUNT, unitFor } from './progress-unit';
+import { reconcileDayFines } from '../attendance/day-fines';
 
 // Attendance rows are written as new Date('YYYY-MM-DD'), which parses to UTC
 // midnight, and both date columns are @db.Date, which Prisma truncates in UTC.
@@ -125,7 +126,10 @@ export class MemorizationService {
   // A student who was not in the halaqa cannot have recited in it. The teacher
   // records attendance and memorization on the same screen, so the two can
   // contradict each other unless the write is refused here.
-  private async assertNotAbsent(studentId: number, date: Date) {
+  private async assertNotAbsent(
+    studentId: number,
+    date: Date,
+  ): Promise<AttendanceStatus | null> {
     const attendance = await this.prisma.attendance.findUnique({
       where: { studentId_date: { studentId, date } },
       select: { status: true },
@@ -145,6 +149,7 @@ export class MemorizationService {
           'Cannot record memorization for a student marked absent on this date',
       });
     }
+    return attendance?.status ?? null;
   }
 
   async create(dto: CreateMemorizationDto) {
@@ -161,10 +166,19 @@ export class MemorizationService {
     // Attendance.date is a bare DATE, so the timestamp has to be floored to
     // midnight to line up with the row the teacher just wrote.
     const date = startOfUtcDay(new Date());
-    await this.assertNotAbsent(dto.studentId, date);
+    const attendance = await this.assertNotAbsent(dto.studentId, date);
 
-    return this.prisma.memorizationProgress.create({
-      data: { ...dto, subject, date },
+    return this.prisma.$transaction(async (tx) => {
+      const record = await tx.memorizationProgress.create({
+        data: { ...dto, subject, date },
+      });
+      // A recitation is what clears the day's "did not memorize" charge, so
+      // the day is reconciled in the same write. With no attendance yet there
+      // is nothing to reconcile: the charge only exists once roll is taken.
+      if (attendance) {
+        await reconcileDayFines(tx, dto.studentId, date, attendance, null);
+      }
+      return record;
     });
   }
 

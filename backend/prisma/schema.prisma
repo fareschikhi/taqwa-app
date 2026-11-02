@@ -225,8 +225,9 @@ model Attendance {
   date      DateTime         @db.Date
   status    AttendanceStatus
 
-  // The teacher's own mark, not something inferred from the ledger: if she
-  // later forgives the fine, the day was still a day he did not memorize.
+  // Derived by the server (attended, but no recitation recorded that day) and
+  // kept on the row rather than inferred from the ledger: if the fine is later
+  // forgiven, the day was still a day he did not memorize.
   missedMemorization Boolean @default(false)
 
   notes     String?          @db.Text

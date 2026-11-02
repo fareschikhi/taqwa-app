@@ -44,16 +44,6 @@ class _AttendancePageState extends ConsumerState<AttendancePage>
   /// changed and a failed write does not leave the two silently disagreeing.
   final Map<int, AttendanceStatus> _savedAttendance = {};
 
-  /// The "لم يحفظ" toggle, present only for adult students — a child never
-  /// accrues a fine, so his id never enters this map. It changes on its own,
-  /// independently of the status chip, which is exactly why the pending
-  /// comparison in attendance_draft.dart has to consider it too.
-  final Map<int, bool> _missed = {};
-
-  /// What the server last confirmed for the toggle, mirroring
-  /// [_savedAttendance]'s role for the status chip.
-  final Map<int, bool> _savedMissed = {};
-
   /// What the sheet held the moment it finished loading: the server's own
   /// rows, with present filled in for every student it had none for.
   ///
@@ -63,7 +53,6 @@ class _AttendancePageState extends ConsumerState<AttendancePage>
   /// open rebuilds them, so only a mark the teacher moved by hand is worth
   /// warning about.
   final Map<int, AttendanceStatus> _initialAttendance = {};
-  final Map<int, bool> _initialMissed = {};
 
   final Set<int> _memorizedStudentIds = {};
 
@@ -95,15 +84,11 @@ class _AttendancePageState extends ConsumerState<AttendancePage>
   /// student's row from `GET /students` nests only `id`, `name` and `level`
   /// for his halaqa — not the fine fields — so this holds the full
   /// [HalaqaModel] (fetched separately) for whichever id he belongs to. A
-  /// student with no entry here is treated as a child: never fined, and the
-  /// toggle never renders for him.
+  /// student with no entry here is treated as a child: never fined.
   final Map<int, HalaqaModel> _studentHalaqa = {};
 
   bool _isAdultStudent(int studentId) =>
       _studentHalaqa[studentId]?.isAdult ?? false;
-
-  int _missedMemorizationFeeFor(int studentId) =>
-      _studentHalaqa[studentId]?.missedMemorizationFee ?? 0;
 
   int _lateFeeFor(int studentId) => _studentHalaqa[studentId]?.lateFee ?? 0;
 
@@ -153,8 +138,6 @@ class _AttendancePageState extends ConsumerState<AttendancePage>
     return pendingAttendanceIds(
       draft: _attendance,
       saved: _savedAttendance,
-      missedDraft: _missed,
-      missedSaved: _savedMissed,
     ).where(visible.contains).toSet();
   }
 
@@ -165,8 +148,6 @@ class _AttendancePageState extends ConsumerState<AttendancePage>
   Set<int> get _handEditedIds => pendingAttendanceIds(
     draft: _attendance,
     saved: _initialAttendance,
-    missedDraft: _missed,
-    missedSaved: _initialMissed,
   );
 
   @override
@@ -284,18 +265,10 @@ class _AttendancePageState extends ConsumerState<AttendancePage>
     final halaqasById = {for (final h in roster.halaqas) h.id: h};
 
     final existingMap = <int, String>{};
-    // The toggle a student's Attendance row carried the last time it was
-    // written. A student with no row at all has neither, which is exactly
-    // why both maps are read together below rather than one implying "no
-    // row means false" — that would be a coincidence of the default, not a
-    // rule this code should lean on.
-    final existingMissedMap = <int, bool>{};
     for (final record in existingRecords) {
       final sId = (record['studentId'] as num?)?.toInt();
       final st = record['status'] as String?;
       if (sId != null && st != null) existingMap[sId] = st;
-      final missed = record['missedMemorization'] as bool?;
-      if (sId != null && missed != null) existingMissedMap[sId] = missed;
     }
 
     final memorizedByStudent = memorizationByStudent(memorizationRecords);
@@ -320,8 +293,6 @@ class _AttendancePageState extends ConsumerState<AttendancePage>
         ..addAll(memorizedByStudent);
       _savedAttendance.clear();
       _initialAttendance.clear();
-      _initialMissed.clear();
-      _savedMissed.clear();
       for (final s in studentList) {
         final existing = attendanceStatusFromApi(existingMap[s.id]);
         // A student with no row yet has nothing saved, and `unset` is not a
@@ -340,17 +311,6 @@ class _AttendancePageState extends ConsumerState<AttendancePage>
         if (!stillPending.contains(s.id)) {
           _attendance[s.id] = baseline;
         }
-        // A child never accrues a fine, so his id never enters either
-        // toggle map — that absence is what keeps the switch off his card
-        // and the key off his batch record.
-        if (_isAdultStudent(s.id)) {
-          final existingMissed = existingMissedMap[s.id] ?? false;
-          _savedMissed[s.id] = existingMissed;
-          _initialMissed[s.id] = existingMissed;
-          if (!stillPending.contains(s.id)) {
-            _missed[s.id] = existingMissed;
-          }
-        }
       }
       // Held marks belong on the chips, not only in the banner. Reopened
       // offline, the sheet would otherwise show the old rows, and a save
@@ -360,9 +320,6 @@ class _AttendancePageState extends ConsumerState<AttendancePage>
         final id = record['studentId'] as int;
         if (record['date'] != today || stillPending.contains(id)) continue;
         _attendance[id] = attendanceStatusFromApi(record['status'] as String);
-        if (record.containsKey('missedMemorization')) {
-          _missed[id] = record['missedMemorization'] as bool;
-        }
       }
       _copySavedAt = fromCache ? roster.savedAt : null;
       _isLoading = false;
@@ -473,18 +430,11 @@ class _AttendancePageState extends ConsumerState<AttendancePage>
     final apiStatus = status == null ? null : attendanceStatusToApi(status);
     if (status == null || apiStatus == null) return true;
 
-    // Built through the shared payload helper — for a batch of one, with
-    // `saved: {}` so this student is always included — rather than a
-    // hand-rolled map, so the toggle rides along exactly as it would in a
-    // full save. Hand-rolling it here a second time is how it would have
-    // been silently dropped from this path alone.
     final record = attendanceBatchPayload(
       draft: {studentId: status},
       saved: const {},
       date: _todayStr,
-      missedDraft: _missed,
     ).first;
-    final missed = record['missedMemorization'] as bool?;
 
     setState(() => _savingStudentIds.add(studentId));
     try {
@@ -492,13 +442,9 @@ class _AttendancePageState extends ConsumerState<AttendancePage>
         studentId: studentId,
         date: _todayStr,
         status: apiStatus,
-        missedMemorization: missed,
       );
       if (mounted) {
-        setState(() {
-          _savedAttendance[studentId] = status;
-          if (missed != null) _savedMissed[studentId] = missed;
-        });
+        setState(() => _savedAttendance[studentId] = status);
       }
       await _flushQueue();
       return true;
@@ -530,8 +476,6 @@ class _AttendancePageState extends ConsumerState<AttendancePage>
       },
       saved: _savedAttendance,
       date: _todayStr,
-      missedDraft: _missed,
-      missedSaved: _savedMissed,
     );
     if (payload.isEmpty) {
       setState(() => _isSaving = false);
@@ -549,9 +493,6 @@ class _AttendancePageState extends ConsumerState<AttendancePage>
           _savedAttendance[id] = attendanceStatusFromApi(
             record['status'] as String,
           );
-          if (record.containsKey('missedMemorization')) {
-            _savedMissed[id] = record['missedMemorization'] as bool;
-          }
         }
       });
       _showSnack('تم حفظ حضور ${payload.length} طالب', isError: false);
@@ -676,14 +617,6 @@ class _AttendancePageState extends ConsumerState<AttendancePage>
           // without these rows, so without this the teacher sees an empty
           // board and marks the halaqa a second time.
           _attendance[id] = status;
-          // Same reasoning for the toggle: a queued record that carried it
-          // must land in both maps, or the flush would leave that student
-          // looking pending forever despite the server now holding his mark.
-          if (record.containsKey('missedMemorization')) {
-            final missed = record['missedMemorization'] as bool;
-            _savedMissed[id] = missed;
-            _missed[id] = missed;
-          }
         }
       });
       _showSnack('تم حفظ ${sending.length} حضور مؤجل', isError: false);
@@ -718,19 +651,8 @@ class _AttendancePageState extends ConsumerState<AttendancePage>
       if (tapped == AttendanceStatus.absent) {
         _memorizedStudentIds.remove(student.id);
         _todayMemorization.remove(student.id);
-        // An absent student is already charged for the absence; leaving a
-        // stale "لم يحفظ" on him would bill the same fact twice, which is
-        // exactly what the server also refuses. The switch itself is about
-        // to become disabled, but the value behind it must not linger true.
-        _missed.remove(student.id);
       }
     });
-  }
-
-  /// Only ever called for an adult student, since the switch does not render
-  /// for anyone else.
-  void _onToggleMissed(int studentId, bool value) {
-    setState(() => _missed[studentId] = value);
   }
 
   /// Backing out of the shell would drop marks that were never written, and
@@ -986,7 +908,6 @@ class _AttendancePageState extends ConsumerState<AttendancePage>
             if (_attendance[s.id] != AttendanceStatus.absent) skipped++;
             continue;
           }
-          _missed.remove(s.id);
         }
         _attendance[s.id] = status;
       }
@@ -1001,7 +922,6 @@ class _AttendancePageState extends ConsumerState<AttendancePage>
 
   Widget _buildTable() {
     final students = _students;
-    final showMissed = students.any((s) => _isAdultStudent(s.id));
     final pending = _pendingIds;
 
     bool allAre(AttendanceStatus status) =>
@@ -1019,9 +939,7 @@ class _AttendancePageState extends ConsumerState<AttendancePage>
         child: Column(
           children: [
             _AttendanceHeaderRow(
-              showMissed: showMissed,
               lateFee: _sharedFee(_lateFeeFor),
-              missedFee: _sharedFee(_missedMemorizationFeeFor),
               allAre: allAre,
               onMarkAll: _markAll,
             ),
@@ -1041,12 +959,8 @@ class _AttendancePageState extends ConsumerState<AttendancePage>
                     isSaving: _savingStudentIds.contains(student.id),
                     isPending: pending.contains(student.id),
                     todaySummary: _todaySummaryOf(student.id),
-                    showMissedColumn: showMissed,
-                    isAdult: _isAdultStudent(student.id),
-                    missed: _missed[student.id] ?? false,
                     onSelectStatus: (s) => _onChipTap(student, s),
                     onOpenMemorization: () => _openMemorizationSheet(student),
-                    onToggleMissed: (v) => _onToggleMissed(student.id, v),
                   );
                 },
               ),
@@ -1105,16 +1019,12 @@ const _markColumns = [
 /// that marks the whole halaqa at once.
 class _AttendanceHeaderRow extends StatelessWidget {
   const _AttendanceHeaderRow({
-    required this.showMissed,
     required this.lateFee,
-    required this.missedFee,
     required this.allAre,
     required this.onMarkAll,
   });
 
-  final bool showMissed;
   final String? lateFee;
-  final String? missedFee;
   final bool Function(AttendanceStatus status) allAre;
   final ValueChanged<AttendanceStatus> onMarkAll;
 
@@ -1129,12 +1039,6 @@ class _AttendanceHeaderRow extends StatelessWidget {
         child: Row(
           crossAxisAlignment: CrossAxisAlignment.stretch,
           children: [
-            if (showMissed)
-              _HeaderCell(
-                label: 'لم يحفظ',
-                subLabel: missedFee,
-                divider: divider,
-              ),
             for (final (status, label) in _markColumns)
               _HeaderCell(
                 label: label,
@@ -1216,8 +1120,8 @@ class _HeaderCell extends StatelessWidget {
   }
 }
 
-/// One student's line: a mark circle per status, the "لم يحفظ" box for
-/// adults, and the name — which opens his recitation sheet.
+/// One student's line: a mark circle per status and the name — which opens
+/// his recitation sheet.
 class _AttendanceTableRow extends StatelessWidget {
   const _AttendanceTableRow({
     required this.name,
@@ -1225,12 +1129,8 @@ class _AttendanceTableRow extends StatelessWidget {
     required this.isLast,
     required this.isSaving,
     required this.isPending,
-    required this.showMissedColumn,
-    required this.isAdult,
-    required this.missed,
     required this.onSelectStatus,
     required this.onOpenMemorization,
-    required this.onToggleMissed,
     this.todaySummary,
   });
 
@@ -1244,14 +1144,8 @@ class _AttendanceTableRow extends StatelessWidget {
   final bool isPending;
   final String? todaySummary;
 
-  /// Whether the table has the "لم يحفظ" column at all — true once any
-  /// student on screen is an adult. A child's row leaves the cell blank.
-  final bool showMissedColumn;
-  final bool isAdult;
-  final bool missed;
   final ValueChanged<AttendanceStatus> onSelectStatus;
   final VoidCallback onOpenMemorization;
-  final ValueChanged<bool> onToggleMissed;
 
   @override
   Widget build(BuildContext context) {
@@ -1275,19 +1169,6 @@ class _AttendanceTableRow extends StatelessWidget {
         child: Row(
           crossAxisAlignment: CrossAxisAlignment.stretch,
           children: [
-            if (showMissedColumn)
-              cell(
-                isAdult
-                    ? _MissedBox(
-                        checked: missed,
-                        // Absent is already charged for the absence; the
-                        // server refuses fining the same day twice.
-                        enabled: enabled && canMemorize,
-                        studentName: name,
-                        onTap: () => onToggleMissed(!missed),
-                      )
-                    : null,
-              ),
             for (final (itemStatus, label) in _markColumns)
               cell(
                 isSaving && status == itemStatus
@@ -1525,64 +1406,6 @@ class _MarkCircle extends StatelessWidget {
             ),
             child: selected
                 ? Icon(Icons.check_rounded, size: 18.w, color: ink)
-                : null,
-          ),
-        ),
-      ),
-    );
-  }
-}
-
-/// The adult-only "did not recite" checkbox. Square, unlike the status
-/// circles, because it is an independent yes/no rather than one of a set.
-class _MissedBox extends StatelessWidget {
-  const _MissedBox({
-    required this.checked,
-    required this.enabled,
-    required this.studentName,
-    required this.onTap,
-  });
-
-  final bool checked;
-  final bool enabled;
-  final String studentName;
-  final VoidCallback onTap;
-
-  @override
-  Widget build(BuildContext context) {
-    final on = checked && enabled;
-    return Semantics(
-      checked: checked,
-      enabled: enabled,
-      label: '$studentName: لم يحفظ',
-      excludeSemantics: true,
-      child: InkResponse(
-        onTap: enabled ? onTap : null,
-        radius: 22.w,
-        child: Padding(
-          padding: EdgeInsets.all(8.w),
-          child: AnimatedContainer(
-            duration: AppConstants.animFast,
-            width: 26.w,
-            height: 26.w,
-            decoration: BoxDecoration(
-              color: on ? AppColors.error : Colors.transparent,
-              borderRadius: BorderRadius.circular(AppConstants.radiusSm),
-              border: Border.all(
-                color: on
-                    ? AppColors.error
-                    : enabled
-                    ? AppColors.error.withValues(alpha: 0.6)
-                    : AppColors.outlineVariant.withValues(alpha: 0.5),
-                width: 2,
-              ),
-            ),
-            child: on
-                ? Icon(
-                    Icons.close_rounded,
-                    size: 18.w,
-                    color: AppColors.onError,
-                  )
                 : null,
           ),
         ),

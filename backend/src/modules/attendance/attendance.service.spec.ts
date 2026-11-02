@@ -596,6 +596,7 @@ describe('AttendanceService guardian notifications', () => {
       attendance: {
         findUnique: jest.fn().mockResolvedValue(null),
         upsert: jest.fn().mockImplementation(({ create }) => ({ id: 1, ...create })),
+        updateMany: jest.fn().mockResolvedValue({ count: 1 }),
       },
       memorizationProgress: { deleteMany: jest.fn().mockResolvedValue({ count: 0 }) },
       student: {
@@ -678,6 +679,7 @@ describe('AttendanceService guardian notifications', () => {
       attendance: {
         findUnique: jest.fn().mockResolvedValue(null),
         upsert: jest.fn().mockImplementation(({ create }) => ({ id: 1, ...create })),
+        updateMany: jest.fn().mockResolvedValue({ count: 1 }),
       },
       memorizationProgress: { deleteMany: jest.fn().mockResolvedValue({ count: 0 }) },
       student: {
@@ -787,6 +789,9 @@ describe('AttendanceService fine reconciliation', () => {
     role?: string;
     isAdult?: boolean;
     existing?: Array<{ id: number; source: string }>;
+    // Whether a recitation is already on file for the day. Defaults to true
+    // so the absence/late tests below are not muddied by a memorization fee.
+    recited?: boolean;
   } = {}) => {
     const tx = {
       attendance: {
@@ -796,8 +801,12 @@ describe('AttendanceService fine reconciliation', () => {
           .mockImplementation(({ create }) =>
             Promise.resolve({ id: 1, ...create }),
           ),
+        updateMany: jest.fn().mockResolvedValue({ count: 1 }),
       },
-      memorizationProgress: { deleteMany: jest.fn().mockResolvedValue({ count: 0 }) },
+      memorizationProgress: {
+        deleteMany: jest.fn().mockResolvedValue({ count: 0 }),
+        count: jest.fn().mockResolvedValue((opts.recited ?? true) ? 1 : 0),
+      },
       student: {
         // userId stands in for the fallback createdById: reconcileFines uses
         // it only when no actor is passed in, which is exactly what create()
@@ -827,11 +836,10 @@ describe('AttendanceService fine reconciliation', () => {
   const svcWith = (prisma: unknown) =>
     new AttendanceService(prisma as any, { create: jest.fn() } as any);
 
-  const dto = (status: AttendanceStatus, missedMemorization = false) => ({
+  const dto = (status: AttendanceStatus) => ({
     studentId: 7,
     date: '2026-08-26',
     status,
-    missedMemorization,
   });
 
   it('charges an absent adult student the halaqa absence fee', async () => {
@@ -883,14 +891,83 @@ describe('AttendanceService fine reconciliation', () => {
     expect(prisma.tx.fineEntry.create).not.toHaveBeenCalled();
   });
 
-  it('charges the memorization fee for a present student who did not recite', async () => {
-    const prisma = makePrisma();
-    await svcWith(prisma).create(dto(AttendanceStatus.PRESENT, true));
+  it('charges the memorization fee for a present student with no recitation that day', async () => {
+    const prisma = makePrisma({ recited: false });
+    await svcWith(prisma).create(dto(AttendanceStatus.PRESENT));
 
+    expect(prisma.tx.memorizationProgress.count).toHaveBeenCalledWith({
+      where: { studentId: 7, date: new Date('2026-08-26') },
+    });
     expect(prisma.tx.fineEntry.create).toHaveBeenCalledWith(
       expect.objectContaining({
         data: expect.objectContaining({ source: 'MISSED_MEMORIZATION', amount: 30 }),
       }),
+    );
+    expect(prisma.tx.attendance.updateMany).toHaveBeenCalledWith({
+      where: { studentId: 7, date: new Date('2026-08-26') },
+      data: { missedMemorization: true },
+    });
+  });
+
+  it('charges no memorization fee when a recitation is on file for the day', async () => {
+    const prisma = makePrisma({ recited: true });
+    await svcWith(prisma).create(dto(AttendanceStatus.PRESENT));
+
+    expect(prisma.tx.fineEntry.create).not.toHaveBeenCalled();
+    expect(prisma.tx.attendance.updateMany).toHaveBeenCalledWith(
+      expect.objectContaining({ data: { missedMemorization: false } }),
+    );
+  });
+
+  // The client no longer decides this. An old app build still sending the
+  // flag must not be able to charge (or waive) the fee on its own.
+  it('ignores a client-sent missedMemorization flag', async () => {
+    const prisma = makePrisma({ recited: true });
+    await svcWith(prisma).create({
+      ...dto(AttendanceStatus.PRESENT),
+      missedMemorization: true,
+    } as any);
+
+    expect(prisma.tx.fineEntry.create).not.toHaveBeenCalled();
+  });
+
+  it('does not look for a recitation on a day the student was absent', async () => {
+    const prisma = makePrisma({ recited: false });
+    await svcWith(prisma).create(dto(AttendanceStatus.ABSENT));
+
+    expect(prisma.tx.memorizationProgress.count).not.toHaveBeenCalled();
+    expect(prisma.tx.fineEntry.create).toHaveBeenCalledTimes(1);
+    expect(prisma.tx.fineEntry.create).toHaveBeenCalledWith(
+      expect.objectContaining({
+        data: expect.objectContaining({ source: 'ABSENCE' }),
+      }),
+    );
+  });
+
+  // At roll call the memorization fee is provisional — the student usually
+  // has not recited yet — so the late notice names only the late fee.
+  it('leaves the provisional memorization fee out of the notification amount', async () => {
+    const prisma = makePrisma({ recited: false });
+    const notifications = { create: jest.fn().mockResolvedValue(undefined) };
+    const service = new AttendanceService(
+      {
+        ...prisma,
+        student: {
+          findUnique: jest.fn().mockResolvedValue({
+            userId: 30,
+            user: { fullName: 'Test', role: 'ADULT_STUDENT' },
+            parent: null,
+          }),
+        },
+      } as any,
+      notifications as any,
+    );
+
+    await service.create(dto(AttendanceStatus.LATE));
+
+    expect(prisma.tx.fineEntry.create).toHaveBeenCalledTimes(2);
+    expect(notifications.create).toHaveBeenCalledWith(
+      expect.objectContaining({ body: 'تم تسجيل تأخرك اليوم — رسوم 20 دج' }),
     );
   });
 });

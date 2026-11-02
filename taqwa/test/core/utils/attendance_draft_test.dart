@@ -94,91 +94,19 @@ void main() {
     });
   });
 
-  group('missed memorization', () {
-    // The toggle changes without the chip changing, and the old comparison
-    // looked only at the chip — so this edit would never have been sent.
-    test('reports a student whose toggle changed but whose chip did not', () {
-      final pending = pendingAttendanceIds(
-        draft: {1: AttendanceStatus.present},
-        saved: {1: AttendanceStatus.present},
-        missedDraft: {1: true},
-        missedSaved: {1: false},
-      );
+  // "Did not memorize" is derived by the server from whether a recitation
+  // was recorded that day, so the sheet never sends it — an adult student
+  // marked present goes out exactly like a child.
+  test('never sends a missedMemorization flag', () {
+    final payload = attendanceBatchPayload(
+      draft: {1: AttendanceStatus.present, 2: AttendanceStatus.late},
+      saved: {},
+      date: '2026-08-28',
+    );
 
-      expect(pending, {1});
-    });
-
-    test('ignores a student whose toggle already matches the server', () {
-      final pending = pendingAttendanceIds(
-        draft: {1: AttendanceStatus.present},
-        saved: {1: AttendanceStatus.present},
-        missedDraft: {1: true},
-        missedSaved: {1: true},
-      );
-
-      expect(pending, isEmpty);
-    });
-
-    test('never sends an undecided student even when the toggle changed', () {
-      final pending = pendingAttendanceIds(
-        draft: {1: AttendanceStatus.unset},
-        saved: {},
-        missedDraft: {1: true},
-        missedSaved: {},
-      );
-
-      expect(pending, isEmpty);
-    });
-
-    test('carries the flag for an adult student', () {
-      final payload = attendanceBatchPayload(
-        draft: {1: AttendanceStatus.present},
-        saved: {},
-        date: '2026-08-28',
-        missedDraft: {1: true},
-      );
-
-      expect(payload, [
-        {
-          'studentId': 1,
-          'date': '2026-08-28',
-          'status': 'PRESENT',
-          'missedMemorization': true,
-        },
-      ]);
-    });
-
-    // Unlike absence, lateness does not absorb the missed recitation: the
-    // server's desiredCharges stacks LATE and MISSED_MEMORIZATION on the same
-    // day, so both have to survive the trip in one record.
-    test('carries the flag for a late adult who also did not recite', () {
-      final payload = attendanceBatchPayload(
-        draft: {1: AttendanceStatus.late},
-        saved: {},
-        date: '2026-08-28',
-        missedDraft: {1: true},
-      );
-
-      expect(payload, [
-        {
-          'studentId': 1,
-          'date': '2026-08-28',
-          'status': 'LATE',
-          'missedMemorization': true,
-        },
-      ]);
-    });
-
-    // A child student never accrues a fine, so the key is left off entirely
-    // rather than sent as a meaningless false.
-    test('omits the flag for a student who is not in the adult map', () {
-      final payload = attendanceBatchPayload(
-        draft: {1: AttendanceStatus.present},
-        saved: {},
-        date: '2026-08-28',
-      );
-
-      expect(payload.first.containsKey('missedMemorization'), isFalse);
-    });
+    expect(payload, [
+      {'studentId': 1, 'date': '2026-08-28', 'status': 'PRESENT'},
+      {'studentId': 2, 'date': '2026-08-28', 'status': 'LATE'},
+    ]);
   });
 }

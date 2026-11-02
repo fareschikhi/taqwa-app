@@ -11,9 +11,8 @@ enum AttendanceStatus { present, absent, late, unset }
 /// One of the two recitation controls under a student's name: an icon with
 /// its label beneath it.
 ///
-/// The memorization button opens the recitation sheet and the "لم يحفظ"
-/// toggle charges a fine, but they answer the same question — did he recite
-/// today? — so they are built from one shell and read as a pair.
+/// Built as one shell so recitation controls placed side by side read as a
+/// set: same icon size, label position and badge behaviour.
 class RecitationButton extends StatelessWidget {
   const RecitationButton({
     super.key,
