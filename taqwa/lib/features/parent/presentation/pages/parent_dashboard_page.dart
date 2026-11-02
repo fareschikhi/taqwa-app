@@ -12,12 +12,11 @@ import '../../../../core/utils/last_session.dart';
 import '../../../../core/widgets/last_session_card.dart';
 import '../../../data/repositories/student_repository.dart';
 import '../../../data/models/attendance_summary_model.dart';
-import '../../../data/models/parent/halaqa_manager_contact_model.dart';
 import '../../../data/models/parent/parent_child_model.dart';
 import '../../../data/models/student_note_model.dart';
-import '../widgets/halaqa_manager_contact_card.dart';
 import 'child_details_page.dart';
 import 'child_notes_page.dart';
+import '../widgets/parent_chat_button.dart';
 import 'package:taqwa/core/widgets/app_text.dart';
 import 'package:taqwa/core/widgets/app_logo.dart';
 import 'package:taqwa/core/widgets/halaqa_news_card.dart';
@@ -44,7 +43,6 @@ class _ParentDashboardPageState extends ConsumerState<ParentDashboardPage> {
   AttendanceSummaryModel? _attendance;
   Map<String, dynamic>? _progress;
   List<StudentNoteModel> _notes = [];
-  List<HalaqaManagerContactModel> _managers = [];
   List<Map<String, dynamic>> _attendanceHistory = [];
   List<HalaqaAnnouncementModel> _news = [];
 
@@ -86,7 +84,6 @@ class _ParentDashboardPageState extends ConsumerState<ParentDashboardPage> {
               .cast<Map<String, dynamic>>()
               .map(StudentNoteModel.fromJson)
               .toList();
-          _managers = HalaqaManagerContactModel.listFromProfile(profile);
           _attendanceHistory = results[3] as List<Map<String, dynamic>>;
           _news = news;
           _isLoading = false;
@@ -185,6 +182,7 @@ class _ParentDashboardPageState extends ConsumerState<ParentDashboardPage> {
         padding: EdgeInsets.symmetric(horizontal: 16.w, vertical: 8.h),
         child: Row(
           children: [
+            const ParentChatButton(),
             const Spacer(),
             Container(
               width: 36.w,
@@ -401,7 +399,6 @@ class _ParentDashboardPageState extends ConsumerState<ParentDashboardPage> {
                     builder: (_) => ChildNotesPage(
                       studentId: child.id,
                       childName: child.fullName,
-                      managers: _managers,
                     ),
                   ),
                 ),
@@ -434,19 +431,6 @@ class _ParentDashboardPageState extends ConsumerState<ParentDashboardPage> {
           )
         else
           NoteTimeline(notes: preview),
-        // A note is often what makes a parent want to talk to someone, so the
-        // halaqa's managers are one tap away right under it.
-        if (_managers.isNotEmpty) ...[
-          SizedBox(height: 16.h),
-          AppText(
-            'تواصل مع مشرف الحلقة',
-            style: AppTextStyles.labelMdBold.copyWith(
-              color: AppColors.onSurfaceVariant,
-            ),
-          ),
-          SizedBox(height: 8.h),
-          HalaqaManagerContactCard(managers: _managers),
-        ],
       ],
     );
   }

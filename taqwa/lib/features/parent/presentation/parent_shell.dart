@@ -17,6 +17,9 @@ import '../../shared/presentation/pages/profile_page.dart';
 import 'package:taqwa/core/widgets/app_text.dart';
 import 'package:taqwa/features/data/repositories/notification_repository.dart';
 import 'pages/notifications_page.dart';
+import 'package:taqwa/core/providers/chat_unread_provider.dart';
+import 'package:taqwa/features/chat/presentation/pages/chat_thread_page.dart';
+import 'package:taqwa/features/data/models/chat/chat_target.dart';
 
 class ParentShell extends ConsumerStatefulWidget {
   const ParentShell({super.key});
@@ -50,6 +53,7 @@ class _ParentShellState extends ConsumerState<ParentShell> {
     WidgetsBinding.instance.addPostFrameCallback((_) {
       ref.read(selectedStudentProvider.notifier).load();
       _loadUnread();
+      ref.read(chatUnreadProvider.notifier).refresh();
     });
 
     // Android shows nothing in the tray while the app is in the foreground,
@@ -57,12 +61,21 @@ class _ParentShellState extends ConsumerState<ParentShell> {
     // already looking at the screen the notification would have sent them to.
     // The web build never starts Firebase, so there is nothing to listen to.
     if (kIsWeb) return;
-    _onMessage = FirebaseMessaging.onMessage.listen((_) => _loadUnread());
+    _onMessage = FirebaseMessaging.onMessage.listen((message) {
+      _loadUnread();
+      if (message.data['route'] == 'chat') {
+        ref.read(chatUnreadProvider.notifier).refresh();
+      }
+    });
 
     // Tapping a notification that opened the app from the background lands on
     // the tab rather than wherever they last were.
-    _onMessageOpened = FirebaseMessaging.onMessageOpenedApp.listen((_) {
+    _onMessageOpened = FirebaseMessaging.onMessageOpenedApp.listen((message) {
       if (!mounted) return;
+      if (message.data['route'] == 'chat') {
+        _openChat();
+        return;
+      }
       _selectTab(3);
     });
   }
@@ -72,6 +85,18 @@ class _ParentShellState extends ConsumerState<ParentShell> {
     _onMessage?.cancel();
     _onMessageOpened?.cancel();
     super.dispose();
+  }
+
+  /// A chat push opens the conversation itself, not a tab.
+  void _openChat() {
+    Navigator.of(context).push(
+      MaterialPageRoute(
+        builder: (_) => const ChatThreadPage(
+          target: ChatTarget.mine(),
+          title: 'الإدارة',
+        ),
+      ),
+    );
   }
 
   /// The badge counts what the ملاحظات tab would show: the selected child's

@@ -6,6 +6,7 @@ import 'package:taqwa/core/providers/selected_student_provider.dart';
 import 'package:taqwa/core/theme/app_colors.dart';
 import 'package:taqwa/core/theme/app_text_styles.dart';
 import 'package:taqwa/core/widgets/app_text.dart';
+import 'package:taqwa/features/parent/presentation/widgets/parent_chat_button.dart';
 import 'package:taqwa/features/data/models/notification_model.dart';
 import 'package:taqwa/features/data/repositories/notification_repository.dart';
 
@@ -81,11 +82,17 @@ class _NotificationsPageState extends ConsumerState<NotificationsPage> {
           children: [
             Padding(
               padding: EdgeInsets.fromLTRB(16.w, 16.h, 16.w, 8.h),
-              child: AppText(
-                'ملاحظات',
-                style: AppTextStyles.headlineLgMobile.copyWith(
-                  color: AppColors.onSurface,
-                ),
+              child: Row(
+                children: [
+                  const ParentChatButton(),
+                  const Spacer(),
+                  AppText(
+                    'ملاحظات',
+                    style: AppTextStyles.headlineLgMobile.copyWith(
+                      color: AppColors.onSurface,
+                    ),
+                  ),
+                ],
               ),
             ),
             Expanded(
@@ -117,7 +124,8 @@ class _NotificationsPageState extends ConsumerState<NotificationsPage> {
                               physics: const AlwaysScrollableScrollPhysics(),
                               padding: EdgeInsets.symmetric(horizontal: 16.w),
                               itemCount: _items.length,
-                              separatorBuilder: (_, _) => SizedBox(height: 10.h),
+                              separatorBuilder: (_, _) =>
+                                  SizedBox(height: 10.h),
                               itemBuilder: (_, i) => _NotificationCard(
                                 item: _items[i],
                                 onTap: () => _markRead(_items[i]),

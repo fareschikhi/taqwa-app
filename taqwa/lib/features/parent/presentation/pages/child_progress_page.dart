@@ -11,6 +11,7 @@ import '../../../../core/utils/memorization_history.dart';
 import '../../../../core/utils/hadith_label.dart';
 import '../../../data/repositories/student_repository.dart';
 import 'package:taqwa/core/widgets/app_text.dart';
+import '../widgets/parent_chat_button.dart';
 
 class ChildProgressPage extends ConsumerStatefulWidget {
   const ChildProgressPage({super.key});
@@ -97,6 +98,7 @@ class _ChildProgressPageState extends ConsumerState<ChildProgressPage> {
                     SizedBox(height: 16.h),
                     Row(
                       children: [
+                        const ParentChatButton(),
                         const Spacer(),
                         AppText(
                           'التقوى',

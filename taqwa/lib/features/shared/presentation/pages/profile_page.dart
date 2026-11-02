@@ -14,6 +14,7 @@ import '../../../../core/widgets/avatar_widget.dart';
 import '../../../../core/utils/account_validators.dart';
 import '../../../../core/providers/auth_provider.dart';
 import 'package:taqwa/core/widgets/app_text.dart';
+import 'package:taqwa/features/parent/presentation/widgets/parent_chat_button.dart';
 import '../widgets/change_password_sheet.dart';
 import 'package:taqwa/features/data/models/user_model.dart';
 import 'package:taqwa/features/data/repositories/auth_repository_impl.dart';
@@ -235,6 +236,10 @@ class _ProfilePageState extends ConsumerState<ProfilePage> {
                   children: [
                     Row(
                       children: [
+                        if (widget.role == 'parent') ...[
+                          const ParentChatButton(onBrand: true),
+                          SizedBox(width: 8.w),
+                        ],
                         if (canEditProfile(user.role))
                         GestureDetector(
                           onTap: _toggleEditMode,

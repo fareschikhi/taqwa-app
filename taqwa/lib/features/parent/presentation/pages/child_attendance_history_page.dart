@@ -8,6 +8,7 @@ import '../../../../core/providers/selected_student_provider.dart';
 import '../../../data/repositories/student_repository.dart';
 import '../../../data/models/attendance_summary_model.dart';
 import 'package:taqwa/core/widgets/app_text.dart';
+import '../widgets/parent_chat_button.dart';
 
 class ChildAttendanceHistoryPage extends ConsumerStatefulWidget {
   const ChildAttendanceHistoryPage({super.key});
@@ -94,6 +95,7 @@ class _ChildAttendanceHistoryPageState
                 SizedBox(height: 16.h),
                 Row(
                   children: [
+                    const ParentChatButton(),
                     const Spacer(),
                     AppText(
                       'التقوى',
@@ -224,8 +226,7 @@ class _ChildAttendanceHistoryPageState
     bool isOld(Map<String, dynamic> record) {
       final dt = DateTime.tryParse(record['date'].toString());
       // An unreadable date is kept in view rather than hidden as old.
-      return dt != null &&
-          DateTime(dt.year, dt.month, dt.day).isBefore(cutoff);
+      return dt != null && DateTime(dt.year, dt.month, dt.day).isBefore(cutoff);
     }
 
     final recent = _history.where((r) => !isOld(r)).toList();
@@ -315,7 +316,10 @@ class _ChildAttendanceHistoryPageState
             style: AppTextStyles.labelSm.copyWith(color: AppColors.outline),
           ),
           SizedBox(width: 10.w),
-          AppText(label, style: AppTextStyles.labelMdBold.copyWith(color: color)),
+          AppText(
+            label,
+            style: AppTextStyles.labelMdBold.copyWith(color: color),
+          ),
         ],
       ),
     );
