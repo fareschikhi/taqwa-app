@@ -306,7 +306,7 @@ class _AdminDashboardPageState extends ConsumerState<AdminDashboardPage> {
         StatCard(
           value: '$_studentsCount',
           label: 'إجمالي الطلاب',
-          onTap: () => _openTab(1),
+          onTap: () => _openTab(AdminTabs.students),
           icon: Icons.group,
           iconColor: AppColors.primary,
           iconBgColor: AppColors.primaryContainer,
@@ -315,7 +315,7 @@ class _AdminDashboardPageState extends ConsumerState<AdminDashboardPage> {
         StatCard(
           value: '$_teachersCount',
           label: 'المعلمين',
-          onTap: () => _openTab(3),
+          onTap: () => _openTab(AdminTabs.teachers),
           icon: Icons.badge,
           iconColor: AppColors.secondary,
           iconBgColor: AppColors.secondaryContainer,
@@ -333,7 +333,7 @@ class _AdminDashboardPageState extends ConsumerState<AdminDashboardPage> {
         StatCard(
           value: '$_halaqasCount',
           label: 'الحلقات النشطة',
-          onTap: () => _openTab(2),
+          onTap: () => _openTab(AdminTabs.halaqas),
           icon: Icons.menu_book,
           iconColor: AppColors.tertiary,
           iconBgColor: AppColors.tertiaryContainer,
@@ -342,7 +342,7 @@ class _AdminDashboardPageState extends ConsumerState<AdminDashboardPage> {
         StatCard(
           value: '$_managersCount',
           label: 'المديرون',
-          onTap: () => _openTab(4),
+          onTap: () => _openTab(AdminTabs.managers),
           icon: Icons.manage_accounts,
           iconColor: AppColors.secondary,
           iconBgColor: AppColors.secondaryContainer,

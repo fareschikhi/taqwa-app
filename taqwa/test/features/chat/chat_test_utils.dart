@@ -89,6 +89,7 @@ Widget host(Widget child, {ChatRepository? repo}) => ProviderScope(
   overrides: [
     chatRepositoryProvider.overrideWithValue(repo ?? FakeChatRepository()),
     chatPushesProvider.overrideWithValue(const Stream.empty()),
+    chatPushTapsProvider.overrideWith((ref) => const Stream.empty()),
   ],
   child: ScreenUtilInit(
     designSize: const Size(390, 844),
