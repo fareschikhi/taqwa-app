@@ -86,6 +86,8 @@ model User {
   deviceTokens  DeviceToken[]
   finesCreated  FineEntry[]
   announcements HalaqaAnnouncement[]
+  chatMessages  ChatMessage[] @relation("ChatMessageSender")
+  chatReads     ChatRead[]
 
   @@index([phone])
   @@index([email])
@@ -125,6 +127,7 @@ model Parent {
 
   user     User            @relation(fields: [userId], references: [id], onDelete: Cascade)
   students    Student[]
+  chatConversation ChatConversation?
 
   @@map("parents")
 }
@@ -420,6 +423,9 @@ model Manager {
   // Students with no halaqa have no ManagerHalaqa row to reach them through,
   // so the admin grants them to a manager with this flag instead.
   canAccessUnassigned Boolean @default(false)
+  // Lets the manager answer parents in the shared "الإدارة" chat, for the
+  // parents whose children they can already reach. Admins always can.
+  canChat           Boolean  @default(false)
   createdAt         DateTime @default(now())
   updatedAt         DateTime @updatedAt
 
@@ -503,4 +509,73 @@ model FineEntry {
   @@index([studentId])
   @@index([createdById])
   @@map("fine_entries")
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// Parent ↔ administration chat
+// ─────────────────────────────────────────────────────────────────────────────
+
+// One conversation per parent, with "the administration" as a whole: every
+// admin and every manager allowed to reach that parent answers from the same
+// thread. Who may see it is worked out on each request from the parent's
+// children and the staff member's halaqas (see chat-access.ts), never stored,
+// so moving a manager between halaqas takes effect at once.
+model ChatConversation {
+  id            Int      @id @default(autoincrement())
+  parentId      Int      @unique
+  lastMessageAt DateTime @default(now())
+  createdAt     DateTime @default(now())
+
+  parent   Parent        @relation(fields: [parentId], references: [id], onDelete: Cascade)
+  messages ChatMessage[]
+  reads    ChatRead[]
+
+  @@index([lastMessageAt])
+  @@map("chat_conversations")
+}
+
+// The real staff sender is kept for accountability and for the staff view;
+// the parent's view replaces it with "الإدارة" on the server.
+//
+// Deleting is soft: the row stays so ordering and read markers stay stable,
+// but its text and photo are wiped. `updatedAt` is what an open chat polls on,
+// so it notices edits and deletes, not only new rows.
+model ChatMessage {
+  id               Int       @id @default(autoincrement())
+  conversationId   Int
+  // Null once the sender's account is deleted: a manager leaving must not
+  // erase their replies from a parent's history.
+  senderUserId     Int?
+  // Fixed when sent, so the side of a message survives its sender's deletion.
+  fromStaff        Boolean
+  body             String?   @db.Text
+  imagePath        String?   @db.VarChar(255)
+  editedAt         DateTime?
+  deletedAt        DateTime?
+  modifiedByUserId Int?
+  createdAt        DateTime  @default(now())
+  updatedAt        DateTime  @updatedAt
+
+  conversation ChatConversation @relation(fields: [conversationId], references: [id], onDelete: Cascade)
+  sender       User?            @relation("ChatMessageSender", fields: [senderUserId], references: [id], onDelete: SetNull)
+
+  @@index([conversationId, id])
+  @@index([conversationId, updatedAt])
+  @@index([senderUserId])
+  @@map("chat_messages")
+}
+
+// Each person's own read position in a conversation. Unread is "messages from
+// the other side after this id", so every staff member keeps their own count.
+model ChatRead {
+  conversationId    Int
+  userId            Int
+  lastReadMessageId Int
+
+  conversation ChatConversation @relation(fields: [conversationId], references: [id], onDelete: Cascade)
+  user         User             @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@id([conversationId, userId])
+  @@index([userId])
+  @@map("chat_reads")
 }

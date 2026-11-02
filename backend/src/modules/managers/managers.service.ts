@@ -63,6 +63,7 @@ export class ManagersService {
       canManageAccounts,
       canDeleteAccounts,
       canAccessUnassigned,
+      canChat,
       ...rest
     } = dto;
 
@@ -85,6 +86,7 @@ export class ManagersService {
             canManageAccounts: canManageAccounts ?? false,
             canDeleteAccounts: canDeleteAccounts ?? false,
             canAccessUnassigned: canAccessUnassigned ?? false,
+            canChat: canChat ?? false,
             ...(halaqaIds && halaqaIds.length > 0
               ? {
                   halaqas: {
@@ -118,6 +120,7 @@ export class ManagersService {
       canManageAccounts,
       canDeleteAccounts,
       canAccessUnassigned,
+      canChat,
       ...rest
     } = dto;
     const userUpdate: any = { ...rest };
@@ -134,7 +137,8 @@ export class ManagersService {
     if (
       canManageAccounts !== undefined ||
       canDeleteAccounts !== undefined ||
-      canAccessUnassigned !== undefined
+      canAccessUnassigned !== undefined ||
+      canChat !== undefined
     ) {
       await this.prisma.manager.update({
         where: { id },
@@ -142,6 +146,7 @@ export class ManagersService {
           ...(canManageAccounts !== undefined ? { canManageAccounts } : {}),
           ...(canDeleteAccounts !== undefined ? { canDeleteAccounts } : {}),
           ...(canAccessUnassigned !== undefined ? { canAccessUnassigned } : {}),
+          ...(canChat !== undefined ? { canChat } : {}),
         },
       });
     }

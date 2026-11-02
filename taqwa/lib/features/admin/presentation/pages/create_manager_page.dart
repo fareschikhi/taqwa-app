@@ -42,6 +42,7 @@ class _CreateManagerPageState extends State<CreateManagerPage> {
   bool _canManageAccounts = false;
   bool _canDeleteAccounts = false;
   bool _canAccessUnassigned = false;
+  bool _canChat = false;
   bool get _isEditing => widget.editManager != null;
 
   @override
@@ -56,6 +57,7 @@ class _CreateManagerPageState extends State<CreateManagerPage> {
       _canManageAccounts = m.canManageAccounts;
       _canDeleteAccounts = m.canDeleteAccounts;
       _canAccessUnassigned = m.canAccessUnassigned;
+      _canChat = m.canChat;
       if (m.halaqas != null) {
         for (final h in m.halaqas!) {
           final id = h['id'];
@@ -146,6 +148,7 @@ class _CreateManagerPageState extends State<CreateManagerPage> {
         'canManageAccounts': _canManageAccounts,
         'canDeleteAccounts': _canDeleteAccounts,
         'canAccessUnassigned': _canAccessUnassigned,
+        'canChat': _canChat,
         // Always send the list when editing, so clearing every toggle actually
         // unassigns: the API only rewrites assignments when halaqaIds is present,
         // and an omitted key would silently keep the old ones.
@@ -177,6 +180,7 @@ class _CreateManagerPageState extends State<CreateManagerPage> {
         setState(() {
           _selectedHalaqaIds.clear();
           _canAccessUnassigned = false;
+          _canChat = false;
         });
       } else {
         Navigator.pop(context, true);
@@ -426,6 +430,13 @@ class _CreateManagerPageState extends State<CreateManagerPage> {
                         value: _canDeleteAccounts,
                         onChanged: (v) =>
                             setState(() => _canDeleteAccounts = v),
+                      ),
+                      SizedBox(height: 8.h),
+                      PrivilegeSwitch(
+                        title: 'المحادثات مع أولياء الأمور',
+                        subtitle: 'الرد على أولياء أمور حلقاته باسم الإدارة',
+                        value: _canChat,
+                        onChanged: (v) => setState(() => _canChat = v),
                       ),
                       SizedBox(height: 32.h),
                       // Buttons

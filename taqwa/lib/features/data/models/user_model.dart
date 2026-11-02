@@ -15,6 +15,9 @@ class UserModel {
   final bool canManageAccounts;
   final bool canDeleteAccounts;
 
+  /// A manager the admin allowed to answer parents in the shared chat.
+  final bool canChat;
+
   /// The password was set by an admin and is temporary: the app holds the
   /// user on the change-password screen until they replace it.
   final bool mustChangePassword;
@@ -33,6 +36,7 @@ class UserModel {
     this.managerId,
     this.canManageAccounts = false,
     this.canDeleteAccounts = false,
+    this.canChat = false,
     this.mustChangePassword = false,
   });
 
@@ -50,6 +54,7 @@ class UserModel {
     managerId: managerId,
     canManageAccounts: canManageAccounts,
     canDeleteAccounts: canDeleteAccounts,
+    canChat: canChat,
     mustChangePassword: mustChangePassword ?? this.mustChangePassword,
   );
 
@@ -92,11 +97,13 @@ class UserModel {
     int? mId;
     bool canManage = false;
     bool canDelete = false;
+    bool chat = false;
     if (json['manager'] != null) {
       final m = json['manager'] as Map<String, dynamic>;
       mId = (m['id'] as num?)?.toInt();
       canManage = (m['canManageAccounts'] as bool?) ?? false;
       canDelete = (m['canDeleteAccounts'] as bool?) ?? false;
+      chat = (m['canChat'] as bool?) ?? false;
     }
 
     return UserModel(
@@ -113,6 +120,7 @@ class UserModel {
       managerId: mId,
       canManageAccounts: canManage,
       canDeleteAccounts: canDelete,
+      canChat: chat,
       mustChangePassword: (json['mustChangePassword'] as bool?) ?? false,
     );
   }
@@ -145,6 +153,7 @@ class UserModel {
           'id': managerId,
           'canManageAccounts': canManageAccounts,
           'canDeleteAccounts': canDeleteAccounts,
+          'canChat': canChat,
         },
     };
   }

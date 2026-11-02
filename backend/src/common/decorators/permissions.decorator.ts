@@ -8,6 +8,7 @@ import { SetMetadata } from '@nestjs/common';
 export enum ManagerPermission {
   MANAGE_ACCOUNTS = 'canManageAccounts',
   DELETE_ACCOUNTS = 'canDeleteAccounts',
+  CHAT = 'canChat',
 }
 
 export const PERMISSION_KEY = 'managerPermission';

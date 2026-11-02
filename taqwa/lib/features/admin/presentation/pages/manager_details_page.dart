@@ -151,6 +151,11 @@ class _ManagerDetailsPageState extends State<ManagerDetailsPage> {
                             label: 'حذف الحسابات',
                             allowed: _manager.canDeleteAccounts,
                           ),
+                          SizedBox(height: 8.h),
+                          _PermissionRow(
+                            label: 'المحادثات مع أولياء الأمور',
+                            allowed: _manager.canChat,
+                          ),
                           SizedBox(height: 12.h),
                           DetailInfoRow(
                             icon: Icons.fact_check_outlined,
