@@ -1,0 +1,194 @@
+import { AttendanceStatus, Memorization, Prisma } from '@prisma/client';
+import { reconcileDayPoints } from './day-points';
+
+const D = new Date('2026-11-05');
+
+type Row = { id: number; source: string; amount: Prisma.Decimal };
+
+const makeTx = (opts: {
+  role?: string | null;
+  attendance?: { status: AttendanceStatus; justification: { id: number } | null } | null;
+  recitations?: Array<{ memorizationType: Memorization; amountDone: number }>;
+  existing?: Row[];
+}) => ({
+  student: {
+    findUnique: jest
+      .fn()
+      .mockResolvedValue(
+        opts.role === null
+          ? null
+          : { userId: 70, user: { role: opts.role ?? 'STUDENT' } },
+      ),
+  },
+  attendance: { findUnique: jest.fn().mockResolvedValue(opts.attendance ?? null) },
+  memorizationProgress: {
+    findMany: jest.fn().mockResolvedValue(opts.recitations ?? []),
+  },
+  pointEntry: {
+    findMany: jest.fn().mockResolvedValue(opts.existing ?? []),
+    create: jest.fn().mockResolvedValue({}),
+    update: jest.fn().mockResolvedValue({}),
+    deleteMany: jest.fn().mockResolvedValue({ count: 0 }),
+  },
+});
+
+const run = (tx: ReturnType<typeof makeTx>, date = D) =>
+  reconcileDayPoints(tx as any, 7, date);
+
+const present = { status: AttendanceStatus.PRESENT, justification: null };
+const absent = { status: AttendanceStatus.ABSENT, justification: null };
+const dec = (v: string) => new Prisma.Decimal(v);
+
+describe('reconcileDayPoints', () => {
+  it('does nothing before the start date', async () => {
+    const tx = makeTx({ attendance: present });
+    await run(tx, new Date('2026-10-01'));
+    expect(tx.student.findUnique).not.toHaveBeenCalled();
+    expect(tx.pointEntry.create).not.toHaveBeenCalled();
+  });
+
+  it('ignores users who are not students', async () => {
+    const tx = makeTx({ role: 'TEACHER', attendance: present });
+    await run(tx);
+    expect(tx.pointEntry.findMany).not.toHaveBeenCalled();
+    expect(tx.pointEntry.create).not.toHaveBeenCalled();
+  });
+
+  it('ignores a missing student', async () => {
+    const tx = makeTx({ role: null, attendance: present });
+    await run(tx);
+    expect(tx.pointEntry.create).not.toHaveBeenCalled();
+  });
+
+  it('gives adult students points too', async () => {
+    const tx = makeTx({ role: 'ADULT_STUDENT', attendance: present });
+    await run(tx);
+    expect(tx.pointEntry.create).toHaveBeenCalledTimes(2);
+  });
+
+  it('creates PRESENT and MISSED for a present day with no recitation', async () => {
+    const tx = makeTx({ attendance: present });
+    await run(tx);
+    expect(tx.pointEntry.create).toHaveBeenCalledWith({
+      data: { userId: 70, amount: '0.500', source: 'PRESENT', date: D },
+    });
+    expect(tx.pointEntry.create).toHaveBeenCalledWith({
+      data: {
+        userId: 70,
+        amount: '-1.000',
+        source: 'MISSED_MEMORIZATION',
+        date: D,
+      },
+    });
+  });
+
+  it('asks only for automatic rows', async () => {
+    const tx = makeTx({ attendance: present });
+    await run(tx);
+    expect(tx.pointEntry.findMany).toHaveBeenCalledWith(
+      expect.objectContaining({
+        where: { userId: 70, date: D, source: { not: 'MANUAL' } },
+      }),
+    );
+  });
+
+  it('is idempotent', async () => {
+    const tx = makeTx({
+      attendance: present,
+      existing: [
+        { id: 1, source: 'PRESENT', amount: dec('0.5') },
+        { id: 2, source: 'MISSED_MEMORIZATION', amount: dec('-1') },
+      ],
+    });
+    await run(tx);
+    expect(tx.pointEntry.create).not.toHaveBeenCalled();
+    expect(tx.pointEntry.update).not.toHaveBeenCalled();
+    expect(tx.pointEntry.deleteMany).not.toHaveBeenCalled();
+  });
+
+  it('swaps rows when present becomes absent', async () => {
+    const tx = makeTx({
+      attendance: absent,
+      existing: [
+        { id: 1, source: 'PRESENT', amount: dec('0.5') },
+        { id: 2, source: 'MISSED_MEMORIZATION', amount: dec('-1') },
+      ],
+    });
+    await run(tx);
+    expect(tx.pointEntry.deleteMany).toHaveBeenCalledWith({
+      where: { id: { in: [1, 2] } },
+    });
+    expect(tx.pointEntry.create).toHaveBeenCalledTimes(1);
+    expect(tx.pointEntry.create).toHaveBeenCalledWith({
+      data: { userId: 70, amount: '-1.000', source: 'ABSENCE', date: D },
+    });
+  });
+
+  it('keeps the amount an attendance row was created with', async () => {
+    const tx = makeTx({
+      attendance: present,
+      recitations: [{ memorizationType: Memorization.MEMORIZING, amountDone: 1 }],
+      existing: [
+        { id: 1, source: 'PRESENT', amount: dec('1') },
+        { id: 2, source: 'MEMORIZATION', amount: dec('1') },
+      ],
+    });
+    await run(tx);
+    expect(tx.pointEntry.update).not.toHaveBeenCalled();
+    expect(tx.pointEntry.create).not.toHaveBeenCalled();
+  });
+
+  it('updates the memorization row when pages change', async () => {
+    const tx = makeTx({
+      attendance: present,
+      recitations: [{ memorizationType: Memorization.MEMORIZING, amountDone: 2 }],
+      existing: [
+        { id: 1, source: 'PRESENT', amount: dec('0.5') },
+        { id: 2, source: 'MEMORIZATION', amount: dec('1') },
+      ],
+    });
+    await run(tx);
+    expect(tx.pointEntry.update).toHaveBeenCalledWith({
+      where: { id: 2 },
+      data: { amount: '2.000' },
+    });
+  });
+
+  it('does not rewrite an unchanged memorization row', async () => {
+    const tx = makeTx({
+      attendance: present,
+      recitations: [
+        { memorizationType: Memorization.BIGREVISION, amountDone: 0.5 },
+      ],
+      existing: [
+        { id: 1, source: 'PRESENT', amount: dec('0.5') },
+        { id: 2, source: 'MEMORIZATION', amount: dec('0.125') },
+      ],
+    });
+    await run(tx);
+    expect(tx.pointEntry.update).not.toHaveBeenCalled();
+  });
+
+  it('removes memorization points when the recitations are gone', async () => {
+    const tx = makeTx({
+      attendance: absent,
+      existing: [{ id: 5, source: 'MEMORIZATION', amount: dec('2') }],
+    });
+    await run(tx);
+    expect(tx.pointEntry.deleteMany).toHaveBeenCalledWith({
+      where: { id: { in: [5] } },
+    });
+  });
+
+  it('drops the absence entry once a justification is recorded', async () => {
+    const tx = makeTx({
+      attendance: { status: AttendanceStatus.ABSENT, justification: { id: 9 } },
+      existing: [{ id: 3, source: 'ABSENCE', amount: dec('-1') }],
+    });
+    await run(tx);
+    expect(tx.pointEntry.deleteMany).toHaveBeenCalledWith({
+      where: { id: { in: [3] } },
+    });
+    expect(tx.pointEntry.create).not.toHaveBeenCalled();
+  });
+});
