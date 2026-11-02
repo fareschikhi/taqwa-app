@@ -6,6 +6,7 @@ class TeacherPayloadDto {
   final String? dateOfBirth;
   final String? address;
   final String? avatar;
+  final bool? canPostNews;
 
   const TeacherPayloadDto({
     this.fullName,
@@ -15,6 +16,7 @@ class TeacherPayloadDto {
     this.dateOfBirth,
     this.address,
     this.avatar,
+    this.canPostNews,
   });
 
   Map<String, dynamic> toJson() => {
@@ -25,6 +27,7 @@ class TeacherPayloadDto {
     if (dateOfBirth != null) 'dateOfBirth': dateOfBirth,
     if (address != null) 'address': address,
     if (avatar != null) 'avatar': avatar,
+    if (canPostNews != null) 'canPostNews': canPostNews,
     'role': 'TEACHER',
   };
 }

@@ -1,22 +1,29 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
+import 'package:taqwa/core/widgets/wird_reminder_card.dart';
 import '../../../../core/theme/app_colors.dart';
 import '../../../../core/theme/app_text_styles.dart';
 import '../../../../core/constants/app_constants.dart';
 import '../../../../core/widgets/app_card.dart';
 import '../../../../core/widgets/progress_card.dart';
 import '../../../../core/providers/auth_provider.dart';
+import '../../../../core/providers/selected_halaqa_provider.dart';
 import '../../../data/repositories/teacher_repository.dart';
 import '../../../data/models/attendance_summary_model.dart';
 import '../../../data/models/revision_needed_model.dart';
 import '../../../data/models/memorization_progress_summary_model.dart';
+import '../../../data/models/teacher_student_model.dart';
+import 'memorization_entry_sheet.dart';
 import 'package:taqwa/core/widgets/app_text.dart';
+import 'package:taqwa/core/widgets/shell_tab_scope.dart';
 import 'package:taqwa/core/widgets/app_logo.dart';
 import 'package:taqwa/core/widgets/halaqa_news_card.dart';
 import 'package:taqwa/features/data/models/halaqa/halaqa_announcement_model.dart';
 import 'package:taqwa/features/data/repositories/halaqa_announcement_repository.dart';
 import 'package:taqwa/features/shared/presentation/pages/halaqa_news_page.dart';
+import 'package:taqwa/features/manager/presentation/widgets/delete_halaqa_news.dart';
+import 'package:taqwa/features/manager/presentation/widgets/halaqa_news_form_sheet.dart';
 
 class TeacherDashboardPage extends ConsumerStatefulWidget {
   const TeacherDashboardPage({super.key});
@@ -55,19 +62,29 @@ class _TeacherDashboardPageState extends ConsumerState<TeacherDashboardPage> {
       });
       return;
     }
+    // Every figure here is for the halaqa picked in the shell's switcher.
+    final halaqaId = ref.read(selectedHalaqaProvider).selected?.id;
     setState(() {
       _isLoading = true;
       _error = null;
     });
     try {
       final results = await Future.wait([
-        _repo.getAttendanceSummary(teacherId),
-        _repo.getRevisionNeeded(teacherId),
-        _repo.getMemorizationProgress(teacherId),
+        _repo.getAttendanceSummary(teacherId, halaqaId: halaqaId),
+        _repo.getRevisionNeeded(teacherId, halaqaId: halaqaId),
+        _repo.getMemorizationProgress(teacherId, halaqaId: halaqaId),
       ]);
-      final news = await _newsRepo.myAnnouncements().catchError(
-        (_) => <HalaqaAnnouncementModel>[],
-      );
+      final news =
+          await (halaqaId == null
+                  ? _newsRepo.myAnnouncements()
+                  : _newsRepo.forHalaqa(halaqaId))
+              .catchError((_) => <HalaqaAnnouncementModel>[]);
+      // A switch while this was in flight has started a newer load; this
+      // answer is for the halaqa the teacher just left.
+      if (!mounted ||
+          halaqaId != ref.read(selectedHalaqaProvider).selected?.id) {
+        return;
+      }
       setState(() {
         _attendanceSummary = results[0] as AttendanceSummaryModel;
         _revisionNeeded = results[1] as List<RevisionNeededModel>;
@@ -76,6 +93,10 @@ class _TeacherDashboardPageState extends ConsumerState<TeacherDashboardPage> {
         _isLoading = false;
       });
     } catch (e) {
+      if (!mounted ||
+          halaqaId != ref.read(selectedHalaqaProvider).selected?.id) {
+        return;
+      }
       setState(() {
         _isLoading = false;
         _error = 'حدث خطأ أثناء تحميل البيانات';
@@ -85,10 +106,64 @@ class _TeacherDashboardPageState extends ConsumerState<TeacherDashboardPage> {
 
   Future<void> _loadData() => loadData();
 
+  /// Opens the same recitation sheet as the attendance page. The revision list
+  /// carries no hadith books, so the student is read from the roster first.
+  Future<void> _openMemorizationSheet(RevisionNeededModel entry) async {
+    final teacherId = ref.read(authProvider).user?.teacherId;
+    if (teacherId == null) return;
+    TeacherStudentModel? student;
+    try {
+      final roster = await _repo.getStudents(teacherId: teacherId, limit: 100);
+      student = roster.data.where((s) => s.id == entry.id).firstOrNull;
+    } catch (_) {}
+    if (!mounted) return;
+    if (student == null) {
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(const SnackBar(content: AppText('تعذّر فتح نافذة الحفظ')));
+      return;
+    }
+    final created = await showModalBottomSheet<MemorizationEntryResult>(
+      context: context,
+      isScrollControlled: true,
+      backgroundColor: Colors.transparent,
+      builder: (_) => MemorizationEntrySheet(student: student!),
+    );
+    // A saved entry takes the student off the list, so the cards are redrawn.
+    if (created != null && mounted) _loadData();
+  }
+
+  /// Granted per teacher by the admin; the server checks it again on every
+  /// write, so this only decides what the screen offers.
+  bool get _canPostNews => ref.read(authProvider).user?.canPostNews ?? false;
+
   Future<void> _openNews() async {
-    await Navigator.of(
+    final user = ref.read(authProvider).user;
+    await Navigator.of(context).push(
+      MaterialPageRoute(
+        builder: (_) => HalaqaNewsPage(
+          halaqaId: ref.read(selectedHalaqaProvider).selected?.id,
+          canCompose: _canPostNews,
+          ownPostsOf: user?.id,
+        ),
+      ),
+    );
+    // Something may have been posted, edited or deleted on that page.
+    if (_canPostNews && mounted) await _loadData();
+  }
+
+  Future<void> _composeNews({HalaqaAnnouncementModel? existing}) async {
+    final saved = await HalaqaNewsFormSheet.show(
       context,
-    ).push(MaterialPageRoute(builder: (_) => const HalaqaNewsPage()));
+      isAdmin: false,
+      existing: existing,
+      initialHalaqaId: ref.read(selectedHalaqaProvider).selected?.id,
+    );
+    if (saved) await _loadData();
+  }
+
+  Future<void> _deleteNews(HalaqaAnnouncementModel announcement) async {
+    if (await deleteHalaqaNews(context, announcement)) await _loadData();
   }
 
   @override
@@ -98,6 +173,9 @@ class _TeacherDashboardPageState extends ConsumerState<TeacherDashboardPage> {
           (_error != null || _attendanceSummary == null)) {
         _loadData();
       }
+    });
+    ref.listen(selectedHalaqaProvider, (previous, next) {
+      if (next.selected?.id != previous?.selected?.id) _loadData();
     });
 
     final user = ref.watch(authProvider).user;
@@ -152,14 +230,30 @@ class _TeacherDashboardPageState extends ConsumerState<TeacherDashboardPage> {
                           SizedBox(height: 24.h),
                           _buildBentoGrid(),
                           SizedBox(height: 24.h),
-                          if (_news.isNotEmpty) ...[
+                          if (_news.isNotEmpty ||
+                              user?.canPostNews == true) ...[
                             HalaqaNewsCard(
                               announcements: _news,
+                              canCompose: user?.canPostNews ?? false,
+                              onCompose: _composeNews,
+                              // Withheld without the grant: a teacher it was
+                              // taken from still has their old posts here.
+                              onEdit: user?.canPostNews == true
+                                  ? (a) => _composeNews(existing: a)
+                                  : null,
+                              onDelete: user?.canPostNews == true
+                                  ? _deleteNews
+                                  : null,
+                              ownPostsOf: user?.id,
                               onSeeAll: _openNews,
                             ),
                             SizedBox(height: 20.h),
                           ],
                           _buildMemorizationProgress(),
+                          if (WirdReminderCard.isAvailable) ...[
+                            SizedBox(height: 24.h),
+                            const WirdReminderCard(),
+                          ],
                           SizedBox(height: 32.h),
                         ]),
                       ),
@@ -234,6 +328,10 @@ class _TeacherDashboardPageState extends ConsumerState<TeacherDashboardPage> {
     );
   }
 
+  /// Summary cards open the bottom-nav tab behind their figures; the indexes
+  /// match TeacherShell._pages.
+  void _openTab(int index) => ShellTabScope.of(context)?.selectTab(index);
+
   Widget _buildBentoGrid() {
     // This endpoint scopes `present` and `absent` to the current month and has
     // already folded late arrivals into `present`, so these are the days the
@@ -244,6 +342,7 @@ class _TeacherDashboardPageState extends ConsumerState<TeacherDashboardPage> {
       children: [
         // Attendance summary — full width, horizontal layout
         AppCard(
+          onTap: () => _openTab(2),
           padding: EdgeInsets.symmetric(horizontal: 32.w, vertical: 20.h),
           child: Row(
             children: [
@@ -326,7 +425,7 @@ class _TeacherDashboardPageState extends ConsumerState<TeacherDashboardPage> {
             crossAxisAlignment: CrossAxisAlignment.end,
             children: [
               AppText(
-                'طلاب يحتاجون مراجعة',
+                'طلاب بحاجة للعرض',
                 style: AppTextStyles.headlineSm.copyWith(
                   color: AppColors.onBackground,
                 ),
@@ -361,6 +460,8 @@ class _TeacherDashboardPageState extends ConsumerState<TeacherDashboardPage> {
                             '${student.daysWithoutMemorization} :ايام بدون عرض',
                         initial: initial,
                         bgColor: color,
+                        onOpenMemorization: () =>
+                            _openMemorizationSheet(student),
                       ),
                       if (entry.key < _revisionNeeded.take(5).length - 1)
                         SizedBox(height: 8.h),
@@ -377,6 +478,7 @@ class _TeacherDashboardPageState extends ConsumerState<TeacherDashboardPage> {
   Widget _buildMemorizationProgress() {
     final mem = _memorizationProgress;
     return AppCard(
+      onTap: () => _openTab(1),
       padding: EdgeInsets.all(20.w),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.end,
@@ -396,14 +498,14 @@ class _TeacherDashboardPageState extends ConsumerState<TeacherDashboardPage> {
           ),
           SizedBox(height: 12.h),
           _ProgressBarRow(
-            label: 'مراجعة صغرى',
+            label: 'جمع',
             count: mem?.minorReviewCount ?? 0,
             total: mem?.studentsCount ?? 0,
             color: AppColors.secondary,
           ),
           SizedBox(height: 12.h),
           _ProgressBarRow(
-            label: 'مراجعة كبرى',
+            label: 'مراجعة وضبط',
             count: mem?.majorReviewCount ?? 0,
             total: mem?.studentsCount ?? 0,
             color: AppColors.tertiary,
@@ -420,16 +522,18 @@ class _ReviewStudentRow extends StatelessWidget {
     required this.issue,
     required this.initial,
     required this.bgColor,
+    required this.onOpenMemorization,
   });
   final String name, issue, initial;
   final Color bgColor;
+  final VoidCallback onOpenMemorization;
 
   @override
   Widget build(BuildContext context) {
     return Row(
       children: [
         GestureDetector(
-          onTap: () {},
+          onTap: onOpenMemorization,
           child: Container(
             padding: EdgeInsets.all(6.w),
             decoration: BoxDecoration(

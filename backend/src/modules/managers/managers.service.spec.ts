@@ -154,3 +154,40 @@ describe('ManagersService unassigned students', () => {
     });
   });
 });
+
+// The admin grants chat per manager, the same way as the other privileges.
+describe('ManagersService chat privilege', () => {
+  const makePrisma = () => ({
+    manager: {
+      findUnique: jest.fn().mockResolvedValue({ id: 3, userId: 42 }),
+      update: jest.fn(),
+    },
+    user: { create: jest.fn(), update: jest.fn() },
+  });
+
+  it('create defaults canChat to false', async () => {
+    const prisma = makePrisma();
+
+    await new ManagersService(prisma as any).create({
+      fullName: 'Nadir Hamdi',
+      password: 'secret123',
+    } as any);
+
+    expect(prisma.user.create.mock.calls[0][0].data.manager.create.canChat).toBe(
+      false,
+    );
+  });
+
+  it('update writes canChat when given', async () => {
+    const prisma = makePrisma();
+    const service = new ManagersService(prisma as any);
+    jest.spyOn(service, 'findOne').mockResolvedValue({} as any);
+
+    await service.update(3, { canChat: true } as any);
+
+    expect(prisma.manager.update).toHaveBeenCalledWith({
+      where: { id: 3 },
+      data: { canChat: true },
+    });
+  });
+});

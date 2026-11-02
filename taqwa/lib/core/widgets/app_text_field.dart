@@ -28,6 +28,7 @@ class AppTextField extends StatefulWidget {
     this.autofocus = false,
     this.maxLength,
     this.inputFormatters,
+    this.textAlign = TextAlign.right,
   });
 
   final String? label;
@@ -49,6 +50,7 @@ class AppTextField extends StatefulWidget {
   final bool autofocus;
   final int? maxLength;
   final List<TextInputFormatter>? inputFormatters;
+  final TextAlign textAlign;
 
   @override
   State<AppTextField> createState() => _AppTextFieldState();
@@ -154,7 +156,7 @@ class _AppTextFieldState extends State<AppTextField> {
             autofocus: widget.autofocus,
             maxLength: widget.maxLength,
             inputFormatters: widget.inputFormatters,
-            textAlign: TextAlign.right,
+            textAlign: widget.textAlign,
             textDirection: _textDirection,
             style: AppTextStyles.bodyMd.copyWith(color: AppColors.onSurface),
             decoration: InputDecoration(

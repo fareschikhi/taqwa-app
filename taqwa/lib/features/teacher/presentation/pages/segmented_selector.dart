@@ -25,45 +25,60 @@ class SegmentedSelector<T> extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return Row(
-      children: options.map((opt) {
-        final isSelected = selected == opt.value;
-        return Expanded(
-          child: Padding(
-            padding: EdgeInsets.symmetric(horizontal: 4.w),
-            child: GestureDetector(
-              onTap: () => onChanged(opt.value),
-              child: Container(
-                padding: EdgeInsets.symmetric(vertical: 14.h),
-                alignment: Alignment.center,
-                decoration: BoxDecoration(
-                  color: isSelected
-                      ? AppColors.primary.withValues(alpha: 0.1)
-                      : AppColors.surfaceContainerLow,
-                  borderRadius: BorderRadius.circular(AppConstants.radiusMd),
-                  border: Border.all(
-                    color: isSelected
-                        ? AppColors.primary
-                        : AppColors.inputBorder,
-                    width: isSelected ? 1.5 : 1,
+    // IntrinsicHeight + stretch: every tile takes the tallest one's height,
+    // so a longer label never leaves its tile out of line with the others.
+    return IntrinsicHeight(
+      child: Row(
+        crossAxisAlignment: CrossAxisAlignment.stretch,
+        children: options.map((opt) {
+          final isSelected = selected == opt.value;
+          return Expanded(
+            child: Padding(
+              padding: EdgeInsets.symmetric(horizontal: 4.w),
+              child: GestureDetector(
+                onTap: () => onChanged(opt.value),
+                child: Container(
+                  padding: EdgeInsets.symmetric(
+                    vertical: 14.h,
+                    horizontal: 6.w,
                   ),
-                ),
-                child: AppText(
-                  opt.label,
-                  style: AppTextStyles.labelMd.copyWith(
+                  alignment: Alignment.center,
+                  decoration: BoxDecoration(
                     color: isSelected
-                        ? AppColors.primary
-                        : AppColors.onSurfaceVariant,
-                    fontWeight: isSelected
-                        ? FontWeight.bold
-                        : FontWeight.normal,
+                        ? AppColors.primary.withValues(alpha: 0.1)
+                        : AppColors.surfaceContainerLow,
+                    borderRadius: BorderRadius.circular(AppConstants.radiusMd),
+                    border: Border.all(
+                      color: isSelected
+                          ? AppColors.primary
+                          : AppColors.inputBorder,
+                      width: isSelected ? 1.5 : 1,
+                    ),
+                  ),
+                  // One line always; a label too wide for its third of the
+                  // row shrinks slightly instead of wrapping.
+                  child: FittedBox(
+                    fit: BoxFit.scaleDown,
+                    child: AppText(
+                      opt.label,
+                      maxLines: 1,
+                      softWrap: false,
+                      style: AppTextStyles.labelMd.copyWith(
+                        color: isSelected
+                            ? AppColors.primary
+                            : AppColors.onSurfaceVariant,
+                        fontWeight: isSelected
+                            ? FontWeight.bold
+                            : FontWeight.normal,
+                      ),
+                    ),
                   ),
                 ),
               ),
             ),
-          ),
-        );
-      }).toList(),
+          );
+        }).toList(),
+      ),
     );
   }
 }

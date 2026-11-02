@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
+import 'package:taqwa/core/widgets/wird_reminder_card.dart';
 import '../../../../core/theme/app_colors.dart';
 import '../../../../core/theme/app_text_styles.dart';
 import '../../../../core/constants/app_constants.dart';
@@ -9,21 +10,23 @@ import '../../../../core/widgets/avatar_widget.dart';
 import '../../../../core/providers/auth_provider.dart';
 import '../../../../core/providers/selected_student_provider.dart';
 import '../../../../core/utils/last_session.dart';
+import '../../../../core/utils/student_rating.dart';
 import '../../../../core/widgets/last_session_card.dart';
 import '../../../data/repositories/student_repository.dart';
 import '../../../data/models/attendance_summary_model.dart';
-import '../../../data/models/parent/halaqa_manager_contact_model.dart';
 import '../../../data/models/parent/parent_child_model.dart';
 import '../../../data/models/student_note_model.dart';
-import '../widgets/halaqa_manager_contact_card.dart';
 import 'child_details_page.dart';
 import 'child_notes_page.dart';
+import '../widgets/parent_chat_button.dart';
 import 'package:taqwa/core/widgets/app_text.dart';
+import 'package:taqwa/core/widgets/shell_tab_scope.dart';
 import 'package:taqwa/core/widgets/app_logo.dart';
 import 'package:taqwa/core/widgets/halaqa_news_card.dart';
 import 'package:taqwa/features/data/models/halaqa/halaqa_announcement_model.dart';
 import 'package:taqwa/features/data/repositories/halaqa_announcement_repository.dart';
 import 'package:taqwa/features/shared/presentation/pages/halaqa_news_page.dart';
+import 'package:taqwa/core/utils/memorization_amount.dart';
 
 /// How many of the child's latest notes the dashboard shows before "عرض الكل".
 const int kNotesPreviewCount = 3;
@@ -44,9 +47,9 @@ class _ParentDashboardPageState extends ConsumerState<ParentDashboardPage> {
   AttendanceSummaryModel? _attendance;
   Map<String, dynamic>? _progress;
   List<StudentNoteModel> _notes = [];
-  List<HalaqaManagerContactModel> _managers = [];
   List<Map<String, dynamic>> _attendanceHistory = [];
   List<HalaqaAnnouncementModel> _news = [];
+  String? _rating;
 
   @override
   void initState() {
@@ -86,8 +89,8 @@ class _ParentDashboardPageState extends ConsumerState<ParentDashboardPage> {
               .cast<Map<String, dynamic>>()
               .map(StudentNoteModel.fromJson)
               .toList();
-          _managers = HalaqaManagerContactModel.listFromProfile(profile);
           _attendanceHistory = results[3] as List<Map<String, dynamic>>;
+          _rating = ratingOf(profile);
           _news = news;
           _isLoading = false;
         });
@@ -163,6 +166,10 @@ class _ParentDashboardPageState extends ConsumerState<ParentDashboardPage> {
                       ],
                       _buildTeacherNotes(child),
                     ],
+                    if (WirdReminderCard.isAvailable) ...[
+                      SizedBox(height: 20.h),
+                      const WirdReminderCard(),
+                    ],
                     SizedBox(height: 32.h),
                   ]),
                 ),
@@ -185,21 +192,8 @@ class _ParentDashboardPageState extends ConsumerState<ParentDashboardPage> {
         padding: EdgeInsets.symmetric(horizontal: 16.w, vertical: 8.h),
         child: Row(
           children: [
+            const ParentChatButton(),
             const Spacer(),
-            Container(
-              width: 36.w,
-              height: 36.w,
-              decoration: const BoxDecoration(
-                color: AppColors.primaryContainer,
-                shape: BoxShape.circle,
-              ),
-              child: Icon(
-                Icons.person,
-                color: AppColors.onPrimaryContainer,
-                size: 20.w,
-              ),
-            ),
-            SizedBox(width: 8.w),
             AppText(
               'التقوى',
               style: AppTextStyles.headlineMd.copyWith(
@@ -235,11 +229,15 @@ class _ParentDashboardPageState extends ConsumerState<ParentDashboardPage> {
     );
   }
 
+  /// Each figure opens the bottom-nav tab behind it, ahead of the card's own
+  /// tap to the details page; the indexes match ParentShell._pages.
+  void _openTab(int index) => ShellTabScope.of(context)?.selectTab(index);
+
   Widget _buildChildCard(BuildContext context, ParentChildModel child) {
     // The card reports the current month; the attendance history tab keeps
     // showing the whole enrolment, which is why both figures are available.
     final monthAttendedDays = _attendance?.monthAttended ?? 0;
-    final pagesDone = (_progress?['totalPagesDone'] as num?)?.toInt() ?? 0;
+    final pagesDone = formatAmount(_progress?['totalPagesDone'] as num?);
 
     return GestureDetector(
       onTap: () => Navigator.push(
@@ -324,8 +322,8 @@ class _ParentDashboardPageState extends ConsumerState<ParentDashboardPage> {
                 color: AppColors.onPrimary.withValues(alpha: 0.1),
                 borderRadius: BorderRadius.circular(AppConstants.radiusMd),
               ),
-              // Two figures, not three: how much of the Qur'an the child has
-              // memorised, and whether they have been turning up lately.
+              // How much of the Qur'an the child has memorised, whether they
+              // have been turning up lately, and the teacher's overall rating.
               // Revision counts belong to the teacher's view of the work, not
               // to a parent's summary of it.
               child: Row(
@@ -334,6 +332,7 @@ class _ParentDashboardPageState extends ConsumerState<ParentDashboardPage> {
                     child: _StatChip(
                       label: 'أيام الحضور هذا الشهر',
                       value: _isLoading ? '--' : '$monthAttendedDays',
+                      onTap: () => _openTab(2),
                     ),
                   ),
                   Container(
@@ -345,6 +344,18 @@ class _ParentDashboardPageState extends ConsumerState<ParentDashboardPage> {
                     child: _StatChip(
                       label: 'حفظ',
                       value: _isLoading ? '--' : '$pagesDone صفحة',
+                      onTap: () => _openTab(1),
+                    ),
+                  ),
+                  Container(
+                    width: 1,
+                    height: 40.h,
+                    color: AppColors.onPrimary.withValues(alpha: 0.3),
+                  ),
+                  Expanded(
+                    child: _StatChip(
+                      label: 'التقييم العام',
+                      value: _isLoading ? '--' : (_rating ?? 'لم يقيّم بعد'),
                     ),
                   ),
                 ],
@@ -401,7 +412,6 @@ class _ParentDashboardPageState extends ConsumerState<ParentDashboardPage> {
                     builder: (_) => ChildNotesPage(
                       studentId: child.id,
                       childName: child.fullName,
-                      managers: _managers,
                     ),
                   ),
                 ),
@@ -434,44 +444,41 @@ class _ParentDashboardPageState extends ConsumerState<ParentDashboardPage> {
           )
         else
           NoteTimeline(notes: preview),
-        // A note is often what makes a parent want to talk to someone, so the
-        // halaqa's managers are one tap away right under it.
-        if (_managers.isNotEmpty) ...[
-          SizedBox(height: 16.h),
-          AppText(
-            'تواصل مع مشرف الحلقة',
-            style: AppTextStyles.labelMdBold.copyWith(
-              color: AppColors.onSurfaceVariant,
-            ),
-          ),
-          SizedBox(height: 8.h),
-          HalaqaManagerContactCard(managers: _managers),
-        ],
       ],
     );
   }
 }
 
 class _StatChip extends StatelessWidget {
-  const _StatChip({required this.label, required this.value});
+  const _StatChip({required this.label, required this.value, this.onTap});
   final String label, value;
+  final VoidCallback? onTap;
 
   @override
-  Widget build(BuildContext context) => Column(
-    children: [
-      AppText(
-        value,
-        style: AppTextStyles.headlineSm.copyWith(
-          color: AppColors.onPrimary,
-          fontWeight: FontWeight.w700,
+  Widget build(BuildContext context) => GestureDetector(
+    onTap: onTap,
+    behavior: HitTestBehavior.opaque,
+    child: Column(
+      children: [
+        AppText(
+          value,
+          // A rating is free text a teacher typed, so it may run longer than
+          // a number does.
+          textAlign: TextAlign.center,
+          maxLines: 2,
+          overflow: TextOverflow.ellipsis,
+          style: AppTextStyles.headlineSm.copyWith(
+            color: AppColors.onPrimary,
+            fontWeight: FontWeight.w700,
+          ),
         ),
-      ),
-      AppText(
-        label,
-        style: AppTextStyles.labelSm.copyWith(
-          color: AppColors.onPrimary.withValues(alpha: 0.8),
+        AppText(
+          label,
+          style: AppTextStyles.labelSm.copyWith(
+            color: AppColors.onPrimary.withValues(alpha: 0.8),
+          ),
         ),
-      ),
-    ],
+      ],
+    ),
   );
 }

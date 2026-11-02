@@ -9,7 +9,7 @@ void main() {
   group('roleLabelFor', () {
     test('names each role that can reach the profile', () {
       expect(roleLabelFor(UserRole.admin), 'مدير النظام');
-      expect(roleLabelFor(UserRole.manager), 'مشرف');
+      expect(roleLabelFor(UserRole.manager), 'إدارة');
       expect(roleLabelFor(UserRole.teacher), 'معلم');
       expect(roleLabelFor(UserRole.parent), 'ولي أمر');
       expect(roleLabelFor(UserRole.student), 'طالب');
@@ -18,7 +18,10 @@ void main() {
 
     test('does not fall back to parent for a manager', () {
       // The bug this replaces: manager fell through to the parent default.
-      expect(roleLabelFor(UserRole.manager), isNot(roleLabelFor(UserRole.parent)));
+      expect(
+        roleLabelFor(UserRole.manager),
+        isNot(roleLabelFor(UserRole.parent)),
+      );
     });
   });
 

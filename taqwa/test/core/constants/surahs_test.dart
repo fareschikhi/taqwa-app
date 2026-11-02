@@ -26,6 +26,29 @@ void main() {
     });
   });
 
+  group('Surah pages', () {
+    test('counts every page a surah appears on', () {
+      expect(kSurahs[0].pageCount, 1); // الفاتحة
+      expect(kSurahs[1].pageCount, 48); // البقرة, pages 2-49
+      expect(kSurahs[113].pageCount, 1); // الناس shares page 604
+    });
+
+    // A surah starts on the page the previous one ended on, or the next one,
+    // and the mushaf runs from page 1 to page 604 without gaps.
+    test('runs through the mushaf in order without gaps', () {
+      expect(kSurahs.first.startPage, 1);
+      expect(kSurahs.last.endPage, 604);
+      for (var i = 0; i < kSurahs.length; i++) {
+        final surah = kSurahs[i];
+        expect(surah.endPage, greaterThanOrEqualTo(surah.startPage));
+        if (i > 0) {
+          final gap = surah.startPage - kSurahs[i - 1].endPage;
+          expect(gap, inInclusiveRange(0, 1), reason: 'surah ${surah.number}');
+        }
+      }
+    });
+  });
+
   group('surahLabelOf', () {
     test('labels a known surah by name', () {
       expect(surahLabelOf(2), 'سورة البقرة');

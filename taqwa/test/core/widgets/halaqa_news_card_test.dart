@@ -4,7 +4,7 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:taqwa/core/widgets/halaqa_news_card.dart';
 import 'package:taqwa/features/data/models/halaqa/halaqa_announcement_model.dart';
 
-HalaqaAnnouncementModel _news(int id, String title) =>
+HalaqaAnnouncementModel _news(int id, String title, {int authorId = 2}) =>
     HalaqaAnnouncementModel.fromJson({
       'id': id,
       'halaqaId': 4,
@@ -12,12 +12,14 @@ HalaqaAnnouncementModel _news(int id, String title) =>
       'body': 'الحلقة معطلة غدا',
       'createdAt': '2026-09-17T09:12:40.214Z',
       'halaqa': {'id': 4, 'name': 'حلقة النور'},
+      'author': {'id': authorId, 'fullName': 'المدير'},
     });
 
 Future<void> _pump(
   WidgetTester tester, {
   ValueChanged<HalaqaAnnouncementModel>? onEdit,
   ValueChanged<HalaqaAnnouncementModel>? onDelete,
+  int? ownPostsOf,
 }) async {
   await tester.pumpWidget(
     ScreenUtilInit(
@@ -27,10 +29,14 @@ Future<void> _pump(
           body: ListView(
             children: [
               HalaqaNewsCard(
-                announcements: [_news(1, 'غياب المعلم'), _news(2, 'مسابقة')],
+                announcements: [
+                  _news(1, 'غياب المعلم'),
+                  _news(2, 'مسابقة', authorId: 9),
+                ],
                 canCompose: onEdit != null,
                 onEdit: onEdit,
                 onDelete: onDelete,
+                ownPostsOf: ownPostsOf,
               ),
             ],
           ),
@@ -68,5 +74,24 @@ void main() {
     expect(edited, [2]);
     expect(deleted, [1]);
     expect(tester.takeException(), isNull);
+  });
+
+  // A teacher's view: the manager's news in their halaqa stays read-only.
+  testWidgets('only the viewer\'s own news gets icons when ownPostsOf is set', (
+    tester,
+  ) async {
+    final edited = <int>[];
+    await _pump(
+      tester,
+      onEdit: (a) => edited.add(a.id),
+      onDelete: (_) {},
+      ownPostsOf: 9,
+    );
+
+    expect(find.byIcon(Icons.edit_outlined), findsOneWidget);
+    expect(find.byIcon(Icons.delete_outline), findsOneWidget);
+
+    await tester.tap(find.byIcon(Icons.edit_outlined));
+    expect(edited, [2]);
   });
 }

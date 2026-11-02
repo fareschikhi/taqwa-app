@@ -14,6 +14,7 @@ import '../../parent/presentation/pages/child_progress_page.dart';
 import '../../parent/presentation/pages/child_attendance_history_page.dart';
 import '../../shared/presentation/pages/profile_page.dart';
 import 'package:taqwa/core/widgets/app_text.dart';
+import 'package:taqwa/core/widgets/shell_tab_scope.dart';
 import 'package:taqwa/features/data/repositories/notification_repository.dart';
 import '../../parent/presentation/pages/notifications_page.dart';
 
@@ -142,7 +143,10 @@ class _AdultStudentShellState extends ConsumerState<AdultStudentShell> {
       body: Column(
         children: [
           Expanded(
-            child: IndexedStack(index: _currentIndex, children: _pages),
+            child: ShellTabScope(
+              selectTab: _selectTab,
+              child: IndexedStack(index: _currentIndex, children: _pages),
+            ),
           ),
         ],
       ),

@@ -4,10 +4,8 @@ import '../../../../core/theme/app_colors.dart';
 import '../../../../core/theme/app_text_styles.dart';
 import '../../../../core/widgets/app_text.dart';
 import '../../../../core/widgets/note_timeline.dart';
-import '../../../data/models/parent/halaqa_manager_contact_model.dart';
 import '../../../data/models/student_note_model.dart';
 import '../../../data/repositories/student_repository.dart';
-import '../widgets/halaqa_manager_contact_card.dart';
 
 /// The whole timeline of a child's teacher notes. The dashboard shows only the
 /// latest few; this is where "عرض الكل" leads.
@@ -16,14 +14,9 @@ class ChildNotesPage extends StatefulWidget {
     super.key,
     required this.studentId,
     required this.childName,
-    this.managers = const [],
   });
 
   final int studentId;
-
-  /// The child's halaqa managers, already read by the dashboard's profile
-  /// load, so the parent can message one without going back.
-  final List<HalaqaManagerContactModel> managers;
 
   /// In the title, so a parent of several children can see whose notes
   /// these are.
@@ -120,13 +113,7 @@ class _ChildNotesPageState extends State<ChildNotesPage> {
           : ListView(
               physics: const AlwaysScrollableScrollPhysics(),
               padding: EdgeInsets.fromLTRB(16.w, 16.h, 16.w, 32.h),
-              children: [
-                if (widget.managers.isNotEmpty) ...[
-                  HalaqaManagerContactCard(managers: widget.managers),
-                  SizedBox(height: 20.h),
-                ],
-                NoteTimeline(notes: _notes),
-              ],
+              children: [NoteTimeline(notes: _notes)],
             ),
     );
   }

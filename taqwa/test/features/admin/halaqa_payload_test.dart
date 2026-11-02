@@ -20,6 +20,33 @@ void main() {
       expect(data['level'], 'متوسط');
     });
 
+    test('an edit payload carries the roster once it is known', () {
+      final data = buildHalaqaPayload(
+        name: 'حلقة النور',
+        teacherId: 7,
+        level: '',
+        studentIds: const [1, 3],
+        isEditing: true,
+        rosterLoaded: true,
+      );
+
+      expect(data['studentIds'], const [1, 3]);
+    });
+
+    test('an edit that removed every student sends an empty roster', () {
+      final data = buildHalaqaPayload(
+        name: 'حلقة النور',
+        teacherId: 7,
+        level: '',
+        studentIds: const [],
+        isEditing: true,
+        rosterLoaded: true,
+      );
+
+      // Absent would leave the roster as it was; empty is what empties it.
+      expect(data['studentIds'], isEmpty);
+    });
+
     test('a create payload carries the picked students', () {
       final data = buildHalaqaPayload(
         name: 'حلقة النور',

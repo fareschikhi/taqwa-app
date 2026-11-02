@@ -1,4 +1,10 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
+import '../../../core/providers/auth_provider.dart';
+import '../../../core/providers/chat_unread_provider.dart';
+import '../../chat/data/chat_push.dart';
+import '../../chat/presentation/pages/chat_inbox_page.dart';
+import '../../data/models/chat/chat_target.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
 import '../../../core/theme/app_colors.dart';
 import '../../../core/theme/app_text_styles.dart';
@@ -8,31 +14,72 @@ import 'pages/manager_students_page.dart';
 import 'pages/manager_parents_page.dart';
 import 'pages/justification_list_page.dart';
 import 'package:taqwa/core/widgets/app_text.dart';
+import 'package:taqwa/core/widgets/shell_tab_scope.dart';
 import 'package:taqwa/features/shared/presentation/pages/profile_page.dart';
 
-class ManagerShell extends StatefulWidget {
+class ManagerShell extends ConsumerStatefulWidget {
   const ManagerShell({super.key});
 
   @override
-  State<ManagerShell> createState() => _ManagerShellState();
+  ConsumerState<ManagerShell> createState() => _ManagerShellState();
 }
 
-class _ManagerShellState extends State<ManagerShell> {
+class _ManagerShellState extends ConsumerState<ManagerShell> {
   int _currentIndex = 0;
 
-  final List<Widget> _pages = const [
-    ManagerDashboardPage(),
-    ManagerStudentsPage(),
-    ManagerParentsPage(),
-    JustificationListPage(),
-    ProfilePage(role: 'manager'),
+  /// Whether the admin let this manager answer parents. The chat itself is
+  /// reached from the dashboard's top bar, not a tab: six tabs don't fit.
+  late final bool _canChat = canUseStaffChat(ref.read(authProvider).user);
+
+  @override
+  void initState() {
+    super.initState();
+    WidgetsBinding.instance.addPostFrameCallback(
+      (_) => ref.read(chatUnreadProvider.notifier).refresh(),
+    );
+  }
+
+  /// Which list the التبريرات tab shows, so the dashboard's pending and
+  /// justified cards can each open their own.
+  final _justificationFilter = ValueNotifier<int>(0);
+
+  late final List<Widget> _pages = [
+    ManagerDashboardPage(justificationFilter: _justificationFilter),
+    const ManagerStudentsPage(),
+    const ManagerParentsPage(),
+    JustificationListPage(filter: _justificationFilter),
+    const ProfilePage(role: 'manager'),
   ];
 
   @override
+  void dispose() {
+    _justificationFilter.dispose();
+    super.dispose();
+  }
+
+  void _selectTab(int i) => setState(() => _currentIndex = i);
+
+  @override
   Widget build(BuildContext context) {
-    return Scaffold(
-      body: IndexedStack(index: _currentIndex, children: _pages),
-      bottomNavigationBar: _buildBottomNav(),
+    ref.listen(chatPushEventsProvider, (_, next) {
+      if (next.value?['route'] == 'chat') {
+        ref.read(chatUnreadProvider.notifier).refresh();
+      }
+    });
+    // A tapped chat notification opens the inbox.
+    ref.listen(chatPushTapsProvider, (_, next) {
+      if (_canChat && next.value?['route'] == 'chat') {
+        Navigator.of(context).push(
+          MaterialPageRoute(builder: (_) => const ChatInboxPage()),
+        );
+      }
+    });
+    return ShellTabScope(
+      selectTab: _selectTab,
+      child: Scaffold(
+        body: IndexedStack(index: _currentIndex, children: _pages),
+        bottomNavigationBar: _buildBottomNav(),
+      ),
     );
   }
 
@@ -89,7 +136,7 @@ class _ManagerShellState extends State<ManagerShell> {
               final isActive = _currentIndex == i;
               final item = items[i];
               return GestureDetector(
-                onTap: () => setState(() => _currentIndex = i),
+                onTap: () => _selectTab(i),
                 child: AnimatedContainer(
                   duration: AppConstants.animFast,
                   padding: EdgeInsets.symmetric(

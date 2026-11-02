@@ -68,7 +68,7 @@ class _ManagerRow extends StatelessWidget {
               crossAxisAlignment: CrossAxisAlignment.end,
               children: [
                 AppText(
-                  manager.fullName.isEmpty ? 'مشرف الحلقة' : manager.fullName,
+                  manager.fullName.isEmpty ? 'إدارة الحلقة' : manager.fullName,
                   style: AppTextStyles.bodyMdBold.copyWith(
                     color: AppColors.onSurface,
                   ),
@@ -77,7 +77,7 @@ class _ManagerRow extends StatelessWidget {
                   overflow: TextOverflow.ellipsis,
                 ),
                 AppText(
-                  'مشرف الحلقة',
+                  'إدارة الحلقة',
                   style: AppTextStyles.labelMd.copyWith(
                     color: AppColors.onSurfaceVariant,
                   ),

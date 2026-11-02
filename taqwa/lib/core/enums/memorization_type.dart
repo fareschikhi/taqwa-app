@@ -1,10 +1,17 @@
 enum MemorizationType { hifz, minorReview, majorReview }
 
+/// Every Quran entry, new or revision, is measured in mushaf pages; a hizb
+/// is only a shortcut for entering ten of them.
+const String kPageUnitLabel = 'صفحة';
+const String kPageAmountLabel = 'عدد الصفحات';
+const int kMushafPages = 604;
+const int kPagesPerHizb = 10;
+
 extension MemorizationTypeX on MemorizationType {
   String get label => switch (this) {
     MemorizationType.hifz => 'حفظ',
-    MemorizationType.minorReview => 'مراجعة صغرى',
-    MemorizationType.majorReview => 'مراجعة كبرى',
+    MemorizationType.minorReview => 'جمع',
+    MemorizationType.majorReview => 'مراجعة وضبط',
   };
 
   String get apiValue => switch (this) {
@@ -12,17 +19,6 @@ extension MemorizationTypeX on MemorizationType {
     MemorizationType.minorReview => 'SMALLREVISION',
     MemorizationType.majorReview => 'BIGREVISION',
   };
-
-  /// New memorization is measured in pages; revision is measured in hizbs.
-  /// Every unit-dependent label and bound below hangs off this one split, so
-  /// nothing else in the app should re-derive it from the type.
-  bool get isCountedInPages => this == MemorizationType.hifz;
-
-  String get unitLabel => isCountedInPages ? 'صفحة' : 'حزب';
-
-  String get amountLabel => isCountedInPages ? 'عدد الصفحات' : 'عدد الأحزاب';
-
-  int get maxAmount => isCountedInPages ? 604 : 60;
 
   /// Parses the enum sent by the API. Read screens pull the raw string off
   /// untyped JSON, so an absent or unexpected value yields null rather than

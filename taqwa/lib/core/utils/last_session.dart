@@ -15,10 +15,10 @@ class LastSessionEntry {
   /// QURAN-only; null for a HADITH entry.
   final int? surahNumber;
 
-  /// Pages for new Quran memorization, hizbs for Quran revision, hadiths for
-  /// any hadith entry. Which one it is follows from [subject] and [type], so
-  /// nothing here re-derives the split.
-  final int amount;
+  /// Pages for any Quran entry, hadiths for any hadith entry. Which one it is
+  /// follows from [subject], so nothing here re-derives the split. A half page
+  /// arrives as 1.5.
+  final num amount;
 
   /// Null when the API sends a type this build does not know about, so an
   /// unfamiliar value costs the label rather than the whole card.
@@ -98,7 +98,7 @@ LastSession? lastSessionOf({
                 MemorizationSubject.quran,
             surahNumber: (record['surahNumber'] as num?)?.toInt() ?? 0,
             hadithReference: record['hadithReference'] as String?,
-            amount: (record['amountDone'] as num?)?.toInt() ?? 0,
+            amount: (record['amountDone'] as num?) ?? 0,
             type: MemorizationTypeX.fromApi(
               record['memorizationType'] as String?,
             ),

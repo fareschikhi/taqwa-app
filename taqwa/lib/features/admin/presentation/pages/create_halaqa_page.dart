@@ -14,15 +14,16 @@ import '../../../../core/widgets/app_button.dart';
 import '../../../../core/widgets/app_text_field.dart';
 import '../../../../core/widgets/user_selector_field.dart';
 import '../../../../core/widgets/confirm_second_halaqa_dialog.dart';
+import '../../../../core/widgets/confirm_delete_dialog.dart';
 import 'package:taqwa/core/widgets/app_text.dart';
 
 /// Builds the body sent to create or update a halaqa.
 ///
-/// [studentIds] is dropped whenever [isEditing]: the update endpoint replaces
-/// the halaqa's entire roster with whatever it is handed, and the edit form
-/// never learns the current roster, so sending a partial list would disconnect
-/// every student the admin did not re-pick. The picker is hidden on edit for
-/// the same reason; this guard keeps the payload honest regardless.
+/// On edit, [studentIds] travels only when [rosterLoaded]: the update endpoint
+/// replaces the halaqa's entire roster with whatever it is handed, so a list
+/// built without first knowing the current roster would disconnect every
+/// student the admin never saw. Once the roster is known the list is sent
+/// even when empty — that is how removing the last student is saved.
 ///
 /// [isAdult] always travels — false is as meaningful an answer as true, and
 /// the backend's `UpdateHalaqaDto` accepts it either way. The three rates
@@ -36,6 +37,7 @@ Map<String, dynamic> buildHalaqaPayload({
   required String level,
   required List<int> studentIds,
   required bool isEditing,
+  bool rosterLoaded = false,
   bool isAdult = false,
   int? absenceFee,
   int? lateFee,
@@ -47,7 +49,8 @@ Map<String, dynamic> buildHalaqaPayload({
     // An edit always sends the key so that emptying the field clears the
     // column; a create with a blank field leaves it out and keeps the NULL.
     if (isEditing || level.isNotEmpty) 'level': level.isEmpty ? null : level,
-    if (!isEditing && studentIds.isNotEmpty) 'studentIds': studentIds,
+    if (isEditing ? rosterLoaded : studentIds.isNotEmpty)
+      'studentIds': studentIds,
     'isAdult': isAdult,
     if (isAdult && absenceFee != null) 'absenceFee': absenceFee,
     if (isAdult && lateFee != null) 'lateFee': lateFee,
@@ -108,6 +111,7 @@ class _CreateHalaqaPageState extends State<CreateHalaqaPage> {
   final _missedMemorizationFeeController = TextEditingController();
 
   List<TeacherModel> _teachers = [];
+
   /// Every halaqa in the school, used only to work out whether the picked
   /// teacher already runs one. The admin's own `GET /halaqas` is unfiltered,
   /// so this needs nothing from the teachers endpoint — which a teacher can
@@ -123,7 +127,15 @@ class _CreateHalaqaPageState extends State<CreateHalaqaPage> {
   bool _isAdultHalaqa = false;
   int? _selectedTeacherId;
 
+  /// On edit, [_selectedStudents] starts as the halaqa's current roster. Until
+  /// that roster has arrived the picker stays hidden and the save sends no
+  /// `studentIds`, so a slow or failed load can never disconnect anyone.
+  bool _isLoadingRoster = false;
+  bool _rosterLoaded = false;
+  bool _rosterFailed = false;
+
   bool get _isEditing => widget.editHalaqa != null;
+  bool get _canPickStudents => !_isEditing || _rosterLoaded;
 
   @override
   void initState() {
@@ -136,14 +148,36 @@ class _CreateHalaqaPageState extends State<CreateHalaqaPage> {
       _isAdultHalaqa = h.isAdult;
       _absenceFeeController.text = h.absenceFee.toString();
       _lateFeeController.text = h.lateFee.toString();
-      _missedMemorizationFeeController.text =
-          h.missedMemorizationFee.toString();
+      _missedMemorizationFeeController.text = h.missedMemorizationFee
+          .toString();
     }
     _loadTeachers();
     _loadHalaqas();
-    // Students back the create-only picker, so they are not needed on edit.
-    if (!_isEditing) _loadStudents();
+    _loadStudents();
+    if (_isEditing) _loadRoster();
     _studentSearchController.addListener(_onSearchChanged);
+  }
+
+  Future<void> _loadRoster() async {
+    setState(() {
+      _isLoadingRoster = true;
+      _rosterFailed = false;
+    });
+    try {
+      final roster = await _repo.getHalaqaRoster(widget.editHalaqa!.id);
+      if (!mounted) return;
+      setState(() {
+        _selectedStudents
+          ..clear()
+          ..addAll(roster);
+        _rosterLoaded = true;
+        _filteredStudents = _eligibleStudents(_studentSearchController.text);
+      });
+    } catch (_) {
+      if (mounted) setState(() => _rosterFailed = true);
+    } finally {
+      if (mounted) setState(() => _isLoadingRoster = false);
+    }
   }
 
   Future<void> _loadTeachers() async {
@@ -189,8 +223,20 @@ class _CreateHalaqaPageState extends State<CreateHalaqaPage> {
   /// Switching the halaqa's type invalidates whatever was already picked
   /// under the old one, so the selection is cleared rather than left to
   /// either violate the adult/child pairing or silently vanish from the
-  /// payload without the admin noticing why.
-  void _onToggleAdultHalaqa(bool value) {
+  /// payload without the admin noticing why. On edit that selection is the
+  /// halaqa's real roster, so clearing it is confirmed first.
+  Future<void> _onToggleAdultHalaqa(bool value) async {
+    if (_isEditing && _selectedStudents.isNotEmpty) {
+      final confirmed = await ConfirmDeleteDialog.show(
+        context,
+        title: 'تغيير نوع الحلقة',
+        message:
+            'سيتم إزالة ${_selectedStudents.length} من الطلاب من الحلقة '
+            'لأنهم لا يناسبون النوع الجديد. '
+            'لن يُحفظ التغيير إلا بعد الضغط على حفظ التعديلات.',
+      );
+      if (!confirmed || !mounted) return;
+    }
     setState(() {
       _isAdultHalaqa = value;
       _selectedStudents.clear();
@@ -233,9 +279,9 @@ class _CreateHalaqaPageState extends State<CreateHalaqaPage> {
     if (!_formKey.currentState!.validate()) return;
 
     if (_selectedTeacherId == null) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: AppText('يرجى اختيار المعلم')),
-      );
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(const SnackBar(content: AppText('يرجى اختيار المعلم')));
       return;
     }
 
@@ -268,9 +314,12 @@ class _CreateHalaqaPageState extends State<CreateHalaqaPage> {
         name: _nameController.text.trim(),
         teacherId: _selectedTeacherId!,
         level: _levelController.text.trim(),
-        studentIds:
-            _selectedStudents.map((s) => s.id).whereType<int>().toList(),
+        studentIds: _selectedStudents
+            .map((s) => s.id)
+            .whereType<int>()
+            .toList(),
         isEditing: _isEditing,
+        rosterLoaded: _rosterLoaded,
         isAdult: _isAdultHalaqa,
         absenceFee: _isAdultHalaqa ? _parseRate(_absenceFeeController) : null,
         lateFee: _isAdultHalaqa ? _parseRate(_lateFeeController) : null,
@@ -345,8 +394,9 @@ class _CreateHalaqaPageState extends State<CreateHalaqaPage> {
                           padding: EdgeInsets.all(20.w),
                           decoration: BoxDecoration(
                             color: AppColors.surfaceContainerLowest,
-                            borderRadius:
-                                BorderRadius.circular(AppConstants.radiusXl),
+                            borderRadius: BorderRadius.circular(
+                              AppConstants.radiusXl,
+                            ),
                             boxShadow: const [
                               BoxShadow(
                                 color: Color.fromRGBO(18, 52, 59, 0.04),
@@ -417,8 +467,8 @@ class _CreateHalaqaPageState extends State<CreateHalaqaPage> {
                                     )
                                     .toList(),
                                 selectedId: _selectedTeacherId,
-                                onSelected: (o) => setState(
-                                    () => _selectedTeacherId = o.id),
+                                onSelected: (o) =>
+                                    setState(() => _selectedTeacherId = o.id),
                               ),
                               SizedBox(height: 8.h),
                               _buildAdultHalaqaSwitch(),
@@ -466,79 +516,97 @@ class _CreateHalaqaPageState extends State<CreateHalaqaPage> {
                             ],
                           ),
                         ),
-                        // The student picker is create-only. On update the API
-                        // replaces the whole roster with whatever `studentIds`
-                        // contains, and the form has no way to know the current
-                        // roster (see the note on HalaqaModel.students), so
-                        // sending it here would disconnect every student the
-                        // admin did not re-pick.
-                        if (!_isEditing) ...[
-                          SizedBox(height: 20.h),
-                          // ── Students card ──────────────────────────────────
-                          Container(
-                            padding: EdgeInsets.all(20.w),
-                            decoration: BoxDecoration(
-                              color: AppColors.surfaceContainerLowest,
-                              borderRadius:
-                                  BorderRadius.circular(AppConstants.radiusXl),
-                              boxShadow: const [
-                                BoxShadow(
-                                  color: Color.fromRGBO(18, 52, 59, 0.04),
-                                  blurRadius: 20,
-                                  offset: Offset(0, 4),
-                                ),
-                              ],
+                        // On edit this card opens on the current roster, and
+                        // the save sends the edited list in full: the update
+                        // endpoint replaces the roster with whatever it gets.
+                        SizedBox(height: 20.h),
+                        // ── Students card ──────────────────────────────────
+                        Container(
+                          padding: EdgeInsets.all(20.w),
+                          decoration: BoxDecoration(
+                            color: AppColors.surfaceContainerLowest,
+                            borderRadius: BorderRadius.circular(
+                              AppConstants.radiusXl,
                             ),
-                            child: Column(
-                              crossAxisAlignment: CrossAxisAlignment.end,
-                              children: [
-                                Row(
-                                  mainAxisAlignment: MainAxisAlignment.end,
-                                  children: [
-                                    if (_selectedStudents.isNotEmpty)
-                                      Container(
-                                        padding: EdgeInsets.symmetric(
-                                            horizontal: 8.w, vertical: 2.h),
-                                        decoration: BoxDecoration(
-                                          color: AppColors.primary
-                                              .withValues(alpha: 0.12),
-                                          borderRadius: BorderRadius.circular(
-                                              AppConstants.radiusFull),
+                            boxShadow: const [
+                              BoxShadow(
+                                color: Color.fromRGBO(18, 52, 59, 0.04),
+                                blurRadius: 20,
+                                offset: Offset(0, 4),
+                              ),
+                            ],
+                          ),
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.end,
+                            children: [
+                              Row(
+                                mainAxisAlignment: MainAxisAlignment.end,
+                                children: [
+                                  if (_selectedStudents.isNotEmpty)
+                                    Container(
+                                      padding: EdgeInsets.symmetric(
+                                        horizontal: 8.w,
+                                        vertical: 2.h,
+                                      ),
+                                      decoration: BoxDecoration(
+                                        color: AppColors.primary.withValues(
+                                          alpha: 0.12,
                                         ),
-                                        child: AppText(
-                                          '${_selectedStudents.length} طلاب',
-                                          style:
-                                              AppTextStyles.labelSm.copyWith(
-                                            color: AppColors.primary,
-                                            fontWeight: FontWeight.w600,
-                                          ),
+                                        borderRadius: BorderRadius.circular(
+                                          AppConstants.radiusFull,
                                         ),
                                       ),
-                                    if (_selectedStudents.isNotEmpty)
-                                      SizedBox(width: 8.w),
-                                    _SectionHeader(
-                                      icon: Icons.people_outline,
-                                      title: 'الطلاب (اختياري)',
+                                      child: AppText(
+                                        '${_selectedStudents.length} طلاب',
+                                        style: AppTextStyles.labelSm.copyWith(
+                                          color: AppColors.primary,
+                                          fontWeight: FontWeight.w600,
+                                        ),
+                                      ),
                                     ),
-                                  ],
+                                  if (_selectedStudents.isNotEmpty)
+                                    SizedBox(width: 8.w),
+                                  _SectionHeader(
+                                    icon: Icons.people_outline,
+                                    title: _isEditing
+                                        ? 'طلاب الحلقة'
+                                        : 'الطلاب (اختياري)',
+                                  ),
+                                ],
+                              ),
+                              SizedBox(height: 4.h),
+                              Align(
+                                alignment: AlignmentDirectional.centerEnd,
+                                child: AppText(
+                                  _isEditing
+                                      ? 'أضف طالباً أو احذفه، وتُحفظ التغييرات عند الضغط على حفظ التعديلات'
+                                      : 'ابحث عن طالب وأضفه إلى الحلقة',
+                                  style: AppTextStyles.labelSm.copyWith(
+                                    color: AppColors.onSurfaceVariant,
+                                  ),
+                                  textAlign: TextAlign.end,
                                 ),
-                                SizedBox(height: 4.h),
-                                Align(
-                                  alignment: AlignmentDirectional.centerEnd,
-                                  child: AppText(
-                                    'ابحث عن طالب وأضفه إلى الحلقة',
-                                    style: AppTextStyles.labelSm.copyWith(
-                                      color: AppColors.onSurfaceVariant,
+                              ),
+                              SizedBox(height: 12.h),
+                              if (_isEditing && _isLoadingRoster)
+                                Padding(
+                                  padding: EdgeInsets.symmetric(vertical: 16.h),
+                                  child: const Center(
+                                    child: CircularProgressIndicator(
+                                      color: AppColors.primary,
                                     ),
                                   ),
                                 ),
-                                SizedBox(height: 12.h),
+                              if (_isEditing && _rosterFailed)
+                                _RosterErrorBox(onRetry: _loadRoster),
+                              if (_canPickStudents) ...[
                                 // ── Search box ───────────────────────────────
                                 Container(
                                   decoration: BoxDecoration(
                                     color: AppColors.surfaceContainerLowest,
                                     borderRadius: BorderRadius.circular(
-                                        AppConstants.radiusMd),
+                                      AppConstants.radiusMd,
+                                    ),
                                     border: Border.all(
                                       color: _showStudentDropdown
                                           ? AppColors.primary
@@ -555,18 +623,21 @@ class _CreateHalaqaPageState extends State<CreateHalaqaPage> {
                                           textDirection: TextDirection.rtl,
                                           style: AppTextStyles.bodyMd,
                                           onTap: () => setState(
-                                              () => _showStudentDropdown = true),
+                                            () => _showStudentDropdown = true,
+                                          ),
                                           decoration: InputDecoration(
                                             hintText: 'ابحث عن طالب بالاسم...',
                                             hintStyle: AppTextStyles.labelMd
                                                 .copyWith(
-                                              color: AppColors.inputPlaceholder,
-                                            ),
+                                                  color: AppColors
+                                                      .inputPlaceholder,
+                                                ),
                                             border: InputBorder.none,
-                                            contentPadding: EdgeInsets.symmetric(
-                                              horizontal: 16.w,
-                                              vertical: 14.h,
-                                            ),
+                                            contentPadding:
+                                                EdgeInsets.symmetric(
+                                                  horizontal: 16.w,
+                                                  vertical: 14.h,
+                                                ),
                                           ),
                                         ),
                                       ),
@@ -578,9 +649,9 @@ class _CreateHalaqaPageState extends State<CreateHalaqaPage> {
                                                 height: 18.w,
                                                 child:
                                                     const CircularProgressIndicator(
-                                                  strokeWidth: 2,
-                                                  color: AppColors.primary,
-                                                ),
+                                                      strokeWidth: 2,
+                                                      color: AppColors.primary,
+                                                    ),
                                               )
                                             : const Icon(
                                                 Icons.search,
@@ -595,17 +666,25 @@ class _CreateHalaqaPageState extends State<CreateHalaqaPage> {
                                     _filteredStudents.isNotEmpty) ...[
                                   SizedBox(height: 8.h),
                                   Container(
-                                    constraints:
-                                        BoxConstraints(maxHeight: 220.h),
+                                    constraints: BoxConstraints(
+                                      maxHeight: 220.h,
+                                    ),
                                     decoration: BoxDecoration(
                                       color: AppColors.surfaceContainerLowest,
                                       borderRadius: BorderRadius.circular(
-                                          AppConstants.radiusMd),
+                                        AppConstants.radiusMd,
+                                      ),
                                       border: Border.all(
-                                          color: AppColors.outlineVariant),
+                                        color: AppColors.outlineVariant,
+                                      ),
                                       boxShadow: const [
                                         BoxShadow(
-                                          color: Color.fromRGBO(18, 52, 59, 0.06),
+                                          color: Color.fromRGBO(
+                                            18,
+                                            52,
+                                            59,
+                                            0.06,
+                                          ),
                                           blurRadius: 10,
                                           offset: Offset(0, 4),
                                         ),
@@ -614,12 +693,13 @@ class _CreateHalaqaPageState extends State<CreateHalaqaPage> {
                                     child: ListView.separated(
                                       shrinkWrap: true,
                                       padding: EdgeInsets.symmetric(
-                                          vertical: 4.h),
+                                        vertical: 4.h,
+                                      ),
                                       separatorBuilder: (context, index) =>
                                           Divider(
-                                        height: 1,
-                                        color: AppColors.outlineVariant,
-                                      ),
+                                            height: 1,
+                                            color: AppColors.outlineVariant,
+                                          ),
                                       itemCount: _filteredStudents.length,
                                       itemBuilder: (ctx, i) {
                                         final s = _filteredStudents[i];
@@ -637,8 +717,9 @@ class _CreateHalaqaPageState extends State<CreateHalaqaPage> {
                                                     s.fullName,
                                                     style: AppTextStyles.bodyMd
                                                         .copyWith(
-                                                      fontWeight: FontWeight.w600,
-                                                    ),
+                                                          fontWeight:
+                                                              FontWeight.w600,
+                                                        ),
                                                     textAlign: TextAlign.end,
                                                   ),
                                                 ),
@@ -658,7 +739,9 @@ class _CreateHalaqaPageState extends State<CreateHalaqaPage> {
                                 ],
                                 if (_showStudentDropdown &&
                                     _filteredStudents.isEmpty &&
-                                    _studentSearchController.text.isNotEmpty) ...[
+                                    _studentSearchController
+                                        .text
+                                        .isNotEmpty) ...[
                                   SizedBox(height: 8.h),
                                   Container(
                                     width: double.infinity,
@@ -666,9 +749,11 @@ class _CreateHalaqaPageState extends State<CreateHalaqaPage> {
                                     decoration: BoxDecoration(
                                       color: AppColors.surfaceContainerLowest,
                                       borderRadius: BorderRadius.circular(
-                                          AppConstants.radiusMd),
+                                        AppConstants.radiusMd,
+                                      ),
                                       border: Border.all(
-                                          color: AppColors.outlineVariant),
+                                        color: AppColors.outlineVariant,
+                                      ),
                                     ),
                                     child: AppText(
                                       'لا يوجد طلاب مطابقون',
@@ -688,14 +773,30 @@ class _CreateHalaqaPageState extends State<CreateHalaqaPage> {
                                       child: SelectedStudentCard(
                                         student: s,
                                         onRemove: () => _removeStudent(s),
+                                        removeIcon: _isEditing
+                                            ? Icons.delete_outline
+                                            : Icons.close,
+                                        removeTooltip: _isEditing
+                                            ? 'حذف من الحلقة'
+                                            : 'إزالة',
+                                      ),
+                                    ),
+                                  ),
+                                ] else if (_isEditing) ...[
+                                  SizedBox(height: 16.h),
+                                  Center(
+                                    child: AppText(
+                                      'لا يوجد طلاب في هذه الحلقة',
+                                      style: AppTextStyles.labelMd.copyWith(
+                                        color: AppColors.onSurfaceVariant,
                                       ),
                                     ),
                                   ),
                                 ],
                               ],
-                            ),
+                            ],
                           ),
-                        ],
+                        ),
                         SizedBox(height: 24.h),
                         AppButton(
                           label: _isEditing ? 'حفظ التعديلات' : 'إضافة حلقة',
@@ -783,9 +884,13 @@ class SelectedStudentCard extends StatelessWidget {
     super.key,
     required this.student,
     required this.onRemove,
+    this.removeIcon = Icons.close,
+    this.removeTooltip = 'إزالة',
   });
   final StudentModel student;
   final VoidCallback onRemove;
+  final IconData removeIcon;
+  final String removeTooltip;
 
   @override
   Widget build(BuildContext context) {
@@ -799,19 +904,23 @@ class SelectedStudentCard extends StatelessWidget {
       child: Row(
         children: [
           // Remove button
-          GestureDetector(
-            onTap: onRemove,
-            child: Container(
-              width: 26.w,
-              height: 26.w,
-              decoration: BoxDecoration(
-                color: AppColors.error.withValues(alpha: 0.12),
-                shape: BoxShape.circle,
-              ),
-              child: Icon(
-                Icons.close,
-                size: 14.w,
-                color: AppColors.error,
+          Tooltip(
+            message: removeTooltip,
+            child: Semantics(
+              button: true,
+              label: removeTooltip,
+              child: InkResponse(
+                onTap: onRemove,
+                radius: 20.w,
+                child: Container(
+                  width: 30.w,
+                  height: 30.w,
+                  decoration: BoxDecoration(
+                    color: AppColors.error.withValues(alpha: 0.12),
+                    shape: BoxShape.circle,
+                  ),
+                  child: Icon(removeIcon, size: 16.w, color: AppColors.error),
+                ),
               ),
             ),
           ),
@@ -885,16 +994,51 @@ class StudentAvatar extends StatelessWidget {
 
 // ─── Shared helpers ────────────────────────────────────────────────────────
 
+class _RosterErrorBox extends StatelessWidget {
+  const _RosterErrorBox({required this.onRetry});
+  final VoidCallback onRetry;
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      width: double.infinity,
+      padding: EdgeInsets.all(14.w),
+      decoration: BoxDecoration(
+        color: AppColors.error.withValues(alpha: 0.06),
+        borderRadius: BorderRadius.circular(AppConstants.radiusMd),
+        border: Border.all(color: AppColors.error.withValues(alpha: 0.25)),
+      ),
+      child: Column(
+        children: [
+          AppText(
+            'تعذر تحميل طلاب الحلقة',
+            style: AppTextStyles.labelMd.copyWith(color: AppColors.error),
+            textAlign: TextAlign.center,
+          ),
+          SizedBox(height: 4.h),
+          TextButton.icon(
+            onPressed: onRetry,
+            icon: const Icon(Icons.refresh, color: AppColors.primary),
+            label: AppText(
+              'إعادة المحاولة',
+              style: AppTextStyles.labelMd.copyWith(color: AppColors.primary),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
 class _FieldLabel extends StatelessWidget {
   const _FieldLabel({required this.label});
   final String label;
 
   @override
   Widget build(BuildContext context) => AppText(
-        label,
-        style:
-            AppTextStyles.labelMd.copyWith(color: AppColors.onSurfaceVariant),
-      );
+    label,
+    style: AppTextStyles.labelMd.copyWith(color: AppColors.onSurfaceVariant),
+  );
 }
 
 class _SectionHeader extends StatelessWidget {

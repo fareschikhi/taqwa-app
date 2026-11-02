@@ -13,18 +13,27 @@ import 'package:taqwa/features/manager/presentation/widgets/halaqa_news_form_she
 ///
 /// Reads /halaqa-announcements/mine, so the same page serves every role and
 /// the scope stays on the server. A manager or admin also gets the compose
-/// action and per-item edit and delete.
+/// action and per-item edit and delete. Given a [halaqaId], it shows only
+/// that halaqa's history instead — the teacher's view of the halaqa picked
+/// in their switcher. A teacher the admin allowed to post news composes too,
+/// with [ownPostsOf] set so edit and delete appear on their own news only.
 class HalaqaNewsPage extends StatefulWidget {
   const HalaqaNewsPage({
     super.key,
     this.canCompose = false,
     this.isAdmin = false,
     this.managerId,
+    this.halaqaId,
+    this.ownPostsOf,
   });
 
   final bool canCompose;
   final bool isAdmin;
   final int? managerId;
+  final int? halaqaId;
+
+  /// When set, only news this user wrote can be edited or deleted.
+  final int? ownPostsOf;
 
   @override
   State<HalaqaNewsPage> createState() => _HalaqaNewsPageState();
@@ -50,7 +59,10 @@ class _HalaqaNewsPageState extends State<HalaqaNewsPage> {
       _error = null;
     });
     try {
-      final announcements = await _repo.myAnnouncements();
+      final halaqaId = widget.halaqaId;
+      final announcements = halaqaId == null
+          ? await _repo.myAnnouncements()
+          : await _repo.forHalaqa(halaqaId);
       if (!mounted) return;
       setState(() {
         _announcements = announcements;
@@ -164,6 +176,10 @@ class _HalaqaNewsPageState extends State<HalaqaNewsPage> {
   }
 
   Widget _buildItem(HalaqaAnnouncementModel announcement) {
+    final ownPostsOf = widget.ownPostsOf;
+    final canModify =
+        widget.canCompose &&
+        (ownPostsOf == null || announcement.authorId == ownPostsOf);
     return AppCard(
       padding: EdgeInsets.all(16.w),
       child: Column(
@@ -171,7 +187,7 @@ class _HalaqaNewsPageState extends State<HalaqaNewsPage> {
         children: [
           Row(
             children: [
-              if (widget.canCompose) ...[
+              if (canModify) ...[
                 IconButton(
                   icon: Icon(
                     Icons.edit_outlined,

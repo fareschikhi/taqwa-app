@@ -18,6 +18,9 @@ class ManagerModel {
   /// Whether this manager also reaches the students who are in no halaqa.
   final bool canAccessUnassigned;
 
+  /// Whether this manager may answer parents in the shared chat.
+  final bool canChat;
+
   const ManagerModel({
     this.id,
     this.userId,
@@ -31,6 +34,7 @@ class ManagerModel {
     this.canManageAccounts = false,
     this.canDeleteAccounts = false,
     this.canAccessUnassigned = false,
+    this.canChat = false,
   });
 
   factory ManagerModel.fromJson(Map<String, dynamic> json) {
@@ -45,7 +49,8 @@ class ManagerModel {
 
     return ManagerModel(
       id: json['id'],
-      userId: (user?['id'] as num?)?.toInt() ?? (json['userId'] as num?)?.toInt(),
+      userId:
+          (user?['id'] as num?)?.toInt() ?? (json['userId'] as num?)?.toInt(),
       fullName: user?['fullName'] ?? json['fullName'] ?? '',
       phone: user?['phone'] ?? json['phone'],
       email: user?['email'] ?? json['email'],
@@ -56,6 +61,7 @@ class ManagerModel {
       canManageAccounts: (json['canManageAccounts'] as bool?) ?? false,
       canDeleteAccounts: (json['canDeleteAccounts'] as bool?) ?? false,
       canAccessUnassigned: (json['canAccessUnassigned'] as bool?) ?? false,
+      canChat: (json['canChat'] as bool?) ?? false,
     );
   }
 

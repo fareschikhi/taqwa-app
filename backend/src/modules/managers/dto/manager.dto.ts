@@ -22,6 +22,7 @@ export class CreateManagerDto {
   @IsOptional() @IsBoolean() canManageAccounts?: boolean;
   @IsOptional() @IsBoolean() canDeleteAccounts?: boolean;
   @IsOptional() @IsBoolean() canAccessUnassigned?: boolean;
+  @IsOptional() @IsBoolean() canChat?: boolean;
 }
 
 export class UpdateManagerDto {
@@ -34,6 +35,7 @@ export class UpdateManagerDto {
   @IsOptional() @IsBoolean() canManageAccounts?: boolean;
   @IsOptional() @IsBoolean() canDeleteAccounts?: boolean;
   @IsOptional() @IsBoolean() canAccessUnassigned?: boolean;
+  @IsOptional() @IsBoolean() canChat?: boolean;
 }
 
 export class UpdateManagerStatusDto {

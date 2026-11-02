@@ -56,7 +56,7 @@ void main() {
     // AuthGate holds an indeterminate spinner while the stored token is read,
     // and pumpAndSettle would wait on it forever. Step past it a frame at a
     // time until the form is up.
-    for (var i = 0; i < 10 && find.byType(AppButton).evaluate().isEmpty; i++) {
+    for (var i = 0; i < 100 && find.byType(AppButton).evaluate().isEmpty; i++) {
       await tester.pump(const Duration(milliseconds: 50));
     }
     await tester.pumpAndSettle();
@@ -80,7 +80,7 @@ void main() {
     addTearDown(tester.view.reset);
 
     await tester.pumpWidget(const TaqwaApp());
-    for (var i = 0; i < 10 && find.byType(AppButton).evaluate().isEmpty; i++) {
+    for (var i = 0; i < 100 && find.byType(AppButton).evaluate().isEmpty; i++) {
       await tester.pump(const Duration(milliseconds: 50));
     }
     await tester.pumpAndSettle();

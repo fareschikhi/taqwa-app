@@ -12,6 +12,7 @@ import 'package:taqwa/features/data/models/teacher/teacher_model.dart';
 import 'package:taqwa/core/widgets/avatar_widget.dart';
 import 'package:taqwa/core/widgets/card_action_row.dart';
 import 'package:taqwa/core/widgets/confirm_status_dialog.dart';
+import 'package:taqwa/core/widgets/list_layout.dart';
 import 'package:taqwa/features/data/repositories/user_repository.dart';
 import 'create_teacher_page.dart';
 import '../admin_shell.dart';
@@ -32,6 +33,14 @@ class _TeachersManagementPageState extends State<TeachersManagementPage> {
   bool _isLoading = true;
   final _teacherRepo = TeacherRepository();
   final _userRepo = UserRepository();
+
+  static const _layoutKey = 'admin_teachers';
+  ListLayout _layout = ListLayout.list;
+
+  void _setLayout(ListLayout layout) {
+    setState(() => _layout = layout);
+    ListLayoutStore.write(_layoutKey, layout);
+  }
 
   /// Opens the create/edit form: [teacher] null creates, otherwise edits.
   Future<void> _openForm(TeacherModel? teacher) async {
@@ -95,6 +104,9 @@ class _TeachersManagementPageState extends State<TeachersManagementPage> {
   void initState() {
     super.initState();
     _load();
+    ListLayoutStore.read(_layoutKey).then((layout) {
+      if (mounted && layout != _layout) setState(() => _layout = layout);
+    });
   }
 
   @override
@@ -217,10 +229,21 @@ class _TeachersManagementPageState extends State<TeachersManagementPage> {
                       onPressed: () => _openForm(null),
                     ),
                     SizedBox(height: 16.h),
-                    SearchBarWidget(
-                      hint: 'ابحث عن معلم بالاسم أو رقم الهاتف...',
-                      controller: _searchController,
-                      onChanged: (_) => setState(() => _applyFilter()),
+                    Row(
+                      children: [
+                        ListLayoutToggle(
+                          value: _layout,
+                          onChanged: _setLayout,
+                        ),
+                        SizedBox(width: 8.w),
+                        Expanded(
+                          child: SearchBarWidget(
+                            hint: 'ابحث عن معلم بالاسم أو رقم الهاتف...',
+                            controller: _searchController,
+                            onChanged: (_) => setState(() => _applyFilter()),
+                          ),
+                        ),
+                      ],
                     ),
                     SizedBox(height: 12.h),
                     FilterChipGroup(
@@ -258,6 +281,37 @@ class _TeachersManagementPageState extends State<TeachersManagementPage> {
                             ),
                           ),
                         ),
+                      )
+                    : _layout == ListLayout.grid
+                    ? LayoutBuilder(
+                        builder: (_, constraints) {
+                          final columns = cardGridColumns(
+                            constraints.maxWidth - 32.w,
+                          );
+                          return ListView.separated(
+                            physics: const AlwaysScrollableScrollPhysics(),
+                            padding: EdgeInsets.fromLTRB(16.w, 0, 16.w, 16.h),
+                            itemCount: (_filtered.length / columns).ceil(),
+                            separatorBuilder: (_, _) => SizedBox(height: 12.h),
+                            itemBuilder: (_, row) => CardGridRow(
+                              columns: columns,
+                              children: [
+                                for (final teacher in _filtered.skip(
+                                  row * columns,
+                                ).take(columns))
+                                  _TeacherGridCard(
+                                    teacher: teacher,
+                                    onEdit: () => _openForm(teacher),
+                                    onDelete: () => _deleteTeacher(
+                                      teacher.id,
+                                      teacher.halaqaCount,
+                                    ),
+                                    onToggleActive: () => _toggleStatus(teacher),
+                                  ),
+                              ],
+                            ),
+                          );
+                        },
                       )
                     : ListView.separated(
                         physics: const AlwaysScrollableScrollPhysics(),
@@ -460,6 +514,164 @@ class _TeacherCard extends StatelessWidget {
           ),
         ],
       ),
+    );
+  }
+}
+
+/// The grid layout's card: the same facts and actions as [_TeacherCard],
+/// stacked to fit half the screen's width.
+class _TeacherGridCard extends StatelessWidget {
+  const _TeacherGridCard({
+    required this.teacher,
+    required this.onEdit,
+    required this.onDelete,
+    required this.onToggleActive,
+  });
+  final TeacherModel teacher;
+  final VoidCallback onEdit;
+  final VoidCallback onDelete;
+  final VoidCallback onToggleActive;
+
+  @override
+  Widget build(BuildContext context) {
+    final name = teacher.fullName;
+    final phone = teacher.phone ?? '';
+    final isActive = teacher.isActive;
+
+    return Container(
+      decoration: BoxDecoration(
+        color: AppColors.surfaceContainerLowest,
+        borderRadius: BorderRadius.circular(AppConstants.radiusXl),
+        boxShadow: const [
+          BoxShadow(
+            color: Color.fromRGBO(18, 52, 59, 0.04),
+            blurRadius: 20,
+            offset: Offset(0, 4),
+          ),
+        ],
+      ),
+      padding: EdgeInsets.all(12.w),
+      child: Column(
+        children: [
+          AvatarWidget(
+            avatarUrl: teacher.avatar,
+            size: AppConstants.avatarLg,
+            fallback: AppText(
+              name.isNotEmpty ? name[0] : '؟',
+              style: AppTextStyles.headlineSm.copyWith(
+                color: AppColors.onPrimaryContainer,
+              ),
+            ),
+          ),
+          SizedBox(height: 8.h),
+          AppText(
+            name,
+            style: AppTextStyles.bodyMdBold.copyWith(
+              color: AppColors.onSurface,
+            ),
+            textAlign: TextAlign.center,
+            maxLines: 2,
+            overflow: TextOverflow.ellipsis,
+          ),
+          SizedBox(height: 4.h),
+          AppText(
+            phone.isNotEmpty ? phone : '—',
+            style: AppTextStyles.labelSm.copyWith(
+              color: AppColors.onSurfaceVariant,
+            ),
+            maxLines: 1,
+            overflow: TextOverflow.ellipsis,
+          ),
+          SizedBox(height: 6.h),
+          Container(
+            padding: EdgeInsets.symmetric(horizontal: 10.w, vertical: 3.h),
+            decoration: BoxDecoration(
+              color: (isActive ? AppColors.primary : AppColors.outline)
+                  .withValues(alpha: 0.1),
+              borderRadius: BorderRadius.circular(AppConstants.radiusFull),
+            ),
+            child: Row(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                Container(
+                  width: 6.w,
+                  height: 6.w,
+                  decoration: BoxDecoration(
+                    color: isActive ? AppColors.primary : AppColors.outline,
+                    shape: BoxShape.circle,
+                  ),
+                ),
+                SizedBox(width: 4.w),
+                AppText(
+                  isActive ? 'نشط' : 'في إجازة',
+                  style: AppTextStyles.labelSm.copyWith(
+                    color: isActive ? AppColors.primary : AppColors.outline,
+                  ),
+                ),
+              ],
+            ),
+          ),
+          const Spacer(),
+          SizedBox(height: 10.h),
+          Container(
+            padding: EdgeInsets.symmetric(vertical: 8.h),
+            decoration: BoxDecoration(
+              color: AppColors.surfaceContainerLow,
+              borderRadius: BorderRadius.circular(AppConstants.radiusMd),
+            ),
+            child: Row(
+              children: [
+                Expanded(
+                  child: _GridStat(value: teacher.halaqaCount, label: 'حلقات'),
+                ),
+                Container(
+                  width: 1,
+                  height: 32.h,
+                  color: AppColors.outlineVariant,
+                ),
+                Expanded(
+                  child: _GridStat(value: teacher.studentCount, label: 'طلاب'),
+                ),
+              ],
+            ),
+          ),
+          SizedBox(height: 10.h),
+          CardActionRow(
+            compact: true,
+            isActive: isActive,
+            onToggleActive: onToggleActive,
+            onDelete: onDelete,
+            onEdit: onEdit,
+            onTelegram: telegramUri(phone) != null
+                ? () => openTelegram(context, phone)
+                : null,
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+class _GridStat extends StatelessWidget {
+  const _GridStat({required this.value, required this.label});
+  final int value;
+  final String label;
+
+  @override
+  Widget build(BuildContext context) {
+    return Column(
+      children: [
+        AppText(
+          '$value',
+          style: AppTextStyles.headlineSm.copyWith(color: AppColors.onSurface),
+        ),
+        AppText(
+          label,
+          style: AppTextStyles.labelSm.copyWith(
+            color: AppColors.onSurfaceVariant,
+          ),
+        ),
+      ],
     );
   }
 }

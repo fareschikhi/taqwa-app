@@ -11,12 +11,13 @@ import '../../../../core/constants/app_constants.dart';
 import '../../../../core/widgets/app_button.dart';
 import '../../../../core/widgets/app_text_field.dart';
 import '../../../../core/widgets/avatar_widget.dart';
-import '../../../../core/utils/account_validators.dart';
 import '../../../../core/providers/auth_provider.dart';
 import 'package:taqwa/core/widgets/app_text.dart';
+import 'package:taqwa/features/parent/presentation/widgets/parent_chat_button.dart';
 import '../widgets/change_password_sheet.dart';
 import 'package:taqwa/features/data/models/user_model.dart';
 import 'package:taqwa/features/data/repositories/auth_repository_impl.dart';
+import 'package:taqwa/core/widgets/phone_field.dart';
 
 /// Every role that can open the profile needs its own name. A manager used to
 /// fall through to the parent default and be shown as "ولي أمر".
@@ -25,7 +26,7 @@ String roleLabelFor(UserRole role) {
     case UserRole.admin:
       return 'مدير النظام';
     case UserRole.manager:
-      return 'مشرف';
+      return 'إدارة';
     case UserRole.teacher:
       return 'معلم';
     case UserRole.parent:
@@ -174,14 +175,14 @@ class _ProfilePageState extends ConsumerState<ProfilePage> {
         _selectedImage = null;
         _selectedImageBytes = null;
       });
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: AppText('تم حفظ التغييرات')),
-      );
-    } catch (e) {
-      if (!mounted) return;
       ScaffoldMessenger.of(
         context,
-      ).showSnackBar(SnackBar(content: AppText(AuthRepository.errorMessage(e))));
+      ).showSnackBar(const SnackBar(content: AppText('تم حفظ التغييرات')));
+    } catch (e) {
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: AppText(AuthRepository.errorMessage(e))),
+      );
     } finally {
       if (mounted) setState(() => _isSaving = false);
     }
@@ -209,7 +210,9 @@ class _ProfilePageState extends ConsumerState<ProfilePage> {
     if (user == null) {
       return const Scaffold(
         backgroundColor: AppColors.background,
-        body: Center(child: CircularProgressIndicator(color: AppColors.primary)),
+        body: Center(
+          child: CircularProgressIndicator(color: AppColors.primary),
+        ),
       );
     }
     _seedFrom(user);
@@ -223,238 +226,243 @@ class _ProfilePageState extends ConsumerState<ProfilePage> {
           child: SingleChildScrollView(
             physics: const AlwaysScrollableScrollPhysics(),
             child: Column(
-            children: [
-              // Header gradient
-              Container(
-                width: double.infinity,
-                padding: EdgeInsets.fromLTRB(16.w, 16.h, 16.w, 32.h),
-                decoration: const BoxDecoration(
-                  gradient: AppColors.brandGradient,
-                ),
-                child: Column(
-                  children: [
-                    Row(
-                      children: [
-                        if (canEditProfile(user.role))
-                        GestureDetector(
-                          onTap: _toggleEditMode,
-                          child: Container(
-                            padding: EdgeInsets.symmetric(
-                              horizontal: 12.w,
-                              vertical: 6.h,
-                            ),
-                            decoration: BoxDecoration(
-                              color: AppColors.onPrimary.withValues(alpha: 0.2),
-                              borderRadius: BorderRadius.circular(
-                                AppConstants.radiusFull,
+              children: [
+                // Header gradient
+                Container(
+                  width: double.infinity,
+                  padding: EdgeInsets.fromLTRB(16.w, 16.h, 16.w, 32.h),
+                  decoration: const BoxDecoration(
+                    gradient: AppColors.brandGradient,
+                  ),
+                  child: Column(
+                    children: [
+                      Row(
+                        children: [
+                          if (widget.role == 'parent') ...[
+                            const ParentChatButton(onBrand: true),
+                            SizedBox(width: 8.w),
+                          ],
+                          if (canEditProfile(user.role))
+                            GestureDetector(
+                              onTap: _toggleEditMode,
+                              child: Container(
+                                padding: EdgeInsets.symmetric(
+                                  horizontal: 12.w,
+                                  vertical: 6.h,
+                                ),
+                                decoration: BoxDecoration(
+                                  color: AppColors.onPrimary.withValues(
+                                    alpha: 0.2,
+                                  ),
+                                  borderRadius: BorderRadius.circular(
+                                    AppConstants.radiusFull,
+                                  ),
+                                ),
+                                child: Row(
+                                  mainAxisSize: MainAxisSize.min,
+                                  children: [
+                                    Icon(
+                                      _editMode
+                                          ? Icons.close
+                                          : Icons.edit_outlined,
+                                      color: AppColors.onPrimary,
+                                      size: 16.w,
+                                    ),
+                                    SizedBox(width: 4.w),
+                                    AppText(
+                                      _editMode ? 'إلغاء' : 'تعديل',
+                                      style: AppTextStyles.labelSm.copyWith(
+                                        color: AppColors.onPrimary,
+                                      ),
+                                    ),
+                                  ],
+                                ),
                               ),
                             ),
-                            child: Row(
-                              mainAxisSize: MainAxisSize.min,
-                              children: [
-                                Icon(
-                                  _editMode ? Icons.close : Icons.edit_outlined,
-                                  color: AppColors.onPrimary,
-                                  size: 16.w,
-                                ),
-                                SizedBox(width: 4.w),
-                                AppText(
-                                  _editMode ? 'إلغاء' : 'تعديل',
-                                  style: AppTextStyles.labelSm.copyWith(
-                                    color: AppColors.onPrimary,
-                                  ),
-                                ),
-                              ],
+                          const Spacer(),
+                          AppText(
+                            'الحساب',
+                            style: AppTextStyles.headlineMd.copyWith(
+                              color: AppColors.onPrimary,
                             ),
                           ),
-                        ),
-                        const Spacer(),
-                        AppText(
-                          'الحساب',
-                          style: AppTextStyles.headlineMd.copyWith(
-                            color: AppColors.onPrimary,
-                          ),
-                        ),
-                      ],
-                    ),
-                    SizedBox(height: 20.h),
-                    // Avatar
-                    GestureDetector(
-                      onTap: _editMode ? _pickImage : null,
-                      child: Stack(
-                      children: [
-                        // The ring is drawn around the photo, so the image
-                        // itself is the circle inside the 3px border.
-                        Container(
-                          width: 90.w,
-                          height: 90.w,
-                          decoration: BoxDecoration(
-                            shape: BoxShape.circle,
-                            border: Border.all(
-                              color: AppColors.onPrimary.withValues(alpha: 0.5),
-                              width: 3,
-                            ),
-                          ),
-                          child: _selectedImageBytes != null
-                              ? ClipOval(
-                                  child: Image.memory(
-                                    _selectedImageBytes!,
-                                    fit: BoxFit.cover,
-                                  ),
-                                )
-                              : AvatarWidget(
-                                  avatarUrl: user.avatar,
-                                  size: 90.w - 6,
-                                  backgroundColor: AppColors.onPrimary
-                                      .withValues(alpha: 0.2),
-                                  fallback: AppText(
-                                    initialFor(user.fullName),
-                                    style: AppTextStyles.headlineLgMobile
-                                        .copyWith(color: AppColors.onPrimary),
-                                  ),
-                                ),
-                        ),
-                        if (_editMode)
-                          Positioned(
-                            bottom: 0,
-                            left: 0,
-                            child: Container(
-                              width: 28.w,
-                              height: 28.w,
+                        ],
+                      ),
+                      SizedBox(height: 20.h),
+                      // Avatar
+                      GestureDetector(
+                        onTap: _editMode ? _pickImage : null,
+                        child: Stack(
+                          children: [
+                            // The ring is drawn around the photo, so the image
+                            // itself is the circle inside the 3px border.
+                            Container(
+                              width: 90.w,
+                              height: 90.w,
                               decoration: BoxDecoration(
-                                color: AppColors.onPrimary,
                                 shape: BoxShape.circle,
+                                border: Border.all(
+                                  color: AppColors.onPrimary.withValues(
+                                    alpha: 0.5,
+                                  ),
+                                  width: 3,
+                                ),
                               ),
-                              child: Icon(
-                                Icons.camera_alt,
-                                color: AppColors.primary,
-                                size: 16.w,
-                              ),
+                              child: _selectedImageBytes != null
+                                  ? ClipOval(
+                                      child: Image.memory(
+                                        _selectedImageBytes!,
+                                        fit: BoxFit.cover,
+                                      ),
+                                    )
+                                  : AvatarWidget(
+                                      avatarUrl: user.avatar,
+                                      size: 90.w - 6,
+                                      backgroundColor: AppColors.onPrimary
+                                          .withValues(alpha: 0.2),
+                                      fallback: AppText(
+                                        initialFor(user.fullName),
+                                        style: AppTextStyles.headlineLgMobile
+                                            .copyWith(
+                                              color: AppColors.onPrimary,
+                                            ),
+                                      ),
+                                    ),
                             ),
-                          ),
-                      ],
-                      ),
-                    ),
-                    SizedBox(height: 12.h),
-                    AppText(
-                      _nameController.text,
-                      style: AppTextStyles.headlineSm.copyWith(
-                        color: AppColors.onPrimary,
-                      ),
-                    ),
-                    SizedBox(height: 4.h),
-                    Container(
-                      padding: EdgeInsets.symmetric(
-                        horizontal: 12.w,
-                        vertical: 4.h,
-                      ),
-                      decoration: BoxDecoration(
-                        color: AppColors.onPrimary.withValues(alpha: 0.2),
-                        borderRadius: BorderRadius.circular(
-                          AppConstants.radiusFull,
+                            if (_editMode)
+                              Positioned(
+                                bottom: 0,
+                                left: 0,
+                                child: Container(
+                                  width: 28.w,
+                                  height: 28.w,
+                                  decoration: BoxDecoration(
+                                    color: AppColors.onPrimary,
+                                    shape: BoxShape.circle,
+                                  ),
+                                  child: Icon(
+                                    Icons.camera_alt,
+                                    color: AppColors.primary,
+                                    size: 16.w,
+                                  ),
+                                ),
+                              ),
+                          ],
                         ),
                       ),
-                      child: AppText(
-                        roleLabelFor(user.role),
-                        style: AppTextStyles.labelMd.copyWith(
+                      SizedBox(height: 12.h),
+                      AppText(
+                        _nameController.text,
+                        style: AppTextStyles.headlineSm.copyWith(
                           color: AppColors.onPrimary,
                         ),
                       ),
-                    ),
-                  ],
+                      SizedBox(height: 4.h),
+                      Container(
+                        padding: EdgeInsets.symmetric(
+                          horizontal: 12.w,
+                          vertical: 4.h,
+                        ),
+                        decoration: BoxDecoration(
+                          color: AppColors.onPrimary.withValues(alpha: 0.2),
+                          borderRadius: BorderRadius.circular(
+                            AppConstants.radiusFull,
+                          ),
+                        ),
+                        child: AppText(
+                          roleLabelFor(user.role),
+                          style: AppTextStyles.labelMd.copyWith(
+                            color: AppColors.onPrimary,
+                          ),
+                        ),
+                      ),
+                    ],
+                  ),
                 ),
-              ),
-              // Content
-              Padding(
-                padding: EdgeInsets.symmetric(horizontal: 16.w),
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.end,
-                  children: [
-                    SizedBox(height: 24.h),
-                    // Personal info section
-                    _SectionHeader(
-                      title: 'البيانات الشخصية',
-                      icon: Icons.person_outline,
-                    ),
-                    SizedBox(height: 16.h),
-                    AppTextField(
-                      label: 'الاسم الكامل',
-                      hint: 'أدخل اسمك الكامل',
-                      controller: _nameController,
-                      enabled: _editMode,
-                    ),
-                    SizedBox(height: 14.h),
-                    AppTextField(
-                      label: 'رقم الهاتف',
-                      hint: '05XXXXXXXX',
-                      controller: _phoneController,
-                      keyboardType: TextInputType.phone,
-                      maxLength: AccountValidators.phoneLength,
-                      inputFormatters: AccountValidators.phoneInputFormatters,
-                      enabled: _editMode,
-                      prefixIcon: const Icon(
-                        Icons.phone_outlined,
-                        color: AppColors.onSurfaceVariant,
-                      ),
-                    ),
-                    if (_editMode) ContactOwnersHint(
-                      controller: _phoneController,
-                      field: ContactField.phone,
-                      excludeUserId: user.id,
-                    ),
-                    SizedBox(height: 14.h),
-                    AppTextField(
-                      label: 'البريد الإلكتروني',
-                      hint: 'example@email.com',
-                      controller: _emailController,
-                      keyboardType: TextInputType.emailAddress,
-                      enabled: _editMode,
-                      prefixIcon: const Icon(
-                        Icons.email_outlined,
-                        color: AppColors.onSurfaceVariant,
-                      ),
-                    ),
-                    if (_editMode) ContactOwnersHint(
-                      controller: _emailController,
-                      field: ContactField.email,
-                      excludeUserId: user.id,
-                    ),
-                    if (_editMode) ...[
+                // Content
+                Padding(
+                  padding: EdgeInsets.symmetric(horizontal: 16.w),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.end,
+                    children: [
                       SizedBox(height: 24.h),
+                      // Personal info section
+                      _SectionHeader(
+                        title: 'البيانات الشخصية',
+                        icon: Icons.person_outline,
+                      ),
+                      SizedBox(height: 16.h),
+                      AppTextField(
+                        label: 'الاسم الكامل',
+                        hint: 'أدخل اسمك الكامل',
+                        controller: _nameController,
+                        enabled: _editMode,
+                      ),
+                      SizedBox(height: 14.h),
+                      PhoneField(
+                        controller: _phoneController,
+                        enabled: _editMode,
+                      ),
+                      if (_editMode)
+                        ContactOwnersHint(
+                          controller: _phoneController,
+                          field: ContactField.phone,
+                          excludeUserId: user.id,
+                        ),
+                      SizedBox(height: 14.h),
+                      AppTextField(
+                        label: 'البريد الإلكتروني',
+                        hint: 'example@email.com',
+                        controller: _emailController,
+                        keyboardType: TextInputType.emailAddress,
+                        enabled: _editMode,
+                        prefixIcon: const Icon(
+                          Icons.email_outlined,
+                          color: AppColors.onSurfaceVariant,
+                        ),
+                      ),
+                      if (_editMode)
+                        ContactOwnersHint(
+                          controller: _emailController,
+                          field: ContactField.email,
+                          excludeUserId: user.id,
+                        ),
+                      if (_editMode) ...[
+                        SizedBox(height: 24.h),
+                        AppButton(
+                          label: 'حفظ التغييرات',
+                          variant: AppButtonVariant.gradient,
+                          icon: Icons.save_outlined,
+                          isLoading: _isSaving,
+                          onPressed: _save,
+                        ),
+                      ],
+                      SizedBox(height: 24.h),
+                      if (canEditProfile(user.role)) ...[
+                        _SettingsTile(
+                          icon: Icons.lock_outline,
+                          title: 'تغيير كلمة المرور',
+                          onTap: () => ChangePasswordSheet.show(context),
+                        ),
+                        SizedBox(height: 24.h),
+                      ],
+                      // Logout
                       AppButton(
-                        label: 'حفظ التغييرات',
-                        variant: AppButtonVariant.gradient,
-                        icon: Icons.save_outlined,
-                        isLoading: _isSaving,
-                        onPressed: _save,
+                        label: 'تسجيل الخروج',
+                        variant: AppButtonVariant.secondary,
+                        icon: Icons.logout,
+                        onPressed: () => _logout(),
                       ),
+                      SizedBox(height: 32.h),
                     ],
-                    SizedBox(height: 24.h),
-                    if (canEditProfile(user.role)) ...[
-                      _SettingsTile(
-                        icon: Icons.lock_outline,
-                        title: 'تغيير كلمة المرور',
-                        onTap: () => ChangePasswordSheet.show(context),
-                      ),
-                      SizedBox(height: 24.h),
-                    ],
-                    // Logout
-                    AppButton(
-                      label: 'تسجيل الخروج',
-                      variant: AppButtonVariant.secondary,
-                      icon: Icons.logout,
-                      onPressed: () => _logout(),
-                    ),
-                    SizedBox(height: 32.h),
-                  ],
+                  ),
                 ),
-              ),
-            ],
+              ],
+            ),
           ),
         ),
       ),
-    ),
-  );
+    );
   }
 }
 

@@ -9,23 +9,29 @@ import '../../../../core/theme/app_text_styles.dart';
 import '../../../../core/widgets/app_button.dart';
 import '../../../../core/utils/account_validators.dart';
 import '../../../../core/widgets/app_text_field.dart';
+import '../../../../core/widgets/phone_field.dart';
 import '../../../data/models/parent/parent_child_model.dart';
 import '../../../data/models/parent/parent_model.dart';
 import '../../../data/models/parent/parent_payload_dto.dart';
 import '../../../data/repositories/parent_repository.dart';
+import '../../../data/repositories/student_repository.dart';
 import '../widgets/avatar_picker_field.dart';
+import '../widgets/children_picker.dart';
 import '../widgets/form_section.dart';
-import '../widgets/linked_student_tile.dart';
 import 'package:taqwa/core/widgets/app_text.dart';
 
 /// Create or edit a parent account. Shared by the admin and the manager
 /// sections — both roles hit the same POST/PATCH /parents routes, so they get
 /// the same form, photo picker included.
 class ParentFormPage extends StatefulWidget {
-  const ParentFormPage({super.key, this.parent});
+  const ParentFormPage({super.key, this.parent, this.loadChildCandidates});
 
   /// Parent being edited; null means "create a new one".
   final ParentModel? parent;
+
+  /// Fetches the students the children picker offers. Defaults to every
+  /// child student from the API; tests pass a stub.
+  final Future<List<ParentChildModel>> Function()? loadChildCandidates;
 
   @override
   State<ParentFormPage> createState() => _ParentFormPageState();
@@ -44,6 +50,13 @@ class _ParentFormPageState extends State<ParentFormPage> {
   XFile? _pickedImage;
   bool _isLoading = false;
 
+  /// The parent's children as picked in the form, starting from the ones
+  /// already linked.
+  late final List<ParentChildModel> _children = [...?widget.parent?.children];
+  List<ParentChildModel> _childCandidates = [];
+  bool _isLoadingCandidates = false;
+  bool _candidatesFailed = false;
+
   bool get _isEditing => widget.parent != null;
 
   @override
@@ -56,6 +69,34 @@ class _ParentFormPageState extends State<ParentFormPage> {
       _emailController.text = parent.email ?? '';
       _addressController.text = parent.address ?? '';
     }
+    _loadChildCandidates();
+  }
+
+  Future<void> _loadChildCandidates() async {
+    setState(() {
+      _isLoadingCandidates = true;
+      _candidatesFailed = false;
+    });
+    try {
+      final load =
+          widget.loadChildCandidates ?? StudentRepository().getChildStudents;
+      final candidates = await load();
+      if (mounted) setState(() => _childCandidates = candidates);
+    } catch (_) {
+      if (mounted) setState(() => _candidatesFailed = true);
+    } finally {
+      if (mounted) setState(() => _isLoadingCandidates = false);
+    }
+  }
+
+  List<int> get _childIds => _children.map((c) => c.id).toList();
+
+  /// Whether the picked children differ from the ones the parent came with,
+  /// so an edit that leaves them alone sends no `studentIds`.
+  bool get _childrenChanged {
+    final before = {...?widget.parent?.children.map((c) => c.id)};
+    final after = _childIds.toSet();
+    return before.length != after.length || !before.containsAll(after);
   }
 
   @override
@@ -88,6 +129,7 @@ class _ParentFormPageState extends State<ParentFormPage> {
           'address': _addressController.text.trim(),
           'avatar': ?avatarUrl,
           if (password.isNotEmpty) 'password': password,
+          if (_childrenChanged) 'studentIds': _childIds,
         });
       } else {
         await _repo.createParent(
@@ -98,6 +140,7 @@ class _ParentFormPageState extends State<ParentFormPage> {
             email: _emailController.text.trim(),
             address: _addressController.text.trim(),
             avatar: avatarUrl,
+            studentIds: _childIds,
           ),
         );
       }
@@ -115,9 +158,9 @@ class _ParentFormPageState extends State<ParentFormPage> {
       Navigator.pop(context, true);
     } catch (e) {
       if (!mounted) return;
-      ScaffoldMessenger.of(
-        context,
-      ).showSnackBar(SnackBar(content: AppText(ParentRepository.errorMessage(e))));
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: AppText(ParentRepository.errorMessage(e))),
+      );
     } finally {
       if (mounted) setState(() => _isLoading = false);
     }
@@ -141,10 +184,8 @@ class _ParentFormPageState extends State<ParentFormPage> {
                     children: [
                       SizedBox(height: 24.h),
                       _buildCard(),
-                      if (_isEditing) ...[
-                        SizedBox(height: 16.h),
-                        _buildStudentsCard(widget.parent!.children),
-                      ],
+                      SizedBox(height: 16.h),
+                      _buildStudentsCard(),
                       SizedBox(height: 32.h),
                       AppButton(
                         label: _isEditing
@@ -174,20 +215,20 @@ class _ParentFormPageState extends State<ParentFormPage> {
   }
 
   BoxDecoration get _cardDecoration => BoxDecoration(
-        color: AppColors.surfaceContainerLowest,
-        borderRadius: BorderRadius.circular(AppConstants.radiusXl),
-        boxShadow: const [
-          BoxShadow(
-            color: Color.fromRGBO(18, 52, 59, 0.04),
-            blurRadius: 20,
-            offset: Offset(0, 4),
-          ),
-        ],
-      );
+    color: AppColors.surfaceContainerLowest,
+    borderRadius: BorderRadius.circular(AppConstants.radiusXl),
+    boxShadow: const [
+      BoxShadow(
+        color: Color.fromRGBO(18, 52, 59, 0.04),
+        blurRadius: 20,
+        offset: Offset(0, 4),
+      ),
+    ],
+  );
 
-  /// The parent's linked students, as they came with the parent from
-  /// GET /parents. Tapping one opens its details page.
-  Widget _buildStudentsCard(List<ParentChildModel> students) {
+  /// The parent's children: the ones already linked, plus a search to link
+  /// more. Saving the form saves the picked list.
+  Widget _buildStudentsCard() {
     return Container(
       width: double.infinity,
       padding: EdgeInsets.all(20.w),
@@ -197,24 +238,30 @@ class _ParentFormPageState extends State<ParentFormPage> {
         children: [
           FormSectionHeader(
             icon: Icons.school_outlined,
-            title: 'الطلاب المرتبطون (${students.length})',
+            title: 'الطلاب المرتبطون (${_children.length})',
+          ),
+          SizedBox(height: 4.h),
+          Align(
+            alignment: AlignmentDirectional.centerEnd,
+            child: AppText(
+              'ابحث عن أبناء ولي الأمر وأضفهم إلى حسابه.',
+              style: AppTextStyles.labelSm.copyWith(
+                color: AppColors.onSurfaceVariant,
+              ),
+            ),
           ),
           SizedBox(height: 12.h),
-          if (students.isEmpty)
-            Align(
-              alignment: AlignmentDirectional.centerEnd,
-              child: AppText(
-                'لا يوجد طلاب مرتبطون بولي الأمر هذا.',
-                style: AppTextStyles.labelSm.copyWith(
-                  color: AppColors.onSurfaceVariant,
-                ),
-              ),
-            )
-          else
-            for (final student in students) ...[
-              LinkedStudentTile(student: student),
-              if (student != students.last) SizedBox(height: 8.h),
-            ],
+          ChildrenPicker(
+            candidates: _childCandidates,
+            selected: _children,
+            parentId: widget.parent?.id,
+            isLoading: _isLoadingCandidates,
+            loadFailed: _candidatesFailed,
+            onRetry: _loadChildCandidates,
+            onAdd: (s) => setState(() => _children.add(s)),
+            onRemove: (s) =>
+                setState(() => _children.removeWhere((c) => c.id == s.id)),
+          ),
         ],
       ),
     );
@@ -251,7 +298,7 @@ class _ParentFormPageState extends State<ParentFormPage> {
           SizedBox(height: 16.h),
           AppTextField(
             label: 'العنوان / الحي (اختياري)',
-            hint: 'مثال: حي الياسمين، الرياض',
+            hint: 'أدخل العنوان أو الحي',
             controller: _addressController,
             prefixIcon: const Icon(
               Icons.location_on_outlined,
@@ -264,18 +311,9 @@ class _ParentFormPageState extends State<ParentFormPage> {
             title: 'بيانات الاتصال والحساب',
           ),
           SizedBox(height: 16.h),
-          AppTextField(
-            label: 'رقم الهاتف',
-            hint: '05XXXXXXXX',
+          PhoneField(
             controller: _phoneController,
-            keyboardType: TextInputType.phone,
-            maxLength: AccountValidators.phoneLength,
-            inputFormatters: AccountValidators.phoneInputFormatters,
             validator: AccountValidators.phone,
-            prefixIcon: const Icon(
-              Icons.phone_outlined,
-              color: AppColors.onSurfaceVariant,
-            ),
           ),
           ContactOwnersHint(
             controller: _phoneController,

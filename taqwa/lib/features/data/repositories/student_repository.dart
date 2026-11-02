@@ -2,6 +2,7 @@ import 'package:dio/dio.dart';
 import 'package:taqwa/features/data/models/student/student_payload_dto.dart';
 import '../datasources/student_remote_datasource.dart';
 import '../models/student/student_model.dart';
+import '../models/parent/parent_child_model.dart';
 import '../models/attendance_summary_model.dart';
 import '../models/student_note_model.dart';
 
@@ -9,6 +10,16 @@ class StudentRepository {
   final _ds = StudentRemoteDatasource();
 
   Future<List<StudentModel>> getAllStudents() => _ds.getAll();
+
+  /// Every child (non-adult) student, in the parent-children shape — the
+  /// candidates of the parent form's children picker.
+  Future<List<ParentChildModel>> getChildStudents() async {
+    final rows = await _ds.getAllRaw();
+    return rows
+        .where((r) => (r['user'] as Map<String, dynamic>?)?['role'] == 'STUDENT')
+        .map(ParentChildModel.fromJson)
+        .toList();
+  }
 
   Future<int> getStudentsCount() => _ds.getCount();
 

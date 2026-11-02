@@ -57,7 +57,8 @@ void main() {
     expect(find.text('حلقة النور'), findsOneWidget);
     expect(find.text('مبتدئ'), findsOneWidget);
     expect(find.text('مسموح'), findsOneWidget);
-    expect(find.text('غير مسموح'), findsOneWidget);
+    // Delete accounts and chat are both refused.
+    expect(find.text('غير مسموح'), findsNWidgets(2));
     expect(find.text('5'), findsOneWidget);
     expect(find.byIcon(Icons.edit_outlined), findsOneWidget);
     // No number, so nothing to open Telegram with.
@@ -91,5 +92,22 @@ void main() {
 
     expect(find.text('الحلقات المعينة (0)'), findsOneWidget);
     expect(find.text('لم تُعيَّن أي حلقة لهذا المدير.'), findsOneWidget);
+  });
+
+  testWidgets('lists the chat privilege', (tester) async {
+    _phoneScreen(tester);
+    final manager = ManagerModel.fromJson({
+      'id': 7,
+      'canChat': true,
+      'user': {'fullName': 'مدير'},
+      'halaqas': [],
+    });
+
+    await tester.pumpWidget(_host(ManagerDetailsPage(manager: manager)));
+    await tester.pumpAndSettle();
+
+    expect(find.text('المحادثات مع أولياء الأمور'), findsOneWidget);
+    // Chat is the only privilege granted here.
+    expect(find.text('مسموح'), findsOneWidget);
   });
 }

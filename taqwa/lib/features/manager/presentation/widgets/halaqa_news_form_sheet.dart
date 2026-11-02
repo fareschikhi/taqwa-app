@@ -18,24 +18,31 @@ import 'package:taqwa/features/data/repositories/halaqa_repository.dart';
 /// The halaqa list is fetched per role rather than passed in: a manager may
 /// only post to halaqas assigned to them, and `GET /halaqas` is
 /// ADMIN/TEACHER-only and 403s for them — the split [HalaqaRepository]
-/// already documents.
+/// already documents. A teacher passes neither, and `GET /halaqas` hands them
+/// their own halaqas.
 class HalaqaNewsFormSheet extends StatefulWidget {
   const HalaqaNewsFormSheet({
     super.key,
     required this.isAdmin,
     this.managerId,
     this.existing,
+    this.initialHalaqaId,
   });
 
   final bool isAdmin;
   final int? managerId;
   final HalaqaAnnouncementModel? existing;
 
+  /// Preselected for new news when it is one of the halaqas offered — the
+  /// teacher's switcher pick, so the news goes where they are looking.
+  final int? initialHalaqaId;
+
   static Future<bool> show(
     BuildContext context, {
     required bool isAdmin,
     int? managerId,
     HalaqaAnnouncementModel? existing,
+    int? initialHalaqaId,
   }) async {
     final saved = await showModalBottomSheet<bool>(
       context: context,
@@ -45,6 +52,7 @@ class HalaqaNewsFormSheet extends StatefulWidget {
         isAdmin: isAdmin,
         managerId: managerId,
         existing: existing,
+        initialHalaqaId: initialHalaqaId,
       ),
     );
     return saved ?? false;
@@ -101,8 +109,14 @@ class _HalaqaNewsFormSheetState extends State<HalaqaNewsFormSheet> {
       setState(() {
         _halaqas = halaqas;
         _isLoadingHalaqas = false;
-        // One halaqa means there is nothing to choose.
-        _halaqaId ??= halaqas.length == 1 ? halaqas.first.id : null;
+        // The halaqa the caller is looking at; else, one halaqa means there
+        // is nothing to choose.
+        final initial = widget.initialHalaqaId;
+        _halaqaId ??= halaqas.any((h) => h.id == initial)
+            ? initial
+            : halaqas.length == 1
+            ? halaqas.first.id
+            : null;
       });
     } catch (e) {
       if (!mounted) return;

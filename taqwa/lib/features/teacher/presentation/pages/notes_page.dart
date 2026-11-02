@@ -6,7 +6,10 @@ import '../../../../core/theme/app_text_styles.dart';
 import '../../../../core/constants/app_constants.dart';
 import '../../../../core/widgets/app_button.dart';
 import '../../../../core/widgets/confirm_delete_dialog.dart';
+import '../../../../core/widgets/expandable_text.dart';
+import '../../../../core/widgets/note_timeline.dart' show kNoteFoldedLines;
 import '../../../../core/providers/auth_provider.dart';
+import '../../../../core/providers/selected_halaqa_provider.dart';
 import '../../../data/repositories/teacher_repository.dart';
 import '../../../data/models/teacher_student_model.dart';
 import '../../../data/models/student_note_model.dart';
@@ -21,16 +24,40 @@ class NotesPage extends ConsumerStatefulWidget {
 
 class _NotesPageState extends ConsumerState<NotesPage> {
   final _noteController = TextEditingController();
-  TeacherStudentModel? _selectedStudent;
-  // Picked "all students": one note addressed to every student in _students.
-  // Mutually exclusive with _selectedStudent.
-  bool _allStudents = false;
+  // The students the note goes to; several are sent one shared note.
+  Set<int> _selectedIds = {};
+  // The note the form is rewriting; null while it writes a new one.
+  StudentNoteModel? _editingNote;
   bool _showForm = false;
   bool _isSaving = false;
   bool _isLoading = true;
 
-  List<TeacherStudentModel> _students = [];
-  List<StudentNoteModel> _notes = [];
+  // Every halaqa's students and notes, loaded once; a halaqa switch only
+  // changes which of them [_students] and [_notes] let through.
+  List<TeacherStudentModel> _roster = [];
+  List<StudentNoteModel> _allNotes = [];
+
+  /// The halaqa picked in the shell's switcher: the students the picker
+  /// offers, and the ones "all students" addresses.
+  List<TeacherStudentModel> get _students {
+    final selected = ref.read(selectedHalaqaProvider).selected;
+    return _roster
+        .where((s) => inSelectedHalaqa(s.halaqaId, selected))
+        .toList();
+  }
+
+  /// Notes addressed to anyone in that halaqa. A note sent to several
+  /// halaqas before the switcher existed shows under each of them.
+  List<StudentNoteModel> get _notes {
+    if (ref.read(selectedHalaqaProvider).selected == null) return _allNotes;
+    final ids = _students.map((s) => s.id).toSet();
+    return _allNotes.where((n) {
+      final recipients = n.recipientIds.isEmpty
+          ? [n.studentId]
+          : n.recipientIds;
+      return recipients.any(ids.contains);
+    }).toList();
+  }
 
   final _repo = TeacherRepository();
 
@@ -56,8 +83,8 @@ class _NotesPageState extends ConsumerState<NotesPage> {
         _repo.getNotesByTeacher(tid),
       ]);
       setState(() {
-        _students = (results[0] as StudentListResponse).data;
-        _notes = results[1] as List<StudentNoteModel>;
+        _roster = (results[0] as StudentListResponse).data;
+        _allNotes = results[1] as List<StudentNoteModel>;
         _isLoading = false;
       });
     } catch (_) {
@@ -66,32 +93,31 @@ class _NotesPageState extends ConsumerState<NotesPage> {
   }
 
   Future<void> _saveNote() async {
+    if (_editingNote != null) return _saveEdit(_editingNote!);
     final tid = _teacherId;
     if (tid == null) return;
-    if (_selectedStudent == null && !(_allStudents && _students.isNotEmpty)) {
-      return;
-    }
+    final ids = _selectedIds.toList();
+    if (ids.isEmpty) return;
     final text = _noteController.text.trim();
     if (text.isEmpty) return;
 
     setState(() => _isSaving = true);
     try {
-      final newNote = _allStudents
+      final newNote = ids.length > 1
           ? await _repo.createBulkNote(
-              studentIds: _students.map((s) => s.id).toList(),
+              studentIds: ids,
               teacherId: tid,
               note: text,
             )
           : await _repo.createNote(
-              studentId: _selectedStudent!.id,
+              studentId: ids.single,
               teacherId: tid,
               note: text,
             );
       setState(() {
-        _notes = [newNote, ..._notes];
+        _allNotes = [newNote, ..._allNotes];
         _showForm = false;
-        _selectedStudent = null;
-        _allStudents = false;
+        _selectedIds = {};
         _noteController.clear();
         _isSaving = false;
       });
@@ -100,17 +126,67 @@ class _NotesPageState extends ConsumerState<NotesPage> {
     }
   }
 
+  Future<void> _saveEdit(StudentNoteModel original) async {
+    final text = _noteController.text.trim();
+    if (text.isEmpty) return;
+    if (text == original.note) {
+      _closeForm();
+      return;
+    }
+
+    setState(() => _isSaving = true);
+    try {
+      final updated = await _repo.updateNote(id: original.id, note: text);
+      setState(() {
+        _allNotes = [
+          for (final n in _allNotes) n.id == updated.id ? updated : n,
+        ];
+        _isSaving = false;
+      });
+      _closeForm();
+    } catch (_) {
+      if (!mounted) return;
+      setState(() => _isSaving = false);
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: AppText('تعذّر حفظ التعديل، حاول مرة أخرى')),
+      );
+    }
+  }
+
+  void _startEdit(StudentNoteModel note) {
+    setState(() {
+      _editingNote = note;
+      _noteController.text = note.note;
+      _showForm = true;
+    });
+  }
+
+  /// Leaves edit mode too, so the next "إضافة ملاحظة" starts blank rather
+  /// than on the note that was being rewritten.
+  void _closeForm() {
+    setState(() {
+      _showForm = false;
+      if (_editingNote != null) {
+        _editingNote = null;
+        _noteController.clear();
+      }
+    });
+  }
+
   Future<void> _deleteNote(int noteId) async {
+    // A note deleted while open in the form has nothing left to save into.
+    if (_editingNote?.id == noteId) _closeForm();
     try {
       await _repo.deleteNote(noteId);
-      setState(() => _notes.removeWhere((n) => n.id == noteId));
+      setState(() => _allNotes.removeWhere((n) => n.id == noteId));
     } catch (_) {}
   }
 
-  Future<void> _pickStudent() async {
+  Future<void> _pickStudents() async {
     String query = '';
-    // Either a TeacherStudentModel or _allStudentsChoice.
-    final selected = await showModalBottomSheet<Object>(
+    // Edited in the sheet; only applied when the teacher confirms.
+    final picked = {..._selectedIds};
+    final selected = await showModalBottomSheet<Set<int>>(
       context: context,
       isScrollControlled: true,
       shape: RoundedRectangleBorder(
@@ -123,10 +199,11 @@ class _NotesPageState extends ConsumerState<NotesPage> {
           builder: (ctx, setSheetState) {
             final filtered = _students
                 .where(
-                  (s) =>
-                      s.fullName.toLowerCase().contains(query.toLowerCase()),
+                  (s) => s.fullName.toLowerCase().contains(query.toLowerCase()),
                 )
                 .toList();
+            final allPicked =
+                _students.isNotEmpty && picked.length == _students.length;
             return SafeArea(
               child: Padding(
                 padding: EdgeInsets.only(
@@ -140,7 +217,7 @@ class _NotesPageState extends ConsumerState<NotesPage> {
                   crossAxisAlignment: CrossAxisAlignment.end,
                   children: [
                     AppText(
-                      'اختر الطالب',
+                      'اختر الطلاب',
                       style: AppTextStyles.headlineSm.copyWith(
                         color: AppColors.primary,
                       ),
@@ -196,11 +273,13 @@ class _NotesPageState extends ConsumerState<NotesPage> {
                     ),
                     SizedBox(height: 8.h),
                     if (query.isEmpty && _students.isNotEmpty) ...[
-                      ListTile(
-                        trailing: const Icon(
-                          Icons.group,
-                          color: AppColors.primary,
-                        ),
+                      CheckboxListTile(
+                        controlAffinity: ListTileControlAffinity.trailing,
+                        activeColor: AppColors.primary,
+                        tristate: true,
+                        value: allPicked
+                            ? true
+                            : (picked.isEmpty ? false : null),
                         title: AppText(
                           'جميع الطلاب (${_students.length})',
                           style: AppTextStyles.labelMdBold.copyWith(
@@ -208,7 +287,13 @@ class _NotesPageState extends ConsumerState<NotesPage> {
                           ),
                           textAlign: TextAlign.end,
                         ),
-                        onTap: () => Navigator.pop(ctx, _allStudentsChoice),
+                        onChanged: (_) => setSheetState(() {
+                          if (allPicked) {
+                            picked.clear();
+                          } else {
+                            picked.addAll(_students.map((s) => s.id));
+                          }
+                        }),
                       ),
                       Divider(height: 1, color: AppColors.outlineVariant),
                     ],
@@ -233,16 +318,37 @@ class _NotesPageState extends ConsumerState<NotesPage> {
                               ),
                               itemBuilder: (_, i) {
                                 final s = filtered[i];
-                                return ListTile(
+                                return CheckboxListTile(
+                                  controlAffinity:
+                                      ListTileControlAffinity.trailing,
+                                  activeColor: AppColors.primary,
+                                  value: picked.contains(s.id),
                                   title: AppText(
                                     s.fullName,
                                     style: AppTextStyles.bodyMd,
                                     textAlign: TextAlign.end,
                                   ),
-                                  onTap: () => Navigator.pop(ctx, s),
+                                  onChanged: (checked) => setSheetState(() {
+                                    if (checked ?? false) {
+                                      picked.add(s.id);
+                                    } else {
+                                      picked.remove(s.id);
+                                    }
+                                  }),
                                 );
                               },
                             ),
+                    ),
+                    SizedBox(height: 12.h),
+                    AppButton(
+                      label: picked.isEmpty
+                          ? 'اختر طالبًا واحدًا على الأقل'
+                          : 'تأكيد (${picked.length})',
+                      variant: AppButtonVariant.primary,
+                      height: 44.h,
+                      onPressed: picked.isEmpty
+                          ? null
+                          : () => Navigator.pop(ctx, {...picked}),
                     ),
                   ],
                 ),
@@ -253,17 +359,20 @@ class _NotesPageState extends ConsumerState<NotesPage> {
       },
     );
     if (selected == null) return;
-    setState(() {
-      _allStudents = selected == _allStudentsChoice;
-      _selectedStudent = selected is TeacherStudentModel ? selected : null;
-    });
+    setState(() => _selectedIds = selected);
   }
 
-  static const _allStudentsChoice = 'all';
-
-  String? get _recipientLabel => _allStudents
-      ? 'جميع الطلاب (${_students.length})'
-      : _selectedStudent?.fullName;
+  String? get _recipientLabel {
+    if (_selectedIds.isEmpty) return null;
+    if (_selectedIds.length == 1) {
+      final id = _selectedIds.single;
+      return _students.where((s) => s.id == id).firstOrNull?.fullName;
+    }
+    if (_selectedIds.length == _students.length) {
+      return 'جميع الطلاب (${_students.length})';
+    }
+    return studentCountLabel(_selectedIds.length);
+  }
 
   @override
   void dispose() {
@@ -274,10 +383,17 @@ class _NotesPageState extends ConsumerState<NotesPage> {
   @override
   Widget build(BuildContext context) {
     ref.listen(authProvider, (previous, next) {
-      if (next.user?.teacherId != null && _students.isEmpty && !_isLoading) {
+      if (next.user?.teacherId != null && _roster.isEmpty && !_isLoading) {
         _loadData();
       }
     });
+    ref.listen(selectedHalaqaProvider, (previous, next) {
+      if (next.selected?.id == previous?.selected?.id) return;
+      // A recipient picked in the halaqa just left is not in this one; the
+      // text typed so far is kept.
+      setState(() => _selectedIds = {});
+    });
+    ref.watch(selectedHalaqaProvider.select((s) => s.selected?.id));
 
     return Scaffold(
       backgroundColor: AppColors.background,
@@ -321,8 +437,14 @@ class _NotesPageState extends ConsumerState<NotesPage> {
                               variant: AppButtonVariant.gradient,
                               icon: Icons.add,
                               height: 44.h,
-                              onPressed: () =>
-                                  setState(() => _showForm = !_showForm),
+                              // While an edit is open this swaps it for a
+                              // blank note instead of closing the form.
+                              onPressed: () => _editingNote != null
+                                  ? setState(() {
+                                      _editingNote = null;
+                                      _noteController.clear();
+                                    })
+                                  : setState(() => _showForm = !_showForm),
                             ),
                           ),
                         ],
@@ -352,50 +474,55 @@ class _NotesPageState extends ConsumerState<NotesPage> {
                           crossAxisAlignment: CrossAxisAlignment.end,
                           children: [
                             AppText(
-                              'ملاحظة جديدة',
+                              _editingNote != null
+                                  ? 'تعديل الملاحظة'
+                                  : 'ملاحظة جديدة',
                               style: AppTextStyles.headlineSm.copyWith(
                                 color: AppColors.primary,
                               ),
                             ),
                             SizedBox(height: 12.h),
-                            GestureDetector(
-                              onTap: _pickStudent,
-                              child: Container(
-                                width: double.infinity,
-                                decoration: BoxDecoration(
-                                  color: AppColors.surfaceContainerLow,
-                                  borderRadius: BorderRadius.circular(
-                                    AppConstants.radiusMd,
-                                  ),
-                                  border: Border.all(
-                                    color: AppColors.inputBorder,
-                                  ),
-                                ),
-                                padding: EdgeInsets.symmetric(
-                                  horizontal: 16.w,
-                                  vertical: 14.h,
-                                ),
-                                child: Row(
-                                  children: [
-                                    const Icon(
-                                      Icons.arrow_drop_down,
-                                      color: AppColors.primary,
+                            if (_editingNote != null)
+                              _LockedRecipients(note: _editingNote!)
+                            else
+                              GestureDetector(
+                                onTap: _pickStudents,
+                                child: Container(
+                                  width: double.infinity,
+                                  decoration: BoxDecoration(
+                                    color: AppColors.surfaceContainerLow,
+                                    borderRadius: BorderRadius.circular(
+                                      AppConstants.radiusMd,
                                     ),
-                                    Expanded(
-                                      child: AppText(
-                                        _recipientLabel ?? 'اختر الطالب...',
-                                        style: AppTextStyles.labelMd.copyWith(
-                                          color: _recipientLabel != null
-                                              ? AppColors.onSurface
-                                              : AppColors.inputPlaceholder,
-                                        ),
-                                        textAlign: TextAlign.end,
+                                    border: Border.all(
+                                      color: AppColors.inputBorder,
+                                    ),
+                                  ),
+                                  padding: EdgeInsets.symmetric(
+                                    horizontal: 16.w,
+                                    vertical: 14.h,
+                                  ),
+                                  child: Row(
+                                    children: [
+                                      const Icon(
+                                        Icons.arrow_drop_down,
+                                        color: AppColors.primary,
                                       ),
-                                    ),
-                                  ],
+                                      Expanded(
+                                        child: AppText(
+                                          _recipientLabel ?? 'اختر الطلاب...',
+                                          style: AppTextStyles.labelMd.copyWith(
+                                            color: _recipientLabel != null
+                                                ? AppColors.onSurface
+                                                : AppColors.inputPlaceholder,
+                                          ),
+                                          textAlign: TextAlign.end,
+                                        ),
+                                      ),
+                                    ],
+                                  ),
                                 ),
                               ),
-                            ),
                             SizedBox(height: 12.h),
                             TextField(
                               controller: _noteController,
@@ -446,14 +573,15 @@ class _NotesPageState extends ConsumerState<NotesPage> {
                                     label: 'إلغاء',
                                     variant: AppButtonVariant.secondary,
                                     height: 40.h,
-                                    onPressed: () =>
-                                        setState(() => _showForm = false),
+                                    onPressed: _closeForm,
                                   ),
                                 ),
                                 SizedBox(width: 8.w),
                                 Expanded(
                                   child: AppButton(
-                                    label: 'حفظ',
+                                    label: _editingNote != null
+                                        ? 'حفظ التعديل'
+                                        : 'حفظ',
                                     variant: AppButtonVariant.primary,
                                     height: 40.h,
                                     isLoading: _isSaving,
@@ -490,6 +618,7 @@ class _NotesPageState extends ConsumerState<NotesPage> {
                                   SizedBox(height: 16.h),
                               itemBuilder: (_, i) => _NoteCard(
                                 note: _notes[i],
+                                onEdit: () => _startEdit(_notes[i]),
                                 onDelete: () => _deleteNote(_notes[i].id),
                               ),
                             ),
@@ -503,14 +632,19 @@ class _NotesPageState extends ConsumerState<NotesPage> {
 }
 
 class _NoteCard extends StatelessWidget {
-  const _NoteCard({required this.note, required this.onDelete});
+  const _NoteCard({
+    required this.note,
+    required this.onEdit,
+    required this.onDelete,
+  });
   final StudentNoteModel note;
+  final VoidCallback onEdit;
   final VoidCallback onDelete;
 
   @override
   Widget build(BuildContext context) {
     final title = note.isBulk
-        ? 'جميع الطلاب (${note.recipientIds.length})'
+        ? studentCountLabel(note.recipientIds.length)
         : note.studentName ?? '';
     final initial = (note.studentName?.isNotEmpty ?? false)
         ? note.studentName![0]
@@ -602,13 +736,13 @@ class _NoteCard extends StatelessWidget {
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.end,
               children: [
-                AppText(
+                ExpandableText(
                   note.note,
                   style: AppTextStyles.bodyMd.copyWith(
                     color: AppColors.onSurface,
                     height: 1.7,
                   ),
-                  textAlign: TextAlign.end,
+                  maxLines: kNoteFoldedLines,
                 ),
                 SizedBox(height: 12.h),
                 Row(
@@ -643,6 +777,27 @@ class _NoteCard extends StatelessWidget {
                         ],
                       ),
                     ),
+                    SizedBox(width: 16.w),
+                    GestureDetector(
+                      onTap: onEdit,
+                      child: Row(
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          const Icon(
+                            Icons.edit_outlined,
+                            color: AppColors.primary,
+                            size: 18,
+                          ),
+                          SizedBox(width: 4.w),
+                          AppText(
+                            'تعديل',
+                            style: AppTextStyles.labelSm.copyWith(
+                              color: AppColors.primary,
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
                   ],
                 ),
               ],
@@ -652,4 +807,54 @@ class _NoteCard extends StatelessWidget {
       ),
     );
   }
+}
+
+/// Who a note being edited went to. Shown where the picker sits for a new
+/// note, but fixed: an edit changes the text, not the students.
+class _LockedRecipients extends StatelessWidget {
+  const _LockedRecipients({required this.note});
+  final StudentNoteModel note;
+
+  @override
+  Widget build(BuildContext context) {
+    final label = note.isBulk
+        ? studentCountLabel(note.recipientIds.length)
+        : note.studentName ?? '';
+    return Container(
+      width: double.infinity,
+      decoration: BoxDecoration(
+        color: AppColors.surfaceContainerLow,
+        borderRadius: BorderRadius.circular(AppConstants.radiusMd),
+        border: Border.all(color: AppColors.inputBorder),
+      ),
+      padding: EdgeInsets.symmetric(horizontal: 16.w, vertical: 14.h),
+      child: Row(
+        children: [
+          Icon(
+            Icons.lock_outline,
+            size: 18.w,
+            color: AppColors.onSurfaceVariant,
+          ),
+          Expanded(
+            child: AppText(
+              label,
+              style: AppTextStyles.labelMd.copyWith(
+                color: AppColors.onSurfaceVariant,
+              ),
+              textAlign: TextAlign.end,
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+/// "طالبان", "3 طلاب", "11 طالبًا": the recipients of a note sent to several.
+@visibleForTesting
+String studentCountLabel(int count) {
+  if (count == 2) return 'طالبان';
+  final mod100 = count % 100;
+  if (mod100 >= 3 && mod100 <= 10) return '$count طلاب';
+  return '$count طالبًا';
 }

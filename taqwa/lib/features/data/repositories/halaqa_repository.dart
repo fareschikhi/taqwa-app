@@ -1,6 +1,7 @@
 import 'package:dio/dio.dart';
 import 'package:taqwa/features/data/datasources/halaqa_remote_datasource.dart';
 import 'package:taqwa/features/data/models/halaqa/halaqa_model.dart';
+import 'package:taqwa/features/data/models/student/student_model.dart';
 
 class HalaqaRepository {
   final _ds = HalaqaRemoteDatasource();
@@ -15,6 +16,8 @@ class HalaqaRepository {
       _ds.getForManager(managerId);
 
   Future<HalaqaModel> getHalaqa(int id) => _ds.getOne(id);
+
+  Future<List<StudentModel>> getHalaqaRoster(int id) => _ds.getRoster(id);
 
   Future<HalaqaModel> createHalaqa(Map<String, dynamic> data) =>
       _ds.create(data);

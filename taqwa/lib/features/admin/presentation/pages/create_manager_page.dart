@@ -16,6 +16,8 @@ import '../../../../features/data/repositories/halaqa_repository.dart';
 import '../../../../features/data/models/manager_model.dart';
 import 'package:taqwa/core/widgets/app_text.dart';
 import 'package:taqwa/core/utils/student_grouping.dart';
+import 'package:taqwa/core/widgets/phone_field.dart';
+import 'package:taqwa/features/admin/presentation/widgets/privilege_switch.dart';
 
 class CreateManagerPage extends StatefulWidget {
   /// Pass [editManager] to pre-fill the form for editing an existing manager.
@@ -42,6 +44,7 @@ class _CreateManagerPageState extends State<CreateManagerPage> {
   bool _canManageAccounts = false;
   bool _canDeleteAccounts = false;
   bool _canAccessUnassigned = false;
+  bool _canChat = false;
   bool get _isEditing => widget.editManager != null;
 
   @override
@@ -56,6 +59,7 @@ class _CreateManagerPageState extends State<CreateManagerPage> {
       _canManageAccounts = m.canManageAccounts;
       _canDeleteAccounts = m.canDeleteAccounts;
       _canAccessUnassigned = m.canAccessUnassigned;
+      _canChat = m.canChat;
       if (m.halaqas != null) {
         for (final h in m.halaqas!) {
           final id = h['id'];
@@ -146,6 +150,7 @@ class _CreateManagerPageState extends State<CreateManagerPage> {
         'canManageAccounts': _canManageAccounts,
         'canDeleteAccounts': _canDeleteAccounts,
         'canAccessUnassigned': _canAccessUnassigned,
+        'canChat': _canChat,
         // Always send the list when editing, so clearing every toggle actually
         // unassigns: the API only rewrites assignments when halaqaIds is present,
         // and an omitted key would silently keep the old ones.
@@ -177,6 +182,7 @@ class _CreateManagerPageState extends State<CreateManagerPage> {
         setState(() {
           _selectedHalaqaIds.clear();
           _canAccessUnassigned = false;
+          _canChat = false;
         });
       } else {
         Navigator.pop(context, true);
@@ -310,18 +316,9 @@ class _CreateManagerPageState extends State<CreateManagerPage> {
                         title: 'معلومات الاتصال',
                       ),
                       SizedBox(height: 16.h),
-                      AppTextField(
-                        label: 'رقم الهاتف',
-                        hint: '05XXXXXXXX',
+                      PhoneField(
                         controller: _phoneController,
-                        keyboardType: TextInputType.phone,
-                        maxLength: AccountValidators.phoneLength,
-                        inputFormatters: AccountValidators.phoneInputFormatters,
                         validator: AccountValidators.phone,
-                        prefixIcon: const Icon(
-                          Icons.phone_outlined,
-                          color: AppColors.onSurfaceVariant,
-                        ),
                       ),
                       ContactOwnersHint(
                         controller: _phoneController,
@@ -412,7 +409,7 @@ class _CreateManagerPageState extends State<CreateManagerPage> {
                         title: 'الصلاحيات',
                       ),
                       SizedBox(height: 12.h),
-                      _PrivilegeSwitch(
+                      PrivilegeSwitch(
                         title: 'إنشاء وتعديل الحسابات',
                         subtitle: 'إضافة أو تعديل طالب أو ولي أمر وربطهم',
                         value: _canManageAccounts,
@@ -420,12 +417,19 @@ class _CreateManagerPageState extends State<CreateManagerPage> {
                             setState(() => _canManageAccounts = v),
                       ),
                       SizedBox(height: 8.h),
-                      _PrivilegeSwitch(
+                      PrivilegeSwitch(
                         title: 'حذف الحسابات',
                         subtitle: 'حذف حساب طالب أو ولي أمر',
                         value: _canDeleteAccounts,
                         onChanged: (v) =>
                             setState(() => _canDeleteAccounts = v),
+                      ),
+                      SizedBox(height: 8.h),
+                      PrivilegeSwitch(
+                        title: 'المحادثات مع أولياء الأمور',
+                        subtitle: 'الرد على أولياء أمور حلقاته باسم الإدارة',
+                        value: _canChat,
+                        onChanged: (v) => setState(() => _canChat = v),
                       ),
                       SizedBox(height: 32.h),
                       // Buttons
@@ -610,65 +614,6 @@ class _HalaqaOption extends StatelessWidget {
             ),
           ],
         ),
-      ),
-    );
-  }
-}
-
-class _PrivilegeSwitch extends StatelessWidget {
-  const _PrivilegeSwitch({
-    required this.title,
-    required this.subtitle,
-    required this.value,
-    required this.onChanged,
-  });
-  final String title;
-  final String subtitle;
-  final bool value;
-  final ValueChanged<bool> onChanged;
-
-  @override
-  Widget build(BuildContext context) {
-    return Container(
-      padding: EdgeInsets.symmetric(horizontal: 12.w, vertical: 8.h),
-      decoration: BoxDecoration(
-        color: value
-            ? AppColors.primaryContainer.withValues(alpha: 0.3)
-            : AppColors.surfaceContainerLowest,
-        borderRadius: BorderRadius.circular(AppConstants.radiusMd),
-        border: Border.all(
-          color: value ? AppColors.primaryContainer : AppColors.outlineVariant,
-        ),
-      ),
-      child: Row(
-        children: [
-          Switch(
-            value: value,
-            onChanged: onChanged,
-            activeThumbColor: AppColors.primary,
-          ),
-          Expanded(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.end,
-              children: [
-                AppText(
-                  title,
-                  style: AppTextStyles.bodyMd.copyWith(
-                    color: AppColors.onSurface,
-                    fontWeight: value ? FontWeight.w600 : FontWeight.w400,
-                  ),
-                ),
-                AppText(
-                  subtitle,
-                  style: AppTextStyles.labelSm.copyWith(
-                    color: AppColors.onSurfaceVariant,
-                  ),
-                  textAlign: TextAlign.end,
-                ),
-              ],
-            ),
-          ),
-        ],
       ),
     );
   }

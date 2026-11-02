@@ -14,8 +14,22 @@ import 'pages/teachers_management_page.dart';
 import 'pages/managers_management_page.dart';
 import 'pages/parents_management_page.dart';
 import 'pages/reports_page.dart';
+import 'package:taqwa/core/providers/chat_unread_provider.dart';
 import 'package:taqwa/core/widgets/app_text.dart';
+import 'package:taqwa/features/chat/data/chat_push.dart';
+import 'package:taqwa/features/chat/presentation/pages/chat_inbox_page.dart';
 import 'package:taqwa/features/shared/presentation/pages/profile_page.dart';
+
+/// Drawer positions other admin pages jump to. Chat sits second, so the
+/// administration sees parents' messages one tap from the dashboard.
+abstract final class AdminTabs {
+  static const dashboard = 0;
+  static const chat = 1;
+  static const students = 2;
+  static const halaqas = 3;
+  static const teachers = 4;
+  static const managers = 5;
+}
 
 class AdminShellScope extends InheritedWidget {
   final int currentIndex;
@@ -53,6 +67,7 @@ class _AdminShellState extends ConsumerState<AdminShell> {
 
   final List<Widget> _pages = const [
     AdminDashboardPage(),
+    ChatInboxPage(),
     StudentsManagementPage(),
     HalaqasManagementPage(),
     TeachersManagementPage(),
@@ -74,7 +89,27 @@ class _AdminShellState extends ConsumerState<AdminShell> {
   }
 
   @override
+  void initState() {
+    super.initState();
+    WidgetsBinding.instance.addPostFrameCallback(
+      (_) => ref.read(chatUnreadProvider.notifier).refresh(),
+    );
+  }
+
+  @override
   Widget build(BuildContext context) {
+    ref.listen(chatPushEventsProvider, (_, next) {
+      if (next.value?['route'] == 'chat') {
+        ref.read(chatUnreadProvider.notifier).refresh();
+      }
+    });
+    // A tapped chat notification opens the inbox.
+    ref.listen(chatPushTapsProvider, (_, next) {
+      if (next.value?['route'] == 'chat') {
+        setState(() => _currentIndex = AdminTabs.chat);
+      }
+    });
+
     return AdminShellScope(
       currentIndex: _currentIndex,
       selectTab: (index) => setState(() => _currentIndex = index),
@@ -94,54 +129,62 @@ class _AdminShellState extends ConsumerState<AdminShell> {
   }
 
   Widget _buildDrawer(BuildContext context) {
+    final unread = ref.watch(chatUnreadProvider);
     final items = [
       _NavItemData(
         icon: Icons.dashboard_outlined,
         activeIcon: Icons.dashboard,
         label: 'الرئيسية',
-        index: 0,
+        index: AdminTabs.dashboard,
+      ),
+      _NavItemData(
+        icon: Icons.forum_outlined,
+        activeIcon: Icons.forum,
+        label: 'المحادثات',
+        index: AdminTabs.chat,
+        badge: unread,
       ),
       _NavItemData(
         icon: Icons.group_outlined,
         activeIcon: Icons.group,
         label: 'الطلاب',
-        index: 1,
+        index: AdminTabs.students,
       ),
       _NavItemData(
         icon: Icons.menu_book_outlined,
         activeIcon: Icons.menu_book,
         label: 'الحلقات',
-        index: 2,
+        index: AdminTabs.halaqas,
       ),
       _NavItemData(
         icon: Icons.badge_outlined,
         activeIcon: Icons.badge,
         label: 'المعلمون',
-        index: 3,
+        index: AdminTabs.teachers,
       ),
       _NavItemData(
         icon: Icons.manage_accounts_outlined,
         activeIcon: Icons.manage_accounts,
         label: 'الإدارة',
-        index: 4,
+        index: AdminTabs.managers,
       ),
       _NavItemData(
         icon: Icons.family_restroom_outlined,
         activeIcon: Icons.family_restroom,
         label: 'أولياء الأمور',
-        index: 5,
+        index: 6,
       ),
       _NavItemData(
         icon: Icons.bar_chart_outlined,
         activeIcon: Icons.bar_chart,
         label: 'التقارير',
-        index: 6,
+        index: 7,
       ),
       _NavItemData(
         icon: Icons.person_outline,
         activeIcon: Icons.person,
         label: 'الحساب',
-        index: 7,
+        index: 8,
       ),
     ];
 
@@ -246,6 +289,31 @@ class _AdminShellState extends ConsumerState<AdminShell> {
                                   : FontWeight.w500,
                             ),
                           ),
+                          if (item.badge > 0) ...[
+                            const Spacer(),
+                            Container(
+                              constraints: BoxConstraints(minWidth: 22.w),
+                              padding: EdgeInsets.symmetric(
+                                horizontal: 6.w,
+                                vertical: 1.h,
+                              ),
+                              decoration: BoxDecoration(
+                                color: AppColors.error,
+                                borderRadius: BorderRadius.circular(
+                                  AppConstants.radiusFull,
+                                ),
+                              ),
+                              child: AppText(
+                                '${item.badge}',
+                                textAlign: TextAlign.center,
+                                semanticsLabel: '${item.badge} رسائل جديدة',
+                                style: AppTextStyles.labelSm.copyWith(
+                                  color: AppColors.onPrimary,
+                                  fontWeight: FontWeight.w700,
+                                ),
+                              ),
+                            ),
+                          ],
                         ],
                       ),
                     ),
@@ -297,9 +365,13 @@ class _NavItemData {
     required this.activeIcon,
     required this.label,
     required this.index,
+    this.badge = 0,
   });
   final IconData icon;
   final IconData activeIcon;
   final String label;
   final int index;
+
+  /// An unread count shown after the label; 0 shows nothing.
+  final int badge;
 }

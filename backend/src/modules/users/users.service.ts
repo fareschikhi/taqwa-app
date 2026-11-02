@@ -35,6 +35,8 @@ export class UsersService {
             id: true,
             canManageAccounts: true,
             canDeleteAccounts: true,
+            canChat: true,
+            canAccessUnassigned: true,
           },
         },
       },

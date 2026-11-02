@@ -11,6 +11,10 @@ class HalaqaAnnouncementModel {
   final String title;
   final String body;
   final String authorName;
+
+  /// The User who posted, so a teacher is offered edit and delete on their
+  /// own news only.
+  final int? authorId;
   final DateTime createdAt;
 
   /// Set when this was posted to all halaqas at once; edit and delete then
@@ -28,6 +32,7 @@ class HalaqaAnnouncementModel {
     required this.title,
     required this.body,
     required this.authorName,
+    this.authorId,
     required this.createdAt,
     this.batchId,
     this.halaqaNames = const [],
@@ -46,6 +51,8 @@ class HalaqaAnnouncementModel {
       title: (json['title'] as String?) ?? '',
       body: (json['body'] as String?) ?? '',
       authorName: (author?['fullName'] as String?) ?? '',
+      authorId:
+          (author?['id'] as num?)?.toInt() ?? (json['authorId'] as num?)?.toInt(),
       createdAt:
           DateTime.tryParse((json['createdAt'] ?? '').toString()) ??
           DateTime.now(),

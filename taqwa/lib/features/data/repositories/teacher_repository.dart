@@ -34,18 +34,25 @@ class TeacherRepository {
   }
 
   // ─── Teacher functionalities ──────────────────────────────────────────────────────────────
-  Future<AttendanceSummaryModel> getAttendanceSummary(int teacherId) async {
-    return _ds.getAttendanceSummary(teacherId);
+  Future<AttendanceSummaryModel> getAttendanceSummary(
+    int teacherId, {
+    int? halaqaId,
+  }) async {
+    return _ds.getAttendanceSummary(teacherId, halaqaId: halaqaId);
   }
 
-  Future<List<RevisionNeededModel>> getRevisionNeeded(int teacherId) async {
-    return _ds.getRevisionNeeded(teacherId);
+  Future<List<RevisionNeededModel>> getRevisionNeeded(
+    int teacherId, {
+    int? halaqaId,
+  }) async {
+    return _ds.getRevisionNeeded(teacherId, halaqaId: halaqaId);
   }
 
   Future<MemorizationProgressSummaryModel> getMemorizationProgress(
-    int teacherId,
-  ) async {
-    return _ds.getMemorizationProgress(teacherId);
+    int teacherId, {
+    int? halaqaId,
+  }) async {
+    return _ds.getMemorizationProgress(teacherId, halaqaId: halaqaId);
   }
 
   // ─── Students ──────────────────────────────────────────────────────────────
@@ -56,6 +63,7 @@ class TeacherRepository {
     int page = 1,
     int limit = 30,
     bool? isActive,
+    int? halaqaId,
   }) async {
     return _ds.getStudents(
       teacherId: teacherId,
@@ -63,6 +71,7 @@ class TeacherRepository {
       page: page,
       limit: limit,
       isActive: isActive,
+      halaqaId: halaqaId,
     );
   }
 
@@ -127,6 +136,15 @@ class TeacherRepository {
     );
   }
 
+  /// Only the text changes: the students a note went to are fixed when it is
+  /// written, and editing it does not notify them again.
+  Future<StudentNoteModel> updateNote({
+    required int id,
+    required String note,
+  }) async {
+    return _ds.updateNote(id: id, note: note);
+  }
+
   Future<void> deleteNote(int id) async {
     await _ds.deleteNote(id);
   }
@@ -139,7 +157,7 @@ class TeacherRepository {
   Future<Map<String, dynamic>> submitMemorization({
     required int studentId,
     int? surahNumber,
-    required int amountDone,
+    required num amountDone,
     required String memorizationType,
     String subject = 'QURAN',
     String? hadithReference,
