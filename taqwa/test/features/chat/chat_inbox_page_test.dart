@@ -73,6 +73,21 @@ void main() {
     expect(find.byType(BackButton), findsNothing);
   });
 
+  // The admin shell has no app bar, so its drawer page must carry the
+  // shell's menu button or the admin is stuck on the inbox.
+  testWidgets('shows the leading widget it is given', (tester) async {
+    await tester.pumpWidget(
+      host(
+        const ChatInboxPage(leading: Icon(Icons.menu)),
+        repo: _InboxRepo([]),
+      ),
+    );
+    await tester.pumpAndSettle();
+
+    expect(find.byIcon(Icons.menu), findsOneWidget);
+    expect(find.byType(BackButton), findsNothing);
+  });
+
   testWidgets('says so when there is no conversation yet', (tester) async {
     await tester.pumpWidget(host(const ChatInboxPage(), repo: _InboxRepo([])));
     await tester.pumpAndSettle();

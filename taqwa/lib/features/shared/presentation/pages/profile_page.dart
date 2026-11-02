@@ -55,7 +55,11 @@ String initialFor(String fullName) {
 }
 
 class ProfilePage extends ConsumerStatefulWidget {
-  const ProfilePage({super.key, required this.role});
+  const ProfilePage({super.key, required this.role, this.leading});
+
+  /// The header's start control. The admin shell has no app bar, so it
+  /// passes its menu button here.
+  final Widget? leading;
 
   /// Kept for the callers that already pass it; the details on screen come
   /// from the signed-in user rather than this string.
@@ -238,47 +242,12 @@ class _ProfilePageState extends ConsumerState<ProfilePage> {
                     children: [
                       Row(
                         children: [
-                          if (widget.role == 'parent') ...[
-                            const ParentChatButton(onBrand: true),
+                          if (widget.leading != null) ...[
+                            widget.leading!,
                             SizedBox(width: 8.w),
                           ],
-                          if (canEditProfile(user.role))
-                            GestureDetector(
-                              onTap: _toggleEditMode,
-                              child: Container(
-                                padding: EdgeInsets.symmetric(
-                                  horizontal: 12.w,
-                                  vertical: 6.h,
-                                ),
-                                decoration: BoxDecoration(
-                                  color: AppColors.onPrimary.withValues(
-                                    alpha: 0.2,
-                                  ),
-                                  borderRadius: BorderRadius.circular(
-                                    AppConstants.radiusFull,
-                                  ),
-                                ),
-                                child: Row(
-                                  mainAxisSize: MainAxisSize.min,
-                                  children: [
-                                    Icon(
-                                      _editMode
-                                          ? Icons.close
-                                          : Icons.edit_outlined,
-                                      color: AppColors.onPrimary,
-                                      size: 16.w,
-                                    ),
-                                    SizedBox(width: 4.w),
-                                    AppText(
-                                      _editMode ? 'إلغاء' : 'تعديل',
-                                      style: AppTextStyles.labelSm.copyWith(
-                                        color: AppColors.onPrimary,
-                                      ),
-                                    ),
-                                  ],
-                                ),
-                              ),
-                            ),
+                          if (widget.role == 'parent')
+                            const ParentChatButton(onBrand: true),
                           const Spacer(),
                           AppText(
                             'الحساب',
@@ -288,6 +257,18 @@ class _ProfilePageState extends ConsumerState<ProfilePage> {
                           ),
                         ],
                       ),
+                      // Under the title, so the start corner stays free for
+                      // the menu button.
+                      if (canEditProfile(user.role)) ...[
+                        SizedBox(height: 8.h),
+                        Align(
+                          alignment: AlignmentDirectional.centerEnd,
+                          child: _EditToggle(
+                            editing: _editMode,
+                            onTap: _toggleEditMode,
+                          ),
+                        ),
+                      ],
                       SizedBox(height: 20.h),
                       // Avatar
                       GestureDetector(
@@ -459,6 +440,45 @@ class _ProfilePageState extends ConsumerState<ProfilePage> {
                 ),
               ],
             ),
+          ),
+        ),
+      ),
+    );
+  }
+}
+
+/// The "تعديل" / "إلغاء" pill on the brand header.
+class _EditToggle extends StatelessWidget {
+  const _EditToggle({required this.editing, required this.onTap});
+  final bool editing;
+  final VoidCallback onTap;
+
+  @override
+  Widget build(BuildContext context) {
+    return Material(
+      color: AppColors.onPrimary.withValues(alpha: 0.2),
+      borderRadius: BorderRadius.circular(AppConstants.radiusFull),
+      child: InkWell(
+        onTap: onTap,
+        borderRadius: BorderRadius.circular(AppConstants.radiusFull),
+        child: Padding(
+          padding: EdgeInsets.symmetric(horizontal: 12.w, vertical: 6.h),
+          child: Row(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Icon(
+                editing ? Icons.close : Icons.edit_outlined,
+                color: AppColors.onPrimary,
+                size: 16.w,
+              ),
+              SizedBox(width: 4.w),
+              AppText(
+                editing ? 'إلغاء' : 'تعديل',
+                style: AppTextStyles.labelSm.copyWith(
+                  color: AppColors.onPrimary,
+                ),
+              ),
+            ],
           ),
         ),
       ),

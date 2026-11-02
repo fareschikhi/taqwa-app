@@ -54,6 +54,42 @@ class AdminShellScope extends InheritedWidget {
   }
 }
 
+/// Opens the admin drawer. For pages that live outside the admin folder
+/// and so don't draw their own menu tile, like the shared chat inbox.
+class AdminMenuButton extends StatelessWidget {
+  const AdminMenuButton({super.key, this.onBrand = false});
+
+  /// Light colours, for headers drawn on the brand gradient.
+  final bool onBrand;
+
+  @override
+  Widget build(BuildContext context) {
+    final radius = BorderRadius.circular(AppConstants.radiusMd);
+    return Semantics(
+      button: true,
+      label: 'القائمة',
+      child: Material(
+        color: onBrand
+            ? AppColors.onPrimary.withValues(alpha: 0.2)
+            : AppColors.surfaceContainer,
+        borderRadius: radius,
+        child: InkWell(
+          onTap: () => AdminShellScope.of(context)?.openMenu(),
+          borderRadius: radius,
+          child: SizedBox(
+            width: 40.w,
+            height: 40.w,
+            child: Icon(
+              Icons.menu,
+              color: onBrand ? AppColors.onPrimary : AppColors.onSurfaceVariant,
+            ),
+          ),
+        ),
+      ),
+    );
+  }
+}
+
 class AdminShell extends ConsumerStatefulWidget {
   const AdminShell({super.key});
 
@@ -67,14 +103,14 @@ class _AdminShellState extends ConsumerState<AdminShell> {
 
   final List<Widget> _pages = const [
     AdminDashboardPage(),
-    ChatInboxPage(),
+    ChatInboxPage(leading: AdminMenuButton()),
     StudentsManagementPage(),
     HalaqasManagementPage(),
     TeachersManagementPage(),
     ManagersManagementPage(),
     ParentsManagementPage(),
     ReportsPage(),
-    ProfilePage(role: 'admin'),
+    ProfilePage(role: 'admin', leading: AdminMenuButton(onBrand: true)),
   ];
 
   Future<void> _logout() async {

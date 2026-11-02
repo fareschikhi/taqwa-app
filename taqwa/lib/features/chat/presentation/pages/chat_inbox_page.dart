@@ -34,7 +34,12 @@ Future<void> openStaffThread(BuildContext context, ChatInboxItemModel item) {
 /// The shared staff inbox: every parent thread this admin or manager may
 /// see, most recent first, with their own unread counts.
 class ChatInboxPage extends ConsumerStatefulWidget {
-  const ChatInboxPage({super.key});
+  const ChatInboxPage({super.key, this.leading});
+
+  /// The top bar's start control. The admin shell has no app bar, so it
+  /// passes its menu button here; when null, a pushed inbox gets a back
+  /// button instead.
+  final Widget? leading;
 
   @override
   ConsumerState<ChatInboxPage> createState() => _ChatInboxPageState();
@@ -118,9 +123,11 @@ class _ChatInboxPageState extends ConsumerState<ChatInboxPage> {
               padding: EdgeInsets.fromLTRB(16.w, 16.h, 16.w, 0),
               child: Row(
                 children: [
-                  // Pushed from a manager's dashboard; the admin's drawer
-                  // page has nothing to go back to.
-                  if (ModalRoute.of(context)?.canPop ?? false)
+                  // Pushed from a manager's dashboard it goes back; as the
+                  // admin's drawer page it opens the drawer instead.
+                  if (widget.leading != null)
+                    widget.leading!
+                  else if (ModalRoute.of(context)?.canPop ?? false)
                     const BackButton(),
                   const Spacer(),
                   AppText(
