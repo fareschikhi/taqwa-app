@@ -432,7 +432,7 @@ class _CreateManagerPageState extends State<CreateManagerPage> {
                             setState(() => _canDeleteAccounts = v),
                       ),
                       SizedBox(height: 8.h),
-                      PrivilegeSwitch(
+                      _PrivilegeSwitch(
                         title: 'المحادثات مع أولياء الأمور',
                         subtitle: 'الرد على أولياء أمور حلقاته باسم الإدارة',
                         value: _canChat,

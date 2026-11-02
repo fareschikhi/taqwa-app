@@ -4,6 +4,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:image_picker/image_picker.dart';
 import 'package:taqwa/features/chat/data/chat_push.dart';
+import 'package:taqwa/features/data/models/chat/chat_inbox_item_model.dart';
 import 'package:taqwa/features/data/models/chat/chat_message_model.dart';
 import 'package:taqwa/features/data/models/chat/chat_page_model.dart';
 import 'package:taqwa/features/data/models/chat/chat_target.dart';
@@ -74,6 +75,9 @@ class FakeChatRepository extends ChatRepository {
 
   @override
   Future<int> unread({required bool staff}) async => 0;
+
+  @override
+  Future<List<ChatInboxItemModel>> inbox({String? search}) async => const [];
 }
 
 DioException forbidden() => DioException(

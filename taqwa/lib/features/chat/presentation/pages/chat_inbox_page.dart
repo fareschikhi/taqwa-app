@@ -118,6 +118,10 @@ class _ChatInboxPageState extends ConsumerState<ChatInboxPage> {
               padding: EdgeInsets.fromLTRB(16.w, 16.h, 16.w, 0),
               child: Row(
                 children: [
+                  // Pushed from a manager's dashboard; the admin's drawer
+                  // page has nothing to go back to.
+                  if (ModalRoute.of(context)?.canPop ?? false)
+                    const BackButton(),
                   const Spacer(),
                   AppText(
                     'التقوى',

@@ -39,6 +39,40 @@ void main() {
     expect(find.text('2'), findsOneWidget);
   });
 
+  // A manager opens the inbox from the dashboard, on top of it; the admin
+  // has it as a drawer page, where there is nothing to go back to.
+  testWidgets('offers a way back only when opened on top of a page', (
+    tester,
+  ) async {
+    await tester.pumpWidget(
+      host(
+        Builder(
+          builder: (context) => Scaffold(
+            body: TextButton(
+              onPressed: () => Navigator.push(
+                context,
+                MaterialPageRoute(builder: (_) => const ChatInboxPage()),
+              ),
+              child: const Text('open'),
+            ),
+          ),
+        ),
+        repo: _InboxRepo([]),
+      ),
+    );
+    await tester.tap(find.text('open'));
+    await tester.pumpAndSettle();
+
+    expect(find.byType(BackButton), findsOneWidget);
+    await tester.tap(find.byType(BackButton));
+    await tester.pumpAndSettle();
+    expect(find.byType(ChatInboxPage), findsNothing);
+
+    await tester.pumpWidget(host(const ChatInboxPage(), repo: _InboxRepo([])));
+    await tester.pumpAndSettle();
+    expect(find.byType(BackButton), findsNothing);
+  });
+
   testWidgets('says so when there is no conversation yet', (tester) async {
     await tester.pumpWidget(host(const ChatInboxPage(), repo: _InboxRepo([])));
     await tester.pumpAndSettle();

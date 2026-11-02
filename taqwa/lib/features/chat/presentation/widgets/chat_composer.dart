@@ -118,7 +118,6 @@ class _ChatComposerState extends State<ChatComposer> {
                     maxLines: 5,
                     // The server's limit; a counter under the field would be clutter.
                     inputFormatters: [LengthLimitingTextInputFormatter(2000)],
-                    textAlign: TextAlign.right,
                     textInputAction: TextInputAction.newline,
                     keyboardType: TextInputType.multiline,
                   ),

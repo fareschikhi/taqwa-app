@@ -5,7 +5,6 @@ import '../../../core/providers/chat_unread_provider.dart';
 import '../../chat/data/chat_push.dart';
 import '../../chat/presentation/pages/chat_inbox_page.dart';
 import '../../data/models/chat/chat_target.dart';
-import 'manager_tabs.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
 import '../../../core/theme/app_colors.dart';
 import '../../../core/theme/app_text_styles.dart';
@@ -27,7 +26,8 @@ class ManagerShell extends ConsumerStatefulWidget {
 class _ManagerShellState extends ConsumerState<ManagerShell> {
   int _currentIndex = 0;
 
-  /// The chat tab is there only when the admin granted this manager chat.
+  /// Whether the admin let this manager answer parents. The chat itself is
+  /// reached from the dashboard's top bar, not a tab: six tabs don't fit.
   late final bool _canChat = canUseStaffChat(ref.read(authProvider).user);
 
   @override
@@ -42,7 +42,6 @@ class _ManagerShellState extends ConsumerState<ManagerShell> {
     ManagerDashboardPage(),
     ManagerStudentsPage(),
     ManagerParentsPage(),
-    if (_canChat) const ChatInboxPage(),
     JustificationListPage(),
     ProfilePage(role: 'manager'),
   ];
@@ -57,7 +56,9 @@ class _ManagerShellState extends ConsumerState<ManagerShell> {
     // A tapped chat notification opens the inbox.
     ref.listen(chatPushTapsProvider, (_, next) {
       if (_canChat && next.value?['route'] == 'chat') {
-        setState(() => _currentIndex = ManagerTabs.chat);
+        Navigator.of(context).push(
+          MaterialPageRoute(builder: (_) => const ChatInboxPage()),
+        );
       }
     });
     return Scaffold(
@@ -66,17 +67,7 @@ class _ManagerShellState extends ConsumerState<ManagerShell> {
     );
   }
 
-  /// A tab icon, with this manager's unread chat count when there is one.
-  Widget _withBadge(int count, Widget icon) => count > 0
-      ? Badge(
-          label: Text('$count'),
-          backgroundColor: AppColors.error,
-          child: icon,
-        )
-      : icon;
-
   Widget _buildBottomNav() {
-    final unread = ref.watch(chatUnreadProvider);
     final items = [
       _NavItem(
         icon: Icons.dashboard_outlined,
@@ -93,13 +84,6 @@ class _ManagerShellState extends ConsumerState<ManagerShell> {
         activeIcon: Icons.family_restroom,
         label: 'أولياء الأمور',
       ),
-      if (_canChat)
-        const _NavItem(
-          icon: Icons.forum_outlined,
-          activeIcon: Icons.forum,
-          label: 'المحادثات',
-          badge: true,
-        ),
       _NavItem(
         icon: Icons.rule_outlined,
         activeIcon: Icons.rule,
@@ -152,15 +136,12 @@ class _ManagerShellState extends ConsumerState<ManagerShell> {
                   child: Column(
                     mainAxisSize: MainAxisSize.min,
                     children: [
-                      _withBadge(
-                        item.badge ? unread : 0,
-                        Icon(
+                      Icon(
                         isActive ? item.activeIcon : item.icon,
                         color: isActive
                             ? AppColors.onPrimaryContainer
                             : AppColors.onSurfaceVariant,
                         size: 22.w,
-                      ),
                       ),
                       SizedBox(height: 4.h),
                       AppText(
@@ -191,12 +172,8 @@ class _NavItem {
     required this.icon,
     required this.activeIcon,
     required this.label,
-    this.badge = false,
   });
   final IconData icon;
   final IconData activeIcon;
   final String label;
-
-  /// Shows the chat unread count on this tab.
-  final bool badge;
 }
