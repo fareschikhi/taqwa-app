@@ -1,13 +1,50 @@
+jest.mock('../points/day-points', () => ({
+  reconcileDayPoints: jest.fn().mockResolvedValue(undefined),
+}));
 import { NotFoundException } from '@nestjs/common';
+import { reconcileDayPoints } from '../points/day-points';
 import { ManagersService } from './managers.service';
 
 describe('ManagersService.remove', () => {
-  const makePrisma = (manager: { id: number; userId: number } | null) => ({
-    manager: { findUnique: jest.fn().mockResolvedValue(manager) },
-    user: {
-      delete: jest.fn().mockResolvedValue({ id: manager?.userId }),
-      update: jest.fn(),
-    },
+  const makePrisma = (
+    manager: { id: number; userId: number } | null,
+    excused: Array<{ attendance: { studentId: number; date: Date } }> = [],
+  ) => {
+    const prisma: any = {
+      manager: { findUnique: jest.fn().mockResolvedValue(manager) },
+      user: {
+        delete: jest.fn().mockResolvedValue({ id: manager?.userId }),
+        update: jest.fn(),
+      },
+      absenceJustification: { findMany: jest.fn().mockResolvedValue(excused) },
+    };
+    prisma.$transaction = jest.fn((cb: any) => cb(prisma));
+    return prisma;
+  };
+
+  // The cascade takes the manager's excuses with it, so each excused day is
+  // an unexcused absence again and its points must say so.
+  it('re-reconciles every day the manager had excused', async () => {
+    const points = jest.mocked(reconcileDayPoints);
+    points.mockClear();
+    const d1 = new Date('2026-11-05');
+    const d2 = new Date('2026-11-06');
+    const prisma = makePrisma({ id: 2, userId: 64 }, [
+      { attendance: { studentId: 7, date: d1 } },
+      { attendance: { studentId: 8, date: d2 } },
+    ]);
+
+    await new ManagersService(prisma).remove(2);
+
+    expect(prisma.absenceJustification.findMany).toHaveBeenCalledWith({
+      where: { managerId: 2 },
+      select: { attendance: { select: { studentId: true, date: true } } },
+    });
+    expect(points).toHaveBeenCalledWith(prisma, 7, d1);
+    expect(points).toHaveBeenCalledWith(prisma, 8, d2);
+    expect(points.mock.invocationCallOrder[0]).toBeGreaterThan(
+      prisma.user.delete.mock.invocationCallOrder[0],
+    );
   });
 
   it('hard-deletes the linked user row', async () => {

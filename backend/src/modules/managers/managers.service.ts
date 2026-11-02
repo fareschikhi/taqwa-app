@@ -1,5 +1,6 @@
 import { Injectable, NotFoundException } from '@nestjs/common';
 import { PrismaService } from '../../prisma/prisma.service';
+import { reconcileDayPoints } from '../points/day-points';
 import {
   CreateManagerDto,
   UpdateManagerDto,
@@ -180,7 +181,21 @@ export class ManagersService {
     if (!manager) throw new NotFoundException('المدير غير موجود');
     // Hard delete — removing the user cascades to the manager row, its halaqa
     // assignments, and the absence justifications it authored.
-    return this.prisma.user.delete({ where: { id: manager.userId } });
+    //
+    // Each excused day turns back into an unexcused absence, so its points are
+    // reconciled in the same transaction, after the cascade has run. The days
+    // are read first: once the excuses are gone nothing points to them.
+    return this.prisma.$transaction(async (tx) => {
+      const excused = await tx.absenceJustification.findMany({
+        where: { managerId: id },
+        select: { attendance: { select: { studentId: true, date: true } } },
+      });
+      const deleted = await tx.user.delete({ where: { id: manager.userId } });
+      for (const { attendance } of excused) {
+        await reconcileDayPoints(tx, attendance.studentId, attendance.date);
+      }
+      return deleted;
+    });
   }
 
   async getStudents(id: number) {
