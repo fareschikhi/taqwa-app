@@ -214,10 +214,7 @@ export class ChatController {
     @Param('messageId', ParseIntPipe) messageId: number,
     @Res() res: Response,
   ) {
-    const path = await this.chat.photoPathFor(user, messageId);
-    res.setHeader('Cache-Control', 'private, max-age=86400');
-    res.setHeader('X-Content-Type-Options', 'nosniff');
-    res.sendFile(this.photos.absolutePath(path));
+    this.photos.serve(res, await this.chat.photoPathFor(user, messageId));
   }
 
   @Delete('messages/:id')

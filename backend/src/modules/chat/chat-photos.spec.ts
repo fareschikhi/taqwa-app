@@ -1,4 +1,6 @@
 import { BadRequestException } from '@nestjs/common';
+import express from 'express';
+import request from 'supertest';
 import {
   existsSync,
   mkdtempSync,
@@ -67,5 +69,20 @@ describe('ChatPhotos', () => {
     expect(() => photos.absolutePath('.chat/../avatar.jpg')).toThrow();
     await photos.deleteChatPhoto('../avatar.jpg');
     expect(existsSync(join(dir, 'avatar.jpg'))).toBe(true);
+  });
+
+  // Through real Express, not a mocked res: `sendFile` refuses any path with
+  // a dot segment by default, and `.chat` is exactly that. Only the real
+  // thing shows whether the authorized route can reach the private folder.
+  it('serves a stored photo to an authorized caller', async () => {
+    const path = await photos.save(file('image/jpeg', JPEG));
+    const app = express();
+    app.get('/photo', (_req, res) => photos.serve(res, path));
+
+    const res = await request(app).get('/photo').expect(200);
+
+    expect(res.headers['content-type']).toBe('image/jpeg');
+    expect(res.headers['cache-control']).toBe('private, max-age=86400');
+    expect(Buffer.from(res.body)).toEqual(JPEG);
   });
 });

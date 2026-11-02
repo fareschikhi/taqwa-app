@@ -1,5 +1,6 @@
 import { BadRequestException, Injectable, OnModuleInit } from '@nestjs/common';
 import { randomUUID } from 'crypto';
+import type { Response } from 'express';
 import { mkdirSync } from 'fs';
 import { unlink, writeFile } from 'fs/promises';
 import { join } from 'path';
@@ -42,6 +43,15 @@ export class ChatPhotos implements OnModuleInit {
   absolutePath(path: string): string {
     if (!STORED_PATH.test(path)) throw new BadRequestException('مسار غير صالح');
     return join(uploadDir(), path);
+  }
+
+  /** Streams a stored photo to an already-authorized caller. */
+  serve(res: Response, path: string): void {
+    res.setHeader('Cache-Control', 'private, max-age=86400');
+    res.setHeader('X-Content-Type-Options', 'nosniff');
+    // sendFile 404s any path with a dot segment unless told otherwise, and
+    // `.chat` is one. Safe to allow: absolutePath only accepts STORED_PATH.
+    res.sendFile(this.absolutePath(path), { dotfiles: 'allow' });
   }
 
   /** Best effort: a file that is already gone is not an error. */
