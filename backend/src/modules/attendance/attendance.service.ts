@@ -8,6 +8,7 @@ import {
 import { AttendanceStatus, Prisma } from '@prisma/client';
 import { NotificationsService } from '../notifications/notifications.service';
 import { reconcileDayFines } from './day-fines';
+import { reconcileDayPoints } from '../points/day-points';
 
 /// Who is recording the attendance. Carries the teacher id because the halaqa
 /// a student sits in is what decides whether a given teacher may write for him.
@@ -185,6 +186,7 @@ export class AttendanceService {
           dto.status,
           actorUserId,
         );
+        await reconcileDayPoints(tx, dto.studentId, date);
         return { record: written, previous: before?.status ?? null, charged };
       },
     );
@@ -243,6 +245,7 @@ export class AttendanceService {
           r.status,
           actorUserId,
         );
+        await reconcileDayPoints(tx, r.studentId, date);
         transitions.push({
           studentId: r.studentId,
           status: r.status,
@@ -285,6 +288,7 @@ export class AttendanceService {
           status,
           actorUserId,
         );
+        await reconcileDayPoints(tx, studentId, day);
         return { record: written, previous: before?.status ?? null, charged };
       },
     );
@@ -347,6 +351,7 @@ export class AttendanceService {
         record.status,
         actorUserId,
       );
+      await reconcileDayPoints(tx, record.studentId, record.date);
       return record;
     });
   }

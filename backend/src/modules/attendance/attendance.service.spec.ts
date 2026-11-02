@@ -1,3 +1,7 @@
+jest.mock('../points/day-points', () => ({
+  reconcileDayPoints: jest.fn().mockResolvedValue(undefined),
+}));
+import { reconcileDayPoints } from '../points/day-points';
 import { AttendanceStatus } from '@prisma/client';
 import { AttendanceService } from './attendance.service';
 import { desiredCharges } from './fine-reconciliation';
@@ -1120,5 +1124,78 @@ describe('AttendanceService teacher ownership', () => {
     await expect(
       svc(prisma).update(1, { status: AttendanceStatus.PRESENT } as any, TEACHER as any),
     ).rejects.toThrow();
+  });
+});
+
+describe('AttendanceService keeps daily points in step', () => {
+  const points = jest.mocked(reconcileDayPoints);
+  beforeEach(() => points.mockClear());
+
+  const makePrisma = () => {
+    const tx = {
+      attendance: {
+        findUnique: jest.fn().mockResolvedValue(null),
+        upsert: jest
+          .fn()
+          .mockImplementation(({ create }) => Promise.resolve({ id: 1, ...create })),
+        update: jest.fn().mockResolvedValue({
+          id: 1,
+          studentId: 7,
+          date: new Date('2026-11-05'),
+          status: AttendanceStatus.ABSENT,
+        }),
+      },
+      memorizationProgress: { deleteMany: jest.fn().mockResolvedValue({ count: 1 }) },
+      student: { findUnique: jest.fn().mockResolvedValue(null) },
+    };
+    return {
+      $transaction: jest.fn((cb: any) => cb(tx)),
+      attendance: { findUnique: jest.fn().mockResolvedValue({ studentId: 7 }) },
+      student: { findUnique: jest.fn().mockResolvedValue(null) },
+      tx,
+    };
+  };
+  const day = new Date('2026-11-05');
+
+  it('reconciles after an absence has cleared the recitations', async () => {
+    const prisma = makePrisma();
+    await svc(prisma).create({
+      studentId: 7,
+      date: '2026-11-05',
+      status: AttendanceStatus.ABSENT,
+    });
+    expect(points).toHaveBeenCalledTimes(1);
+    expect(points).toHaveBeenCalledWith(prisma.tx, 7, day);
+    expect(points.mock.invocationCallOrder[0]).toBeGreaterThan(
+      prisma.tx.memorizationProgress.deleteMany.mock.invocationCallOrder[0],
+    );
+  });
+
+  it('reconciles each student of a batch', async () => {
+    const prisma = makePrisma();
+    await svc(prisma).createBatch({
+      records: [
+        { studentId: 7, date: '2026-11-05', status: AttendanceStatus.PRESENT },
+        { studentId: 8, date: '2026-11-06', status: AttendanceStatus.LATE },
+      ],
+    } as any);
+    expect(prisma.$transaction).toHaveBeenCalledTimes(1);
+    expect(points).toHaveBeenCalledWith(prisma.tx, 7, day);
+    expect(points).toHaveBeenCalledWith(prisma.tx, 8, new Date('2026-11-06'));
+  });
+
+  it('reconciles on upsert', async () => {
+    const prisma = makePrisma();
+    await svc(prisma).upsert(7, '2026-11-05', AttendanceStatus.PRESENT);
+    expect(points).toHaveBeenCalledWith(prisma.tx, 7, day);
+  });
+
+  it('reconciles on a correction', async () => {
+    const prisma = makePrisma();
+    await svc(prisma).update(1, { status: AttendanceStatus.ABSENT });
+    expect(points).toHaveBeenCalledWith(prisma.tx, 7, day);
+    expect(points.mock.invocationCallOrder[0]).toBeGreaterThan(
+      prisma.tx.memorizationProgress.deleteMany.mock.invocationCallOrder[0],
+    );
   });
 });

@@ -11,6 +11,7 @@ import {
 } from '@prisma/client';
 import { MAX_AMOUNT, unitFor } from './progress-unit';
 import { reconcileDayFines } from '../attendance/day-fines';
+import { reconcileDayPoints } from '../points/day-points';
 
 // Attendance rows are written as new Date('YYYY-MM-DD'), which parses to UTC
 // midnight, and both date columns are @db.Date, which Prisma truncates in UTC.
@@ -178,6 +179,9 @@ export class MemorizationService {
       if (attendance) {
         await reconcileDayFines(tx, dto.studentId, date, attendance, null);
       }
+      // Unlike fines, points follow a recitation with or without roll call:
+      // the pages were recited either way.
+      await reconcileDayPoints(tx, dto.studentId, date);
       return record;
     });
   }
@@ -219,9 +223,16 @@ export class MemorizationService {
       await this.assertHadithEnabled(existing.studentId, dto.hadithReference);
     }
 
-    return this.prisma.memorizationProgress.update({
-      where: { id },
-      data: dto,
+    // A changed amount or type changes what the day is worth, so the day's
+    // points are reconciled in the same write. The date and student cannot be
+    // edited, so the row's own day is the only one affected.
+    return this.prisma.$transaction(async (tx) => {
+      const record = await tx.memorizationProgress.update({
+        where: { id },
+        data: dto,
+      });
+      await reconcileDayPoints(tx, existing.studentId, existing.date);
+      return record;
     });
   }
 

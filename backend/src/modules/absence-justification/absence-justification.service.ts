@@ -1,6 +1,7 @@
 import { Injectable, NotFoundException } from '@nestjs/common';
 import { AttendanceStatus } from '@prisma/client';
 import { PrismaService } from '../../prisma/prisma.service';
+import { reconcileDayPoints } from '../points/day-points';
 import {
   CreateAbsenceJustificationDto,
   UpdateAbsenceJustificationDto,
@@ -81,16 +82,29 @@ export class AbsenceJustificationService {
   }
 
   async create(dto: CreateAbsenceJustificationDto) {
-    return this.prisma.absenceJustification.create({
-      data: {
-        studentId: dto.studentId,
-        attendanceId: dto.attendanceId,
-        managerId: dto.managerId,
-        reasonType: dto.reasonType,
-        customReason: dto.customReason,
-        notes: dto.notes,
-      },
-      include: this.include,
+    // An excused absence costs no points, so recording the excuse reconciles
+    // the absent day in the same write. The day comes from the attendance row
+    // itself rather than the dto, which only names it.
+    return this.prisma.$transaction(async (tx) => {
+      const attendance = await tx.attendance.findUnique({
+        where: { id: dto.attendanceId },
+        select: { studentId: true, date: true },
+      });
+      const justification = await tx.absenceJustification.create({
+        data: {
+          studentId: dto.studentId,
+          attendanceId: dto.attendanceId,
+          managerId: dto.managerId,
+          reasonType: dto.reasonType,
+          customReason: dto.customReason,
+          notes: dto.notes,
+        },
+        include: this.include,
+      });
+      if (attendance) {
+        await reconcileDayPoints(tx, attendance.studentId, attendance.date);
+      }
+      return justification;
     });
   }
 

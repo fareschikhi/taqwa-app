@@ -1,3 +1,7 @@
+jest.mock('../points/day-points', () => ({
+  reconcileDayPoints: jest.fn().mockResolvedValue(undefined),
+}));
+import { reconcileDayPoints } from '../points/day-points';
 import { BadRequestException } from '@nestjs/common';
 import {
   AttendanceStatus,
@@ -476,5 +480,73 @@ describe('MemorizationService half-page amounts', () => {
       memorizationType: Memorization.BIGREVISION,
     });
     expect(prisma.memorizationProgress.create).toHaveBeenCalled();
+  });
+});
+
+describe('MemorizationService keeps daily points in step', () => {
+  const points = jest.mocked(reconcileDayPoints);
+  beforeEach(() => points.mockClear());
+
+  const makePrisma = (attendance: AttendanceStatus | null) => {
+    const prisma: any = {
+      attendance: {
+        findUnique: jest
+          .fn()
+          .mockResolvedValue(attendance === null ? null : { id: 1, status: attendance }),
+      },
+      memorizationProgress: {
+        create: jest.fn().mockResolvedValue({ id: 10 }),
+        findUnique: jest.fn().mockResolvedValue({
+          id: 20,
+          studentId: 7,
+          date: new Date('2026-11-05'),
+          subject: MemorizationSubject.QURAN,
+          surahNumber: 2,
+          hadithReference: null,
+          memorizationType: Memorization.MEMORIZING,
+          amountDone: 1,
+        }),
+        update: jest.fn().mockResolvedValue({ id: 20 }),
+      },
+      // A child: fine reconciliation is a no-op, keeping this about points.
+      student: { findUnique: jest.fn().mockResolvedValue(null) },
+    };
+    prisma.$transaction = jest.fn((cb: any) => cb(prisma));
+    return prisma;
+  };
+
+  const dto = {
+    studentId: 7,
+    surahNumber: 2,
+    amountDone: 1,
+    memorizationType: Memorization.MEMORIZING,
+  };
+  const today = () => {
+    const now = new Date();
+    return new Date(
+      Date.UTC(now.getUTCFullYear(), now.getUTCMonth(), now.getUTCDate()),
+    );
+  };
+
+  it('reconciles the day a recitation is recorded', async () => {
+    const prisma = makePrisma(AttendanceStatus.PRESENT);
+    await new MemorizationService(prisma).create(dto);
+    expect(points).toHaveBeenCalledWith(prisma, 7, today());
+  });
+
+  it('reconciles points even before roll call', async () => {
+    const prisma = makePrisma(null);
+    await new MemorizationService(prisma).create(dto);
+    expect(points).toHaveBeenCalledWith(prisma, 7, today());
+  });
+
+  it('reconciles the recitation\'s own day when it is edited', async () => {
+    const prisma = makePrisma(null);
+    await new MemorizationService(prisma).update(20, { amountDone: 3 } as any);
+    expect(prisma.$transaction).toHaveBeenCalled();
+    expect(points).toHaveBeenCalledWith(prisma, 7, new Date('2026-11-05'));
+    expect(points.mock.invocationCallOrder[0]).toBeGreaterThan(
+      prisma.memorizationProgress.update.mock.invocationCallOrder[0],
+    );
   });
 });
