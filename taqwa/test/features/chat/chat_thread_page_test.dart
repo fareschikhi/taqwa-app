@@ -1,3 +1,4 @@
+import 'package:dio/dio.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:taqwa/features/chat/presentation/pages/chat_thread_page.dart';
@@ -73,5 +74,37 @@ void main() {
 
     expect(find.byType(ChatThreadPage), findsNothing);
     expect(find.text('لم تعد تملك صلاحية هذه المحادثة'), findsOneWidget);
+  });
+
+  // A deactivated parent's history stays readable; only sending is refused,
+  // with 409, which must not throw staff out like a lost-access 403.
+  testWidgets('a refused reply keeps staff in the thread with their text', (
+    tester,
+  ) async {
+    final repo = FakeChatRepository()
+      ..sendError = DioException(
+        requestOptions: RequestOptions(path: '/chat'),
+        response: Response(
+          requestOptions: RequestOptions(path: '/chat'),
+          statusCode: 409,
+          data: {'message': 'refused'},
+        ),
+      );
+
+    await tester.pumpWidget(
+      host(
+        const ChatThreadPage(target: ChatTarget.parent(9), title: 'x'),
+        repo: repo,
+      ),
+    );
+    await tester.pumpAndSettle();
+    await tester.enterText(find.byType(TextField), 'hello');
+    await tester.pump();
+    await tester.tap(find.byKey(const Key('chat-send')));
+    await tester.pumpAndSettle();
+
+    expect(find.byType(ChatThreadPage), findsOneWidget);
+    expect(find.text('refused'), findsOneWidget);
+    expect(find.text('hello'), findsOneWidget);
   });
 }

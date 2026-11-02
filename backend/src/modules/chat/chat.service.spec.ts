@@ -1,5 +1,6 @@
 import {
   BadRequestException,
+  ConflictException,
   ForbiddenException,
   NotFoundException,
 } from '@nestjs/common';
@@ -160,7 +161,9 @@ describe('ChatService.send', () => {
 
     await expect(
       service.staffSend(admin, 9, { body: 'أهلاً' }),
-    ).rejects.toBeInstanceOf(ForbiddenException);
+      // Not 403: the staff member still has the thread, and the app must keep
+      // them in it (403 means "you lost access" there).
+    ).rejects.toBeInstanceOf(ConflictException);
   });
 
   it('hands the new message to the notifier', async () => {
@@ -180,7 +183,7 @@ describe('ChatService.send', () => {
 });
 
 describe('ChatService pages', () => {
-  it('returns edited and deleted messages when polling with since', async () => {
+  it('returns new, edited and deleted messages since, with an overlap', async () => {
     const { service, prisma } = makeService();
     const since = '2026-11-02T09:00:00.000Z';
 
@@ -188,7 +191,9 @@ describe('ChatService pages', () => {
 
     expect(prisma.chatMessage.findMany.mock.calls[0][0].where).toEqual({
       conversationId: 11,
-      updatedAt: { gt: new Date(since) },
+      // Looks back past since: a row stamped before the previous poll's
+      // serverTime but committed after it must not be skipped for good.
+      updatedAt: { gte: new Date(new Date(since).getTime() - 5000) },
     });
   });
 

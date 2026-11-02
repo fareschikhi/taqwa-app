@@ -1,5 +1,6 @@
 import {
   BadRequestException,
+  ConflictException,
   ForbiddenException,
   Injectable,
   NotFoundException,
@@ -31,6 +32,13 @@ import {
 export const PAGE_SIZE = 30;
 /** Inbox and parent-picker length. A school has a few hundred parents. */
 const LIST_LIMIT = 100;
+/**
+ * How far a poll looks back past its `since`. Prisma stamps `updatedAt` when
+ * a write is built, not when its transaction commits, so a row can carry a
+ * time before the previous poll's serverTime yet only become visible after
+ * it. Re-reading a few seconds is cheap: the app merges by id.
+ */
+export const SINCE_OVERLAP_MS = 5000;
 
 const NO_ACCESS = 'غير مصرح لك بهذه المحادثة';
 
@@ -116,7 +124,12 @@ export class ChatService {
 
     if (query.since) {
       const changed = await this.prisma.chatMessage.findMany({
-        where: { conversationId, updatedAt: { gt: new Date(query.since) } },
+        where: {
+          conversationId,
+          updatedAt: {
+            gte: new Date(new Date(query.since).getTime() - SINCE_OVERLAP_MS),
+          },
+        },
         orderBy: { id: 'asc' },
         include: messageInclude,
       });
@@ -175,7 +188,9 @@ export class ChatService {
     // History stays readable, but nobody can be written to who can't sign in
     // to read it.
     if (!parent.user.isActive) {
-      throw new ForbiddenException('حساب ولي الأمر غير مفعل');
+      // 409, not 403: the thread is still theirs to read, and the app reads
+      // 403 as "access lost" and leaves the screen.
+      throw new ConflictException('حساب ولي الأمر غير مفعل، لا يمكن مراسلته');
     }
 
     const message = await this.prisma.$transaction(async (tx) => {
