@@ -19,6 +19,7 @@ import { ManagersModule } from './modules/managers/managers.module';
 import { AbsenceJustificationModule } from './modules/absence-justification/absence-justification.module';
 import { StudentNotesModule } from './modules/student-notes/student-notes.module';
 import { HalaqaAnnouncementsModule } from './modules/halaqa-announcements/halaqa-announcements.module';
+import { ChatModule } from './modules/chat/chat.module';
 import { UploadsModule } from './modules/uploads/uploads.module';
 import { DevicesModule } from './modules/devices/devices.module';
 import { FinesModule } from './modules/fines/fines.module';
@@ -52,6 +53,7 @@ import { FinesModule } from './modules/fines/fines.module';
     UploadsModule,
     DevicesModule,
     FinesModule,
+    ChatModule,
   ],
   controllers: [AppController],
   providers: [AppService, { provide: APP_GUARD, useClass: ThrottlerGuard }],
