@@ -7,28 +7,42 @@ import 'package:flutter/services.dart';
 class AccountValidators {
   AccountValidators._();
 
-  /// An Algerian mobile in its stored form: 05/06/07 followed by 8 digits.
-  static final _algerianMobile = RegExp(r'^0[567]\d{8}$');
+  /// A phone in its stored form: an Algerian number in local form
+  /// ("0551234567") or any other country's in international form
+  /// ("+33612345678"). Loose on length, since numbering plans differ, but
+  /// within E.164's 15 digits.
+  static final _storedPhone = RegExp(r'^(?:0\d{6,14}|\+[1-9]\d{6,14})$');
 
   // Deliberately loose: one @, no spaces, a dot in the domain. The server's
   // IsEmail is the final word; this only catches obvious typos early.
   static final _email = RegExp(r'^[^\s@]+@[^\s@]+\.[^\s@]+$');
 
-  /// Phone fields stop at the stored form's 10 digits and take digits only,
-  /// so the admin can't type past a full number. +213 can't be typed there;
-  /// the server still folds it for other API callers.
-  static const phoneLength = 10;
-  static final phoneInputFormatters = [FilteringTextInputFormatter.digitsOnly];
+  /// The number box beside the country code: up to E.164's 15 digits, plus a
+  /// leading + for pasting a full number from a country not in the list.
+  static const phoneLength = 16;
+  static final phoneInputFormatters = [
+    FilteringTextInputFormatter.allow(RegExp(r'[\d+]')),
+  ];
 
-  static const phoneError =
-      'رقم الهاتف غير صالح: 10 أرقام تبدأ بـ 05 أو 06 أو 07';
+  static const phoneError = 'رقم الهاتف غير صالح';
 
   /// Same folding the server applies before storing: drops spacing and
-  /// punctuation, and turns +213/00213 into the local 0 prefix.
+  /// punctuation, turns 00 into +, and turns +213 into the local 0 prefix
+  /// (dropping a trunk 0 typed after the code).
   static String normalizePhone(String value) {
-    final compact = value.replaceAll(RegExp(r'[\s\-.()]'), '');
-    final international = RegExp(r'^(?:\+|00)213(\d{9})$').firstMatch(compact);
-    return international != null ? '0${international.group(1)}' : compact;
+    final compact = value
+        .replaceAll(RegExp(r'[\s\-.()]'), '')
+        .replaceFirst(RegExp(r'^00'), '+');
+    final algerian = RegExp(r'^\+2130?(\d+)$').firstMatch(compact);
+    return algerian != null ? '0${algerian.group(1)}' : compact;
+  }
+
+  /// The stored form of [number] typed beside [dialCode] ("+213"), or '' when
+  /// nothing was typed. A number starting with + already carries its own code.
+  static String composePhone(String dialCode, String number) {
+    final value = number.trim();
+    if (value.isEmpty) return '';
+    return normalizePhone(value.startsWith('+') ? value : '$dialCode$value');
   }
 
   static String? fullName(String? v) {
@@ -41,7 +55,7 @@ class AccountValidators {
   static String? phone(String? v, {bool required = false}) {
     final value = v?.trim() ?? '';
     if (value.isEmpty) return required ? 'رقم الهاتف مطلوب' : null;
-    return _algerianMobile.hasMatch(normalizePhone(value)) ? null : phoneError;
+    return _storedPhone.hasMatch(normalizePhone(value)) ? null : phoneError;
   }
 
   static String? email(String? v) {

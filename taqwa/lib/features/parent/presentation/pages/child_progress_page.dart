@@ -12,6 +12,7 @@ import '../../../../core/utils/hadith_label.dart';
 import '../../../data/repositories/student_repository.dart';
 import 'package:taqwa/core/widgets/app_text.dart';
 import '../widgets/parent_chat_button.dart';
+import 'package:taqwa/core/utils/memorization_amount.dart';
 
 class ChildProgressPage extends ConsumerStatefulWidget {
   const ChildProgressPage({super.key});
@@ -74,13 +75,25 @@ class _ChildProgressPageState extends ConsumerState<ChildProgressPage> {
       );
     }
 
-    final totalPagesDone = (_progress?['totalPagesDone'] as num?)?.toInt() ?? 0;
+    final totalPagesDone = formatAmount(_progress?['totalPagesDone'] as num?);
     final totalSurahs = (_progress?['totalSurahs'] as num?)?.toInt() ?? 0;
     final typeCounts =
         (_progress?['typeCounts'] as Map<String, dynamic>?) ?? {};
     final newCount = (typeCounts['MEMORIZING'] as num?)?.toInt() ?? 0;
     final minorCount = (typeCounts['SMALLREVISION'] as num?)?.toInt() ?? 0;
     final majorCount = (typeCounts['BIGREVISION'] as num?)?.toInt() ?? 0;
+    final hadithTypeCounts =
+        (_progress?['hadithTypeCounts'] as Map<String, dynamic>?) ?? {};
+    final hadithNewCount =
+        (hadithTypeCounts['MEMORIZING'] as num?)?.toInt() ?? 0;
+    final hadithMinorCount =
+        (hadithTypeCounts['SMALLREVISION'] as num?)?.toInt() ?? 0;
+    final hadithMajorCount =
+        (hadithTypeCounts['BIGREVISION'] as num?)?.toInt() ?? 0;
+    // Hadith history stays visible after the admin turns hadith off.
+    final showHadith =
+        _progress?['tracksHadith'] == true ||
+        hadithNewCount + hadithMinorCount + hadithMajorCount > 0;
 
     return Scaffold(
       backgroundColor: AppColors.background,
@@ -149,7 +162,7 @@ class _ChildProgressPageState extends ConsumerState<ChildProgressPage> {
                                 crossAxisAlignment: CrossAxisAlignment.start,
                                 children: [
                                   AppText(
-                                    '$totalPagesDone',
+                                    totalPagesDone,
                                     style: AppTextStyles.headlineLg.copyWith(
                                       color: AppColors.onPrimary,
                                       fontWeight: FontWeight.w700,
@@ -195,33 +208,22 @@ class _ChildProgressPageState extends ConsumerState<ChildProgressPage> {
                         ),
                       ),
                       SizedBox(height: 20.h),
-                      Row(
-                        children: [
-                          Expanded(
-                            child: _MiniStat(
-                              label: 'حفظ جديد',
-                              value: '$newCount',
-                              color: AppColors.primary,
-                            ),
-                          ),
-                          SizedBox(width: 12.w),
-                          Expanded(
-                            child: _MiniStat(
-                              label: 'مراجعة صغرى',
-                              value: '$minorCount',
-                              color: AppColors.secondary,
-                            ),
-                          ),
-                          SizedBox(width: 12.w),
-                          Expanded(
-                            child: _MiniStat(
-                              label: 'مراجعة كبرى',
-                              value: '$majorCount',
-                              color: AppColors.tertiary,
-                            ),
-                          ),
-                        ],
+                      // The headings only matter once there are two rows.
+                      if (showHadith) const _StatsHeading('القرآن الكريم'),
+                      _TypeCountsRow(
+                        newCount: newCount,
+                        minorCount: minorCount,
+                        majorCount: majorCount,
                       ),
+                      if (showHadith) ...[
+                        SizedBox(height: 16.h),
+                        const _StatsHeading('الحديث الشريف'),
+                        _TypeCountsRow(
+                          newCount: hadithNewCount,
+                          minorCount: hadithMinorCount,
+                          majorCount: hadithMajorCount,
+                        ),
+                      ],
                       SizedBox(height: 20.h),
                       Row(
                         children: [
@@ -338,7 +340,7 @@ class _ChildProgressPageState extends ConsumerState<ChildProgressPage> {
                       ),
                     ),
                     child: AppText(
-                      '${entry['amountDone']} ${isHadith ? kHadithUnitLabel : type.unitLabel}',
+                      '${formatAmount(entry['amountDone'] as num?)} ${isHadith ? kHadithUnitLabel : kPageUnitLabel}',
                       style: AppTextStyles.labelMd.copyWith(
                         color: AppColors.onSurface,
                       ),
@@ -350,6 +352,62 @@ class _ChildProgressPageState extends ConsumerState<ChildProgressPage> {
           ),
         ],
       ),
+    );
+  }
+}
+
+class _StatsHeading extends StatelessWidget {
+  const _StatsHeading(this.text);
+  final String text;
+
+  @override
+  Widget build(BuildContext context) {
+    return Padding(
+      padding: EdgeInsets.only(bottom: 8.h),
+      child: AppText(
+        text,
+        style: AppTextStyles.bodyMdBold.copyWith(color: AppColors.onSurface),
+      ),
+    );
+  }
+}
+
+class _TypeCountsRow extends StatelessWidget {
+  const _TypeCountsRow({
+    required this.newCount,
+    required this.minorCount,
+    required this.majorCount,
+  });
+  final int newCount, minorCount, majorCount;
+
+  @override
+  Widget build(BuildContext context) {
+    return Row(
+      children: [
+        Expanded(
+          child: _MiniStat(
+            label: 'حفظ جديد',
+            value: '$newCount',
+            color: AppColors.primary,
+          ),
+        ),
+        SizedBox(width: 12.w),
+        Expanded(
+          child: _MiniStat(
+            label: 'جمع',
+            value: '$minorCount',
+            color: AppColors.secondary,
+          ),
+        ),
+        SizedBox(width: 12.w),
+        Expanded(
+          child: _MiniStat(
+            label: 'مراجعة وضبط',
+            value: '$majorCount',
+            color: AppColors.tertiary,
+          ),
+        ),
+      ],
     );
   }
 }

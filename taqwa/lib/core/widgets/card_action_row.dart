@@ -17,6 +17,7 @@ class CardActionRow extends StatelessWidget {
     this.isActive,
     this.onToggleActive,
     this.onTelegram,
+    this.compact = false,
   });
 
   final VoidCallback onEdit;
@@ -30,8 +31,13 @@ class CardActionRow extends StatelessWidget {
   /// Null hides the Telegram button, e.g. when there is no usable number.
   final VoidCallback? onTelegram;
 
+  /// For a narrow grid card: the buttons share the width equally and edit
+  /// drops its label, which would not fit beside three icon buttons.
+  final bool compact;
+
   @override
   Widget build(BuildContext context) {
+    if (compact) return _buildCompact();
     return Row(
       children: [
         if (onTelegram != null) ...[
@@ -130,6 +136,76 @@ class CardActionRow extends StatelessWidget {
           ),
         ),
       ],
+    );
+  }
+
+  Widget _buildCompact() {
+    final buttons = <Widget>[
+      if (onTelegram != null)
+        _iconButton(
+          tooltip: 'تيليجرام',
+          icon: Icons.telegram,
+          background: kTelegramBlue,
+          color: Colors.white,
+          onTap: onTelegram,
+        ),
+      if (isActive != null)
+        _iconButton(
+          tooltip: isActive! ? 'نشط' : 'غير نشط',
+          icon: isActive! ? Icons.check_circle_outline : Icons.block,
+          background: isActive!
+              ? AppColors.primaryContainer
+              : AppColors.errorContainer,
+          color: isActive! ? AppColors.onPrimaryContainer : AppColors.error,
+          onTap: onToggleActive,
+        ),
+      _iconButton(
+        tooltip: 'حذف',
+        icon: Icons.delete_outline,
+        background: AppColors.errorContainer,
+        color: AppColors.error,
+        onTap: onDelete,
+      ),
+      _iconButton(
+        tooltip: 'تعديل',
+        icon: Icons.edit_outlined,
+        color: AppColors.secondary,
+        border: AppColors.outlineVariant,
+        onTap: onEdit,
+      ),
+    ];
+    return Row(
+      children: [
+        for (var i = 0; i < buttons.length; i++) ...[
+          if (i > 0) SizedBox(width: 6.w),
+          Expanded(child: buttons[i]),
+        ],
+      ],
+    );
+  }
+
+  Widget _iconButton({
+    required String tooltip,
+    required IconData icon,
+    required Color color,
+    required VoidCallback? onTap,
+    Color? background,
+    Color? border,
+  }) {
+    return Tooltip(
+      message: tooltip,
+      child: GestureDetector(
+        onTap: onTap,
+        child: Container(
+          height: 38.w,
+          decoration: BoxDecoration(
+            borderRadius: BorderRadius.circular(AppConstants.radiusMd),
+            color: background,
+            border: border == null ? null : Border.all(color: border),
+          ),
+          child: Icon(icon, size: 18.w, color: color),
+        ),
+      ),
     );
   }
 }

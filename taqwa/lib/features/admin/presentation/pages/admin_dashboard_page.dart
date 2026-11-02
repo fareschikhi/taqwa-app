@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
+import 'package:taqwa/core/widgets/wird_reminder_card.dart';
 import '../../../../core/theme/app_colors.dart';
 import '../../../../core/theme/app_text_styles.dart';
 import '../../../../core/constants/app_constants.dart';
@@ -169,6 +170,10 @@ class _AdminDashboardPageState extends ConsumerState<AdminDashboardPage> {
                     ),
                     SizedBox(height: 24.h),
                     _buildChartAndActivity(),
+                    if (WirdReminderCard.isAvailable) ...[
+                      SizedBox(height: 24.h),
+                      const WirdReminderCard(),
+                    ],
                     SizedBox(height: 32.h),
                   ]),
                 ),
@@ -228,21 +233,6 @@ class _AdminDashboardPageState extends ConsumerState<AdminDashboardPage> {
               ),
             ),
             const Spacer(),
-            Container(
-              width: 40.w,
-              height: 40.w,
-              decoration: BoxDecoration(
-                color: AppColors.primaryContainer,
-                shape: BoxShape.circle,
-                border: Border.all(color: AppColors.primaryContainer, width: 2),
-              ),
-              child: Icon(
-                Icons.person,
-                color: AppColors.onPrimaryContainer,
-                size: 22.w,
-              ),
-            ),
-            SizedBox(width: 8.w),
             AppText(
               'التقوى',
               style: AppTextStyles.headlineMd.copyWith(

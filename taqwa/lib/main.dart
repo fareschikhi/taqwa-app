@@ -8,7 +8,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'core/theme/app_theme.dart';
 import 'core/widgets/mobile_frame.dart';
-import 'features/auth/presentation/pages/auth_gate.dart';
+import 'features/auth/presentation/pages/intro_page.dart';
 
 /// Runs in its own isolate when a message arrives with the app closed, so it
 /// shares nothing with the running app and has to initialise Firebase itself.
@@ -67,10 +67,10 @@ class TaqwaApp extends StatelessWidget {
             builder: (context, widget) {
               return Directionality(
                 textDirection: TextDirection.ltr,
-                child: MobileFrame(child: widget!),
+                child: MobileFrame(child: ResumeIntro(child: widget!)),
               );
             },
-            home: const AuthGate(),
+            home: const StartupIntro(),
           );
         },
       ),

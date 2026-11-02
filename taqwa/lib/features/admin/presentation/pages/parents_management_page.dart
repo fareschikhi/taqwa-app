@@ -9,6 +9,7 @@ import '../../../../core/widgets/avatar_widget.dart';
 import '../../../../core/widgets/confirm_delete_dialog.dart';
 import 'package:taqwa/core/widgets/card_action_row.dart';
 import 'package:taqwa/core/widgets/confirm_status_dialog.dart';
+import 'package:taqwa/core/widgets/list_layout.dart';
 import '../../../../features/data/models/parent/parent_model.dart';
 import '../../../../features/data/repositories/parent_repository.dart';
 import 'package:taqwa/features/data/repositories/user_repository.dart';
@@ -33,10 +34,21 @@ class _ParentsManagementPageState extends State<ParentsManagementPage> {
   bool _isLoading = true;
   int _filterIndex = 0;
 
+  static const _layoutKey = 'admin_parents';
+  ListLayout _layout = ListLayout.list;
+
+  void _setLayout(ListLayout layout) {
+    setState(() => _layout = layout);
+    ListLayoutStore.write(_layoutKey, layout);
+  }
+
   @override
   void initState() {
     super.initState();
     _load();
+    ListLayoutStore.read(_layoutKey).then((layout) {
+      if (mounted && layout != _layout) setState(() => _layout = layout);
+    });
   }
 
   @override
@@ -215,10 +227,21 @@ class _ParentsManagementPageState extends State<ParentsManagementPage> {
                       onPressed: () => _openForm(null),
                     ),
                     SizedBox(height: 16.h),
-                    SearchBarWidget(
-                      hint: 'ابحث عن ولي أمر...',
-                      controller: _searchController,
-                      onChanged: (_) => setState(() => _applyFilter()),
+                    Row(
+                      children: [
+                        ListLayoutToggle(
+                          value: _layout,
+                          onChanged: _setLayout,
+                        ),
+                        SizedBox(width: 8.w),
+                        Expanded(
+                          child: SearchBarWidget(
+                            hint: 'ابحث عن ولي أمر...',
+                            controller: _searchController,
+                            onChanged: (_) => setState(() => _applyFilter()),
+                          ),
+                        ),
+                      ],
                     ),
                     SizedBox(height: 12.h),
                     FilterChipGroup(
@@ -256,6 +279,36 @@ class _ParentsManagementPageState extends State<ParentsManagementPage> {
                             ),
                           ),
                         ),
+                      )
+                    : _layout == ListLayout.grid
+                    ? LayoutBuilder(
+                        builder: (_, constraints) {
+                          final columns = cardGridColumns(
+                            constraints.maxWidth - 32.w,
+                          );
+                          return ListView.separated(
+                            physics: const AlwaysScrollableScrollPhysics(),
+                            padding: EdgeInsets.fromLTRB(16.w, 0, 16.w, 16.h),
+                            itemCount: (_filtered.length / columns).ceil(),
+                            separatorBuilder: (_, _) => SizedBox(height: 12.h),
+                            itemBuilder: (_, row) => CardGridRow(
+                              columns: columns,
+                              children: [
+                                for (final parent in _filtered.skip(
+                                  row * columns,
+                                ).take(columns))
+                                  _ParentGridCard(
+                                    parent: parent,
+                                    isActive: parent.isActive ?? true,
+                                    onOpenDetails: () => _openDetails(parent),
+                                    onEdit: () => _openForm(parent),
+                                    onDelete: () => _deleteParent(parent.id!),
+                                    onToggleActive: () => _toggleStatus(parent),
+                                  ),
+                              ],
+                            ),
+                          );
+                        },
                       )
                     : ListView.separated(
                         physics: const AlwaysScrollableScrollPhysics(),
@@ -418,6 +471,128 @@ class _ParentCard extends StatelessWidget {
             ),
             SizedBox(height: 12.h),
             CardActionRow(
+              isActive: isActive,
+              onToggleActive: onToggleActive,
+              onDelete: onDelete,
+              onEdit: onEdit,
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+}
+
+/// The grid layout's card: the same facts and actions as [_ParentCard],
+/// stacked to fit half the screen's width.
+class _ParentGridCard extends StatelessWidget {
+  const _ParentGridCard({
+    required this.parent,
+    required this.isActive,
+    required this.onOpenDetails,
+    required this.onEdit,
+    required this.onDelete,
+    required this.onToggleActive,
+  });
+
+  final ParentModel parent;
+  final bool isActive;
+  final VoidCallback onOpenDetails;
+  final VoidCallback onEdit;
+  final VoidCallback onDelete;
+  final VoidCallback onToggleActive;
+
+  @override
+  Widget build(BuildContext context) {
+    final phone = parent.phone ?? '';
+
+    return GestureDetector(
+      onTap: onOpenDetails,
+      behavior: HitTestBehavior.opaque,
+      child: Container(
+        decoration: BoxDecoration(
+          color: AppColors.surfaceContainerLowest,
+          borderRadius: BorderRadius.circular(AppConstants.radiusXl),
+          boxShadow: const [
+            BoxShadow(
+              color: Color.fromRGBO(18, 52, 59, 0.04),
+              blurRadius: 20,
+              offset: Offset(0, 4),
+            ),
+          ],
+        ),
+        padding: EdgeInsets.all(12.w),
+        child: Column(
+          children: [
+            AvatarWidget(
+              avatarUrl: parent.avatar,
+              size: AppConstants.avatarLg,
+              backgroundColor: AppColors.tertiaryContainer,
+              fallback: AppText(
+                parent.fullName.isNotEmpty ? parent.fullName[0] : '؟',
+                style: AppTextStyles.headlineSm.copyWith(
+                  color: AppColors.onTertiaryContainer,
+                ),
+              ),
+            ),
+            SizedBox(height: 8.h),
+            AppText(
+              parent.fullName,
+              style: AppTextStyles.bodyMdBold.copyWith(
+                color: AppColors.onSurface,
+              ),
+              textAlign: TextAlign.center,
+              maxLines: 2,
+              overflow: TextOverflow.ellipsis,
+            ),
+            if (phone.isNotEmpty) ...[
+              SizedBox(height: 4.h),
+              AppText(
+                phone,
+                style: AppTextStyles.labelSm.copyWith(
+                  color: AppColors.onSurfaceVariant,
+                ),
+                maxLines: 1,
+                overflow: TextOverflow.ellipsis,
+              ),
+            ],
+            SizedBox(height: 6.h),
+            Container(
+              padding: EdgeInsets.symmetric(horizontal: 8.w, vertical: 3.h),
+              decoration: BoxDecoration(
+                color: (isActive ? AppColors.primary : AppColors.outline)
+                    .withValues(alpha: 0.1),
+                borderRadius: BorderRadius.circular(AppConstants.radiusFull),
+              ),
+              child: AppText(
+                isActive ? 'نشط' : 'غير نشط',
+                style: AppTextStyles.labelSm.copyWith(
+                  color: isActive ? AppColors.primary : AppColors.outline,
+                ),
+              ),
+            ),
+            const Spacer(),
+            SizedBox(height: 8.h),
+            Row(
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: [
+                Flexible(
+                  child: AppText(
+                    '${parent.children.length} طالب مرتبط',
+                    style: AppTextStyles.labelSm.copyWith(
+                      color: AppColors.primary,
+                    ),
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
+                  ),
+                ),
+                SizedBox(width: 4.w),
+                const Icon(Icons.group, size: 14, color: AppColors.primary),
+              ],
+            ),
+            SizedBox(height: 10.h),
+            CardActionRow(
+              compact: true,
               isActive: isActive,
               onToggleActive: onToggleActive,
               onDelete: onDelete,

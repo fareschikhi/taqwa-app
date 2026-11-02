@@ -15,6 +15,7 @@ import 'pages/child_progress_page.dart';
 import 'pages/child_attendance_history_page.dart';
 import '../../shared/presentation/pages/profile_page.dart';
 import 'package:taqwa/core/widgets/app_text.dart';
+import 'package:taqwa/core/widgets/shell_tab_scope.dart';
 import 'package:taqwa/features/data/repositories/notification_repository.dart';
 import 'pages/notifications_page.dart';
 import 'package:taqwa/core/providers/chat_unread_provider.dart';
@@ -178,7 +179,10 @@ class _ParentShellState extends ConsumerState<ParentShell> {
         children: [
           if (childState.students.length > 1) _buildChildSwitcher(childState),
           Expanded(
-            child: IndexedStack(index: _currentIndex, children: _pages),
+            child: ShellTabScope(
+              selectTab: _selectTab,
+              child: IndexedStack(index: _currentIndex, children: _pages),
+            ),
           ),
         ],
       ),

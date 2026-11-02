@@ -14,6 +14,7 @@ import 'pages/manager_students_page.dart';
 import 'pages/manager_parents_page.dart';
 import 'pages/justification_list_page.dart';
 import 'package:taqwa/core/widgets/app_text.dart';
+import 'package:taqwa/core/widgets/shell_tab_scope.dart';
 import 'package:taqwa/features/shared/presentation/pages/profile_page.dart';
 
 class ManagerShell extends ConsumerStatefulWidget {
@@ -38,13 +39,25 @@ class _ManagerShellState extends ConsumerState<ManagerShell> {
     );
   }
 
+  /// Which list the التبريرات tab shows, so the dashboard's pending and
+  /// justified cards can each open their own.
+  final _justificationFilter = ValueNotifier<int>(0);
+
   late final List<Widget> _pages = [
-    ManagerDashboardPage(),
-    ManagerStudentsPage(),
-    ManagerParentsPage(),
-    JustificationListPage(),
-    ProfilePage(role: 'manager'),
+    ManagerDashboardPage(justificationFilter: _justificationFilter),
+    const ManagerStudentsPage(),
+    const ManagerParentsPage(),
+    JustificationListPage(filter: _justificationFilter),
+    const ProfilePage(role: 'manager'),
   ];
+
+  @override
+  void dispose() {
+    _justificationFilter.dispose();
+    super.dispose();
+  }
+
+  void _selectTab(int i) => setState(() => _currentIndex = i);
 
   @override
   Widget build(BuildContext context) {
@@ -61,9 +74,12 @@ class _ManagerShellState extends ConsumerState<ManagerShell> {
         );
       }
     });
-    return Scaffold(
-      body: IndexedStack(index: _currentIndex, children: _pages),
-      bottomNavigationBar: _buildBottomNav(),
+    return ShellTabScope(
+      selectTab: _selectTab,
+      child: Scaffold(
+        body: IndexedStack(index: _currentIndex, children: _pages),
+        bottomNavigationBar: _buildBottomNav(),
+      ),
     );
   }
 
@@ -120,7 +136,7 @@ class _ManagerShellState extends ConsumerState<ManagerShell> {
               final isActive = _currentIndex == i;
               final item = items[i];
               return GestureDetector(
-                onTap: () => setState(() => _currentIndex = i),
+                onTap: () => _selectTab(i),
                 child: AnimatedContainer(
                   duration: AppConstants.animFast,
                   padding: EdgeInsets.symmetric(

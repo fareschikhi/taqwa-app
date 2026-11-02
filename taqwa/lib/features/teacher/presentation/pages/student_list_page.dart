@@ -8,6 +8,7 @@ import '../../../../core/utils/fine_balance.dart';
 import '../../../../core/widgets/search_bar_widget.dart';
 import '../../../../core/widgets/avatar_widget.dart';
 import '../../../../core/providers/auth_provider.dart';
+import '../../../../core/providers/selected_halaqa_provider.dart';
 import '../../../data/models/halaqa/halaqa_model.dart';
 import '../../../data/repositories/fine_repository.dart';
 import '../../../data/repositories/halaqa_repository.dart';
@@ -36,6 +37,10 @@ class _StudentListPageState extends ConsumerState<StudentListPage> {
   bool _hasMore = true;
   int _currentPage = 1;
   static const _limit = 20;
+
+  /// Bumped by every fresh load, so a page that arrives after the teacher
+  /// switched halaqa or changed the search is dropped instead of drawn.
+  int _generation = 0;
 
   // Each student's own halaqa, resolved once so the roster can tell an
   // adult student from a child one — `GET /students` nests only `id`, `name`
@@ -142,11 +147,14 @@ class _StudentListPageState extends ConsumerState<StudentListPage> {
   }
 
   Future<void> _loadStudents({bool reset = false}) async {
-    if (_isLoading) return;
+    // A fresh load is never skipped: it is how a halaqa switch or a new
+    // search replaces whatever is still in flight.
+    if (_isLoading && !reset) return;
     if (!reset && !_hasMore) return;
     final tid = _teacherId;
     if (tid == null) return;
 
+    final generation = reset ? ++_generation : _generation;
     setState(() {
       _isLoading = true;
     });
@@ -154,6 +162,7 @@ class _StudentListPageState extends ConsumerState<StudentListPage> {
     try {
       final result = await _repo.getStudents(
         teacherId: tid,
+        halaqaId: ref.read(selectedHalaqaProvider).selected?.id,
         search: _searchController.text.trim().isEmpty
             ? null
             : _searchController.text.trim(),
@@ -161,6 +170,7 @@ class _StudentListPageState extends ConsumerState<StudentListPage> {
         limit: _limit,
         isActive: _isActiveFilter,
       );
+      if (!mounted || generation != _generation) return;
       setState(() {
         if (reset) {
           _students = result.data;
@@ -177,6 +187,7 @@ class _StudentListPageState extends ConsumerState<StudentListPage> {
       _resolveStudentHalaqas();
       await _loadFineBalances();
     } catch (_) {
+      if (!mounted || generation != _generation) return;
       setState(() {
         _isLoading = false;
       });
@@ -196,6 +207,11 @@ class _StudentListPageState extends ConsumerState<StudentListPage> {
       if (next.user?.teacherId != null && _students.isEmpty && !_isLoading) {
         _loadStudents(reset: true);
       }
+    });
+    ref.listen(selectedHalaqaProvider, (previous, next) {
+      if (next.selected?.id == previous?.selected?.id) return;
+      if (_scrollController.hasClients) _scrollController.jumpTo(0);
+      _loadStudents(reset: true);
     });
 
     return Scaffold(
@@ -248,7 +264,7 @@ class _StudentListPageState extends ConsumerState<StudentListPage> {
                     filters: [
                       'الكل (${_students.length})',
                       'نشطون',
-                      'غير نشطون',
+                      'غير نشطين',
                     ],
                     onChanged: (i) {
                       setState(() => _filterIndex = i);
@@ -309,6 +325,7 @@ class _StudentListPageState extends ConsumerState<StudentListPage> {
                                         fullName: student.fullName,
                                         avatar: student.avatar,
                                         halaqaId: student.halaqaId,
+                                        canEditRating: true,
                                       ),
                                     ),
                                   ),

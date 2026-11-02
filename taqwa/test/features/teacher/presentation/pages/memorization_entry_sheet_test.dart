@@ -74,58 +74,65 @@ void main() {
     DioClient.instance.httpClientAdapter = _StubAdapter(jsonEncode([]));
   });
 
-  testWidgets('offers no subject switch for a student without hadith tracking', (
-    tester,
-  ) async {
-    _setPhoneViewport(tester);
-    await tester.pumpWidget(
-      _host(MemorizationEntrySheet(student: _student())),
-    );
-    await tester.pumpAndSettle();
+  testWidgets(
+    'offers no subject switch for a student without hadith tracking',
+    (tester) async {
+      _setPhoneViewport(tester);
+      await tester.pumpWidget(
+        _host(MemorizationEntrySheet(student: _student())),
+      );
+      await tester.pumpAndSettle();
 
-    expect(find.text('القرآن'), findsNothing);
-    expect(find.text('الحديث'), findsNothing);
-    expect(find.text('السورة'), findsOneWidget);
-  });
+      expect(find.text('القرآن'), findsNothing);
+      expect(find.text('الحديث'), findsNothing);
+      expect(find.text('السورة'), findsOneWidget);
+    },
+  );
 
-  testWidgets('offers a Quran/Hadith switch for a student with hadith tracking', (
-    tester,
-  ) async {
-    _setPhoneViewport(tester);
-    await tester.pumpWidget(
-      _host(MemorizationEntrySheet(student: _student(hadithBooks: kHadithBooks))),
-    );
-    await tester.pumpAndSettle();
+  testWidgets(
+    'offers a Quran/Hadith switch for a student with hadith tracking',
+    (tester) async {
+      _setPhoneViewport(tester);
+      await tester.pumpWidget(
+        _host(
+          MemorizationEntrySheet(student: _student(hadithBooks: kHadithBooks)),
+        ),
+      );
+      await tester.pumpAndSettle();
 
-    expect(find.text('القرآن'), findsOneWidget);
-    expect(find.text('الحديث'), findsOneWidget);
-    // Quran is the default subject, so the surah field is still the one shown.
-    expect(find.text('السورة'), findsOneWidget);
-  });
+      expect(find.text('القرآن'), findsOneWidget);
+      expect(find.text('الحديث'), findsOneWidget);
+      // Quran is the default subject, so the surah field is still the one shown.
+      expect(find.text('السورة'), findsOneWidget);
+    },
+  );
 
-  testWidgets('switching to Hadith replaces the surah field with a book picker', (
-    tester,
-  ) async {
-    _setPhoneViewport(tester);
-    await tester.pumpWidget(
-      _host(MemorizationEntrySheet(student: _student(hadithBooks: kHadithBooks))),
-    );
-    await tester.pumpAndSettle();
+  testWidgets(
+    'switching to Hadith replaces the surah field with a book picker',
+    (tester) async {
+      _setPhoneViewport(tester);
+      await tester.pumpWidget(
+        _host(
+          MemorizationEntrySheet(student: _student(hadithBooks: kHadithBooks)),
+        ),
+      );
+      await tester.pumpAndSettle();
 
-    await tester.tap(find.text('الحديث'));
-    await tester.pumpAndSettle();
+      await tester.tap(find.text('الحديث'));
+      await tester.pumpAndSettle();
 
-    expect(find.text('السورة'), findsNothing);
-    expect(find.text('الكتاب'), findsOneWidget);
-    expect(find.text('اختر الكتاب...'), findsOneWidget);
+      expect(find.text('السورة'), findsNothing);
+      expect(find.text('الكتاب'), findsOneWidget);
+      expect(find.text('اختر الكتاب...'), findsOneWidget);
 
-    await tester.tap(find.text('اختر الكتاب...'));
-    await tester.pumpAndSettle();
+      await tester.tap(find.text('اختر الكتاب...'));
+      await tester.pumpAndSettle();
 
-    for (final book in kHadithBooks) {
-      expect(find.text(book), findsWidgets);
-    }
-  });
+      for (final book in kHadithBooks) {
+        expect(find.text(book), findsWidgets);
+      }
+    },
+  );
 
   testWidgets('lists only the books the admin assigned to the student', (
     tester,
@@ -150,9 +157,7 @@ void main() {
     }
   });
 
-  testWidgets('selects the only assigned book without asking', (
-    tester,
-  ) async {
+  testWidgets('selects the only assigned book without asking', (tester) async {
     _setPhoneViewport(tester);
     await tester.pumpWidget(
       _host(
@@ -228,7 +233,9 @@ void main() {
       );
 
       await tester.pumpWidget(
-        _host(MemorizationEntrySheet(student: _student(hadithBooks: kHadithBooks))),
+        _host(
+          MemorizationEntrySheet(student: _student(hadithBooks: kHadithBooks)),
+        ),
       );
       await tester.pumpAndSettle();
 
@@ -240,40 +247,41 @@ void main() {
     },
   );
 
-  testWidgets(
-    "preselects the book of the student's most recent hadith",
-    (tester) async {
-      _setPhoneViewport(tester);
-      DioClient.instance.httpClientAdapter = _StubAdapter(
-        jsonEncode([
-          {
-            'id': 1,
-            'studentId': 1,
-            'surahNumber': null,
-            'amountDone': 1,
-            'memorizationType': 'MEMORIZING',
-            'subject': 'HADITH',
-            'hadithReference': 'عُمدة الأحكام',
-            'date': '2026-08-20T00:00:00.000Z',
-            'recordedAt': '2026-08-20T10:00:00.000Z',
-          },
-        ]),
-      );
+  testWidgets("preselects the book of the student's most recent hadith", (
+    tester,
+  ) async {
+    _setPhoneViewport(tester);
+    DioClient.instance.httpClientAdapter = _StubAdapter(
+      jsonEncode([
+        {
+          'id': 1,
+          'studentId': 1,
+          'surahNumber': null,
+          'amountDone': 1,
+          'memorizationType': 'MEMORIZING',
+          'subject': 'HADITH',
+          'hadithReference': 'عُمدة الأحكام',
+          'date': '2026-08-20T00:00:00.000Z',
+          'recordedAt': '2026-08-20T10:00:00.000Z',
+        },
+      ]),
+    );
 
-      await tester.pumpWidget(
-        _host(MemorizationEntrySheet(student: _student(hadithBooks: kHadithBooks))),
-      );
-      await tester.pumpAndSettle();
+    await tester.pumpWidget(
+      _host(
+        MemorizationEntrySheet(student: _student(hadithBooks: kHadithBooks)),
+      ),
+    );
+    await tester.pumpAndSettle();
 
-      // Only the segment option carries this text before switching, so it is
-      // unambiguous to tap here.
-      await tester.tap(find.text('الحديث'));
-      await tester.pumpAndSettle();
+    // Only the segment option carries this text before switching, so it is
+    // unambiguous to tap here.
+    await tester.tap(find.text('الحديث'));
+    await tester.pumpAndSettle();
 
-      expect(find.text('عُمدة الأحكام'), findsOneWidget);
-      expect(find.text('اختر الكتاب...'), findsNothing);
-    },
-  );
+    expect(find.text('عُمدة الأحكام'), findsOneWidget);
+    expect(find.text('اختر الكتاب...'), findsNothing);
+  });
 
   testWidgets(
     'does not overflow when a keyboard opens over the hadith form on a small phone',
@@ -286,7 +294,9 @@ void main() {
       addTearDown(tester.view.reset);
 
       await tester.pumpWidget(
-        _host(MemorizationEntrySheet(student: _student(hadithBooks: kHadithBooks))),
+        _host(
+          MemorizationEntrySheet(student: _student(hadithBooks: kHadithBooks)),
+        ),
       );
       await tester.pumpAndSettle();
 
@@ -309,4 +319,215 @@ void main() {
       expect(find.text('تسجيل'), findsOneWidget);
     },
   );
+  testWidgets('the page count can be typed, including a half page', (
+    tester,
+  ) async {
+    _setPhoneViewport(tester);
+    await tester.pumpWidget(_host(MemorizationEntrySheet(student: _student())));
+    await tester.pumpAndSettle();
+
+    await tester.tap(find.text('حفظ'));
+    await tester.pumpAndSettle();
+
+    final field = find.byType(TextField);
+    expect(field, findsOneWidget);
+    expect(find.textContaining('نصف صفحة'), findsOneWidget);
+
+    await tester.enterText(field, '3.5');
+    await tester.testTextInput.receiveAction(TextInputAction.done);
+    await tester.pumpAndSettle();
+    expect(find.text('3.5'), findsOneWidget);
+
+    await tester.tap(find.byIcon(Icons.add));
+    await tester.pumpAndSettle();
+    expect(find.text('4.5'), findsOneWidget);
+  });
+
+  testWidgets('a revision is counted in pages and takes a half', (
+    tester,
+  ) async {
+    _setPhoneViewport(tester);
+    await tester.pumpWidget(_host(MemorizationEntrySheet(student: _student())));
+    await tester.pumpAndSettle();
+
+    await tester.tap(find.text('جمع'));
+    await tester.pumpAndSettle();
+
+    expect(find.text('عدد الصفحات'), findsOneWidget);
+    await tester.enterText(find.byType(TextField), '2.5');
+    await tester.testTextInput.receiveAction(TextInputAction.done);
+    await tester.pumpAndSettle();
+    expect(find.text('2.5'), findsOneWidget);
+  });
+
+  testWidgets('a typed amount above the mushaf is brought down to it', (
+    tester,
+  ) async {
+    _setPhoneViewport(tester);
+    await tester.pumpWidget(_host(MemorizationEntrySheet(student: _student())));
+    await tester.pumpAndSettle();
+
+    await tester.enterText(find.byType(TextField), '999');
+    await tester.testTextInput.receiveAction(TextInputAction.done);
+    await tester.pumpAndSettle();
+    expect(find.text('604'), findsOneWidget);
+  });
+
+  testWidgets('counting by hizb starts at ten pages and steps by ten', (
+    tester,
+  ) async {
+    _setPhoneViewport(tester);
+    await tester.pumpWidget(_host(MemorizationEntrySheet(student: _student())));
+    await tester.pumpAndSettle();
+
+    await tester.tap(find.text('حزب'));
+    await tester.pumpAndSettle();
+    expect(find.text('10'), findsOneWidget);
+
+    await tester.tap(find.byIcon(Icons.add));
+    await tester.pumpAndSettle();
+    expect(find.text('20'), findsOneWidget);
+
+    await tester.tap(find.byIcon(Icons.remove));
+    await tester.pumpAndSettle();
+    expect(find.text('10'), findsOneWidget);
+
+    // Back to pages: one page, stepping by one.
+    await tester.tap(find.text('صفحات'));
+    await tester.pumpAndSettle();
+    expect(find.text('1'), findsOneWidget);
+    await tester.tap(find.byIcon(Icons.add));
+    await tester.pumpAndSettle();
+    expect(find.text('2'), findsOneWidget);
+  });
+
+  testWidgets('counting by surah starts at its pages and steps by one', (
+    tester,
+  ) async {
+    _setPhoneViewport(tester);
+    await tester.pumpWidget(_host(MemorizationEntrySheet(student: _student())));
+    await tester.pumpAndSettle();
+
+    await tester.tap(find.text('سورة'));
+    await tester.pumpAndSettle();
+    // No surah picked yet, so there is nothing to count but one page.
+    expect(find.text('1'), findsOneWidget);
+
+    await tester.tap(find.text('اختر السورة...'));
+    await tester.pumpAndSettle();
+    await tester.tap(find.text('آل عمران').last);
+    await tester.pumpAndSettle();
+    expect(find.text('27'), findsOneWidget); // pages 50-76
+
+    await tester.tap(find.byIcon(Icons.remove));
+    await tester.pumpAndSettle();
+    expect(find.text('26'), findsOneWidget);
+
+    // Picking another surah follows it to its own length.
+    await tester.tap(find.byType(DropdownButton<int>));
+    await tester.pumpAndSettle();
+    await tester.tap(find.text('النساء').last);
+    await tester.pumpAndSettle();
+    expect(find.text('30'), findsOneWidget); // pages 77-106
+  });
+
+  testWidgets('a hadith entry offers no page units', (tester) async {
+    _setPhoneViewport(tester);
+    await tester.pumpWidget(
+      _host(
+        MemorizationEntrySheet(student: _student(hadithBooks: kHadithBooks)),
+      ),
+    );
+    await tester.pumpAndSettle();
+    expect(find.text('طريقة العد'), findsOneWidget);
+
+    await tester.tap(find.text('الحديث'));
+    await tester.pumpAndSettle();
+    expect(find.text('طريقة العد'), findsNothing);
+    expect(find.text('عدد الأحاديث'), findsOneWidget);
+  });
+
+  group('prefill from the last Quran entry', () {
+    void stubHistory() {
+      DioClient.instance.httpClientAdapter = _StubAdapter(
+        jsonEncode([
+          {
+            'subject': 'QURAN',
+            'surahNumber': 3,
+            'memorizationType': 'SMALLREVISION',
+            'amountDone': 4,
+            'date': '2026-10-01',
+          },
+          {
+            'subject': 'QURAN',
+            'surahNumber': 2,
+            'memorizationType': 'MEMORIZING',
+            'amountDone': 2.5,
+            'date': '2026-10-20',
+          },
+        ]),
+      );
+    }
+
+    testWidgets('opens on the latest surah, type and pages', (tester) async {
+      _setPhoneViewport(tester);
+      stubHistory();
+      await tester.pumpWidget(
+        _host(MemorizationEntrySheet(student: _student())),
+      );
+      await tester.pumpAndSettle();
+
+      expect(find.text('اختر السورة...'), findsNothing);
+      expect(find.text('البقرة'), findsOneWidget);
+      expect(find.text('2.5'), findsOneWidget);
+      // Named above the form, so the choices read as last session's.
+      expect(find.textContaining('آخر تسجيل'), findsOneWidget);
+    });
+
+    testWidgets('leaves the form empty for a student with no history', (
+      tester,
+    ) async {
+      _setPhoneViewport(tester);
+      await tester.pumpWidget(
+        _host(MemorizationEntrySheet(student: _student())),
+      );
+      await tester.pumpAndSettle();
+
+      expect(find.text('اختر السورة...'), findsOneWidget);
+      expect(find.textContaining('آخر تسجيل'), findsNothing);
+    });
+  });
+
+  testWidgets('offers to move on only when there is a next student', (
+    tester,
+  ) async {
+    _setPhoneViewport(tester);
+    await tester.pumpWidget(
+      _host(
+        MemorizationEntrySheet(student: _student(), nextStudentName: 'أحمد'),
+      ),
+    );
+    await tester.pumpAndSettle();
+
+    expect(tester.takeException(), isNull);
+    expect(find.text('التالي: أحمد'), findsOneWidget);
+    expect(find.text('تسجيل والتالي'), findsOneWidget);
+    expect(find.text('تسجيل والعودة'), findsOneWidget);
+    expect(find.text('تسجيل'), findsNothing);
+  });
+
+  testWidgets('a long next name does not overflow the sheet', (tester) async {
+    _setPhoneViewport(tester);
+    await tester.pumpWidget(
+      _host(
+        MemorizationEntrySheet(
+          student: _student(),
+          nextStudentName: 'عبد الرحمن بن عبد العزيز بن محمد آل عبد اللطيف',
+        ),
+      ),
+    );
+    await tester.pumpAndSettle();
+
+    expect(tester.takeException(), isNull);
+  });
 }

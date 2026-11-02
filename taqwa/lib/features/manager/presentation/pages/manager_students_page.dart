@@ -10,6 +10,8 @@ import '../../../../core/widgets/search_bar_widget.dart';
 import '../../../../core/widgets/app_button.dart';
 import '../../../../core/widgets/confirm_delete_dialog.dart';
 import '../../../../core/widgets/halaqa_group_section.dart';
+import '../../../../core/widgets/list_layout.dart';
+import '../../../../core/widgets/avatar_widget.dart';
 import '../../../../features/data/models/student/student_model.dart';
 import '../../../../features/data/repositories/student_repository.dart';
 import '../../../../features/data/repositories/manager_repository.dart';
@@ -36,6 +38,14 @@ class _ManagerStudentsPageState extends ConsumerState<ManagerStudentsPage> {
   final _searchController = TextEditingController();
   final _studentRepo = StudentRepository();
   final _managerRepo = ManagerRepository();
+
+  static const _layoutKey = 'manager_students';
+  ListLayout _layout = ListLayout.list;
+
+  void _setLayout(ListLayout layout) {
+    setState(() => _layout = layout);
+    ListLayoutStore.write(_layoutKey, layout);
+  }
 
   /// Opens the shared student form: [student] null creates, otherwise edits
   /// that row. The manager id scopes the halaqa options to the ones they own.
@@ -100,6 +110,9 @@ class _ManagerStudentsPageState extends ConsumerState<ManagerStudentsPage> {
   void initState() {
     super.initState();
     _loadStudents();
+    ListLayoutStore.read(_layoutKey).then((layout) {
+      if (mounted && layout != _layout) setState(() => _layout = layout);
+    });
   }
 
   @override
@@ -216,10 +229,21 @@ class _ManagerStudentsPageState extends ConsumerState<ManagerStudentsPage> {
                       ),
                       SizedBox(height: 16.h),
                     ],
-                    SearchBarWidget(
-                      hint: 'ابحث عن طالب بالاسم أو رقم الهاتف...',
-                      controller: _searchController,
-                      onChanged: (_) => setState(() => _applyFilter()),
+                    Row(
+                      children: [
+                        ListLayoutToggle(
+                          value: _layout,
+                          onChanged: _setLayout,
+                        ),
+                        SizedBox(width: 8.w),
+                        Expanded(
+                          child: SearchBarWidget(
+                            hint: 'ابحث عن طالب بالاسم أو رقم الهاتف...',
+                            controller: _searchController,
+                            onChanged: (_) => setState(() => _applyFilter()),
+                          ),
+                        ),
+                      ],
                     ),
                     SizedBox(height: 12.h),
                     _FilterChipGroup(
@@ -283,6 +307,24 @@ class _ManagerStudentsPageState extends ConsumerState<ManagerStudentsPage> {
                               }
                             }),
                             children: [
+                              if (_layout == ListLayout.grid)
+                                CardGrid(
+                                  children: [
+                                    for (final student in group.students)
+                                      _StudentGridCard(
+                                        student: student,
+                                        onOpenDetails: () =>
+                                            _openDetails(student),
+                                        canManage: canManage,
+                                        canDelete: canDelete,
+                                        onEdit: () => _openForm(student),
+                                        onDelete: () => _deleteStudent(
+                                          student['id'] as int,
+                                        ),
+                                      ),
+                                  ],
+                                )
+                              else
                               for (final student in group.students)
                                 Padding(
                                   padding: EdgeInsets.only(bottom: 12.h),
@@ -510,6 +552,155 @@ class _StudentCard extends StatelessWidget {
                 ),
               ],
             ),
+          ],
+        ),
+      ),
+    );
+  }
+}
+
+/// The grid layout's card: the same facts as [_StudentCard], stacked to fit
+/// half the screen's width. Edit and delete appear only for a manager allowed
+/// them, as on the list card.
+class _StudentGridCard extends StatelessWidget {
+  const _StudentGridCard({
+    required this.student,
+    required this.onOpenDetails,
+    this.canManage = false,
+    this.canDelete = false,
+    this.onEdit,
+    this.onDelete,
+  });
+  final Map<String, dynamic> student;
+  final VoidCallback onOpenDetails;
+  final bool canManage;
+  final bool canDelete;
+  final VoidCallback? onEdit;
+  final VoidCallback? onDelete;
+
+  @override
+  Widget build(BuildContext context) {
+    final user = student['user'] as Map<String, dynamic>? ?? {};
+    final String fullName = user['fullName'] ?? '';
+    final String phone = user['phone'] ?? '';
+    final bool isActive = user['isActive'] ?? true;
+    final count = student['_count'] as Map<String, dynamic>? ?? {};
+    final attendanceCount = count['attendance'] ?? 0;
+
+    return GestureDetector(
+      onTap: onOpenDetails,
+      behavior: HitTestBehavior.opaque,
+      child: Container(
+        decoration: BoxDecoration(
+          color: AppColors.surfaceContainerLowest,
+          borderRadius: BorderRadius.circular(AppConstants.radiusXl),
+          boxShadow: const [
+            BoxShadow(
+              color: Color.fromRGBO(18, 52, 59, 0.04),
+              blurRadius: 20,
+              offset: Offset(0, 4),
+            ),
+          ],
+        ),
+        padding: EdgeInsets.all(12.w),
+        child: Column(
+          children: [
+            AvatarWidget(
+              avatarUrl: user['avatar'] as String?,
+              size: 48.w,
+              fallback: Icon(
+                Icons.person,
+                color: AppColors.onPrimaryContainer,
+                size: 28.w,
+              ),
+            ),
+            SizedBox(height: 8.h),
+            AppText(
+              fullName,
+              style: AppTextStyles.bodyMdBold.copyWith(
+                color: AppColors.onSurface,
+              ),
+              textAlign: TextAlign.center,
+              maxLines: 2,
+              overflow: TextOverflow.ellipsis,
+            ),
+            if (phone.isNotEmpty) ...[
+              SizedBox(height: 4.h),
+              AppText(
+                phone,
+                style: AppTextStyles.labelSm.copyWith(
+                  color: AppColors.onSurfaceVariant,
+                ),
+                maxLines: 1,
+                overflow: TextOverflow.ellipsis,
+              ),
+            ],
+            SizedBox(height: 8.h),
+            Wrap(
+              alignment: WrapAlignment.center,
+              spacing: 4.w,
+              runSpacing: 4.h,
+              children: [
+                Container(
+                  padding: EdgeInsets.symmetric(horizontal: 8.w, vertical: 3.h),
+                  decoration: BoxDecoration(
+                    color: AppColors.surfaceContainerHigh,
+                    borderRadius: BorderRadius.circular(AppConstants.radiusMd),
+                  ),
+                  child: AppText(
+                    '$attendanceCount حضور',
+                    style: AppTextStyles.labelSm.copyWith(
+                      color: AppColors.onSurfaceVariant,
+                    ),
+                  ),
+                ),
+                Container(
+                  padding: EdgeInsets.symmetric(horizontal: 8.w, vertical: 3.h),
+                  decoration: BoxDecoration(
+                    color: (isActive ? AppColors.primary : AppColors.outline)
+                        .withValues(alpha: 0.1),
+                    borderRadius: BorderRadius.circular(
+                      AppConstants.radiusFull,
+                    ),
+                  ),
+                  child: AppText(
+                    isActive ? 'نشط' : 'غير نشط',
+                    style: AppTextStyles.labelSm.copyWith(
+                      color: isActive ? AppColors.primary : AppColors.outline,
+                    ),
+                  ),
+                ),
+              ],
+            ),
+            if (canManage || canDelete) ...[
+              const Spacer(),
+              SizedBox(height: 10.h),
+              Row(
+                children: [
+                  if (canDelete)
+                    Expanded(
+                      child: GridCardAction(
+                        tooltip: 'حذف',
+                        icon: Icons.delete_outline,
+                        color: AppColors.error,
+                        background: AppColors.errorContainer,
+                        onTap: onDelete,
+                      ),
+                    ),
+                  if (canDelete && canManage) SizedBox(width: 6.w),
+                  if (canManage)
+                    Expanded(
+                      child: GridCardAction(
+                        tooltip: 'تعديل',
+                        icon: Icons.edit_outlined,
+                        color: AppColors.secondary,
+                        border: AppColors.outlineVariant,
+                        onTap: onEdit,
+                      ),
+                    ),
+                ],
+              ),
+            ],
           ],
         ),
       ),

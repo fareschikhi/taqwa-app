@@ -11,6 +11,7 @@ import '../../../../core/theme/app_text_styles.dart';
 import '../../../../core/widgets/app_button.dart';
 import '../../../../core/utils/account_validators.dart';
 import '../../../../core/widgets/app_text_field.dart';
+import '../../../../core/widgets/phone_field.dart';
 import '../../../../core/widgets/user_selector_field.dart';
 import '../../../data/models/student/student_model.dart';
 import '../../../data/models/student/student_payload_dto.dart';
@@ -231,13 +232,15 @@ class _StudentFormPageState extends State<StudentFormPage> {
       final birthDate = _selectedBirthDate;
 
       if (_isEditing) {
+        final newPassword = _passwordController.text;
         await _repo.updateStudent(widget.student!.id!, {
+          if (_isAdultForm && newPassword.isNotEmpty) 'password': newPassword,
           'fullName': _nameController.text.trim(),
           'phone': _phoneController.text.trim(),
           'address': _addressController.text.trim(),
           if (birthDate != null) 'birthDate': _isoDate(birthDate),
           'halaqaId': ?_selectedHalaqaId,
-          'parentId': ?_selectedParentId,
+          if (!_isAdultForm) 'parentId': ?_selectedParentId,
           'avatar': ?avatarUrl,
           if (widget.canSetHadithBooks) 'hadithBooks': _orderedHadithBooks,
           ..._registration(),
@@ -395,17 +398,9 @@ class _StudentFormPageState extends State<StudentFormPage> {
             title: 'بيانات الاتصال',
           ),
           SizedBox(height: 16.h),
-          AppTextField(
+          PhoneField(
             label: _isAdult ? 'رقم الهاتف *' : 'رقم الهاتف',
-            hint: '05XXXXXXXX',
             controller: _phoneController,
-            keyboardType: TextInputType.phone,
-            maxLength: AccountValidators.phoneLength,
-            inputFormatters: AccountValidators.phoneInputFormatters,
-            prefixIcon: const Icon(
-              Icons.phone_outlined,
-              color: AppColors.onSurfaceVariant,
-            ),
             // Only a new adult signs in with it; a child is a record with no
             // login, and many were imported with a name alone, so requiring
             // it would block every later edit (such as picking a halaqa).
@@ -427,9 +422,11 @@ class _StudentFormPageState extends State<StudentFormPage> {
           // only ever appears while creating.
           if (!_isEditing) ...[_buildAdultSwitch(), SizedBox(height: 16.h)],
           ..._buildRegistrationFields(),
-          if (_isAdult) ...[
+          // An adult signs in, so he gets a password and no parent; on edit
+          // the password is a reset, left blank to keep the current one.
+          if (_isAdultForm) ...[
             AppTextField(
-              label: 'كلمة المرور *',
+              label: _isEditing ? 'كلمة مرور جديدة (اختياري)' : 'كلمة المرور *',
               hint: '••••••••',
               controller: _passwordController,
               obscureText: true,
@@ -439,13 +436,17 @@ class _StudentFormPageState extends State<StudentFormPage> {
               ),
               // Matches ChangePasswordSheet.validateNew rather than inventing
               // a second definition of "too short" for the same rule.
-              validator: ChangePasswordSheet.validateNew,
+              validator: (v) => _isEditing && (v == null || v.isEmpty)
+                  ? null
+                  : ChangePasswordSheet.validateNew(v),
             ),
             SizedBox(height: 4.h),
             Align(
               alignment: AlignmentDirectional.centerEnd,
               child: AppText(
-                'يسجّل الطالب الدخول بهذه الكلمة، ويمكنه تغييرها لاحقاً.',
+                _isEditing
+                    ? 'اتركها فارغة للإبقاء على كلمة المرور الحالية. سيُطلب من الطالب تغييرها عند الدخول.'
+                    : 'يسجّل الطالب الدخول بهذه الكلمة، ويمكنه تغييرها لاحقاً.',
                 style: AppTextStyles.labelSm.copyWith(
                   color: AppColors.onSurfaceVariant,
                 ),

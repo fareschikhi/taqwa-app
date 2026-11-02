@@ -14,7 +14,10 @@ import '../widgets/justify_absence_sheet.dart';
 import 'package:taqwa/core/widgets/app_text.dart';
 
 class JustificationListPage extends ConsumerStatefulWidget {
-  const JustificationListPage({super.key});
+  const JustificationListPage({super.key, this.filter});
+
+  /// Shared with the dashboard, whose cards pick which list opens here.
+  final ValueNotifier<int>? filter;
 
   @override
   ConsumerState<JustificationListPage> createState() =>
@@ -34,7 +37,27 @@ class _JustificationListPageState extends ConsumerState<JustificationListPage> {
   @override
   void initState() {
     super.initState();
+    _filterIndex = widget.filter?.value ?? 0;
+    widget.filter?.addListener(_onFilterChanged);
     _loadJustifications();
+  }
+
+  @override
+  void dispose() {
+    widget.filter?.removeListener(_onFilterChanged);
+    super.dispose();
+  }
+
+  void _onFilterChanged() {
+    final index = widget.filter!.value;
+    if (index != _filterIndex) setState(() => _filterIndex = index);
+  }
+
+  /// A chip tap writes back to the shared filter too, so a dashboard card
+  /// asking for the list already chosen here still registers as a change.
+  void _selectFilter(int index) {
+    setState(() => _filterIndex = index);
+    widget.filter?.value = index;
   }
 
   Future<void> _loadJustifications() async {
@@ -107,11 +130,15 @@ class _JustificationListPageState extends ConsumerState<JustificationListPage> {
                     ),
                     SizedBox(height: 12.h),
                     FilterChipGroup(
+                      // The group keeps its own selection, so it is rebuilt
+                      // when a dashboard card changes the filter from outside.
+                      key: ValueKey(_filterIndex),
+                      initialIndex: _filterIndex,
                       filters: [
                         'بانتظار التبرير (${_unjustified.length})',
                         'مبررة (${_justifications.length})',
                       ],
-                      onChanged: (i) => setState(() => _filterIndex = i),
+                      onChanged: _selectFilter,
                     ),
                   ],
                 ),

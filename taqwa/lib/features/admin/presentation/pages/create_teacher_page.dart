@@ -15,6 +15,8 @@ import 'package:taqwa/features/data/network/api_endpoints.dart';
 import 'package:taqwa/features/data/services/image_upload_service.dart';
 import '../../../data/repositories/teacher_repository.dart';
 import 'package:taqwa/core/widgets/app_text.dart';
+import 'package:taqwa/core/widgets/phone_field.dart';
+import 'package:taqwa/features/admin/presentation/widgets/privilege_switch.dart';
 
 class CreateTeacherPage extends StatefulWidget {
   /// Pass [editTeacher] to pre-fill the form for editing an existing teacher.
@@ -35,6 +37,7 @@ class _CreateTeacherPageState extends State<CreateTeacherPage> {
   final _passwordController = TextEditingController();
   final _addressController = TextEditingController();
   bool _isLoading = false;
+  bool _canPostNews = false;
   XFile? _selectedImage;
   final ImagePicker _picker = ImagePicker();
   bool get _isEditing => widget.editTeacher != null;
@@ -47,6 +50,7 @@ class _CreateTeacherPageState extends State<CreateTeacherPage> {
       _nameController.text = t.fullName;
       _phoneController.text = t.phone ?? '';
       _emailController.text = t.email ?? '';
+      _canPostNews = t.canPostNews;
     }
   }
 
@@ -144,6 +148,7 @@ class _CreateTeacherPageState extends State<CreateTeacherPage> {
             'email': _emailController.text.trim(),
           if (_passwordController.text.isNotEmpty)
             'password': _passwordController.text,
+          'canPostNews': _canPostNews,
           // No dateOfBirth/address here: UpdateTeacherDto declares neither and
           // the API's whitelisting ValidationPipe drops them without an error,
           // so the fields are hidden on edit rather than silently discarded.
@@ -166,6 +171,7 @@ class _CreateTeacherPageState extends State<CreateTeacherPage> {
                 ? null
                 : _addressController.text.trim(),
             avatar: avatarUrl,
+            canPostNews: _canPostNews,
           ),
         );
       }
@@ -341,18 +347,9 @@ class _CreateTeacherPageState extends State<CreateTeacherPage> {
                         title: 'معلومات الاتصال والتوظيف',
                       ),
                       SizedBox(height: 16.h),
-                      AppTextField(
-                        label: 'رقم الهاتف',
-                        hint: '05XXXXXXXX',
+                      PhoneField(
                         controller: _phoneController,
-                        keyboardType: TextInputType.phone,
-                        maxLength: AccountValidators.phoneLength,
-                        inputFormatters: AccountValidators.phoneInputFormatters,
                         validator: AccountValidators.phone,
-                        prefixIcon: const Icon(
-                          Icons.phone_outlined,
-                          color: AppColors.onSurfaceVariant,
-                        ),
                       ),
                       ContactOwnersHint(
                         controller: _phoneController,
@@ -393,7 +390,18 @@ class _CreateTeacherPageState extends State<CreateTeacherPage> {
                           color: AppColors.onSurfaceVariant,
                         ),
                       ),
-                      SizedBox(height: 16.h),
+                      SizedBox(height: 24.h),
+                      _SectionHeader(
+                        icon: Icons.shield_outlined,
+                        title: 'الصلاحيات',
+                      ),
+                      SizedBox(height: 12.h),
+                      PrivilegeSwitch(
+                        title: 'نشر أخبار الحلقة',
+                        subtitle: 'إضافة أخبار لحلقاته وتعديل ما نشره منها',
+                        value: _canPostNews,
+                        onChanged: (v) => setState(() => _canPostNews = v),
+                      ),
                       SizedBox(height: 32.h),
                       // Buttons
                       AppButton(

@@ -17,6 +17,7 @@ import 'package:taqwa/core/widgets/avatar_widget.dart';
 import 'package:taqwa/core/widgets/card_action_row.dart';
 import 'package:taqwa/core/widgets/confirm_status_dialog.dart';
 import 'package:taqwa/core/widgets/halaqa_group_section.dart';
+import 'package:taqwa/core/widgets/list_layout.dart';
 import 'package:taqwa/features/data/repositories/user_repository.dart';
 import 'package:taqwa/core/widgets/app_text.dart';
 
@@ -64,6 +65,17 @@ class _StudentsManagementPageState extends State<StudentsManagementPage> {
   final _studentRepo = StudentRepository();
   final _userRepo = UserRepository();
 
+  static const _layoutKey = 'admin_students';
+  ListLayout _layout = ListLayout.list;
+
+  /// A grid is shorter than the list it replaces, so it can bring the end of
+  /// the loaded page into view and needs the next one.
+  void _setLayout(ListLayout layout) {
+    setState(() => _layout = layout);
+    ListLayoutStore.write(_layoutKey, layout);
+    _fillViewport();
+  }
+
   /// Opens the shared student form: [student] null creates, otherwise edits
   /// that row. The list holds raw API maps, so it is decoded here.
   Future<void> _openForm(Map<String, dynamic>? student) async {
@@ -94,6 +106,7 @@ class _StudentsManagementPageState extends State<StudentsManagementPage> {
           avatar: user['avatar'] as String?,
           halaqaId: (halaqa?['id'] as num?)?.toInt(),
           canEditParent: true,
+          canEditRating: true,
         ),
       ),
     );
@@ -154,6 +167,9 @@ class _StudentsManagementPageState extends State<StudentsManagementPage> {
     _scrollController.addListener(_onScroll);
     _loadHalaqaFilters();
     _load();
+    ListLayoutStore.read(_layoutKey).then((layout) {
+      if (mounted && layout != _layout) _setLayout(layout);
+    });
   }
 
   @override
@@ -331,10 +347,21 @@ class _StudentsManagementPageState extends State<StudentsManagementPage> {
                       ),
                     ),
                     SizedBox(height: 16.h),
-                    SearchBarWidget(
-                      hint: 'ابحث باسم الطالب...',
-                      controller: _searchController,
-                      onChanged: _onSearchChanged,
+                    Row(
+                      children: [
+                        ListLayoutToggle(
+                          value: _layout,
+                          onChanged: _setLayout,
+                        ),
+                        SizedBox(width: 8.w),
+                        Expanded(
+                          child: SearchBarWidget(
+                            hint: 'ابحث باسم الطالب...',
+                            controller: _searchController,
+                            onChanged: _onSearchChanged,
+                          ),
+                        ),
+                      ],
                     ),
                     SizedBox(height: 12.h),
                     FilterChipGroup(
@@ -401,6 +428,24 @@ class _StudentsManagementPageState extends State<StudentsManagementPage> {
                                   _fillViewport();
                                 },
                                 children: [
+                                  if (_layout == ListLayout.grid)
+                                    CardGrid(
+                                      children: [
+                                        for (final student in group.students)
+                                          _StudentGridCard(
+                                            student: student,
+                                            onOpenDetails: () =>
+                                                _openDetails(student),
+                                            onEdit: () => _openForm(student),
+                                            onDelete: () => _deleteStudent(
+                                              student['id'] as int,
+                                            ),
+                                            onToggleActive: () =>
+                                                _toggleStatus(student),
+                                          ),
+                                      ],
+                                    )
+                                  else
                                   for (final student in group.students)
                                     Padding(
                                       padding: EdgeInsets.only(bottom: 16.h),
@@ -562,6 +607,145 @@ class _StudentCard extends StatelessWidget {
             ),
             SizedBox(height: 12.h),
             CardActionRow(
+              isActive: isActive,
+              onToggleActive: onToggleActive,
+              onDelete: onDelete,
+              onEdit: onEdit,
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+}
+
+/// The grid layout's card: the same facts and actions as [_StudentCard],
+/// stacked to fit half the screen's width.
+class _StudentGridCard extends StatelessWidget {
+  const _StudentGridCard({
+    required this.student,
+    required this.onOpenDetails,
+    required this.onEdit,
+    required this.onDelete,
+    required this.onToggleActive,
+  });
+  final Map<String, dynamic> student;
+  final VoidCallback onOpenDetails;
+  final VoidCallback onEdit;
+  final VoidCallback onDelete;
+  final VoidCallback onToggleActive;
+
+  @override
+  Widget build(BuildContext context) {
+    final user = student['user'] as Map<String, dynamic>? ?? {};
+    final String fullName = user['fullName'] ?? '';
+    final bool isActive = user['isActive'] ?? true;
+    final halaqa = student['halaqa'] as Map<String, dynamic>?;
+    final halaqaName = halaqa?['name'] ?? 'غير مسجل';
+    final counts = student['_count'] as Map<String, dynamic>? ?? {};
+
+    return GestureDetector(
+      onTap: onOpenDetails,
+      behavior: HitTestBehavior.opaque,
+      child: Container(
+        decoration: BoxDecoration(
+          color: AppColors.surfaceContainerLowest,
+          borderRadius: BorderRadius.circular(AppConstants.radiusXl),
+          boxShadow: const [
+            BoxShadow(
+              color: Color.fromRGBO(18, 52, 59, 0.04),
+              blurRadius: 20,
+              offset: Offset(0, 4),
+            ),
+          ],
+          border: Border(
+            right: BorderSide(color: AppColors.primary, width: 4.w),
+          ),
+        ),
+        padding: EdgeInsets.all(12.w),
+        child: Column(
+          children: [
+            AvatarWidget(
+              avatarUrl:
+                  (student['avatar'] as String?) ?? (user['avatar'] as String?),
+              size: AppConstants.avatarLg,
+              fallback: AppText(
+                fullName.isNotEmpty ? fullName[0] : '؟',
+                style: AppTextStyles.headlineSm.copyWith(
+                  color: AppColors.onPrimaryContainer,
+                ),
+              ),
+            ),
+            SizedBox(height: 8.h),
+            AppText(
+              fullName,
+              style: AppTextStyles.bodyMdBold.copyWith(
+                color: AppColors.onSurface,
+              ),
+              textAlign: TextAlign.center,
+              maxLines: 2,
+              overflow: TextOverflow.ellipsis,
+            ),
+            SizedBox(height: 6.h),
+            Wrap(
+              alignment: WrapAlignment.center,
+              spacing: 4.w,
+              runSpacing: 4.h,
+              children: [
+                Container(
+                  padding: EdgeInsets.symmetric(horizontal: 8.w, vertical: 2.h),
+                  decoration: BoxDecoration(
+                    color: AppColors.secondaryContainer.withValues(alpha: 0.4),
+                    borderRadius: BorderRadius.circular(AppConstants.radiusFull),
+                  ),
+                  child: AppText(
+                    '$halaqaName',
+                    style: AppTextStyles.labelSm.copyWith(
+                      color: AppColors.secondary,
+                    ),
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
+                  ),
+                ),
+                Container(
+                  padding: EdgeInsets.symmetric(horizontal: 8.w, vertical: 2.h),
+                  decoration: BoxDecoration(
+                    color: isActive
+                        ? AppColors.primary.withValues(alpha: 0.1)
+                        : AppColors.surfaceVariant,
+                    borderRadius: BorderRadius.circular(AppConstants.radiusMd),
+                  ),
+                  child: AppText(
+                    isActive ? 'نشط' : 'غير نشط',
+                    style: AppTextStyles.labelSm.copyWith(
+                      color: isActive ? AppColors.primary : AppColors.outline,
+                    ),
+                  ),
+                ),
+              ],
+            ),
+            const Spacer(),
+            SizedBox(height: 10.h),
+            Row(
+              children: [
+                Expanded(
+                  child: _InfoCell(
+                    label: 'حضور',
+                    value: '${counts['attendance'] ?? 0}',
+                  ),
+                ),
+                SizedBox(width: 6.w),
+                Expanded(
+                  child: _InfoCell(
+                    label: 'حفظ',
+                    value: '${counts['memorization'] ?? 0}',
+                  ),
+                ),
+              ],
+            ),
+            SizedBox(height: 10.h),
+            CardActionRow(
+              compact: true,
               isActive: isActive,
               onToggleActive: onToggleActive,
               onDelete: onDelete,

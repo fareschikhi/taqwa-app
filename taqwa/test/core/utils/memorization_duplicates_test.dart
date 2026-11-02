@@ -62,14 +62,13 @@ void main() {
       expect(summary, 'سورة الأعراف · حفظ جديد · 2 صفحة');
     });
 
-    // Revision is counted in hizbs, so the unit has to follow the type rather
-    // than defaulting to pages.
-    test('counts revision in hizbs', () {
+    // Revision is counted in pages, the same as new memorization.
+    test('counts revision in pages', () {
       final summary = memorizationSummary(
         record(surahNumber: 8, amountDone: 4, memorizationType: 'BIGREVISION'),
       );
 
-      expect(summary, 'سورة الأنفال · مراجعة كبرى · 4 حزب');
+      expect(summary, 'سورة الأنفال · مراجعة وضبط · 4 صفحة');
     });
 
     // An unrecognised type falls back to new memorization, matching the column
@@ -106,7 +105,7 @@ void main() {
         'memorizationType': 'BIGREVISION',
       });
 
-      expect(summary, 'حديث · مراجعة كبرى · 2 حديث');
+      expect(summary, 'حديث · مراجعة وضبط · 2 حديث');
     });
   });
 }

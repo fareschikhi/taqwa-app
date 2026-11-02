@@ -1,18 +1,25 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
+import 'package:taqwa/core/widgets/wird_reminder_card.dart';
 import 'package:taqwa/core/constants/app_constants.dart';
+import 'package:taqwa/core/constants/hadith_books.dart';
 import 'package:taqwa/core/providers/auth_provider.dart';
 import 'package:taqwa/core/providers/selected_student_provider.dart';
 import 'package:taqwa/core/theme/app_colors.dart';
 import 'package:taqwa/core/theme/app_text_styles.dart';
 import 'package:taqwa/core/utils/last_session.dart';
+import 'package:taqwa/core/utils/student_rating.dart';
 import 'package:taqwa/core/widgets/app_card.dart';
 import 'package:taqwa/core/widgets/app_text.dart';
+import 'package:taqwa/core/widgets/shell_tab_scope.dart';
 import 'package:taqwa/core/widgets/app_logo.dart';
+import 'package:taqwa/core/widgets/expandable_text.dart';
 import 'package:taqwa/core/widgets/fine_balance_card.dart';
+import 'package:taqwa/core/widgets/hadith_program_card.dart';
 import 'package:taqwa/core/widgets/halaqa_news_card.dart';
 import 'package:taqwa/core/widgets/last_session_card.dart';
+import 'package:taqwa/core/widgets/note_timeline.dart' show kNoteFoldedLines;
 import 'package:taqwa/features/data/models/attendance_summary_model.dart';
 import 'package:taqwa/features/data/models/fine/fine_summary_model.dart';
 import 'package:taqwa/features/data/models/halaqa/halaqa_announcement_model.dart';
@@ -21,6 +28,7 @@ import 'package:taqwa/features/data/repositories/halaqa_announcement_repository.
 import 'package:taqwa/features/data/repositories/student_repository.dart';
 import 'package:taqwa/features/shared/presentation/pages/halaqa_news_page.dart';
 import 'fines_history_page.dart';
+import 'package:taqwa/core/utils/memorization_amount.dart';
 
 /// The adult student's own front page. There is no child to pick a card for
 /// here — the record loaded is always his — so this reads like
@@ -44,6 +52,8 @@ class _AdultDashboardPageState extends ConsumerState<AdultDashboardPage> {
   Map<String, dynamic>? _progress;
   List<Map<String, dynamic>> _attendanceHistory = [];
   List<Map<String, dynamic>> _notes = [];
+  String? _rating;
+  List<String> _hadithBooks = [];
   FineSummaryModel? _fines;
   List<HalaqaAnnouncementModel> _news = [];
 
@@ -84,6 +94,11 @@ class _AdultDashboardPageState extends ConsumerState<AdultDashboardPage> {
           _progress = results[1] as Map<String, dynamic>;
           _attendanceHistory = results[2] as List<Map<String, dynamic>>;
           _notes = rawNotes.cast<Map<String, dynamic>>();
+          _rating = ratingOf(profile);
+          _hadithBooks = parseHadithBooks(
+            profile['hadithBooks'],
+            tracksHadith: profile['tracksHadith'] == true,
+          );
           _fines = results[4] as FineSummaryModel;
           _news = news;
           _isLoading = false;
@@ -156,9 +171,17 @@ class _AdultDashboardPageState extends ConsumerState<AdultDashboardPage> {
                       ],
                       _buildSummary(),
                       SizedBox(height: 20.h),
+                      if (_hadithBooks.isNotEmpty) ...[
+                        _buildHadithProgram(),
+                        SizedBox(height: 20.h),
+                      ],
                       _buildLastSession(),
                       SizedBox(height: 20.h),
                       _buildTeacherNotes(),
+                    ],
+                    if (WirdReminderCard.isAvailable) ...[
+                      SizedBox(height: 20.h),
+                      const WirdReminderCard(),
                     ],
                     SizedBox(height: 32.h),
                   ]),
@@ -183,20 +206,6 @@ class _AdultDashboardPageState extends ConsumerState<AdultDashboardPage> {
         child: Row(
           children: [
             const Spacer(),
-            Container(
-              width: 36.w,
-              height: 36.w,
-              decoration: const BoxDecoration(
-                color: AppColors.primaryContainer,
-                shape: BoxShape.circle,
-              ),
-              child: Icon(
-                Icons.person,
-                color: AppColors.onPrimaryContainer,
-                size: 20.w,
-              ),
-            ),
-            SizedBox(width: 8.w),
             AppText(
               'التقوى',
               style: AppTextStyles.headlineMd.copyWith(
@@ -249,9 +258,13 @@ class _AdultDashboardPageState extends ConsumerState<AdultDashboardPage> {
   /// Qur'an is memorised, and whether he has been turning up — without the
   /// gradient hero that exists on the parent's side only to be a tappable
   /// route to a *child's* details page.
+  /// Each figure opens the bottom-nav tab behind it; the indexes match
+  /// AdultStudentShell._pages.
+  void _openTab(int index) => ShellTabScope.of(context)?.selectTab(index);
+
   Widget _buildSummary() {
     final monthAttendedDays = _attendance?.monthAttended ?? 0;
-    final pagesDone = (_progress?['totalPagesDone'] as num?)?.toInt() ?? 0;
+    final pagesDone = formatAmount(_progress?['totalPagesDone'] as num?);
 
     return Container(
       padding: EdgeInsets.all(16.w),
@@ -265,14 +278,47 @@ class _AdultDashboardPageState extends ConsumerState<AdultDashboardPage> {
             child: _StatChip(
               label: 'أيام الحضور هذا الشهر',
               value: '$monthAttendedDays',
+              onTap: () => _openTab(2),
             ),
           ),
           Container(width: 1, height: 40.h, color: AppColors.outlineVariant),
           Expanded(
-            child: _StatChip(label: 'حفظ', value: '$pagesDone صفحة'),
+            child: _StatChip(
+              label: 'حفظ',
+              value: '$pagesDone صفحة',
+              onTap: () => _openTab(1),
+            ),
+          ),
+          Container(width: 1, height: 40.h, color: AppColors.outlineVariant),
+          // Read-only here: the teacher words the rating on the student's
+          // details page, and this is where he gets to read it.
+          Expanded(
+            child: _StatChip(
+              label: 'التقييم العام',
+              value: _rating ?? 'لم يقيّم بعد',
+            ),
           ),
         ],
       ),
+    );
+  }
+
+  /// Only built when at least one hadith book is assigned.
+  Widget _buildHadithProgram() {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.end,
+      children: [
+        AppText(
+          'برنامج الحديث',
+          style: AppTextStyles.headlineSm.copyWith(color: AppColors.onSurface),
+        ),
+        SizedBox(height: 12.h),
+        HadithProgramCard(
+          books: _hadithBooks,
+          hadithsDone: _progress?['totalHadithsDone'] as num?,
+          onTap: () => _openTab(1),
+        ),
+      ],
     );
   }
 
@@ -371,13 +417,13 @@ class TeacherNotesSection extends StatelessWidget {
                       ],
                     ),
                     SizedBox(height: 8.h),
-                    AppText(
+                    ExpandableText(
                       (n['note'] as String?) ?? '',
                       style: AppTextStyles.bodyMd.copyWith(
                         color: AppColors.onSurface,
                         height: 1.6,
                       ),
-                      textAlign: TextAlign.end,
+                      maxLines: kNoteFoldedLines,
                     ),
                   ],
                 ),
@@ -390,25 +436,35 @@ class TeacherNotesSection extends StatelessWidget {
 }
 
 class _StatChip extends StatelessWidget {
-  const _StatChip({required this.label, required this.value});
+  const _StatChip({required this.label, required this.value, this.onTap});
   final String label, value;
+  final VoidCallback? onTap;
 
   @override
-  Widget build(BuildContext context) => Column(
-    children: [
-      AppText(
-        value,
-        style: AppTextStyles.headlineSm.copyWith(
-          color: AppColors.onSurface,
-          fontWeight: FontWeight.w700,
+  Widget build(BuildContext context) => GestureDetector(
+    onTap: onTap,
+    behavior: HitTestBehavior.opaque,
+    child: Column(
+      children: [
+        AppText(
+          value,
+          // A rating is free text a teacher typed, so it may run longer than
+          // a number does.
+          textAlign: TextAlign.center,
+          maxLines: 2,
+          overflow: TextOverflow.ellipsis,
+          style: AppTextStyles.headlineSm.copyWith(
+            color: AppColors.onSurface,
+            fontWeight: FontWeight.w700,
+          ),
         ),
-      ),
-      AppText(
-        label,
-        style: AppTextStyles.labelSm.copyWith(
-          color: AppColors.onSurfaceVariant,
+        AppText(
+          label,
+          style: AppTextStyles.labelSm.copyWith(
+            color: AppColors.onSurfaceVariant,
+          ),
         ),
-      ),
-    ],
+      ],
+    ),
   );
 }

@@ -9,6 +9,10 @@ class ParentChildModel {
   final int attendanceCount;
   final int memorizationCount;
 
+  /// The parent this student is linked to. The parent form's children
+  /// picker reads it to flag a student another parent already holds.
+  final int? parentId;
+
   const ParentChildModel({
     required this.id,
     required this.fullName,
@@ -17,6 +21,7 @@ class ParentChildModel {
     this.halaqaName,
     this.attendanceCount = 0,
     this.memorizationCount = 0,
+    this.parentId,
   });
 
   factory ParentChildModel.fromJson(Map<String, dynamic> json) {
@@ -32,6 +37,7 @@ class ParentChildModel {
       halaqaName: halaqa?['name'] as String?,
       attendanceCount: (count?['attendance'] as num?)?.toInt() ?? 0,
       memorizationCount: (count?['memorization'] as num?)?.toInt() ?? 0,
+      parentId: (json['parentId'] as num?)?.toInt(),
     );
   }
 }

@@ -12,9 +12,13 @@ import 'package:taqwa/core/widgets/app_text.dart';
 /// opens that student's details page. Shared by the parent form and the
 /// parent details page so both list the children the same way.
 class LinkedStudentTile extends StatelessWidget {
-  const LinkedStudentTile({super.key, required this.student});
+  const LinkedStudentTile({super.key, required this.student, this.onRemove});
 
   final ParentChildModel student;
+
+  /// When set, the tile ends with a remove button instead of the chevron —
+  /// the parent form's children picker uses it to unlink a student.
+  final VoidCallback? onRemove;
 
   @override
   Widget build(BuildContext context) {
@@ -70,11 +74,22 @@ class LinkedStudentTile extends StatelessWidget {
                 ],
               ),
             ),
-            Icon(
-              Icons.chevron_left,
-              color: AppColors.onSurfaceVariant,
-              size: 20.w,
-            ),
+            if (onRemove != null)
+              IconButton(
+                onPressed: onRemove,
+                tooltip: 'إزالة ${student.fullName}',
+                visualDensity: VisualDensity.compact,
+                style: IconButton.styleFrom(
+                  backgroundColor: AppColors.error.withValues(alpha: 0.12),
+                ),
+                icon: Icon(Icons.close, color: AppColors.error, size: 16.w),
+              )
+            else
+              Icon(
+                Icons.chevron_left,
+                color: AppColors.onSurfaceVariant,
+                size: 20.w,
+              ),
           ],
         ),
       ),

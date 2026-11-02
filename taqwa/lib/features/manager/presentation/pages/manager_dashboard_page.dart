@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
+import 'package:taqwa/core/widgets/wird_reminder_card.dart';
 import '../../../../core/theme/app_colors.dart';
 import '../../../../core/theme/app_text_styles.dart';
 import '../../../../core/constants/app_constants.dart';
@@ -9,6 +10,7 @@ import 'package:taqwa/features/data/repositories/manager_repository.dart';
 import 'package:taqwa/features/data/repositories/absence_justification_repository.dart';
 import '../widgets/justification_form_card.dart';
 import 'package:taqwa/core/widgets/app_text.dart';
+import 'package:taqwa/core/widgets/shell_tab_scope.dart';
 import 'package:taqwa/features/data/models/chat/chat_target.dart';
 import 'package:taqwa/features/chat/presentation/widgets/staff_chat_button.dart';
 import 'package:taqwa/core/widgets/app_logo.dart';
@@ -20,7 +22,11 @@ import 'package:taqwa/features/manager/presentation/widgets/delete_halaqa_news.d
 import 'package:taqwa/features/manager/presentation/widgets/halaqa_news_form_sheet.dart';
 
 class ManagerDashboardPage extends ConsumerStatefulWidget {
-  const ManagerDashboardPage({super.key});
+  const ManagerDashboardPage({super.key, this.justificationFilter});
+
+  /// Shared with the التبريرات tab: set before switching to it so the
+  /// pending and justified cards each open their own list.
+  final ValueNotifier<int>? justificationFilter;
 
   @override
   ConsumerState<ManagerDashboardPage> createState() =>
@@ -145,6 +151,10 @@ class _ManagerDashboardPageState extends ConsumerState<ManagerDashboardPage> {
                                 students: _students,
                                 onSaved: _loadData,
                               ),
+                            if (WirdReminderCard.isAvailable) ...[
+                              SizedBox(height: 24.h),
+                              const WirdReminderCard(),
+                            ],
                             SizedBox(height: 32.h),
                           ],
                         ),
@@ -266,7 +276,16 @@ class _ManagerDashboardPageState extends ConsumerState<ManagerDashboardPage> {
     );
   }
 
+  void _openTab(int index) => ShellTabScope.of(context)?.selectTab(index);
+
+  void _openJustifications(int filter) {
+    widget.justificationFilter?.value = filter;
+    _openTab(3);
+  }
+
   Widget _buildStatCards() {
+    // Each card opens the bottom-nav tab that lists what it counts; the
+    // indexes match ManagerShell._pages.
     final cards = [
       _StatData(
         icon: Icons.group_outlined,
@@ -274,6 +293,7 @@ class _ManagerDashboardPageState extends ConsumerState<ManagerDashboardPage> {
         iconBg: AppColors.secondaryContainer,
         value: '${_stats?['students'] ?? 0}',
         label: 'إجمالي الطلاب',
+        onTap: () => _openTab(1),
       ),
       _StatData(
         icon: Icons.family_restroom_outlined,
@@ -281,6 +301,7 @@ class _ManagerDashboardPageState extends ConsumerState<ManagerDashboardPage> {
         iconBg: AppColors.primaryContainer,
         value: '${_stats?['parents'] ?? 0}',
         label: 'إجمالي الأولياء',
+        onTap: () => _openTab(2),
       ),
       _StatData(
         icon: Icons.pending_actions_outlined,
@@ -289,6 +310,7 @@ class _ManagerDashboardPageState extends ConsumerState<ManagerDashboardPage> {
         value: '${_stats?['unjustified'] ?? 0}',
         label: 'بانتظار التبرير',
         isAlert: true,
+        onTap: () => _openJustifications(0),
       ),
       _StatData(
         icon: Icons.fact_check_outlined,
@@ -296,6 +318,7 @@ class _ManagerDashboardPageState extends ConsumerState<ManagerDashboardPage> {
         iconBg: AppColors.tertiaryContainer,
         value: '${_stats?['justifications'] ?? 0}',
         label: 'تبريرات مسجلة',
+        onTap: () => _openJustifications(1),
       ),
     ];
 
@@ -311,52 +334,56 @@ class _ManagerDashboardPageState extends ConsumerState<ManagerDashboardPage> {
   }
 
   Widget _buildStatCard(_StatData data) {
-    return Container(
-      padding: EdgeInsets.all(14.w),
-      decoration: BoxDecoration(
-        color: AppColors.surfaceContainerLowest,
-        borderRadius: BorderRadius.circular(AppConstants.radiusXl),
-        boxShadow: const [
-          BoxShadow(
-            color: Color.fromRGBO(18, 52, 59, 0.04),
-            blurRadius: 20,
-            offset: Offset(0, 4),
-          ),
-        ],
-      ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.end,
-        mainAxisAlignment: MainAxisAlignment.spaceBetween,
-        children: [
-          Row(
-            mainAxisAlignment: MainAxisAlignment.spaceBetween,
-            children: [
-              AppText(
-                data.value,
-                style: AppTextStyles.headlineMd.copyWith(
-                  color: data.isAlert ? AppColors.error : AppColors.primary,
-                ),
-              ),
-              Container(
-                padding: EdgeInsets.all(8.w),
-                decoration: BoxDecoration(
-                  color: data.iconBg,
-                  shape: BoxShape.circle,
-                ),
-                child: Icon(data.icon, color: data.iconColor, size: 20.w),
-              ),
-            ],
-          ),
-          AppText(
-            data.label,
-            style: AppTextStyles.labelMd.copyWith(
-              color: data.isAlert
-                  ? AppColors.error
-                  : AppColors.onSurfaceVariant,
+    return GestureDetector(
+      onTap: data.onTap,
+      behavior: HitTestBehavior.opaque,
+      child: Container(
+        padding: EdgeInsets.all(14.w),
+        decoration: BoxDecoration(
+          color: AppColors.surfaceContainerLowest,
+          borderRadius: BorderRadius.circular(AppConstants.radiusXl),
+          boxShadow: const [
+            BoxShadow(
+              color: Color.fromRGBO(18, 52, 59, 0.04),
+              blurRadius: 20,
+              offset: Offset(0, 4),
             ),
-            textAlign: TextAlign.right,
-          ),
-        ],
+          ],
+        ),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.end,
+          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+          children: [
+            Row(
+              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+              children: [
+                AppText(
+                  data.value,
+                  style: AppTextStyles.headlineMd.copyWith(
+                    color: data.isAlert ? AppColors.error : AppColors.primary,
+                  ),
+                ),
+                Container(
+                  padding: EdgeInsets.all(8.w),
+                  decoration: BoxDecoration(
+                    color: data.iconBg,
+                    shape: BoxShape.circle,
+                  ),
+                  child: Icon(data.icon, color: data.iconColor, size: 20.w),
+                ),
+              ],
+            ),
+            AppText(
+              data.label,
+              style: AppTextStyles.labelMd.copyWith(
+                color: data.isAlert
+                    ? AppColors.error
+                    : AppColors.onSurfaceVariant,
+              ),
+              textAlign: TextAlign.right,
+            ),
+          ],
+        ),
       ),
     );
   }
@@ -369,6 +396,7 @@ class _StatData {
   final String value;
   final String label;
   final bool isAlert;
+  final VoidCallback? onTap;
 
   const _StatData({
     required this.icon,
@@ -377,5 +405,6 @@ class _StatData {
     required this.value,
     required this.label,
     this.isAlert = false,
+    this.onTap,
   });
 }

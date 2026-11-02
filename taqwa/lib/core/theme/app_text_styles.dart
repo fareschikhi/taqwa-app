@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
-import 'package:google_fonts/google_fonts.dart';
+import 'app_fonts.dart';
 
 /// Taqwa Design System Text Styles
 /// Typography: Cairo for headlines/body, Tajawal for labels
@@ -10,7 +10,7 @@ class AppTextStyles {
   // ═══════════════════════════════════════
   // Display
   // ═══════════════════════════════════════
-  static TextStyle get displayLg => GoogleFonts.cairo(
+  static TextStyle get displayLg => AppFonts.cairo(
         fontSize: 40.sp,
         fontWeight: FontWeight.w700,
         height: 56 / 40,
@@ -19,25 +19,25 @@ class AppTextStyles {
   // ═══════════════════════════════════════
   // Headlines
   // ═══════════════════════════════════════
-  static TextStyle get headlineLg => GoogleFonts.cairo(
+  static TextStyle get headlineLg => AppFonts.cairo(
         fontSize: 32.sp,
         fontWeight: FontWeight.w700,
         height: 44 / 32,
       );
 
-  static TextStyle get headlineLgMobile => GoogleFonts.cairo(
+  static TextStyle get headlineLgMobile => AppFonts.cairo(
         fontSize: 28.sp,
         fontWeight: FontWeight.w700,
         height: 38 / 28,
       );
 
-  static TextStyle get headlineMd => GoogleFonts.cairo(
+  static TextStyle get headlineMd => AppFonts.cairo(
         fontSize: 24.sp,
         fontWeight: FontWeight.w600,
         height: 34 / 24,
       );
 
-  static TextStyle get headlineSm => GoogleFonts.cairo(
+  static TextStyle get headlineSm => AppFonts.cairo(
         fontSize: 20.sp,
         fontWeight: FontWeight.w600,
         height: 28 / 20,
@@ -46,19 +46,19 @@ class AppTextStyles {
   // ═══════════════════════════════════════
   // Body
   // ═══════════════════════════════════════
-  static TextStyle get bodyLg => GoogleFonts.cairo(
+  static TextStyle get bodyLg => AppFonts.cairo(
         fontSize: 18.sp,
         fontWeight: FontWeight.w400,
         height: 28 / 18,
       );
 
-  static TextStyle get bodyMd => GoogleFonts.cairo(
+  static TextStyle get bodyMd => AppFonts.cairo(
         fontSize: 16.sp,
         fontWeight: FontWeight.w400,
         height: 24 / 16,
       );
 
-  static TextStyle get bodyMdBold => GoogleFonts.cairo(
+  static TextStyle get bodyMdBold => AppFonts.cairo(
         fontSize: 16.sp,
         fontWeight: FontWeight.w700,
         height: 24 / 16,
@@ -67,21 +67,21 @@ class AppTextStyles {
   // ═══════════════════════════════════════
   // Labels (Tajawal)
   // ═══════════════════════════════════════
-  static TextStyle get labelMd => GoogleFonts.tajawal(
+  static TextStyle get labelMd => AppFonts.tajawal(
         fontSize: 14.sp,
         fontWeight: FontWeight.w500,
         height: 20 / 14,
         letterSpacing: 0.02 * 14,
       );
 
-  static TextStyle get labelMdBold => GoogleFonts.tajawal(
+  static TextStyle get labelMdBold => AppFonts.tajawal(
         fontSize: 14.sp,
         fontWeight: FontWeight.w700,
         height: 20 / 14,
         letterSpacing: 0.02 * 14,
       );
 
-  static TextStyle get labelSm => GoogleFonts.tajawal(
+  static TextStyle get labelSm => AppFonts.tajawal(
         fontSize: 12.sp,
         fontWeight: FontWeight.w500,
         height: 16 / 12,
@@ -92,13 +92,13 @@ class AppTextStyles {
   // ═══════════════════════════════════════
   // 10sp reads as decoration rather than data on a phone: at that size a
   // parent misses the amount pill on their child's progress list entirely.
-  static TextStyle get caption => GoogleFonts.tajawal(
+  static TextStyle get caption => AppFonts.tajawal(
         fontSize: 12.sp,
         fontWeight: FontWeight.w400,
         height: 16 / 12,
       );
 
-  static TextStyle get button => GoogleFonts.tajawal(
+  static TextStyle get button => AppFonts.tajawal(
         fontSize: 14.sp,
         fontWeight: FontWeight.w700,
         height: 20 / 14,

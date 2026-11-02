@@ -6,6 +6,9 @@ class TeacherModel {
   final DateTime? hireDate;
   final int studentCount;
   final int halaqaCount;
+
+  /// Granted by the admin: may post news to their own halaqas.
+  final bool canPostNews;
   final UserModel user;
 
   TeacherModel({
@@ -15,6 +18,7 @@ class TeacherModel {
     this.hireDate,
     this.studentCount = 0,
     this.halaqaCount = 0,
+    this.canPostNews = false,
   });
 
   String get fullName => user.fullName;
@@ -56,6 +60,7 @@ class TeacherModel {
       user: userObj,
       studentCount: (json['_count']?['students'] as num?)?.toInt() ?? 0,
       halaqaCount: (json['_count']?['halaqas'] as num?)?.toInt() ?? 0,
+      canPostNews: (json['canPostNews'] as bool?) ?? false,
     );
   }
 

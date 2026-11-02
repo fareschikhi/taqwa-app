@@ -28,10 +28,10 @@ void main() {
 
     await tester.pumpWidget(const TaqwaApp());
 
-    // The app now opens on AuthGate, which holds an indeterminate spinner
+    // The app opens on the salawat intro, then AuthGate, which holds an indeterminate spinner
     // while the stored token is read. pumpAndSettle would wait on that
     // animation forever, so step past it a frame at a time first.
-    for (var i = 0; i < 10 && find.byType(AppButton).evaluate().isEmpty; i++) {
+    for (var i = 0; i < 100 && find.byType(AppButton).evaluate().isEmpty; i++) {
       await tester.pump(const Duration(milliseconds: 50));
     }
     await tester.pumpAndSettle();

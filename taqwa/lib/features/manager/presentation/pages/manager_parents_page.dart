@@ -9,6 +9,7 @@ import '../../../../core/widgets/search_bar_widget.dart';
 import '../../../../core/widgets/app_button.dart';
 import '../../../../core/widgets/avatar_widget.dart';
 import '../../../../core/widgets/confirm_delete_dialog.dart';
+import '../../../../core/widgets/list_layout.dart';
 import '../../../../features/data/models/parent/parent_model.dart';
 import '../../../../features/data/repositories/parent_repository.dart';
 import '../../../shared/presentation/pages/parent_details_page.dart';
@@ -30,10 +31,21 @@ class _ManagerParentsPageState extends ConsumerState<ManagerParentsPage> {
   int _filterIndex = 0;
   final _searchController = TextEditingController();
 
+  static const _layoutKey = 'manager_parents';
+  ListLayout _layout = ListLayout.list;
+
+  void _setLayout(ListLayout layout) {
+    setState(() => _layout = layout);
+    ListLayoutStore.write(_layoutKey, layout);
+  }
+
   @override
   void initState() {
     super.initState();
     _load();
+    ListLayoutStore.read(_layoutKey).then((layout) {
+      if (mounted && layout != _layout) setState(() => _layout = layout);
+    });
   }
 
   @override
@@ -184,10 +196,21 @@ class _ManagerParentsPageState extends ConsumerState<ManagerParentsPage> {
                         onPressed: () => _openForm(null),
                       ),
                       SizedBox(height: 16.h),
-                      SearchBarWidget(
-                        hint: 'ابحث عن ولي أمر بالاسم أو رقم الهاتف...',
-                        controller: _searchController,
-                        onChanged: (_) => setState(() => _applyFilter()),
+                      Row(
+                        children: [
+                          ListLayoutToggle(
+                            value: _layout,
+                            onChanged: _setLayout,
+                          ),
+                          SizedBox(width: 8.w),
+                          Expanded(
+                            child: SearchBarWidget(
+                              hint: 'ابحث عن ولي أمر بالاسم أو رقم الهاتف...',
+                              controller: _searchController,
+                              onChanged: (_) => setState(() => _applyFilter()),
+                            ),
+                          ),
+                        ],
                       ),
                       SizedBox(height: 12.h),
                       FilterChipGroup(
@@ -239,6 +262,39 @@ class _ManagerParentsPageState extends ConsumerState<ManagerParentsPage> {
                             ),
                           ),
                         ),
+                      )
+                    : _layout == ListLayout.grid
+                    ? LayoutBuilder(
+                        builder: (_, constraints) {
+                          final columns = cardGridColumns(
+                            constraints.maxWidth - 32.w,
+                          );
+                          return ListView.separated(
+                            physics: const AlwaysScrollableScrollPhysics(),
+                            padding: EdgeInsets.fromLTRB(16.w, 0, 16.w, 16.h),
+                            itemCount: (_filtered.length / columns).ceil(),
+                            separatorBuilder: (_, _) => SizedBox(height: 12.h),
+                            itemBuilder: (_, row) => CardGridRow(
+                              columns: columns,
+                              children: [
+                                for (final parent in _filtered.skip(
+                                  row * columns,
+                                ).take(columns))
+                                  _ParentGridCard(
+                                    parent: parent,
+                                    canManage: canManage,
+                                    canDelete: canDelete,
+                                    onOpenDetails: () => _openDetails(
+                                      parent,
+                                      canEdit: canManage,
+                                    ),
+                                    onEdit: () => _openForm(parent),
+                                    onDelete: () => _deleteParent(parent.id!),
+                                  ),
+                              ],
+                            ),
+                          );
+                        },
                       )
                     : ListView.separated(
                         physics: const AlwaysScrollableScrollPhysics(),
@@ -386,6 +442,132 @@ class _ParentCard extends StatelessWidget {
                 ),
               ],
             ),
+          ],
+        ),
+      ),
+    );
+  }
+}
+
+/// The grid layout's card: the same facts as [_ParentCard], stacked to fit
+/// half the screen's width. Edit and delete appear only for a manager allowed
+/// them, as on the list card.
+class _ParentGridCard extends StatelessWidget {
+  const _ParentGridCard({
+    required this.parent,
+    required this.canManage,
+    required this.canDelete,
+    required this.onOpenDetails,
+    required this.onEdit,
+    required this.onDelete,
+  });
+
+  final ParentModel parent;
+  final bool canManage;
+  final bool canDelete;
+  final VoidCallback onOpenDetails;
+  final VoidCallback onEdit;
+  final VoidCallback onDelete;
+
+  @override
+  Widget build(BuildContext context) {
+    final isActive = parent.isActive ?? true;
+    final phone = parent.phone ?? '';
+
+    return GestureDetector(
+      onTap: onOpenDetails,
+      behavior: HitTestBehavior.opaque,
+      child: Container(
+        decoration: BoxDecoration(
+          color: AppColors.surfaceContainerLowest,
+          borderRadius: BorderRadius.circular(AppConstants.radiusXl),
+          boxShadow: const [
+            BoxShadow(
+              color: Color.fromRGBO(18, 52, 59, 0.04),
+              blurRadius: 20,
+              offset: Offset(0, 4),
+            ),
+          ],
+        ),
+        padding: EdgeInsets.all(12.w),
+        child: Column(
+          children: [
+            AvatarWidget(
+              avatarUrl: parent.avatar,
+              size: 48.w,
+              backgroundColor: AppColors.tertiaryContainer,
+              fallback: AppText(
+                parent.fullName.isNotEmpty ? parent.fullName[0] : '؟',
+                style: AppTextStyles.headlineSm.copyWith(
+                  color: AppColors.onTertiaryContainer,
+                ),
+              ),
+            ),
+            SizedBox(height: 8.h),
+            AppText(
+              parent.fullName,
+              style: AppTextStyles.bodyMdBold.copyWith(
+                color: AppColors.onSurface,
+              ),
+              textAlign: TextAlign.center,
+              maxLines: 2,
+              overflow: TextOverflow.ellipsis,
+            ),
+            if (phone.isNotEmpty) ...[
+              SizedBox(height: 4.h),
+              AppText(
+                phone,
+                style: AppTextStyles.labelSm.copyWith(
+                  color: AppColors.onSurfaceVariant,
+                ),
+                maxLines: 1,
+                overflow: TextOverflow.ellipsis,
+              ),
+            ],
+            SizedBox(height: 8.h),
+            Container(
+              padding: EdgeInsets.symmetric(horizontal: 8.w, vertical: 3.h),
+              decoration: BoxDecoration(
+                color: (isActive ? AppColors.primary : AppColors.outline)
+                    .withValues(alpha: 0.1),
+                borderRadius: BorderRadius.circular(AppConstants.radiusMd),
+              ),
+              child: AppText(
+                isActive ? 'نشط' : 'غير نشط',
+                style: AppTextStyles.labelSm.copyWith(
+                  color: isActive ? AppColors.primary : AppColors.outline,
+                ),
+              ),
+            ),
+            if (canManage || canDelete) ...[
+              const Spacer(),
+              SizedBox(height: 10.h),
+              Row(
+                children: [
+                  if (canDelete)
+                    Expanded(
+                      child: GridCardAction(
+                        tooltip: 'حذف',
+                        icon: Icons.delete_outline,
+                        color: AppColors.error,
+                        background: AppColors.errorContainer,
+                        onTap: onDelete,
+                      ),
+                    ),
+                  if (canDelete && canManage) SizedBox(width: 6.w),
+                  if (canManage)
+                    Expanded(
+                      child: GridCardAction(
+                        tooltip: 'تعديل',
+                        icon: Icons.edit_outlined,
+                        color: AppColors.secondary,
+                        border: AppColors.outlineVariant,
+                        onTap: onEdit,
+                      ),
+                    ),
+                ],
+              ),
+            ],
           ],
         ),
       ),

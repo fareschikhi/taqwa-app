@@ -186,13 +186,14 @@ class RecitationButton extends StatelessWidget {
       ),
     };
 
-/// Picks one of the three attendance marks, tinted to whichever is chosen.
+/// The three attendance marks side by side, so a mark costs a single tap.
 ///
 /// Every student's row opens on [AttendanceStatus.present], so this never
 /// shows [AttendanceStatus.unset]: the sheet records exceptions, and a mark
-/// nobody changed still means the student was there.
-class AttendanceDropdown extends StatelessWidget {
-  const AttendanceDropdown({
+/// nobody changed still means the student was there. The app lays rows out
+/// left to right, so present is listed last to sit first for an Arabic reader.
+class AttendanceSelector extends StatelessWidget {
+  const AttendanceSelector({
     super.key,
     required this.status,
     required this.onChanged,
@@ -204,77 +205,44 @@ class AttendanceDropdown extends StatelessWidget {
   final ValueChanged<AttendanceStatus> onChanged;
 
   /// What lateness costs in this student's halaqa, already formatted, or null
-  /// when it is free. Shown against the late entry so the teacher reads the
-  /// price while choosing rather than after.
+  /// when it is free. Printed under the late segment so the teacher reads the
+  /// price before tapping rather than after.
   final String? lateFeeLabel;
 
   final bool enabled;
 
   static const _options = [
-    (AttendanceStatus.present, 'حاضر'),
-    (AttendanceStatus.late, 'متأخر'),
     (AttendanceStatus.absent, 'غائب'),
+    (AttendanceStatus.late, 'متأخر'),
+    (AttendanceStatus.present, 'حاضر'),
   ];
 
   @override
   Widget build(BuildContext context) {
-    final colors = attendanceColors(status);
-    final ink = enabled ? colors.ink : AppColors.outlineVariant;
-
     return Container(
-      padding: EdgeInsets.symmetric(horizontal: 10.w),
+      padding: EdgeInsets.all(3.w),
       decoration: BoxDecoration(
-        color: enabled ? colors.fill : AppColors.surfaceContainerLow,
+        color: AppColors.surfaceContainerLow,
         borderRadius: BorderRadius.circular(AppConstants.radiusMd),
-        border: Border.all(
-          color: enabled ? colors.fill : AppColors.outlineVariant,
-          width: 1.5,
-        ),
+        border: Border.all(color: AppColors.inputBorder),
       ),
-      child: DropdownButtonHideUnderline(
-        child: DropdownButton<AttendanceStatus>(
-          value: status,
-          isExpanded: true,
-          // Not dense: the button sizes itself to the tallest entry it could
-          // show, and the late one runs to two lines when the halaqa charges
-          // for it. A dense button caps that height and clips the fee.
-          // Null rather than the 48px default: the late entry runs to two
-          // lines when the halaqa charges for it, and a fixed height would
-          // clip the fee right off the menu.
-          itemHeight: null,
-          padding: EdgeInsets.symmetric(vertical: 10.h),
-          borderRadius: BorderRadius.circular(AppConstants.radiusMd),
-          icon: Icon(Icons.arrow_drop_down, color: ink),
-          dropdownColor: AppColors.surfaceContainerLowest,
-          onChanged: enabled
-              ? (value) {
-                  if (value != null) onChanged(value);
-                }
-              : null,
-          // The closed button paints on the status fill, but the open menu
-          // paints on the surface, so the same entry needs a different ink in
-          // each place. selectedItemBuilder is what draws the closed state.
-          selectedItemBuilder: (context) => [
+      // IntrinsicHeight so the late segment's fee line sets one height for
+      // all three, inside a list that hands down no height of its own.
+      child: IntrinsicHeight(
+        child: Row(
+          crossAxisAlignment: CrossAxisAlignment.stretch,
+          children: [
             for (final (itemStatus, label) in _options)
-              _Entry(
-                label: label,
-                feeLabel: itemStatus == AttendanceStatus.late
-                    ? lateFeeLabel
-                    : null,
-                color: ink,
-              ),
-          ],
-          items: [
-            for (final (itemStatus, label) in _options)
-              DropdownMenuItem(
-                value: itemStatus,
-                child: _Entry(
+              Expanded(
+                child: _Segment(
                   label: label,
                   feeLabel: itemStatus == AttendanceStatus.late
                       ? lateFeeLabel
                       : null,
-                  color: AppColors.onSurface,
-                  dotColor: attendanceColors(itemStatus).fill,
+                  color: attendanceColors(itemStatus),
+                  selected: status == itemStatus,
+                  enabled: enabled,
+                  onTap: () => onChanged(itemStatus),
                 ),
               ),
           ],
@@ -284,59 +252,100 @@ class AttendanceDropdown extends StatelessWidget {
   }
 }
 
-/// One line of the dropdown: the mark, and what it costs if it costs anything.
-class _Entry extends StatelessWidget {
-  const _Entry({
+/// One mark of [AttendanceSelector]: filled in its own colour once chosen,
+/// a coloured dot beside the label until then.
+class _Segment extends StatelessWidget {
+  const _Segment({
     required this.label,
     required this.color,
+    required this.selected,
+    required this.enabled,
+    required this.onTap,
     this.feeLabel,
-    this.dotColor,
   });
 
   final String label;
-  final Color color;
   final String? feeLabel;
-
-  /// Shown only in the open menu, where every entry sits on the same neutral
-  /// surface and the colour is the only thing telling them apart.
-  final Color? dotColor;
+  final ({Color fill, Color ink}) color;
+  final bool selected;
+  final bool enabled;
+  final VoidCallback onTap;
 
   @override
   Widget build(BuildContext context) {
-    return Row(
-      children: [
-        if (dotColor != null) ...[
-          Container(
-            width: 8.w,
-            height: 8.w,
-            decoration: BoxDecoration(color: dotColor, shape: BoxShape.circle),
-          ),
-          SizedBox(width: 6.w),
-        ],
-        // The fee goes under the label rather than beside it: the menu is laid
-        // out to the button's width, and the two side by side do not fit it.
-        Flexible(
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              AppText(
-                label,
-                maxLines: 1,
-                overflow: TextOverflow.ellipsis,
-                style: AppTextStyles.labelMdBold.copyWith(color: color),
-              ),
-              if (feeLabel != null)
-                AppText(
-                  feeLabel!,
-                  maxLines: 1,
-                  overflow: TextOverflow.ellipsis,
-                  style: AppTextStyles.labelSm.copyWith(color: color),
+    final Color ink;
+    if (!enabled) {
+      ink = AppColors.outlineVariant;
+    } else if (selected) {
+      ink = color.ink;
+    } else {
+      ink = AppColors.onSurfaceVariant;
+    }
+
+    return Semantics(
+      button: true,
+      selected: selected,
+      enabled: enabled,
+      label: label,
+      excludeSemantics: true,
+      child: Material(
+        type: MaterialType.transparency,
+        child: InkWell(
+          onTap: enabled && !selected ? onTap : null,
+          borderRadius: BorderRadius.circular(AppConstants.radiusDefault),
+          child: AnimatedContainer(
+            duration: AppConstants.animFast,
+            constraints: BoxConstraints(minHeight: 40.h),
+            padding: EdgeInsets.symmetric(horizontal: 4.w, vertical: 6.h),
+            alignment: Alignment.center,
+            decoration: BoxDecoration(
+              color: selected
+                  ? (enabled ? color.fill : AppColors.surfaceContainerHigh)
+                  : Colors.transparent,
+              borderRadius: BorderRadius.circular(AppConstants.radiusDefault),
+            ),
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: [
+                Row(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    Flexible(
+                      child: AppText(
+                        label,
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
+                        style: AppTextStyles.labelMdBold.copyWith(color: ink),
+                      ),
+                    ),
+                    if (!selected) ...[
+                      SizedBox(width: 6.w),
+                      Container(
+                        width: 8.w,
+                        height: 8.w,
+                        decoration: BoxDecoration(
+                          color: enabled
+                              ? color.fill
+                              : AppColors.outlineVariant,
+                          shape: BoxShape.circle,
+                        ),
+                      ),
+                    ],
+                  ],
                 ),
-            ],
+                if (feeLabel != null)
+                  AppText(
+                    feeLabel!,
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
+                    style: AppTextStyles.labelSm.copyWith(color: ink),
+                  ),
+              ],
+            ),
           ),
         ),
-      ],
+      ),
     );
   }
 }

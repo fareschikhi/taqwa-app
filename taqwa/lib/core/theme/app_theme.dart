@@ -1,5 +1,5 @@
 import 'package:flutter/material.dart';
-import 'package:google_fonts/google_fonts.dart';
+import 'app_fonts.dart';
 import 'app_colors.dart';
 
 /// Taqwa Material 3 Theme
@@ -42,24 +42,25 @@ class AppTheme {
       useMaterial3: true,
       colorScheme: colorScheme,
       scaffoldBackgroundColor: AppColors.background,
-      fontFamily: GoogleFonts.cairo().fontFamily,
+      fontFamily: AppFonts.cairo().fontFamily,
+      fontFamilyFallback: AppFonts.fallbackFor(),
       textTheme: TextTheme(
-        displayLarge: GoogleFonts.cairo(fontSize: 40, fontWeight: FontWeight.w700),
-        headlineLarge: GoogleFonts.cairo(fontSize: 32, fontWeight: FontWeight.w700),
-        headlineMedium: GoogleFonts.cairo(fontSize: 24, fontWeight: FontWeight.w600),
-        headlineSmall: GoogleFonts.cairo(fontSize: 20, fontWeight: FontWeight.w600),
-        bodyLarge: GoogleFonts.cairo(fontSize: 18, fontWeight: FontWeight.w400),
-        bodyMedium: GoogleFonts.cairo(fontSize: 16, fontWeight: FontWeight.w400),
-        labelLarge: GoogleFonts.tajawal(fontSize: 14, fontWeight: FontWeight.w500),
-        labelMedium: GoogleFonts.tajawal(fontSize: 12, fontWeight: FontWeight.w500),
-        labelSmall: GoogleFonts.tajawal(fontSize: 10, fontWeight: FontWeight.w500),
+        displayLarge: AppFonts.cairo(fontSize: 40, fontWeight: FontWeight.w700),
+        headlineLarge: AppFonts.cairo(fontSize: 32, fontWeight: FontWeight.w700),
+        headlineMedium: AppFonts.cairo(fontSize: 24, fontWeight: FontWeight.w600),
+        headlineSmall: AppFonts.cairo(fontSize: 20, fontWeight: FontWeight.w600),
+        bodyLarge: AppFonts.cairo(fontSize: 18, fontWeight: FontWeight.w400),
+        bodyMedium: AppFonts.cairo(fontSize: 16, fontWeight: FontWeight.w400),
+        labelLarge: AppFonts.tajawal(fontSize: 14, fontWeight: FontWeight.w500),
+        labelMedium: AppFonts.tajawal(fontSize: 12, fontWeight: FontWeight.w500),
+        labelSmall: AppFonts.tajawal(fontSize: 10, fontWeight: FontWeight.w500),
       ),
       appBarTheme: AppBarTheme(
         backgroundColor: AppColors.background,
         elevation: 0,
         scrolledUnderElevation: 1,
         shadowColor: const Color.fromRGBO(18, 52, 59, 0.04),
-        titleTextStyle: GoogleFonts.cairo(
+        titleTextStyle: AppFonts.cairo(
           fontSize: 22,
           fontWeight: FontWeight.w700,
           color: AppColors.primary,
@@ -74,7 +75,7 @@ class AppTheme {
           shape: RoundedRectangleBorder(
             borderRadius: BorderRadius.circular(12),
           ),
-          textStyle: GoogleFonts.tajawal(fontSize: 14, fontWeight: FontWeight.w700),
+          textStyle: AppFonts.tajawal(fontSize: 14, fontWeight: FontWeight.w700),
         ),
       ),
       outlinedButtonTheme: OutlinedButtonThemeData(
@@ -85,7 +86,7 @@ class AppTheme {
           shape: RoundedRectangleBorder(
             borderRadius: BorderRadius.circular(12),
           ),
-          textStyle: GoogleFonts.tajawal(fontSize: 14, fontWeight: FontWeight.w700),
+          textStyle: AppFonts.tajawal(fontSize: 14, fontWeight: FontWeight.w700),
         ),
       ),
       inputDecorationTheme: InputDecorationTheme(
@@ -103,7 +104,7 @@ class AppTheme {
           borderRadius: BorderRadius.circular(12),
           borderSide: const BorderSide(color: AppColors.inputFocusBorder, width: 1.5),
         ),
-        hintStyle: GoogleFonts.tajawal(
+        hintStyle: AppFonts.tajawal(
           fontSize: 14,
           color: AppColors.inputPlaceholder,
         ),

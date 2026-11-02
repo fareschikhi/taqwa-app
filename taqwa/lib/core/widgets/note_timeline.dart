@@ -6,6 +6,11 @@ import '../theme/app_text_styles.dart';
 import '../utils/note_timeline.dart';
 import 'app_card.dart';
 import 'app_text.dart';
+import 'expandable_text.dart';
+
+/// Lines of a note shown before `اقرأ المزيد`: enough for an ordinary note to
+/// read whole, short enough that one long note doesn't bury the rest.
+const int kNoteFoldedLines = 5;
 
 /// A student's teacher notes laid out as a timeline: grouped under their day,
 /// each stamped with the time it was written, joined by a rail on the right.
@@ -120,13 +125,13 @@ class _Entry extends StatelessWidget {
                       ],
                     ),
                     SizedBox(height: 8.h),
-                    AppText(
+                    ExpandableText(
                       note.note,
                       style: AppTextStyles.bodyMd.copyWith(
                         color: AppColors.onSurface,
                         height: 1.6,
                       ),
-                      textAlign: TextAlign.end,
+                      maxLines: kNoteFoldedLines,
                     ),
                   ],
                 ),

@@ -4,6 +4,7 @@ import 'package:taqwa/core/theme/app_colors.dart';
 import 'package:taqwa/core/theme/app_text_styles.dart';
 import 'package:taqwa/core/widgets/app_card.dart';
 import 'package:taqwa/core/widgets/app_text.dart';
+import 'package:taqwa/core/widgets/expandable_text.dart';
 import 'package:taqwa/features/data/models/halaqa/halaqa_announcement_model.dart';
 
 /// How many announcements a dashboard shows before deferring to the history.
@@ -17,7 +18,8 @@ const int kNewsPreviewCount = 3;
 ///
 /// Renders nothing at all when there is no news and the viewer cannot post
 /// one: the dashboards are dense already and an empty box teaches a reader
-/// nothing. A manager or admin still sees the card, because they are the ones
+/// nothing. Whoever may post — a manager, an admin, or a teacher the admin
+/// allowed to — still sees the card, because they are the ones
 /// who need to find the compose action.
 ///
 /// [onEdit] and [onDelete] put the same per-item icons on each row as the
@@ -32,6 +34,7 @@ class HalaqaNewsCard extends StatelessWidget {
     this.canCompose = false,
     this.onEdit,
     this.onDelete,
+    this.ownPostsOf,
   });
 
   final List<HalaqaAnnouncementModel> announcements;
@@ -40,6 +43,10 @@ class HalaqaNewsCard extends StatelessWidget {
   final bool canCompose;
   final ValueChanged<HalaqaAnnouncementModel>? onEdit;
   final ValueChanged<HalaqaAnnouncementModel>? onDelete;
+
+  /// When set, [onEdit] and [onDelete] apply only to news this user wrote —
+  /// a teacher's view, where the manager's and admin's news are read-only.
+  final int? ownPostsOf;
 
   @override
   Widget build(BuildContext context) {
@@ -67,14 +74,15 @@ class HalaqaNewsCard extends StatelessWidget {
                   textAlign: TextAlign.end,
                 )
               else
-                ...preview.map(
-                  (a) => _NewsRow(
+                ...preview.map((a) {
+                  final mine = ownPostsOf == null || a.authorId == ownPostsOf;
+                  return _NewsRow(
                     announcement: a,
                     isLast: a == preview.last,
-                    onEdit: onEdit,
-                    onDelete: onDelete,
-                  ),
-                ),
+                    onEdit: mine ? onEdit : null,
+                    onDelete: mine ? onDelete : null,
+                  );
+                }),
               if (hasMore && onSeeAll != null) ...[
                 SizedBox(height: 4.h),
                 Align(
@@ -205,12 +213,10 @@ class _NewsRow extends StatelessWidget {
             ],
           ),
           SizedBox(height: 6.h),
-          AppText(
+          ExpandableText(
             announcement.body,
             style: AppTextStyles.bodyMd.copyWith(color: AppColors.onSurface),
-            textAlign: TextAlign.end,
             maxLines: 2,
-            overflow: TextOverflow.ellipsis,
           ),
           if (!isLast) ...[
             SizedBox(height: 12.h),

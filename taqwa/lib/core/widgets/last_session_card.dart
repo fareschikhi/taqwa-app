@@ -9,6 +9,7 @@ import 'package:taqwa/core/utils/last_session.dart';
 import 'package:taqwa/core/utils/hadith_label.dart' show hadithLabelOrFallback, kHadithUnitLabel;
 import 'package:taqwa/core/widgets/app_card.dart';
 import 'package:taqwa/core/widgets/app_text.dart';
+import 'package:taqwa/core/utils/memorization_amount.dart';
 
 /// The last day the child was marked, and what they recited on it.
 ///
@@ -89,8 +90,8 @@ class LastSessionCard extends StatelessWidget {
     // A type this build does not know about still happened, so the amount is
     // reported without claiming a unit for it.
     final amountText = type == null
-        ? 'تسميع · ${entry.amount}'
-        : '${type.label} · ${entry.amount} ${isHadith ? kHadithUnitLabel : type.unitLabel}';
+        ? 'تسميع · ${formatAmount(entry.amount)}'
+        : '${type.label} · ${formatAmount(entry.amount)} ${isHadith ? kHadithUnitLabel : kPageUnitLabel}';
 
     final referenceText = isHadith
         ? hadithLabelOrFallback(entry.hadithReference)

@@ -37,18 +37,28 @@ class TeacherRemoteDatasource {
   }
 
   // ─── Teacher functionalities ──────────────────────────────────────────────────────────────
-  Future<AttendanceSummaryModel> getAttendanceSummary(int teacherId) async {
+  // [halaqaId] narrows each dashboard figure to one of the teacher's halaqas;
+  // left off, they cover all of them.
+  Future<AttendanceSummaryModel> getAttendanceSummary(
+    int teacherId, {
+    int? halaqaId,
+  }) async {
     final response = await _dio.get(
       '${ApiEndpoints.teachers}/$teacherId/attendance-summary',
+      queryParameters: {'halaqaId': ?halaqaId},
     );
     return AttendanceSummaryModel.fromJson(
       response.data as Map<String, dynamic>,
     );
   }
 
-  Future<List<RevisionNeededModel>> getRevisionNeeded(int teacherId) async {
+  Future<List<RevisionNeededModel>> getRevisionNeeded(
+    int teacherId, {
+    int? halaqaId,
+  }) async {
     final response = await _dio.get(
       '${ApiEndpoints.teachers}/$teacherId/revision-needed',
+      queryParameters: {'halaqaId': ?halaqaId},
     );
     return (response.data as List)
         .map((e) => RevisionNeededModel.fromJson(e as Map<String, dynamic>))
@@ -56,10 +66,12 @@ class TeacherRemoteDatasource {
   }
 
   Future<MemorizationProgressSummaryModel> getMemorizationProgress(
-    int teacherId,
-  ) async {
+    int teacherId, {
+    int? halaqaId,
+  }) async {
     final response = await _dio.get(
       '${ApiEndpoints.teachers}/$teacherId/memorization-progress',
+      queryParameters: {'halaqaId': ?halaqaId},
     );
     return MemorizationProgressSummaryModel.fromJson(
       response.data as Map<String, dynamic>,
@@ -74,9 +86,11 @@ class TeacherRemoteDatasource {
     int page = 1,
     int limit = 30,
     bool? isActive,
+    int? halaqaId,
   }) async {
     final queryParams = <String, dynamic>{
       'teacherId': teacherId,
+      'halaqaId': ?halaqaId,
       'page': page,
       'limit': limit,
       if (search != null && search.isNotEmpty) 'search': search,
@@ -185,6 +199,17 @@ class TeacherRemoteDatasource {
     return StudentNoteModel.fromJson(response.data as Map<String, dynamic>);
   }
 
+  Future<StudentNoteModel> updateNote({
+    required int id,
+    required String note,
+  }) async {
+    final response = await _dio.patch(
+      '${ApiEndpoints.studentNotes}/$id',
+      data: {'note': note},
+    );
+    return StudentNoteModel.fromJson(response.data as Map<String, dynamic>);
+  }
+
   Future<void> deleteNote(int id) async {
     await _dio.delete('${ApiEndpoints.studentNotes}/$id');
   }
@@ -194,7 +219,7 @@ class TeacherRemoteDatasource {
   Future<Map<String, dynamic>> submitMemorization({
     required int studentId,
     int? surahNumber,
-    required int amountDone,
+    required num amountDone,
     required String memorizationType,
     String subject = 'QURAN',
     String? hadithReference,

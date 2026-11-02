@@ -18,6 +18,9 @@ class UserModel {
   /// A manager the admin allowed to answer parents in the shared chat.
   final bool canChat;
 
+  /// A teacher the admin allowed to post news to their own halaqas.
+  final bool canPostNews;
+
   /// The password was set by an admin and is temporary: the app holds the
   /// user on the change-password screen until they replace it.
   final bool mustChangePassword;
@@ -37,6 +40,7 @@ class UserModel {
     this.canManageAccounts = false,
     this.canDeleteAccounts = false,
     this.canChat = false,
+    this.canPostNews = false,
     this.mustChangePassword = false,
   });
 
@@ -55,6 +59,7 @@ class UserModel {
     canManageAccounts: canManageAccounts,
     canDeleteAccounts: canDeleteAccounts,
     canChat: canChat,
+    canPostNews: canPostNews,
     mustChangePassword: mustChangePassword ?? this.mustChangePassword,
   );
 
@@ -90,8 +95,10 @@ class UserModel {
       pId = json['parent']['id'];
     }
     int? tId;
+    bool postNews = false;
     if (json['teacher'] != null) {
       tId = json['teacher']['id'];
+      postNews = (json['teacher']['canPostNews'] as bool?) ?? false;
     }
 
     int? mId;
@@ -121,6 +128,7 @@ class UserModel {
       canManageAccounts: canManage,
       canDeleteAccounts: canDelete,
       canChat: chat,
+      canPostNews: postNews,
       mustChangePassword: (json['mustChangePassword'] as bool?) ?? false,
     );
   }
@@ -147,7 +155,8 @@ class UserModel {
       'mustChangePassword': mustChangePassword,
       if (studentId != null) 'student': {'id': studentId},
       if (parentId != null) 'parent': {'id': parentId},
-      if (teacherId != null) 'teacher': {'id': teacherId},
+      if (teacherId != null)
+        'teacher': {'id': teacherId, 'canPostNews': canPostNews},
       if (managerId != null)
         'manager': {
           'id': managerId,

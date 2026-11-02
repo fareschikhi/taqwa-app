@@ -119,7 +119,7 @@ class _JustificationFormCardState extends State<JustificationFormCard> {
       return;
     }
     if (date == null) {
-      _showMessage('يرجى اختيار تاريخ الغياب', isError: true);
+      _showMessage('يرجى اختيار تاريخ الغياب او التاخر', isError: true);
       return;
     }
     final reasonError = JustificationReasonFields.validate(_reasonType, reason);
@@ -206,7 +206,7 @@ class _JustificationFormCardState extends State<JustificationFormCard> {
           ),
           SizedBox(height: 16.h),
           AppTextField(
-            label: 'تاريخ الغياب',
+            label: 'تاريخ الغياب او التاخر',
             hint: 'dd/mm/yyyy',
             readOnly: true,
             onTap: _pickDate,

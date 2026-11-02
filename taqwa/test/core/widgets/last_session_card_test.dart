@@ -77,7 +77,7 @@ void main() {
     expect(find.text('سورة البقرة'), findsOneWidget);
   });
 
-  testWidgets('counts revision in hizbs', (tester) async {
+  testWidgets('counts revision in pages', (tester) async {
     await tester.pumpWidget(
       _host(
         LastSessionCard(
@@ -95,7 +95,7 @@ void main() {
     );
     await tester.pumpAndSettle();
 
-    expect(find.text('مراجعة كبرى · 2 حزب'), findsOneWidget);
+    expect(find.text('مراجعة وضبط · 2 صفحة'), findsOneWidget);
   });
 
   testWidgets('lists every entry recorded that day', (tester) async {

@@ -11,6 +11,9 @@ void main() {
       '055-123-4567': '0551234567',
       '+213 551 23 45 67': '0551234567',
       '00213661234567': '0661234567',
+      '+213 0551 23 45 67': '0551234567',
+      '+33 6 12 34 56 78': '+33612345678',
+      '0033612345678': '+33612345678',
       '1001': '1001',
     };
     cases.forEach((input, expected) {
@@ -20,15 +23,41 @@ void main() {
     });
   });
 
+  group('composePhone', () {
+    test('keeps Algerian numbers in local form, with or without the trunk 0', () {
+      expect(AccountValidators.composePhone('+213', '551234567'), '0551234567');
+      expect(AccountValidators.composePhone('+213', '0551234567'), '0551234567');
+    });
+
+    test('stores other countries in international form', () {
+      expect(AccountValidators.composePhone('+33', '6 12 34 56 78'), '+33612345678');
+    });
+
+    test('a number typed with its own + code wins over the picked one', () {
+      expect(AccountValidators.composePhone('+213', '+447700900123'), '+447700900123');
+    });
+
+    test('nothing typed means no phone', () {
+      expect(AccountValidators.composePhone('+213', '  '), '');
+    });
+  });
+
   group('phone', () {
-    test('accepts Algerian mobiles in any common spelling', () {
-      for (final v in ['0551234567', '0661234567', '0771234567', '+213 551 23 45 67']) {
+    test('accepts numbers from any country, whatever their length', () {
+      for (final v in [
+        '0551234567',
+        '0451234567',
+        '05512345678',
+        '+213 551 23 45 67',
+        '+33612345678',
+        '+12025550123',
+      ]) {
         expect(AccountValidators.phone(v), isNull, reason: v);
       }
     });
 
-    test('rejects anything else', () {
-      for (final v in ['0451234567', '055123456', '05512345678', '1001', 'abc']) {
+    test('rejects what is not a phone number', () {
+      for (final v in ['1001', 'abc', '+0612345678', '+1234567890123456', '05512']) {
         expect(AccountValidators.phone(v), AccountValidators.phoneError, reason: v);
       }
     });

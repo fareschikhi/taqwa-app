@@ -18,9 +18,11 @@ import '../../../data/repositories/fine_repository.dart';
 import '../../../data/repositories/halaqa_repository.dart';
 import '../../../data/repositories/parent_repository.dart';
 import '../../../data/repositories/student_repository.dart';
+import '../../../adult_student/presentation/pages/fines_history_page.dart';
 import '../widgets/profile_detail_widgets.dart';
 import 'parent_form_page.dart';
 import 'package:taqwa/core/widgets/app_text.dart';
+import 'package:taqwa/core/utils/memorization_amount.dart';
 
 class StudentDetailsPage extends StatefulWidget {
   const StudentDetailsPage({
@@ -30,6 +32,7 @@ class StudentDetailsPage extends StatefulWidget {
     this.avatar,
     this.halaqaId,
     this.canEditParent = false,
+    this.canEditRating = false,
   });
 
   /// What the caller already knows before this page's own load lands: the id
@@ -46,6 +49,12 @@ class StudentDetailsPage extends StatefulWidget {
   /// admin's student list turns this on; every other role sees the same card
   /// as read-only contact details.
   final bool canEditParent;
+
+  /// Whether the overall rating box opens the edit dialog. The admin's and a
+  /// teacher's student lists turn this on; a manager (and anyone reaching the
+  /// page through a parent's linked students) only reads the rating, and the
+  /// server refuses it from a manager anyway.
+  final bool canEditRating;
 
   @override
   State<StudentDetailsPage> createState() => _StudentDetailsPageState();
@@ -406,9 +415,10 @@ class _StudentDetailsPageState extends State<StudentDetailsPage> {
   }
 
   Widget _buildStatsRow() {
-    // Revision amounts are hizbs, so the server counts pages from new
-    // memorization only — this is a page count, not a share of the Quran.
-    final pagesDone = (_progress?['totalPagesDone'] as num?)?.toInt() ?? 0;
+    // Revision re-reads pages already memorized, so the server counts pages
+    // from new memorization only — this is a page count, not a share of the
+    // Quran.
+    final pagesDone = formatAmount(_progress?['totalPagesDone'] as num?);
     final attendedDays = _attendance?.monthAttended ?? 0;
 
     // IntrinsicHeight bounds the row's height so the boxes can stretch to match
@@ -421,7 +431,7 @@ class _StudentDetailsPageState extends State<StudentDetailsPage> {
           Expanded(
             child: _StatBox(
               label: 'الصفحات المحفوظة',
-              value: '$pagesDone',
+              value: pagesDone,
               color: AppColors.primary,
             ),
           ),
@@ -440,7 +450,7 @@ class _StudentDetailsPageState extends State<StudentDetailsPage> {
               value: _currentRating ?? 'لم يقيّم بعد',
               color: AppColors.tertiary,
               isMuted: _currentRating == null,
-              onTap: _editRating,
+              onTap: widget.canEditRating ? _editRating : null,
             ),
           ),
         ],
@@ -459,7 +469,15 @@ class _StudentDetailsPageState extends State<StudentDetailsPage> {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.stretch,
       children: [
-        FineBalanceCard(summary: summary),
+        FineBalanceCard(
+          summary: summary,
+          onTap: () => Navigator.push(
+            context,
+            MaterialPageRoute(
+              builder: (_) => FinesHistoryPage(summary: summary),
+            ),
+          ),
+        ),
         SizedBox(height: 12.h),
         Row(
           children: [
@@ -656,7 +674,7 @@ class _StudentDetailsPageState extends State<StudentDetailsPage> {
     final type =
         MemorizationTypeX.fromApi(entry['memorizationType'] as String?) ??
         MemorizationType.hifz;
-    final amount = (entry['amountDone'] as num?)?.toInt() ?? 0;
+    final amount = formatAmount(entry['amountDone'] as num?);
     final typeLabel = type == MemorizationType.hifz ? 'حفظ جديد' : type.label;
     final isHadith = entry['subject'] == 'HADITH';
     final referenceLabel = isHadith
@@ -683,7 +701,7 @@ class _StudentDetailsPageState extends State<StudentDetailsPage> {
           ),
           SizedBox(height: 4.h),
           AppText(
-            '$typeLabel · $amount ${isHadith ? kHadithUnitLabel : type.unitLabel}',
+            '$typeLabel · $amount ${isHadith ? kHadithUnitLabel : kPageUnitLabel}',
             style: AppTextStyles.labelSm.copyWith(
               color: AppColors.onSurfaceVariant,
             ),
@@ -934,7 +952,7 @@ class _RecordItem extends StatelessWidget {
     final type =
         MemorizationTypeX.fromApi(entry['memorizationType'] as String?) ??
         MemorizationType.hifz;
-    final count = (entry['amountDone'] as num?)?.toInt() ?? 0;
+    final count = formatAmount(entry['amountDone'] as num?);
     final isHadith = entry['subject'] == 'HADITH';
     return _RecordItem(
       date: _formatDate(entry['date'] ?? entry['recordedAt']),
@@ -942,7 +960,7 @@ class _RecordItem extends StatelessWidget {
           ? hadithLabelOrFallback(entry['hadithReference'] as String?)
           : surahLabelOf((entry['surahNumber'] as num?)?.toInt()),
       type: type == MemorizationType.hifz ? 'حفظ جديد' : type.label,
-      amount: '$count ${isHadith ? kHadithUnitLabel : type.unitLabel}',
+      amount: '$count ${isHadith ? kHadithUnitLabel : kPageUnitLabel}',
     );
   }
 
@@ -1073,8 +1091,6 @@ class _FineAdjustDialogState extends State<_FineAdjustDialog> {
     final reason = _reasonController.text.trim();
     final error = amount == null
         ? 'أدخل مبلغاً أكبر من صفر'
-        : reason.isEmpty
-        ? 'أدخل سبب التعديل'
         : fineAdjustError(
             amount: amount,
             kind: widget.kind,
@@ -1113,7 +1129,7 @@ class _FineAdjustDialogState extends State<_FineAdjustDialog> {
               ),
               SizedBox(height: 12.h),
               AppTextField(
-                label: 'السبب',
+                label: 'السبب (اختياري)',
                 controller: _reasonController,
                 maxLines: 2,
               ),

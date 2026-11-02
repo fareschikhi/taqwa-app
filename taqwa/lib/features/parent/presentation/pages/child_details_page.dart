@@ -4,7 +4,9 @@ import 'package:flutter_screenutil/flutter_screenutil.dart';
 import '../../../../core/theme/app_colors.dart';
 import '../../../../core/theme/app_text_styles.dart';
 import '../../../../core/constants/app_constants.dart';
+import '../../../../core/constants/hadith_books.dart';
 import '../../../../core/widgets/app_card.dart';
+import '../../../../core/widgets/hadith_program_card.dart';
 import '../../../../core/widgets/avatar_widget.dart';
 import '../../../../core/providers/selected_student_provider.dart';
 import '../../../data/repositories/student_repository.dart';
@@ -79,6 +81,10 @@ class _ChildDetailsPageState extends ConsumerState<ChildDetailsPage> {
             as String? ??
         'غير معين';
     final enrollmentDate = _formatDate(_profile?['enrollmentDate']);
+    final hadithBooks = parseHadithBooks(
+      _profile?['hadithBooks'],
+      tracksHadith: _profile?['tracksHadith'] == true,
+    );
 
     return Scaffold(
       backgroundColor: AppColors.background,
@@ -144,6 +150,14 @@ class _ChildDetailsPageState extends ConsumerState<ChildDetailsPage> {
                       ),
                       SizedBox(height: 20.h),
                       _buildMemorizationCard(),
+                      if (hadithBooks.isNotEmpty) ...[
+                        SizedBox(height: 16.h),
+                        HadithProgramCard(
+                          books: hadithBooks,
+                          hadithsDone: _progress?['totalHadithsDone'] as num?,
+                          title: 'برنامج الحديث',
+                        ),
+                      ],
                       SizedBox(height: 32.h),
                     ]),
                   ),
@@ -161,6 +175,18 @@ class _ChildDetailsPageState extends ConsumerState<ChildDetailsPage> {
     final newCount = (typeCounts['MEMORIZING'] as num?)?.toInt() ?? 0;
     final minorCount = (typeCounts['SMALLREVISION'] as num?)?.toInt() ?? 0;
     final majorCount = (typeCounts['BIGREVISION'] as num?)?.toInt() ?? 0;
+    final hadithTypeCounts =
+        (_progress?['hadithTypeCounts'] as Map<String, dynamic>?) ?? {};
+    final hadithNewCount =
+        (hadithTypeCounts['MEMORIZING'] as num?)?.toInt() ?? 0;
+    final hadithMinorCount =
+        (hadithTypeCounts['SMALLREVISION'] as num?)?.toInt() ?? 0;
+    final hadithMajorCount =
+        (hadithTypeCounts['BIGREVISION'] as num?)?.toInt() ?? 0;
+    // Hadith history stays visible after the admin turns hadith off.
+    final showHadith =
+        _progress?['tracksHadith'] == true ||
+        hadithNewCount + hadithMinorCount + hadithMajorCount > 0;
 
     return AppCard(
       padding: EdgeInsets.all(16.w),
@@ -174,22 +200,49 @@ class _ChildDetailsPageState extends ConsumerState<ChildDetailsPage> {
             ),
           ),
           SizedBox(height: 16.h),
-          _CountRow(label: 'حفظ', count: newCount, color: AppColors.primary),
-          SizedBox(height: 10.h),
-          _CountRow(
-            label: 'مراجعة صغرى',
-            count: minorCount,
-            color: AppColors.secondary,
-          ),
-          SizedBox(height: 10.h),
-          _CountRow(
-            label: 'مراجعة كبرى',
-            count: majorCount,
-            color: AppColors.tertiary,
-          ),
+          // The headings only matter once there are two groups.
+          if (showHadith) _buildCountsHeading('القرآن الكريم'),
+          ..._buildCountRows(newCount, minorCount, majorCount),
+          if (showHadith) ...[
+            SizedBox(height: 16.h),
+            _buildCountsHeading('الحديث الشريف'),
+            ..._buildCountRows(
+              hadithNewCount,
+              hadithMinorCount,
+              hadithMajorCount,
+            ),
+          ],
         ],
       ),
     );
+  }
+
+  Widget _buildCountsHeading(String text) {
+    return Padding(
+      padding: EdgeInsets.only(bottom: 10.h),
+      child: AppText(
+        text,
+        style: AppTextStyles.bodyMdBold.copyWith(color: AppColors.onSurface),
+      ),
+    );
+  }
+
+  List<Widget> _buildCountRows(int newCount, int minorCount, int majorCount) {
+    return [
+      _CountRow(label: 'حفظ', count: newCount, color: AppColors.primary),
+      SizedBox(height: 10.h),
+      _CountRow(
+        label: 'جمع',
+        count: minorCount,
+        color: AppColors.secondary,
+      ),
+      SizedBox(height: 10.h),
+      _CountRow(
+        label: 'مراجعة وضبط',
+        count: majorCount,
+        color: AppColors.tertiary,
+      ),
+    ];
   }
 
   String _formatDate(dynamic raw) {
