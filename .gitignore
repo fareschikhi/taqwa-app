@@ -37,6 +37,11 @@ backups/
 taqwa_note.txt
 
 # Real student/parent sheets and the passwords the importer hands out.
-# The empty *_template.xlsx files are the only spreadsheets that belong here.
+# The import templates are kept locally too (see the paperwork rules below).
 *_filled*.xlsx
 import_passwords*.xlsx
+
+# Local paperwork kept next to the repo, never committed
+/parents_template.xlsx
+/students_template.xlsx
+/استمارة*.pdf
