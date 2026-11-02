@@ -36,6 +36,7 @@ class ApiEndpoints {
   static const String halaqaAnnouncements = '/halaqa-announcements';
   static const String uploads = '/uploads';
   static const String devices = '/devices';
+  static const String chat = '/chat';
 
   /// Turns a stored image reference into a URL the app can load.
   ///
