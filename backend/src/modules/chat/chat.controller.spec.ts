@@ -52,8 +52,8 @@ describe('ChatController wiring', () => {
     }
   });
 
-  it('lets both sides edit and delete, scoped by the service', () => {
-    for (const handler of [proto.edit, proto.remove]) {
+  it('lets both sides edit, delete and see photos, scoped by the service', () => {
+    for (const handler of [proto.edit, proto.remove, proto.photo]) {
       expect(rolesFor(handler)).toEqual(
         [Role.PARENT, Role.ADMIN, Role.MANAGER].sort(),
       );

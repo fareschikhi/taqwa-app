@@ -6,7 +6,7 @@ import { join } from 'path';
 import { MEDIA_SEGMENT, uploadDir } from './upload-storage';
 
 /** File extension for each accepted type; the controller filters on these. */
-const EXTENSIONS: Record<string, string> = {
+export const EXTENSIONS: Record<string, string> = {
   'image/jpeg': 'jpg',
   'image/png': 'png',
   'image/webp': 'webp',
@@ -50,7 +50,7 @@ export class UploadsService implements OnModuleInit {
 }
 
 /** Checks the file's magic bytes against the type it claims to be. */
-function matchesSignature(buffer: Buffer, mimetype: string): boolean {
+export function matchesSignature(buffer: Buffer, mimetype: string): boolean {
   switch (mimetype) {
     case 'image/jpeg':
       return buffer.subarray(0, 3).equals(Buffer.from([0xff, 0xd8, 0xff]));

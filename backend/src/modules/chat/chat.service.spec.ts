@@ -1,4 +1,8 @@
-import { BadRequestException, ForbiddenException } from '@nestjs/common';
+import {
+  BadRequestException,
+  ForbiddenException,
+  NotFoundException,
+} from '@nestjs/common';
 import { ChatService } from './chat.service';
 import * as access from './chat-access';
 
@@ -378,6 +382,51 @@ describe('ChatService inbox', () => {
 
     await expect(service.inbox(admin, undefined)).rejects.toBeInstanceOf(
       ForbiddenException,
+    );
+  });
+});
+
+describe('ChatService photos', () => {
+  const withPhoto = (over: Record<string, unknown> = {}) => {
+    const prisma = makePrisma();
+    prisma.chatMessage.findUnique.mockResolvedValue({
+      imagePath: '.chat/a.jpg',
+      deletedAt: null,
+      conversation: { parentId: 9 },
+      ...over,
+    });
+    return makeService(prisma);
+  };
+
+  it('gives the photo path to a staff member in scope', async () => {
+    const { service } = withPhoto();
+
+    await expect(service.photoPathFor(admin, 1)).resolves.toBe('.chat/a.jpg');
+  });
+
+  it('refuses the photo to a staff member out of scope', async () => {
+    mocked.canStaffSeeParent.mockResolvedValue(false);
+    const { service } = withPhoto();
+
+    await expect(service.photoPathFor(admin, 1)).rejects.toBeInstanceOf(
+      ForbiddenException,
+    );
+  });
+
+  it('refuses the photo to another parent', async () => {
+    mocked.chatParentIdForParentUser.mockResolvedValue(4);
+    const { service } = withPhoto();
+
+    await expect(service.photoPathFor(parentUser, 1)).rejects.toBeInstanceOf(
+      ForbiddenException,
+    );
+  });
+
+  it('has no photo for a deleted message', async () => {
+    const { service } = withPhoto({ deletedAt: at, imagePath: null });
+
+    await expect(service.photoPathFor(admin, 1)).rejects.toBeInstanceOf(
+      NotFoundException,
     );
   });
 });
