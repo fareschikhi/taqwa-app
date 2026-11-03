@@ -32,7 +32,7 @@ class PointEntryModel {
   });
 
   String get label => switch (source) {
-    'MEMORIZATION' => 'حفظ ومراجعة',
+    'MEMORIZATION' => 'حفظ وجمع ومراجعة',
     'PRESENT' => 'حضور',
     'ABSENCE' => 'غياب',
     'MISSED_MEMORIZATION' => 'لم يُسمّع',

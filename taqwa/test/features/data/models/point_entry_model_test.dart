@@ -16,7 +16,7 @@ PointEntryModel entry(Map<String, dynamic> over) => PointEntryModel.fromJson({
 void main() {
   group('label', () {
     test('names every automatic source', () {
-      expect(entry({'source': 'MEMORIZATION'}).label, 'حفظ ومراجعة');
+      expect(entry({'source': 'MEMORIZATION'}).label, 'حفظ وجمع ومراجعة');
       expect(entry({'source': 'PRESENT'}).label, 'حضور');
       expect(entry({'source': 'ABSENCE'}).label, 'غياب');
       expect(entry({'source': 'MISSED_MEMORIZATION'}).label, 'لم يُسمّع');
