@@ -18,6 +18,7 @@ import '../../../shared/presentation/pages/student_details_page.dart';
 import 'package:taqwa/core/widgets/app_text.dart';
 import 'package:taqwa/core/widgets/points_chip.dart';
 import 'package:taqwa/features/data/repositories/points_repository.dart';
+import 'package:taqwa/core/utils/load_per_halaqa.dart';
 
 class StudentListPage extends ConsumerStatefulWidget {
   const StudentListPage({super.key});
@@ -114,49 +115,30 @@ class _StudentListPageState extends ConsumerState<StudentListPage> {
     });
   }
 
-  /// Pulls the balance for every adult halaqa represented on the roster that
-  /// has not been fetched yet. `GET /fines/halaqa/:id` answers for a whole
-  /// halaqa in one call, so this fetches per halaqa rather than per student.
-  Future<void> _loadPoints() async {
-    final halaqaIds = _students
-        .map((s) => s.halaqaId)
-        .whereType<int>()
-        .where((id) => !_fetchedPointHalaqas.contains(id))
-        .toSet();
-    for (final id in halaqaIds) {
-      _fetchedPointHalaqas.add(id);
-      try {
-        final totals = await _pointsRepo.forHalaqa(id);
-        if (!mounted) return;
-        setState(() => _points.addAll(totals));
-      } catch (_) {
-        // One halaqa refusing or failing must not hide the others' chips; a
-        // later load can retry it.
-        _fetchedPointHalaqas.remove(id);
-      }
-    }
-  }
+  /// Pulls the points totals for every halaqa on the roster not fetched yet.
+  /// `GET /points/halaqa/:id` answers for a whole halaqa in one call, so this
+  /// fetches per halaqa rather than per student.
+  Future<void> _loadPoints() => loadPerHalaqa(
+    halaqaIds: _students.map((s) => s.halaqaId).whereType<int>(),
+    claimed: _fetchedPointHalaqas,
+    fetch: _pointsRepo.forHalaqa,
+    onLoaded: (totals) {
+      if (mounted) setState(() => _points.addAll(totals));
+    },
+  );
 
-  Future<void> _loadFineBalances() async {
-    final halaqaIds = _students
+  /// Same, for the fine balances of the adult halaqas only.
+  Future<void> _loadFineBalances() => loadPerHalaqa(
+    halaqaIds: _students
         .map((s) => s.halaqaId)
         .whereType<int>()
-        .where((id) => _halaqasById[id]?.isAdult ?? false)
-        .where((id) => !_fetchedFineHalaqas.contains(id))
-        .toSet();
-    for (final id in halaqaIds) {
-      _fetchedFineHalaqas.add(id);
-      try {
-        final balances = await _fineRepo.forHalaqa(id);
-        if (!mounted) return;
-        setState(() => _balances.addAll(balances));
-      } catch (_) {
-        // One halaqa's balances failing to load must not stall the rest of
-        // the roster — a retry can pick it up on the next refresh.
-        _fetchedFineHalaqas.remove(id);
-      }
-    }
-  }
+        .where((id) => _halaqasById[id]?.isAdult ?? false),
+    claimed: _fetchedFineHalaqas,
+    fetch: _fineRepo.forHalaqa,
+    onLoaded: (balances) {
+      if (mounted) setState(() => _balances.addAll(balances));
+    },
+  );
 
   void _onScroll() {
     if (_scrollController.position.pixels >=

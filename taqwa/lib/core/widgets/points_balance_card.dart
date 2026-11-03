@@ -74,11 +74,18 @@ class PointsBalanceCard extends StatelessWidget {
               color: pointsColor(entry.amount),
             ),
           ),
-          const Spacer(),
-          AppText(
-            entry.label,
-            style: AppTextStyles.labelMd.copyWith(
-              color: AppColors.onSurfaceVariant,
+          SizedBox(width: 12.w),
+          // A manual reason is free text: let it shorten, never push the
+          // amount off the card.
+          Expanded(
+            child: AppText(
+              entry.label,
+              textAlign: TextAlign.right,
+              maxLines: 1,
+              overflow: TextOverflow.ellipsis,
+              style: AppTextStyles.labelMd.copyWith(
+                color: AppColors.onSurfaceVariant,
+              ),
             ),
           ),
         ],

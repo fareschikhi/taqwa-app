@@ -19,7 +19,10 @@ String _trim(num value) {
 
 /// A total, with its unit. Unlike a fine balance this is never clamped: a
 /// student who lost more than he earned really is below zero.
-String formatPoints(num value) => '${_trim(value)} نقطة';
+///
+/// The leading LRM (U+200E) pins the number left-to-right: the string is
+/// Arabic, so it is laid out RTL, and without the mark "-3" would render "3-".
+String formatPoints(num value) => '‎${_trim(value)} نقطة';
 
 /// One history row's amount, always signed so a gain and a loss read apart.
 String formatSignedPoints(num value) {

@@ -40,11 +40,12 @@ class PointEntryModel {
   };
 
   /// The calendar day to show. An automatic entry is dated by its halaqa day,
-  /// which the server sends as UTC midnight: it is read back in UTC so a
-  /// phone east or west of Greenwich still shows the same day. A manual entry
-  /// is a real moment, shown on the phone's own calendar.
+  /// which is a calendar day, not a moment: its year/month/day are taken as
+  /// written ("…T00:00:00Z" or a bare "2026-11-05"), never shifted into a
+  /// time zone. A manual entry is a real moment, shown on the phone's own
+  /// calendar.
   DateTime get displayDate {
-    final day = date?.toUtc();
+    final day = date;
     if (day != null) return DateTime(day.year, day.month, day.day);
     return createdAt.toLocal();
   }

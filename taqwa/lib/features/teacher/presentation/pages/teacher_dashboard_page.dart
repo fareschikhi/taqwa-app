@@ -42,9 +42,9 @@ class _TeacherDashboardPageState extends ConsumerState<TeacherDashboardPage> {
   final _newsRepo = HalaqaAnnouncementRepository();
   final _pointsRepo = PointsRepository();
 
-  /// The teacher's own points. Not tied to the selected halaqa, so it is
-  /// loaded beside the dashboard rather than inside [loadData], which the
-  /// halaqa switcher re-runs.
+  /// The teacher's own points. Not tied to the selected halaqa, so it lives
+  /// outside [loadData]; [_loadData] fetches both side by side (the halaqa
+  /// switcher re-runs it too, which simply refreshes the card).
   PointsSummaryModel? _points;
 
   AttendanceSummaryModel? _attendanceSummary;

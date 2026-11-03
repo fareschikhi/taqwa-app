@@ -50,6 +50,13 @@ void main() {
     expect([d.year, d.month, d.day], [2026, 11, 5]);
   });
 
+  // A date with no 'Z' parses as local midnight; converting it to UTC on a
+  // phone ahead of Greenwich (Algeria, UTC+1) would land on the day before.
+  test('keeps the calendar day of a date with no timezone', () {
+    final d = entry({'date': '2026-11-05'}).displayDate;
+    expect([d.year, d.month, d.day], [2026, 11, 5]);
+  });
+
   test('falls back to createdAt for a manual entry with no day', () {
     final d = entry({'date': null, 'createdAt': '2026-11-07T10:00:00.000Z'})
         .displayDate;

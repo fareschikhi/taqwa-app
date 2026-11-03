@@ -20,6 +20,7 @@ import '../../../shared/presentation/pages/student_form_page.dart';
 import 'package:taqwa/core/widgets/app_text.dart';
 import 'package:taqwa/core/widgets/points_chip.dart';
 import 'package:taqwa/features/data/repositories/points_repository.dart';
+import 'package:taqwa/core/utils/load_per_halaqa.dart';
 
 class ManagerStudentsPage extends ConsumerStatefulWidget {
   const ManagerStudentsPage({super.key});
@@ -157,14 +158,15 @@ class _ManagerStudentsPageState extends ConsumerState<ManagerStudentsPage> {
         .map((s) => ((s['halaqa'] as Map?)?['id'] as num?)?.toInt())
         .whereType<int>()
         .toSet();
+    // A full reload each time, so nothing is remembered between calls; the
+    // halaqas are asked side by side and a failing one only loses its chips.
     final totals = <int, num>{};
-    for (final id in halaqaIds) {
-      try {
-        totals.addAll(await _pointsRepo.forHalaqa(id));
-      } catch (_) {
-        // One halaqa failing leaves only its own chips off.
-      }
-    }
+    await loadPerHalaqa(
+      halaqaIds: halaqaIds,
+      claimed: {},
+      fetch: _pointsRepo.forHalaqa,
+      onLoaded: totals.addAll,
+    );
     if (mounted) setState(() => _points = totals);
   }
 
@@ -256,10 +258,7 @@ class _ManagerStudentsPageState extends ConsumerState<ManagerStudentsPage> {
                     ],
                     Row(
                       children: [
-                        ListLayoutToggle(
-                          value: _layout,
-                          onChanged: _setLayout,
-                        ),
+                        ListLayoutToggle(value: _layout, onChanged: _setLayout),
                         SizedBox(width: 8.w),
                         Expanded(
                           child: SearchBarWidget(
@@ -351,20 +350,21 @@ class _ManagerStudentsPageState extends ConsumerState<ManagerStudentsPage> {
                                   ],
                                 )
                               else
-                              for (final student in group.students)
-                                Padding(
-                                  padding: EdgeInsets.only(bottom: 12.h),
-                                  child: _StudentCard(
-                                    student: student,
-                                    points: _points[student['id']],
-                                    onOpenDetails: () => _openDetails(student),
-                                    canManage: canManage,
-                                    canDelete: canDelete,
-                                    onEdit: () => _openForm(student),
-                                    onDelete: () =>
-                                        _deleteStudent(student['id'] as int),
+                                for (final student in group.students)
+                                  Padding(
+                                    padding: EdgeInsets.only(bottom: 12.h),
+                                    child: _StudentCard(
+                                      student: student,
+                                      points: _points[student['id']],
+                                      onOpenDetails: () =>
+                                          _openDetails(student),
+                                      canManage: canManage,
+                                      canDelete: canDelete,
+                                      onEdit: () => _openForm(student),
+                                      onDelete: () =>
+                                          _deleteStudent(student['id'] as int),
+                                    ),
                                   ),
-                                ),
                             ],
                           );
                         },

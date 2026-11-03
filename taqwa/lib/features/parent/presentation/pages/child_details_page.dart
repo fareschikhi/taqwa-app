@@ -45,9 +45,10 @@ class _ChildDetailsPageState extends ConsumerState<ChildDetailsPage> {
   Future<void> _load(int childId) async {
     setState(() {
       _isLoading = true;
+      // Never show the previous child's points while the next one loads; a
+      // refresh of the same child keeps them until the new ones arrive.
+      if (childId != _loadedChildId) _points = null;
       _loadedChildId = childId;
-      // Never show the previous child's points while the next one loads.
-      _points = null;
     });
     try {
       final results = await Future.wait([
