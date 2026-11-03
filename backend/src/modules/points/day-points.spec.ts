@@ -1,7 +1,12 @@
 import { AttendanceStatus, Memorization, Prisma } from '@prisma/client';
 import { reconcileDayPoints } from './day-points';
+import { POINTS_START_DATE } from './points-rules';
 
-const D = new Date('2026-11-05');
+// Dates are counted from POINTS_START_DATE, never written out, so moving the
+// start date to release day never breaks these tests.
+const fromStart = (days: number) =>
+  new Date(new Date(POINTS_START_DATE).getTime() + days * 86_400_000);
+const D = fromStart(3);
 
 type Row = { id: number; source: string; amount: Prisma.Decimal };
 
@@ -42,7 +47,7 @@ const dec = (v: string) => new Prisma.Decimal(v);
 describe('reconcileDayPoints', () => {
   it('does nothing before the start date', async () => {
     const tx = makeTx({ attendance: present });
-    await run(tx, new Date('2026-10-01'));
+    await run(tx, fromStart(-32));
     expect(tx.student.findUnique).not.toHaveBeenCalled();
     expect(tx.pointEntry.create).not.toHaveBeenCalled();
   });

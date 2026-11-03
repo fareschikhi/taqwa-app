@@ -7,7 +7,11 @@ import {
   milliToAmount,
 } from './points-rules';
 
-const D = new Date('2026-11-05');
+// Dates are counted from POINTS_START_DATE, never written out, so moving the
+// start date to release day never breaks these tests.
+const fromStart = (days: number) =>
+  new Date(new Date(POINTS_START_DATE).getTime() + days * 86_400_000);
+const D = fromStart(3);
 const r = (memorizationType: Memorization, amountDone: number): DayRecitation => ({
   memorizationType,
   amountDone,
@@ -24,7 +28,7 @@ const day = (
 describe('desiredPoints', () => {
   it('gives nothing before the start date', () => {
     expect(
-      day(AttendanceStatus.PRESENT, [], false, new Date('2026-11-01')),
+      day(AttendanceStatus.PRESENT, [], false, fromStart(-1)),
     ).toEqual([]);
   });
 
