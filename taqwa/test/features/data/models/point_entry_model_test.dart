@@ -75,6 +75,48 @@ void main() {
     expect(entry({'source': 'ABSENCE'}).isManual, isFalse);
   });
 
+  group('canUndoPointEntry', () {
+    final manualBy5 = entry({'source': 'MANUAL', 'createdById': 5});
+
+    test('the admin may undo any manual entry', () {
+      expect(
+        canUndoPointEntry(manualBy5, viewerId: 1, viewerIsAdmin: true),
+        isTrue,
+      );
+    });
+
+    test('staff may undo their own manual entry only', () {
+      expect(
+        canUndoPointEntry(manualBy5, viewerId: 5, viewerIsAdmin: false),
+        isTrue,
+      );
+      expect(
+        canUndoPointEntry(manualBy5, viewerId: 6, viewerIsAdmin: false),
+        isFalse,
+      );
+    });
+
+    test('nobody undoes an automatic entry', () {
+      expect(
+        canUndoPointEntry(
+          entry({'source': 'ABSENCE'}),
+          viewerId: 1,
+          viewerIsAdmin: true,
+        ),
+        isFalse,
+      );
+    });
+
+    // An older server sends no creator id; "unknown" must not match "unknown".
+    test('an unknown creator matches no one', () {
+      final unknown = entry({'source': 'MANUAL'});
+      expect(
+        canUndoPointEntry(unknown, viewerId: null, viewerIsAdmin: false),
+        isFalse,
+      );
+    });
+  });
+
   test('summary says whose points these are', () {
     final s = PointsSummaryModel.fromJson({
       'userId': 70,

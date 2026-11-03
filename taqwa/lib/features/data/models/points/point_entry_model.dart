@@ -78,3 +78,17 @@ class PointEntryModel {
     );
   }
 }
+
+/// Whether this viewer may undo [entry]: only manual entries; the admin any of
+/// them, staff only their own. The server checks the same and more (staff
+/// must still be able to adjust that student); this only decides whether to
+/// offer the button.
+bool canUndoPointEntry(
+  PointEntryModel entry, {
+  required int? viewerId,
+  required bool viewerIsAdmin,
+}) {
+  if (!entry.isManual) return false;
+  if (viewerIsAdmin) return true;
+  return viewerId != null && entry.createdById == viewerId;
+}
