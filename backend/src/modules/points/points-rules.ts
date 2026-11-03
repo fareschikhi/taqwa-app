@@ -3,7 +3,7 @@ import { AttendanceStatus, Memorization } from '@prisma/client';
 /// The first day that earns automatic points (UTC day, as attendance dates are
 /// stored). Everyone starts at zero: days before it are never back-filled, even
 /// when a recitation from back then is edited.
-export const POINTS_START_DATE = '2026-11-02';
+export const POINTS_START_DATE = '2026-11-04';
 
 /// The reasons the system writes on its own. MANUAL never comes through here.
 export type AutoPointSource =
