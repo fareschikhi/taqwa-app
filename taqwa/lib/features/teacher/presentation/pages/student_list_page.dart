@@ -16,6 +16,8 @@ import '../../../data/repositories/teacher_repository.dart';
 import '../../../data/models/teacher_student_model.dart';
 import '../../../shared/presentation/pages/student_details_page.dart';
 import 'package:taqwa/core/widgets/app_text.dart';
+import 'package:taqwa/core/widgets/points_chip.dart';
+import 'package:taqwa/features/data/repositories/points_repository.dart';
 
 class StudentListPage extends ConsumerStatefulWidget {
   const StudentListPage({super.key});
@@ -52,6 +54,12 @@ class _StudentListPageState extends ConsumerState<StudentListPage> {
   // halaqa on the roster is resolved rather than one call per student.
   final Map<int, int> _balances = {};
   final Set<int> _fetchedFineHalaqas = {};
+
+  // Points totals by student id. Every student has points, so unlike fines
+  // this covers every halaqa on the roster, one call per halaqa.
+  final _pointsRepo = PointsRepository();
+  final Map<int, num> _points = {};
+  final Set<int> _fetchedPointHalaqas = {};
 
   bool _isAdultStudent(int studentId) =>
       _studentHalaqa[studentId]?.isAdult ?? false;
@@ -109,6 +117,26 @@ class _StudentListPageState extends ConsumerState<StudentListPage> {
   /// Pulls the balance for every adult halaqa represented on the roster that
   /// has not been fetched yet. `GET /fines/halaqa/:id` answers for a whole
   /// halaqa in one call, so this fetches per halaqa rather than per student.
+  Future<void> _loadPoints() async {
+    final halaqaIds = _students
+        .map((s) => s.halaqaId)
+        .whereType<int>()
+        .where((id) => !_fetchedPointHalaqas.contains(id))
+        .toSet();
+    for (final id in halaqaIds) {
+      _fetchedPointHalaqas.add(id);
+      try {
+        final totals = await _pointsRepo.forHalaqa(id);
+        if (!mounted) return;
+        setState(() => _points.addAll(totals));
+      } catch (_) {
+        // One halaqa refusing or failing must not hide the others' chips; a
+        // later load can retry it.
+        _fetchedPointHalaqas.remove(id);
+      }
+    }
+  }
+
   Future<void> _loadFineBalances() async {
     final halaqaIds = _students
         .map((s) => s.halaqaId)
@@ -185,7 +213,10 @@ class _StudentListPageState extends ConsumerState<StudentListPage> {
       // of students still needs matching against them and their balances
       // fetched, so both run again rather than only from `_loadHalaqas`.
       _resolveStudentHalaqas();
-      await _loadFineBalances();
+      // Points move every day, so a fresh load re-fetches them rather than
+      // keeping what an earlier visit saw.
+      if (reset) _fetchedPointHalaqas.clear();
+      await Future.wait([_loadFineBalances(), _loadPoints()]);
     } catch (_) {
       if (!mounted || generation != _generation) return;
       setState(() {
@@ -331,6 +362,7 @@ class _StudentListPageState extends ConsumerState<StudentListPage> {
                                   ),
                                   child: _StudentListTile(
                                     student: student,
+                                    points: _points[student.id],
                                     // Null both when he is a child (never
                                     // fined) and when his halaqa's balance
                                     // has not resolved yet — either way, no
@@ -352,9 +384,12 @@ class _StudentListPageState extends ConsumerState<StudentListPage> {
 }
 
 class _StudentListTile extends StatelessWidget {
-  const _StudentListTile({required this.student, this.balance});
+  const _StudentListTile({required this.student, this.balance, this.points});
   final TeacherStudentModel student;
   final int? balance;
+
+  /// Null until his halaqa's totals arrive, or if they could not be read.
+  final num? points;
 
   @override
   Widget build(BuildContext context) {
@@ -404,6 +439,10 @@ class _StudentListTile extends StatelessWidget {
                   ),
                 ),
               ),
+              if (points != null) ...[
+                SizedBox(height: 6.h),
+                PointsChip(points: points!),
+              ],
               if (balance != null) ...[
                 SizedBox(height: 6.h),
                 _FineBalanceChip(balance: balance!),

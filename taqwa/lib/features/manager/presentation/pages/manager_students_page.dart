@@ -18,6 +18,8 @@ import '../../../../features/data/repositories/manager_repository.dart';
 import '../../../shared/presentation/pages/student_details_page.dart';
 import '../../../shared/presentation/pages/student_form_page.dart';
 import 'package:taqwa/core/widgets/app_text.dart';
+import 'package:taqwa/core/widgets/points_chip.dart';
+import 'package:taqwa/features/data/repositories/points_repository.dart';
 
 class ManagerStudentsPage extends ConsumerStatefulWidget {
   const ManagerStudentsPage({super.key});
@@ -38,6 +40,12 @@ class _ManagerStudentsPageState extends ConsumerState<ManagerStudentsPage> {
   final _searchController = TextEditingController();
   final _studentRepo = StudentRepository();
   final _managerRepo = ManagerRepository();
+  final _pointsRepo = PointsRepository();
+
+  /// Points totals by student id, one call per halaqa. Re-read on every load:
+  /// they move daily. A student with no halaqa gets none — points reach a
+  /// manager through the halaqa only.
+  Map<int, num> _points = {};
 
   static const _layoutKey = 'manager_students';
   ListLayout _layout = ListLayout.list;
@@ -138,9 +146,26 @@ class _ManagerStudentsPageState extends ConsumerState<ManagerStudentsPage> {
           _isLoading = false;
         });
       }
+      await _loadPoints(students);
     } catch (_) {
       if (mounted) setState(() => _isLoading = false);
     }
+  }
+
+  Future<void> _loadPoints(List<Map<String, dynamic>> students) async {
+    final halaqaIds = students
+        .map((s) => ((s['halaqa'] as Map?)?['id'] as num?)?.toInt())
+        .whereType<int>()
+        .toSet();
+    final totals = <int, num>{};
+    for (final id in halaqaIds) {
+      try {
+        totals.addAll(await _pointsRepo.forHalaqa(id));
+      } catch (_) {
+        // One halaqa failing leaves only its own chips off.
+      }
+    }
+    if (mounted) setState(() => _points = totals);
   }
 
   void _applyFilter() {
@@ -313,6 +338,7 @@ class _ManagerStudentsPageState extends ConsumerState<ManagerStudentsPage> {
                                     for (final student in group.students)
                                       _StudentGridCard(
                                         student: student,
+                                        points: _points[student['id']],
                                         onOpenDetails: () =>
                                             _openDetails(student),
                                         canManage: canManage,
@@ -330,6 +356,7 @@ class _ManagerStudentsPageState extends ConsumerState<ManagerStudentsPage> {
                                   padding: EdgeInsets.only(bottom: 12.h),
                                   child: _StudentCard(
                                     student: student,
+                                    points: _points[student['id']],
                                     onOpenDetails: () => _openDetails(student),
                                     canManage: canManage,
                                     canDelete: canDelete,
@@ -359,8 +386,10 @@ class _StudentCard extends StatelessWidget {
     this.canDelete = false,
     this.onEdit,
     this.onDelete,
+    this.points,
   });
   final Map<String, dynamic> student;
+  final num? points;
 
   /// Tapping the card body opens the profile. Edit and delete stay on their
   /// own icons inside it, and their gesture detectors win over this one, so a
@@ -550,6 +579,10 @@ class _StudentCard extends StatelessWidget {
                     color: AppColors.onSurfaceVariant,
                   ),
                 ),
+                if (points != null) ...[
+                  SizedBox(height: 6.h),
+                  PointsChip(points: points!),
+                ],
               ],
             ),
           ],
@@ -570,8 +603,10 @@ class _StudentGridCard extends StatelessWidget {
     this.canDelete = false,
     this.onEdit,
     this.onDelete,
+    this.points,
   });
   final Map<String, dynamic> student;
+  final num? points;
   final VoidCallback onOpenDetails;
   final bool canManage;
   final bool canDelete;
@@ -670,6 +705,7 @@ class _StudentGridCard extends StatelessWidget {
                     ),
                   ),
                 ),
+                if (points != null) PointsChip(points: points!),
               ],
             ),
             if (canManage || canDelete) ...[
