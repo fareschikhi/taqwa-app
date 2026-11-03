@@ -29,6 +29,29 @@ class PointsRepository {
     };
   }
 
+  /// A manual entry on [userId]'s points: positive adds, negative takes
+  /// away. Rounded to two decimals first, the most the server accepts, so a
+  /// float tail (0.1 + 0.2) is not refused. The server checks who may.
+  Future<void> adjust({
+    required int userId,
+    required num amount,
+    String? reason,
+  }) async {
+    final text = reason?.trim() ?? '';
+    await _dio.post(
+      '/points',
+      data: {
+        'userId': userId,
+        'amount': double.parse(amount.toStringAsFixed(2)),
+        if (text.isNotEmpty) 'reason': text,
+      },
+    );
+  }
+
+  /// Undoes one manual entry. The server refuses automatic ones, and staff
+  /// removing someone else's.
+  Future<void> remove(int entryId) => _dio.delete('/points/$entryId');
+
   Future<PointsSummaryModel> _summary(String path) async {
     final response = await _dio.get(path);
     return PointsSummaryModel.fromJson(

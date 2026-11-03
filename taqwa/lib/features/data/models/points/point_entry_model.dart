@@ -21,6 +21,10 @@ class PointEntryModel {
   /// Who made a manual adjustment. Null on automatic entries.
   final String? createdByName;
 
+  /// The account behind [createdByName]: undo is offered on one's own
+  /// manual entries only. Null on automatic entries.
+  final int? createdById;
+
   const PointEntryModel({
     required this.id,
     required this.source,
@@ -29,7 +33,12 @@ class PointEntryModel {
     required this.createdAt,
     required this.date,
     required this.createdByName,
+    this.createdById,
   });
+
+  /// Typed by a person, as opposed to following from attendance or a
+  /// recitation. Only these can be undone.
+  bool get isManual => source == 'MANUAL';
 
   String get label => switch (source) {
     'MEMORIZATION' => 'حفظ وجمع ومراجعة',
@@ -65,6 +74,7 @@ class PointEntryModel {
           ? null
           : DateTime.tryParse(json['date'] as String),
       createdByName: createdBy is Map ? createdBy['fullName'] as String? : null,
+      createdById: (json['createdById'] as num?)?.toInt(),
     );
   }
 }
