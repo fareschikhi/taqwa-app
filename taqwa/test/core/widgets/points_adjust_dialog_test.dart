@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:dio/dio.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
@@ -52,6 +54,7 @@ Finder _field(String label) => find.descendant(
 );
 
 void main() {
+  savingTests();
   testWidgets('subtracting sends a negative amount', (tester) async {
     final calls = <_Call>[];
     final result = await _open(
@@ -121,5 +124,25 @@ void main() {
     expect(find.byType(AlertDialog), findsOneWidget);
     expect(find.text('2'), findsOneWidget);
     expect(result.value, isNull);
+  });
+}
+
+void savingTests() {
+  // Once the request is out, closing the dialog would hide whether it
+  // landed: the user retries and the ledger gets a duplicate entry.
+  testWidgets('cannot be dismissed while saving', (tester) async {
+    final gate = Completer<void>();
+    final result = await _open(tester, (_, _) => gate.future);
+
+    await tester.enterText(_field('العدد'), '2');
+    await tester.tap(find.text('حفظ'));
+    await tester.pump();
+    await tester.tapAt(const Offset(5, 5));
+    await tester.pump();
+    expect(find.byType(AlertDialog), findsOneWidget);
+
+    gate.complete();
+    await tester.pumpAndSettle();
+    expect(result.value, isTrue);
   });
 }

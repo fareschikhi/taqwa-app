@@ -98,82 +98,92 @@ class _PointsAdjustDialogState extends State<PointsAdjustDialog> {
   Widget build(BuildContext context) {
     final accent = _isAdding ? AppColors.primary : AppColors.error;
 
-    return Directionality(
-      textDirection: TextDirection.rtl,
-      child: AlertDialog(
-        backgroundColor: AppColors.surface,
-        title: AppText(
-          'تعديل النقاط',
-          style: AppTextStyles.headlineSm.copyWith(color: AppColors.onSurface),
-        ),
-        content: SingleChildScrollView(
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Wrap(
-                spacing: 8.w,
-                children: [
-                  _directionChip('إضافة', true),
-                  _directionChip('خصم', false),
-                ],
-              ),
-              SizedBox(height: 12.h),
-              AppTextField(
-                label: 'العدد',
-                hint: 'مثال: 2 أو 0.5',
-                controller: _amountController,
-                keyboardType: const TextInputType.numberWithOptions(
-                  decimal: true,
-                ),
-                enabled: !_isSaving,
-                autofocus: true,
-              ),
-              SizedBox(height: 12.h),
-              AppTextField(
-                label: 'السبب (اختياري)',
-                controller: _reasonController,
-                maxLines: 2,
-                maxLength: 300,
-                enabled: !_isSaving,
-              ),
-              if (_errorText != null) ...[
-                SizedBox(height: 8.h),
-                AppText(
-                  _errorText!,
-                  style: AppTextStyles.labelSm.copyWith(color: AppColors.error),
-                ),
-              ],
-            ],
-          ),
-        ),
-        actions: [
-          TextButton(
-            onPressed: _isSaving ? null : () => Navigator.pop(context, false),
-            child: AppText(
-              'إلغاء',
-              style: AppTextStyles.button.copyWith(
-                color: AppColors.onSurfaceVariant,
-              ),
+    // While the request is out, neither a tap outside nor back may close the
+    // dialog: the entry may land after it is gone, and the user, told
+    // nothing, adds it again.
+    return PopScope(
+      canPop: !_isSaving,
+      child: Directionality(
+        textDirection: TextDirection.rtl,
+        child: AlertDialog(
+          backgroundColor: AppColors.surface,
+          title: AppText(
+            'تعديل النقاط',
+            style: AppTextStyles.headlineSm.copyWith(
+              color: AppColors.onSurface,
             ),
           ),
-          TextButton(
-            onPressed: _isSaving ? null : _submit,
-            child: _isSaving
-                ? SizedBox(
-                    width: 18.w,
-                    height: 18.w,
-                    child: CircularProgressIndicator(
-                      strokeWidth: 2,
-                      color: accent,
-                    ),
-                  )
-                : AppText(
-                    'حفظ',
-                    style: AppTextStyles.button.copyWith(color: accent),
+          content: SingleChildScrollView(
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Wrap(
+                  spacing: 8.w,
+                  children: [
+                    _directionChip('إضافة', true),
+                    _directionChip('خصم', false),
+                  ],
+                ),
+                SizedBox(height: 12.h),
+                AppTextField(
+                  label: 'العدد',
+                  hint: 'مثال: 2 أو 0.5',
+                  controller: _amountController,
+                  keyboardType: const TextInputType.numberWithOptions(
+                    decimal: true,
                   ),
+                  enabled: !_isSaving,
+                  autofocus: true,
+                ),
+                SizedBox(height: 12.h),
+                AppTextField(
+                  label: 'السبب (اختياري)',
+                  controller: _reasonController,
+                  maxLines: 2,
+                  maxLength: 300,
+                  enabled: !_isSaving,
+                ),
+                if (_errorText != null) ...[
+                  SizedBox(height: 8.h),
+                  AppText(
+                    _errorText!,
+                    style: AppTextStyles.labelSm.copyWith(
+                      color: AppColors.error,
+                    ),
+                  ),
+                ],
+              ],
+            ),
           ),
-        ],
+          actions: [
+            TextButton(
+              onPressed: _isSaving ? null : () => Navigator.pop(context, false),
+              child: AppText(
+                'إلغاء',
+                style: AppTextStyles.button.copyWith(
+                  color: AppColors.onSurfaceVariant,
+                ),
+              ),
+            ),
+            TextButton(
+              onPressed: _isSaving ? null : _submit,
+              child: _isSaving
+                  ? SizedBox(
+                      width: 18.w,
+                      height: 18.w,
+                      child: CircularProgressIndicator(
+                        strokeWidth: 2,
+                        color: accent,
+                      ),
+                    )
+                  : AppText(
+                      'حفظ',
+                      style: AppTextStyles.button.copyWith(color: accent),
+                    ),
+            ),
+          ],
+        ),
       ),
     );
   }

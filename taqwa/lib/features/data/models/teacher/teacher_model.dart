@@ -38,9 +38,12 @@ class TeacherModel {
     final int idVal = (teacherMap?['id'] as num?)?.toInt() ??
         (json['id'] as num?)?.toInt() ??
         0;
+    // The row's own id is the account id only on a user-shaped row (teacher
+    // nested under "teacher"); on a teacher row it is the teacher id, and
+    // using it would point points adjustments at another account.
     final int userIdVal = (json['userId'] as num?)?.toInt() ??
         (userMap?['id'] as num?)?.toInt() ??
-        (json['id'] as num?)?.toInt() ??
+        (teacherMap != null ? (json['id'] as num?)?.toInt() : null) ??
         0;
 
     final DateTime? hDate = json['hireDate'] != null

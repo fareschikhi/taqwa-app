@@ -34,6 +34,7 @@ Future<void> _pump(WidgetTester tester, Widget page) async {
 }
 
 void main() {
+  reloadFailureTests();
   final twoEntries = PointsSummaryModel(
     total: 4,
     entries: [_manual(id: 1, by: 5), _manual(id: 2, by: 6)],
@@ -103,5 +104,35 @@ void main() {
     expect(api.sent('DELETE', '/points/1'), hasLength(1));
     expect(find.text('سلوك 1'), findsNothing);
     expect(find.text('تم حذف التعديل'), findsOneWidget);
+  });
+}
+
+void reloadFailureTests() {
+  // The delete worked; only the refresh after it failed. Saying "failed"
+  // would invite a second tap and a confusing 404.
+  testWidgets('a failed reload after a delete still reports the delete', (
+    tester,
+  ) async {
+    StubApi.install((_) => (200, {}));
+    await _pump(
+      tester,
+      PointsHistoryPage(
+        summary: PointsSummaryModel(
+          total: 4,
+          entries: [_manual(id: 1, by: 5), _manual(id: 2, by: 6)],
+        ),
+        reload: () async => throw Exception('offline'),
+        viewerId: 5,
+      ),
+    );
+
+    await tester.tap(_undo);
+    await tester.pumpAndSettle();
+    await tester.tap(find.text('حذف'));
+    await tester.pumpAndSettle();
+
+    expect(find.text('تم حذف التعديل'), findsOneWidget);
+    expect(find.text('سلوك 1'), findsNothing);
+    expect(_undo, findsNothing);
   });
 }

@@ -65,20 +65,35 @@ class _PointsHistoryPageState extends State<PointsHistoryPage> {
     final messenger = ScaffoldMessenger.of(context);
     try {
       await _repo.remove(entry.id);
-      _changed = true;
-      final fresh = await widget.reload!();
-      if (!mounted) return;
-      setState(() => _summary = fresh);
-      messenger.showSnackBar(
-        const SnackBar(content: AppText('تم حذف التعديل')),
-      );
     } catch (e) {
+      if (mounted) setState(() => _removingId = null);
       messenger.showSnackBar(
         SnackBar(content: AppText(PointsRepository.errorMessage(e))),
       );
-    } finally {
-      if (mounted) setState(() => _removingId = null);
+      return;
     }
+
+    // The delete is done whatever happens next: say so, and only then try to
+    // refresh. A failed refresh must not read as a failed delete.
+    _changed = true;
+    messenger.showSnackBar(const SnackBar(content: AppText('تم حذف التعديل')));
+    PointsSummaryModel next;
+    try {
+      next = await widget.reload!();
+    } catch (_) {
+      // Offline after the delete: drop the row by hand. The card behind the
+      // page reloads on the way back anyway.
+      next = PointsSummaryModel(
+        userId: _summary.userId,
+        total: _summary.total - entry.amount,
+        entries: _summary.entries.where((e) => e.id != entry.id).toList(),
+      );
+    }
+    if (!mounted) return;
+    setState(() {
+      _summary = next;
+      _removingId = null;
+    });
   }
 
   @override
