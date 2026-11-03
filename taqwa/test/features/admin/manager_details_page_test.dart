@@ -1,12 +1,32 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:taqwa/core/providers/auth_provider.dart';
 import 'package:taqwa/features/admin/presentation/pages/manager_details_page.dart';
 import 'package:taqwa/features/data/models/manager_model.dart';
+import 'package:taqwa/features/data/models/user_model.dart';
 
-Widget _host(Widget child) => ScreenUtilInit(
-  designSize: const Size(390, 844),
-  builder: (_, _) => MaterialApp(home: child),
+import '../../helpers/stub_api.dart';
+
+class _Admin extends AuthNotifier {
+  @override
+  AuthState build() => AuthState(
+    user: UserModel(id: 1, fullName: 'المدير العام', role: UserRole.admin),
+    isAuthenticated: true,
+  );
+}
+
+late StubApi _api;
+
+/// The page loads the manager's points on open, so the server is stubbed:
+/// GET /points/user/:id answers a summary, anything else 404s.
+Widget _host(Widget child) => ProviderScope(
+  overrides: [authProvider.overrideWith(_Admin.new)],
+  child: ScreenUtilInit(
+    designSize: const Size(390, 844),
+    builder: (_, _) => MaterialApp(home: child),
+  ),
 );
 
 /// Phone-sized surface. The test font draws every glyph as a full square, so
@@ -29,6 +49,16 @@ void _phoneScreen(WidgetTester tester) {
 }
 
 void main() {
+  setUp(() {
+    _api = StubApi.install((r) {
+      if (r.method == 'GET' && r.path.startsWith('/points/user/')) {
+        return (200, {'userId': 40, 'total': '2', 'entries': []});
+      }
+      return (404, {'message': 'not stubbed'});
+    });
+  });
+  pointsTests();
+
   testWidgets('shows contact, halaqas and permissions', (tester) async {
     _phoneScreen(tester);
     // Shaped like GET /managers: halaqas arrive as ManagerHalaqa join rows.
@@ -109,5 +139,27 @@ void main() {
     expect(find.text('المحادثات مع أولياء الأمور'), findsOneWidget);
     // Chat is the only privilege granted here.
     expect(find.text('مسموح'), findsOneWidget);
+  });
+}
+
+void pointsTests() {
+  // Managers' points are the admin's to give: their page carries the card
+  // and the adjust button, loaded by the manager's account id.
+  testWidgets('shows the manager\'s points with an adjust button', (
+    tester,
+  ) async {
+    _phoneScreen(tester);
+    final manager = ManagerModel.fromJson({
+      'id': 4,
+      'user': {'id': 40, 'fullName': 'مدير'},
+      'halaqas': [],
+    });
+
+    await tester.pumpWidget(_host(ManagerDetailsPage(manager: manager)));
+    await tester.pumpAndSettle();
+    await tester.scrollUntilVisible(find.text('تعديل النقاط'), 200);
+
+    expect(_api.sent('GET', '/points/user/40'), hasLength(1));
+    expect(find.text('تعديل النقاط'), findsOneWidget);
   });
 }

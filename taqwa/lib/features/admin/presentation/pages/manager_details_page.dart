@@ -10,6 +10,8 @@ import '../../../data/repositories/manager_repository.dart';
 import '../../../shared/presentation/widgets/profile_detail_widgets.dart';
 import 'create_manager_page.dart';
 import 'package:taqwa/core/widgets/app_text.dart';
+import 'package:taqwa/core/widgets/points_section.dart';
+import 'package:taqwa/features/data/repositories/points_repository.dart';
 
 /// A manager's profile as the admin sees it: contact details, the halaqas
 /// they are responsible for, and what their account is allowed to do.
@@ -32,9 +34,14 @@ class ManagerDetailsPage extends StatefulWidget {
 class _ManagerDetailsPageState extends State<ManagerDetailsPage> {
   final _repo = ManagerRepository();
   late ManagerModel _manager = widget.manager;
+  final _pointsRepo = PointsRepository();
   bool _changed = false;
 
+  /// Bumped by pull-to-refresh so the points section reloads with the page.
+  int _refreshCount = 0;
+
   Future<void> _reload() async {
+    setState(() => _refreshCount++);
     final id = _manager.id;
     if (id == null) return;
     try {
@@ -164,6 +171,15 @@ class _ManagerDetailsPageState extends State<ManagerDetailsPage> {
                           ),
                         ],
                       ),
+                      // A manager's points are the admin's alone to give.
+                      if (_manager.userId case final userId?)
+                        PointsSection(
+                          load: () => _pointsRepo.forUser(userId),
+                          canAdjust: true,
+                          hideWhenUnavailable: false,
+                          refreshKey: _refreshCount,
+                          padding: EdgeInsets.only(top: 16.h),
+                        ),
                       SizedBox(height: 16.h),
                     ],
                   ),

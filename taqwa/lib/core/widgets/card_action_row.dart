@@ -17,6 +17,7 @@ class CardActionRow extends StatelessWidget {
     this.isActive,
     this.onToggleActive,
     this.onTelegram,
+    this.onPoints,
     this.compact = false,
   });
 
@@ -30,6 +31,10 @@ class CardActionRow extends StatelessWidget {
 
   /// Null hides the Telegram button, e.g. when there is no usable number.
   final VoidCallback? onTelegram;
+
+  /// Null hides the points button. Teachers have no details page, so their
+  /// card is where the admin reaches their points.
+  final VoidCallback? onPoints;
 
   /// For a narrow grid card: the buttons share the width equally and edit
   /// drops its label, which would not fit beside three icon buttons.
@@ -53,6 +58,28 @@ class CardActionRow extends StatelessWidget {
                   color: kTelegramBlue,
                 ),
                 child: Icon(Icons.telegram, size: 18.w, color: Colors.white),
+              ),
+            ),
+          ),
+          SizedBox(width: 8.w),
+        ],
+        if (onPoints != null) ...[
+          Tooltip(
+            message: 'النقاط',
+            child: GestureDetector(
+              onTap: onPoints,
+              child: Container(
+                width: 38.w,
+                height: 38.w,
+                decoration: BoxDecoration(
+                  borderRadius: BorderRadius.circular(AppConstants.radiusMd),
+                  border: Border.all(color: AppColors.outlineVariant),
+                ),
+                child: Icon(
+                  Icons.stars_outlined,
+                  size: 18.w,
+                  color: AppColors.primary,
+                ),
               ),
             ),
           ),
@@ -90,9 +117,7 @@ class CardActionRow extends StatelessWidget {
             width: 38.w,
             height: 38.w,
             decoration: BoxDecoration(
-              borderRadius: BorderRadius.circular(
-                AppConstants.radiusMd,
-              ),
+              borderRadius: BorderRadius.circular(AppConstants.radiusMd),
               color: AppColors.errorContainer,
             ),
             child: Icon(
@@ -111,9 +136,7 @@ class CardActionRow extends StatelessWidget {
               height: 38.h,
               decoration: BoxDecoration(
                 border: Border.all(color: AppColors.outlineVariant),
-                borderRadius: BorderRadius.circular(
-                  AppConstants.radiusMd,
-                ),
+                borderRadius: BorderRadius.circular(AppConstants.radiusMd),
               ),
               child: Row(
                 mainAxisAlignment: MainAxisAlignment.center,
@@ -148,6 +171,14 @@ class CardActionRow extends StatelessWidget {
           background: kTelegramBlue,
           color: Colors.white,
           onTap: onTelegram,
+        ),
+      if (onPoints != null)
+        _iconButton(
+          tooltip: 'النقاط',
+          icon: Icons.stars_outlined,
+          color: AppColors.primary,
+          border: AppColors.outlineVariant,
+          onTap: onPoints,
         ),
       if (isActive != null)
         _iconButton(

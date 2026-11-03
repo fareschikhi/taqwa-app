@@ -9,6 +9,7 @@ Widget _host(Widget child) => ScreenUtilInit(
     );
 
 void main() {
+  pointsActionTests();
   testWidgets('renders three controls and fires each callback', (tester) async {
     var edited = false, deleted = false, toggled = false;
 
@@ -82,4 +83,35 @@ void main() {
 
     expect(find.byTooltip('تيليجرام'), findsNothing);
   });
+}
+
+void pointsActionTests() {
+  // Teachers have no details page, so their card is where the admin reaches
+  // their points; other cards don't show the button.
+  for (final compact in [false, true]) {
+    testWidgets('a points action appears only when given (compact: $compact)', (
+      tester,
+    ) async {
+      var opened = false;
+      await tester.pumpWidget(
+        _host(
+          CardActionRow(
+            onDelete: () {},
+            onEdit: () {},
+            onPoints: () => opened = true,
+            compact: compact,
+          ),
+        ),
+      );
+      await tester.pumpAndSettle();
+      await tester.tap(find.byTooltip('النقاط'));
+      expect(opened, isTrue);
+
+      await tester.pumpWidget(
+        _host(CardActionRow(onDelete: () {}, onEdit: () {}, compact: compact)),
+      );
+      await tester.pumpAndSettle();
+      expect(find.byTooltip('النقاط'), findsNothing);
+    });
+  }
 }

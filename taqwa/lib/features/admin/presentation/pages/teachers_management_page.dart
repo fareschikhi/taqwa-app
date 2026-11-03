@@ -14,6 +14,8 @@ import 'package:taqwa/core/widgets/card_action_row.dart';
 import 'package:taqwa/core/widgets/confirm_status_dialog.dart';
 import 'package:taqwa/core/widgets/list_layout.dart';
 import 'package:taqwa/features/data/repositories/user_repository.dart';
+import 'package:taqwa/features/data/repositories/points_repository.dart';
+import 'package:taqwa/core/widgets/points_section.dart';
 import 'create_teacher_page.dart';
 import '../admin_shell.dart';
 import 'package:taqwa/core/widgets/app_text.dart';
@@ -33,6 +35,7 @@ class _TeachersManagementPageState extends State<TeachersManagementPage> {
   bool _isLoading = true;
   final _teacherRepo = TeacherRepository();
   final _userRepo = UserRepository();
+  final _pointsRepo = PointsRepository();
 
   static const _layoutKey = 'admin_teachers';
   ListLayout _layout = ListLayout.list;
@@ -51,6 +54,43 @@ class _TeachersManagementPageState extends State<TeachersManagementPage> {
       ),
     );
     if (mounted) _load();
+  }
+
+  /// A teacher's points, which only the admin gives or takes. Teachers have no
+  /// details page, so they open in a sheet from the card. Loaded by the
+  /// teacher's account id ([TeacherModel.userId]), not the teacher-row id.
+  void _showPoints(TeacherModel teacher) {
+    showModalBottomSheet<void>(
+      context: context,
+      isScrollControlled: true,
+      backgroundColor: AppColors.background,
+      shape: RoundedRectangleBorder(
+        borderRadius: BorderRadius.vertical(
+          top: Radius.circular(AppConstants.radiusXl),
+        ),
+      ),
+      builder: (_) => SafeArea(
+        child: SingleChildScrollView(
+          padding: EdgeInsets.all(16.w),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.stretch,
+            children: [
+              AppText(
+                teacher.fullName,
+                style: AppTextStyles.labelMdBold,
+                textAlign: TextAlign.right,
+              ),
+              SizedBox(height: 12.h),
+              PointsSection(
+                load: () => _pointsRepo.forUser(teacher.userId),
+                canAdjust: true,
+                hideWhenUnavailable: false,
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
   }
 
   Future<void> _toggleStatus(TeacherModel teacher) async {
@@ -231,10 +271,7 @@ class _TeachersManagementPageState extends State<TeachersManagementPage> {
                     SizedBox(height: 16.h),
                     Row(
                       children: [
-                        ListLayoutToggle(
-                          value: _layout,
-                          onChanged: _setLayout,
-                        ),
+                        ListLayoutToggle(value: _layout, onChanged: _setLayout),
                         SizedBox(width: 8.w),
                         Expanded(
                           child: SearchBarWidget(
@@ -296,9 +333,10 @@ class _TeachersManagementPageState extends State<TeachersManagementPage> {
                             itemBuilder: (_, row) => CardGridRow(
                               columns: columns,
                               children: [
-                                for (final teacher in _filtered.skip(
-                                  row * columns,
-                                ).take(columns))
+                                for (final teacher
+                                    in _filtered
+                                        .skip(row * columns)
+                                        .take(columns))
                                   _TeacherGridCard(
                                     teacher: teacher,
                                     onEdit: () => _openForm(teacher),
@@ -306,7 +344,9 @@ class _TeachersManagementPageState extends State<TeachersManagementPage> {
                                       teacher.id,
                                       teacher.halaqaCount,
                                     ),
-                                    onToggleActive: () => _toggleStatus(teacher),
+                                    onToggleActive: () =>
+                                        _toggleStatus(teacher),
+                                    onPoints: () => _showPoints(teacher),
                                   ),
                               ],
                             ),
@@ -329,6 +369,7 @@ class _TeachersManagementPageState extends State<TeachersManagementPage> {
                             _filtered[i].halaqaCount,
                           ),
                           onToggleActive: () => _toggleStatus(_filtered[i]),
+                          onPoints: () => _showPoints(_filtered[i]),
                         ),
                       ),
               ),
@@ -347,12 +388,14 @@ class _TeacherCard extends StatelessWidget {
     required this.onEdit,
     required this.onDelete,
     required this.onToggleActive,
+    required this.onPoints,
   });
   final TeacherModel teacher;
   final bool isActive;
   final VoidCallback onEdit;
   final VoidCallback onDelete;
   final VoidCallback onToggleActive;
+  final VoidCallback onPoints;
 
   @override
   Widget build(BuildContext context) {
@@ -504,6 +547,7 @@ class _TeacherCard extends StatelessWidget {
           CardActionRow(
             isActive: isActive,
             onToggleActive: onToggleActive,
+            onPoints: onPoints,
             onDelete: onDelete,
             onEdit: onEdit,
             // Teachers have no details page, so the card is where the admin
@@ -526,11 +570,13 @@ class _TeacherGridCard extends StatelessWidget {
     required this.onEdit,
     required this.onDelete,
     required this.onToggleActive,
+    required this.onPoints,
   });
   final TeacherModel teacher;
   final VoidCallback onEdit;
   final VoidCallback onDelete;
   final VoidCallback onToggleActive;
+  final VoidCallback onPoints;
 
   @override
   Widget build(BuildContext context) {
@@ -640,6 +686,7 @@ class _TeacherGridCard extends StatelessWidget {
             compact: true,
             isActive: isActive,
             onToggleActive: onToggleActive,
+            onPoints: onPoints,
             onDelete: onDelete,
             onEdit: onEdit,
             onTelegram: telegramUri(phone) != null
