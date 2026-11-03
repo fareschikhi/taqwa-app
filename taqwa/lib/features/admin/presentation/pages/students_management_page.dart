@@ -107,6 +107,7 @@ class _StudentsManagementPageState extends State<StudentsManagementPage> {
           halaqaId: (halaqa?['id'] as num?)?.toInt(),
           canEditParent: true,
           canEditRating: true,
+          canAdjustPoints: true,
         ),
       ),
     );

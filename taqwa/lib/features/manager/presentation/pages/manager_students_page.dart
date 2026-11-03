@@ -86,6 +86,7 @@ class _ManagerStudentsPageState extends ConsumerState<ManagerStudentsPage> {
           fullName: (user['fullName'] as String?) ?? '',
           avatar: user['avatar'] as String?,
           halaqaId: (halaqa?['id'] as num?)?.toInt(),
+          canAdjustPoints: true,
         ),
       ),
     );

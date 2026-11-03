@@ -339,6 +339,7 @@ class _StudentListPageState extends ConsumerState<StudentListPage> {
                                         avatar: student.avatar,
                                         halaqaId: student.halaqaId,
                                         canEditRating: true,
+                                        canAdjustPoints: true,
                                       ),
                                     ),
                                   ),

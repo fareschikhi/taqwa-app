@@ -6,7 +6,8 @@ import '../../../../core/constants/app_constants.dart';
 import '../../../../core/constants/surahs.dart';
 import '../../../../core/enums/memorization_type.dart';
 import '../../../../core/utils/fine_balance.dart';
-import '../../../../core/utils/hadith_label.dart' show hadithLabelOrFallback, kHadithUnitLabel;
+import '../../../../core/utils/hadith_label.dart'
+    show hadithLabelOrFallback, kHadithUnitLabel;
 import '../../../../core/widgets/app_button.dart';
 import '../../../../core/widgets/app_card.dart';
 import '../../../../core/widgets/app_text_field.dart';
@@ -23,10 +24,8 @@ import '../widgets/profile_detail_widgets.dart';
 import 'parent_form_page.dart';
 import 'package:taqwa/core/widgets/app_text.dart';
 import 'package:taqwa/core/utils/memorization_amount.dart';
-import 'package:taqwa/core/widgets/points_balance_card.dart';
-import 'package:taqwa/features/data/models/points/points_summary_model.dart';
+import 'package:taqwa/core/widgets/points_section.dart';
 import 'package:taqwa/features/data/repositories/points_repository.dart';
-import 'package:taqwa/features/shared/presentation/pages/points_history_page.dart';
 
 class StudentDetailsPage extends StatefulWidget {
   const StudentDetailsPage({
@@ -37,6 +36,7 @@ class StudentDetailsPage extends StatefulWidget {
     this.halaqaId,
     this.canEditParent = false,
     this.canEditRating = false,
+    this.canAdjustPoints = false,
   });
 
   /// What the caller already knows before this page's own load lands: the id
@@ -60,6 +60,11 @@ class StudentDetailsPage extends StatefulWidget {
   /// server refuses it from a manager anyway.
   final bool canEditRating;
 
+  /// Whether the points card carries a `تعديل النقاط` button. The staff
+  /// student lists (admin, teacher, manager) turn it on; the server still
+  /// refuses a student outside the caller's halaqa.
+  final bool canAdjustPoints;
+
   @override
   State<StudentDetailsPage> createState() => _StudentDetailsPageState();
 }
@@ -71,8 +76,9 @@ class _StudentDetailsPageState extends State<StudentDetailsPage> {
   final _pointsRepo = PointsRepository();
 
   /// Every student has points, child or adult. Staff outside the student's
-  /// halaqa are refused by the server, and the card then simply stays off.
-  PointsSummaryModel? _points;
+  /// halaqa are refused by the server, and the section then simply stays
+  /// off. It loads itself, and a reload of the page (which swaps the list for
+  /// a spinner) builds it afresh.
   final _parentRepo = ParentRepository();
   bool _isOpeningParent = false;
 
@@ -120,8 +126,6 @@ class _StudentDetailsPageState extends State<StudentDetailsPage> {
         _attendance = results[2] as AttendanceSummaryModel;
         _isLoading = false;
       });
-      // Independent of fines, so it neither waits on nor blocks their lookup.
-      _loadPoints();
       // Runs after the profile is on screen: a halaqa lookup failing (or a
       // student with no halaqa at all) must not blank a page that already
       // loaded — the fines section simply stays off.
@@ -132,15 +136,6 @@ class _StudentDetailsPageState extends State<StudentDetailsPage> {
         _error = StudentRepository.errorMessage(e);
         _isLoading = false;
       });
-    }
-  }
-
-  Future<void> _loadPoints() async {
-    try {
-      final points = await _pointsRepo.forStudent(widget.studentId);
-      if (mounted) setState(() => _points = points);
-    } catch (_) {
-      // Refused or unreachable: the card stays off, the page stays up.
     }
   }
 
@@ -267,9 +262,9 @@ class _StudentDetailsPageState extends State<StudentDetailsPage> {
       if (saved == true && mounted) await _load();
     } catch (e) {
       if (!mounted) return;
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text(ParentRepository.errorMessage(e))),
-      );
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(SnackBar(content: Text(ParentRepository.errorMessage(e))));
     } finally {
       if (mounted) setState(() => _isOpeningParent = false);
     }
@@ -413,19 +408,11 @@ class _StudentDetailsPageState extends State<StudentDetailsPage> {
                         SizedBox(height: 16.h),
                         _buildParentCard(_parent!),
                       ],
-                      if (_points != null) ...[
-                        SizedBox(height: 16.h),
-                        PointsBalanceCard(
-                          summary: _points!,
-                          onTap: () => Navigator.push(
-                            context,
-                            MaterialPageRoute(
-                              builder: (_) =>
-                                  PointsHistoryPage(summary: _points!),
-                            ),
-                          ),
-                        ),
-                      ],
+                      PointsSection(
+                        load: () => _pointsRepo.forStudent(widget.studentId),
+                        canAdjust: widget.canAdjustPoints,
+                        padding: EdgeInsets.only(top: 16.h),
+                      ),
                       if (_isAdultStudent && _fineSummary != null) ...[
                         SizedBox(height: 16.h),
                         _buildFinesSection(),
@@ -664,9 +651,8 @@ class _StudentDetailsPageState extends State<StudentDetailsPage> {
           Row(
             children: [
               TextButton.icon(
-                onPressed: () => setState(
-                  () => _showRegistration = !_showRegistration,
-                ),
+                onPressed: () =>
+                    setState(() => _showRegistration = !_showRegistration),
                 icon: Icon(
                   _showRegistration
                       ? Icons.keyboard_arrow_up
