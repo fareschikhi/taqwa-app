@@ -1,7 +1,8 @@
 jest.mock('../points/day-points', () => ({
   reconcileDayPoints: jest.fn().mockResolvedValue(undefined),
 }));
-import { NotFoundException } from '@nestjs/common';
+import { ConflictException, NotFoundException } from '@nestjs/common';
+import { Prisma } from '@prisma/client';
 import { reconcileDayPoints } from '../points/day-points';
 import { ManagersService } from './managers.service';
 
@@ -63,6 +64,26 @@ describe('ManagersService.remove', () => {
     await service.remove(2);
 
     expect(prisma.user.update).not.toHaveBeenCalled();
+  });
+
+// Points, fines and announcements keep their author (onDelete: Restrict),
+  // so an account that made any of them cannot be hard-deleted. The admin
+  // must get a sentence, not Prisma's English error text.
+  it('explains in Arabic when the account still has records', async () => {
+    const prisma = makePrisma({ id: 2, userId: 64 });
+    prisma.user.delete.mockRejectedValue(
+      new Prisma.PrismaClientKnownRequestError('Foreign key constraint violated', {
+        code: 'P2003',
+        clientVersion: 'test',
+      }),
+    );
+
+    const err = await new ManagersService(prisma as any).remove(2).catch((e) => e);
+
+    expect(err).toBeInstanceOf(ConflictException);
+    expect(err.message).toBe(
+      'لا يمكن حذف هذا الحساب لأن له سجلات مرتبطة (نقاط أو غرامات أو إعلانات). عطّل الحساب بدلاً من ذلك.',
+    );
   });
 
   it('throws NotFoundException when the manager does not exist', async () => {

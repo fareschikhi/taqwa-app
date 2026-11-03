@@ -3,6 +3,7 @@ import { PrismaService } from '../../prisma/prisma.service';
 import { CreateTeacherDto, UpdateTeacherDto } from './dto/teacher.dto';
 import * as bcrypt from 'bcrypt';
 import { Memorization } from '@prisma/client';
+import { explainRestrictedDelete } from '../../common/prisma/restricted-delete';
 
 @Injectable()
 export class TeachersService {
@@ -138,7 +139,9 @@ export class TeachersService {
     // Hard delete — removing the user cascades to the teacher row AND to the
     // halaqas they own (halaqas_teacherId_fkey is ON DELETE CASCADE). Students
     // of those halaqas survive; their halaqaId is set to NULL.
-    return this.prisma.user.delete({ where: { id: teacher.userId } });
+    return this.prisma.user
+      .delete({ where: { id: teacher.userId } })
+      .catch(explainRestrictedDelete);
   }
 
   // ─── Teacher Dashboard Aggregates ───────────────────────────────────────────

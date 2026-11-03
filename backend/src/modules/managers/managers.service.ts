@@ -7,6 +7,7 @@ import {
   UpdateManagerStatusDto,
 } from './dto/manager.dto';
 import * as bcrypt from 'bcrypt';
+import { explainRestrictedDelete } from '../../common/prisma/restricted-delete';
 
 @Injectable()
 export class ManagersService {
@@ -185,17 +186,19 @@ export class ManagersService {
     // Each excused day turns back into an unexcused absence, so its points are
     // reconciled in the same transaction, after the cascade has run. The days
     // are read first: once the excuses are gone nothing points to them.
-    return this.prisma.$transaction(async (tx) => {
-      const excused = await tx.absenceJustification.findMany({
-        where: { managerId: id },
-        select: { attendance: { select: { studentId: true, date: true } } },
-      });
-      const deleted = await tx.user.delete({ where: { id: manager.userId } });
-      for (const { attendance } of excused) {
-        await reconcileDayPoints(tx, attendance.studentId, attendance.date);
-      }
-      return deleted;
-    });
+    return this.prisma
+      .$transaction(async (tx) => {
+        const excused = await tx.absenceJustification.findMany({
+          where: { managerId: id },
+          select: { attendance: { select: { studentId: true, date: true } } },
+        });
+        const deleted = await tx.user.delete({ where: { id: manager.userId } });
+        for (const { attendance } of excused) {
+          await reconcileDayPoints(tx, attendance.studentId, attendance.date);
+        }
+        return deleted;
+      })
+      .catch(explainRestrictedDelete);
   }
 
   async getStudents(id: number) {
