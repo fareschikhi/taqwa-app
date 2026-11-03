@@ -12,6 +12,10 @@ import '../../../../core/providers/selected_student_provider.dart';
 import '../../../data/repositories/student_repository.dart';
 import '../../../data/models/parent/parent_child_model.dart';
 import 'package:taqwa/core/widgets/app_text.dart';
+import 'package:taqwa/core/widgets/points_balance_card.dart';
+import 'package:taqwa/features/data/models/points/points_summary_model.dart';
+import 'package:taqwa/features/data/repositories/points_repository.dart';
+import 'package:taqwa/features/shared/presentation/pages/points_history_page.dart';
 
 class ChildDetailsPage extends ConsumerStatefulWidget {
   const ChildDetailsPage({super.key});
@@ -22,10 +26,12 @@ class ChildDetailsPage extends ConsumerStatefulWidget {
 
 class _ChildDetailsPageState extends ConsumerState<ChildDetailsPage> {
   final _repo = StudentRepository();
+  final _pointsRepo = PointsRepository();
   bool _isLoading = true;
   int? _loadedChildId;
   Map<String, dynamic>? _profile;
   Map<String, dynamic>? _progress;
+  PointsSummaryModel? _points;
 
   @override
   void initState() {
@@ -40,6 +46,8 @@ class _ChildDetailsPageState extends ConsumerState<ChildDetailsPage> {
     setState(() {
       _isLoading = true;
       _loadedChildId = childId;
+      // Never show the previous child's points while the next one loads.
+      _points = null;
     });
     try {
       final results = await Future.wait([
@@ -55,6 +63,20 @@ class _ChildDetailsPageState extends ConsumerState<ChildDetailsPage> {
       }
     } catch (_) {
       if (mounted) setState(() => _isLoading = false);
+    }
+    await _loadPoints(childId);
+  }
+
+  /// After the page itself, so a failure only leaves the card off.
+  Future<void> _loadPoints(int childId) async {
+    try {
+      final points = await _pointsRepo.forStudent(childId);
+      // The parent may have switched child while this was in flight.
+      if (mounted && _loadedChildId == childId) {
+        setState(() => _points = points);
+      }
+    } catch (_) {
+      // Card stays off.
     }
   }
 
@@ -150,6 +172,19 @@ class _ChildDetailsPageState extends ConsumerState<ChildDetailsPage> {
                       ),
                       SizedBox(height: 20.h),
                       _buildMemorizationCard(),
+                      if (_points != null) ...[
+                        SizedBox(height: 16.h),
+                        PointsBalanceCard(
+                          summary: _points!,
+                          onTap: () => Navigator.push(
+                            context,
+                            MaterialPageRoute(
+                              builder: (_) =>
+                                  PointsHistoryPage(summary: _points!),
+                            ),
+                          ),
+                        ),
+                      ],
                       if (hadithBooks.isNotEmpty) ...[
                         SizedBox(height: 16.h),
                         HadithProgramCard(

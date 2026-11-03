@@ -15,6 +15,10 @@ import 'package:taqwa/features/data/models/chat/chat_target.dart';
 import 'package:taqwa/features/chat/presentation/widgets/staff_chat_button.dart';
 import 'package:taqwa/core/widgets/app_logo.dart';
 import 'package:taqwa/core/widgets/halaqa_news_card.dart';
+import 'package:taqwa/core/widgets/points_balance_card.dart';
+import 'package:taqwa/features/data/models/points/points_summary_model.dart';
+import 'package:taqwa/features/data/repositories/points_repository.dart';
+import 'package:taqwa/features/shared/presentation/pages/points_history_page.dart';
 import 'package:taqwa/features/data/models/halaqa/halaqa_announcement_model.dart';
 import 'package:taqwa/features/data/repositories/halaqa_announcement_repository.dart';
 import 'package:taqwa/features/shared/presentation/pages/halaqa_news_page.dart';
@@ -37,6 +41,8 @@ class _ManagerDashboardPageState extends ConsumerState<ManagerDashboardPage> {
   final _managerRepo = ManagerRepository();
   final _justificationRepo = AbsenceJustificationRepository();
   final _newsRepo = HalaqaAnnouncementRepository();
+  final _pointsRepo = PointsRepository();
+  PointsSummaryModel? _points;
   Map<String, dynamic>? _stats;
   List<dynamic> _students = [];
   List<HalaqaAnnouncementModel> _news = [];
@@ -103,6 +109,18 @@ class _ManagerDashboardPageState extends ConsumerState<ManagerDashboardPage> {
     } catch (_) {
       if (mounted) setState(() => _isLoading = false);
     }
+    await _loadPoints();
+  }
+
+  /// The manager's own points, loaded after the dashboard so a failure here
+  /// only leaves the card off.
+  Future<void> _loadPoints() async {
+    try {
+      final points = await _pointsRepo.mine();
+      if (mounted) setState(() => _points = points);
+    } catch (_) {
+      if (mounted) setState(() => _points = null);
+    }
   }
 
   @override
@@ -134,6 +152,20 @@ class _ManagerDashboardPageState extends ConsumerState<ManagerDashboardPage> {
                             SizedBox(height: 20.h),
                             _buildStatCards(),
                             SizedBox(height: 24.h),
+                            if (_points != null) ...[
+                              PointsBalanceCard(
+                                summary: _points!,
+                                title: 'نقاطي',
+                                onTap: () => Navigator.push(
+                                  context,
+                                  MaterialPageRoute(
+                                    builder: (_) =>
+                                        PointsHistoryPage(summary: _points!),
+                                  ),
+                                ),
+                              ),
+                              SizedBox(height: 24.h),
+                            ],
                             HalaqaNewsCard(
                               announcements: _news,
                               canCompose: _managerId != null,

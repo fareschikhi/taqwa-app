@@ -23,6 +23,10 @@ import '../widgets/profile_detail_widgets.dart';
 import 'parent_form_page.dart';
 import 'package:taqwa/core/widgets/app_text.dart';
 import 'package:taqwa/core/utils/memorization_amount.dart';
+import 'package:taqwa/core/widgets/points_balance_card.dart';
+import 'package:taqwa/features/data/models/points/points_summary_model.dart';
+import 'package:taqwa/features/data/repositories/points_repository.dart';
+import 'package:taqwa/features/shared/presentation/pages/points_history_page.dart';
 
 class StudentDetailsPage extends StatefulWidget {
   const StudentDetailsPage({
@@ -64,6 +68,11 @@ class _StudentDetailsPageState extends State<StudentDetailsPage> {
   final _repo = StudentRepository();
   final _halaqaRepo = HalaqaRepository();
   final _fineRepo = FineRepository();
+  final _pointsRepo = PointsRepository();
+
+  /// Every student has points, child or adult. Staff outside the student's
+  /// halaqa are refused by the server, and the card then simply stays off.
+  PointsSummaryModel? _points;
   final _parentRepo = ParentRepository();
   bool _isOpeningParent = false;
 
@@ -111,6 +120,8 @@ class _StudentDetailsPageState extends State<StudentDetailsPage> {
         _attendance = results[2] as AttendanceSummaryModel;
         _isLoading = false;
       });
+      // Independent of fines, so it neither waits on nor blocks their lookup.
+      _loadPoints();
       // Runs after the profile is on screen: a halaqa lookup failing (or a
       // student with no halaqa at all) must not blank a page that already
       // loaded — the fines section simply stays off.
@@ -121,6 +132,15 @@ class _StudentDetailsPageState extends State<StudentDetailsPage> {
         _error = StudentRepository.errorMessage(e);
         _isLoading = false;
       });
+    }
+  }
+
+  Future<void> _loadPoints() async {
+    try {
+      final points = await _pointsRepo.forStudent(widget.studentId);
+      if (mounted) setState(() => _points = points);
+    } catch (_) {
+      // Refused or unreachable: the card stays off, the page stays up.
     }
   }
 
@@ -392,6 +412,19 @@ class _StudentDetailsPageState extends State<StudentDetailsPage> {
                       if (_parent != null) ...[
                         SizedBox(height: 16.h),
                         _buildParentCard(_parent!),
+                      ],
+                      if (_points != null) ...[
+                        SizedBox(height: 16.h),
+                        PointsBalanceCard(
+                          summary: _points!,
+                          onTap: () => Navigator.push(
+                            context,
+                            MaterialPageRoute(
+                              builder: (_) =>
+                                  PointsHistoryPage(summary: _points!),
+                            ),
+                          ),
+                        ),
                       ],
                       if (_isAdultStudent && _fineSummary != null) ...[
                         SizedBox(height: 16.h),

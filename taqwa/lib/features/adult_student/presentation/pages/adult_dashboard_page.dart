@@ -16,6 +16,10 @@ import 'package:taqwa/core/widgets/shell_tab_scope.dart';
 import 'package:taqwa/core/widgets/app_logo.dart';
 import 'package:taqwa/core/widgets/expandable_text.dart';
 import 'package:taqwa/core/widgets/fine_balance_card.dart';
+import 'package:taqwa/core/widgets/points_balance_card.dart';
+import 'package:taqwa/features/data/models/points/points_summary_model.dart';
+import 'package:taqwa/features/data/repositories/points_repository.dart';
+import 'package:taqwa/features/shared/presentation/pages/points_history_page.dart';
 import 'package:taqwa/core/widgets/hadith_program_card.dart';
 import 'package:taqwa/core/widgets/halaqa_news_card.dart';
 import 'package:taqwa/core/widgets/last_session_card.dart';
@@ -44,6 +48,7 @@ class AdultDashboardPage extends ConsumerStatefulWidget {
 class _AdultDashboardPageState extends ConsumerState<AdultDashboardPage> {
   final _studentRepo = StudentRepository();
   final _fineRepo = FineRepository();
+  final _pointsRepo = PointsRepository();
   final _newsRepo = HalaqaAnnouncementRepository();
 
   bool _isLoading = true;
@@ -55,6 +60,7 @@ class _AdultDashboardPageState extends ConsumerState<AdultDashboardPage> {
   String? _rating;
   List<String> _hadithBooks = [];
   FineSummaryModel? _fines;
+  PointsSummaryModel? _points;
   List<HalaqaAnnouncementModel> _news = [];
 
   @override
@@ -106,6 +112,18 @@ class _AdultDashboardPageState extends ConsumerState<AdultDashboardPage> {
       }
     } catch (_) {
       if (mounted) setState(() => _isLoading = false);
+    }
+    await _loadPoints();
+  }
+
+  /// Loaded on its own, after the dashboard: a points failure leaves the card
+  /// off rather than costing him the rest of the page.
+  Future<void> _loadPoints() async {
+    try {
+      final points = await _pointsRepo.mine();
+      if (mounted) setState(() => _points = points);
+    } catch (_) {
+      if (mounted) setState(() => _points = null);
     }
   }
 
@@ -162,6 +180,10 @@ class _AdultDashboardPageState extends ConsumerState<AdultDashboardPage> {
                     else ...[
                       _buildFineBalance(),
                       SizedBox(height: 20.h),
+                      if (_points != null) ...[
+                        _buildPoints(_points!),
+                        SizedBox(height: 20.h),
+                      ],
                       if (_news.isNotEmpty) ...[
                         HalaqaNewsCard(
                           announcements: _news,
@@ -238,6 +260,17 @@ class _AdultDashboardPageState extends ConsumerState<AdultDashboardPage> {
           ),
         ),
       ],
+    );
+  }
+
+  Widget _buildPoints(PointsSummaryModel points) {
+    return PointsBalanceCard(
+      summary: points,
+      title: 'نقاطي',
+      onTap: () => Navigator.push(
+        context,
+        MaterialPageRoute(builder: (_) => PointsHistoryPage(summary: points)),
+      ),
     );
   }
 

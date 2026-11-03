@@ -19,6 +19,10 @@ import 'package:taqwa/core/widgets/app_text.dart';
 import 'package:taqwa/core/widgets/shell_tab_scope.dart';
 import 'package:taqwa/core/widgets/app_logo.dart';
 import 'package:taqwa/core/widgets/halaqa_news_card.dart';
+import 'package:taqwa/core/widgets/points_balance_card.dart';
+import 'package:taqwa/features/data/models/points/points_summary_model.dart';
+import 'package:taqwa/features/data/repositories/points_repository.dart';
+import 'package:taqwa/features/shared/presentation/pages/points_history_page.dart';
 import 'package:taqwa/features/data/models/halaqa/halaqa_announcement_model.dart';
 import 'package:taqwa/features/data/repositories/halaqa_announcement_repository.dart';
 import 'package:taqwa/features/shared/presentation/pages/halaqa_news_page.dart';
@@ -36,6 +40,12 @@ class TeacherDashboardPage extends ConsumerStatefulWidget {
 class _TeacherDashboardPageState extends ConsumerState<TeacherDashboardPage> {
   final _repo = TeacherRepository();
   final _newsRepo = HalaqaAnnouncementRepository();
+  final _pointsRepo = PointsRepository();
+
+  /// The teacher's own points. Not tied to the selected halaqa, so it is
+  /// loaded beside the dashboard rather than inside [loadData], which the
+  /// halaqa switcher re-runs.
+  PointsSummaryModel? _points;
 
   AttendanceSummaryModel? _attendanceSummary;
   List<RevisionNeededModel> _revisionNeeded = [];
@@ -104,7 +114,17 @@ class _TeacherDashboardPageState extends ConsumerState<TeacherDashboardPage> {
     }
   }
 
-  Future<void> _loadData() => loadData();
+  Future<void> _loadData() => Future.wait([loadData(), _loadPoints()]);
+
+  Future<void> _loadPoints() async {
+    try {
+      final points = await _pointsRepo.mine();
+      if (mounted) setState(() => _points = points);
+    } catch (_) {
+      // Leaves the card off; the rest of the dashboard is unaffected.
+      if (mounted) setState(() => _points = null);
+    }
+  }
 
   /// Opens the same recitation sheet as the attendance page. The revision list
   /// carries no hadith books, so the student is read from the roster first.
@@ -230,6 +250,20 @@ class _TeacherDashboardPageState extends ConsumerState<TeacherDashboardPage> {
                           SizedBox(height: 24.h),
                           _buildBentoGrid(),
                           SizedBox(height: 24.h),
+                          if (_points != null) ...[
+                            PointsBalanceCard(
+                              summary: _points!,
+                              title: 'نقاطي',
+                              onTap: () => Navigator.push(
+                                context,
+                                MaterialPageRoute(
+                                  builder: (_) =>
+                                      PointsHistoryPage(summary: _points!),
+                                ),
+                              ),
+                            ),
+                            SizedBox(height: 24.h),
+                          ],
                           if (_news.isNotEmpty ||
                               user?.canPostNews == true) ...[
                             HalaqaNewsCard(
