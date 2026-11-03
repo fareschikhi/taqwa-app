@@ -58,6 +58,19 @@ describe('PointsService.summaryForUser', () => {
     });
   });
 
+  // The app adjusts by account, and a student's profile does not reliably
+  // carry its account id, so every summary says whose points these are.
+  it('says whose points these are', async () => {
+    expect((await svc(makePrisma()).summaryForUser(70)).userId).toBe(70);
+  });
+
+  // Undo is offered by the app only on the viewer's own manual entries.
+  it('tells who made each entry, by id', async () => {
+    const prisma = makePrisma();
+    await svc(prisma).summaryForUser(70);
+    expect(prisma.pointEntry.findMany.mock.calls[0][0].select.createdById).toBe(true);
+  });
+
   it('reports zero for an account with no entries', async () => {
     expect((await svc(makePrisma()).summaryForUser(70)).total).toBe('0');
   });
@@ -253,6 +266,16 @@ describe('CreatePointsDto', () => {
 
   it.each([0, 2.555, 1001, -1001])('rejects amount %p', async (amount) => {
     expect(await errors({ userId: 70, amount })).toContain('amount');
+  });
+
+  // 1e-7 passes the two-decimals check (no '.' in "1e-7") and used to reach
+  // the database as a 500; anything below a hundredth is a clean 400.
+  it.each([1e-7, -0.001, 0.009])('rejects the too-small amount %p', async (amount) => {
+    expect(await errors({ userId: 70, amount })).toContain('amount');
+  });
+
+  it.each([0.01, -0.01])('accepts the smallest amount %p', async (amount) => {
+    expect(await errors({ userId: 70, amount })).toEqual([]);
   });
 
   it('rejects a reason over 300 characters', async () => {

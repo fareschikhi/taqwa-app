@@ -11,6 +11,8 @@ import { CreatePointsDto } from './dto/points.dto';
 import { PointsActor, canAdjustUser, canViewStudent } from './points-access';
 
 export type PointsSummary = {
+  /** Whose points these are: the account a manual entry is posted to. */
+  userId: number;
   total: string;
   entries: Array<{
     id: number;
@@ -19,6 +21,7 @@ export type PointsSummary = {
     date: Date | null;
     reason: string | null;
     createdAt: Date;
+    createdById: number | null;
     createdBy: { fullName: string } | null;
   }>;
 };
@@ -45,6 +48,7 @@ export class PointsService {
           date: true,
           reason: true,
           createdAt: true,
+          createdById: true,
           createdBy: { select: { fullName: true } },
         },
       }),
@@ -54,6 +58,7 @@ export class PointsService {
       }),
     ]);
     return {
+      userId,
       total: asText(sum._sum.amount),
       entries: entries.map((e) => ({ ...e, amount: asText(e.amount) })),
     };
