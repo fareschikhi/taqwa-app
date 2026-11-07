@@ -60,6 +60,59 @@ void main() {
     expect(_colorOf(tester, formatPoints(12.5)), AppColors.primary);
   });
 
+  // Own points (and a parent's view): the total is whole, the rows stay
+  // exact so the user can still see where each point came from.
+  testWidgets('wholeNumbers rounds the total down but keeps rows exact', (
+    tester,
+  ) async {
+    await tester.pumpWidget(
+      _host(
+        PointsBalanceCard(
+          wholeNumbers: true,
+          summary: PointsSummaryModel(total: 12.2, entries: [_entry()]),
+        ),
+      ),
+    );
+    await tester.pumpAndSettle();
+
+    expect(find.text(formatPoints(12)), findsOneWidget);
+    expect(find.text(formatPoints(12.2)), findsNothing);
+    expect(find.text('+0.5'), findsOneWidget);
+  });
+
+  // -0.5 shows as 0, so it must not be painted as a loss.
+  testWidgets('wholeNumbers colors by the number shown', (tester) async {
+    await tester.pumpWidget(
+      _host(
+        PointsBalanceCard(
+          wholeNumbers: true,
+          summary: const PointsSummaryModel(total: -0.5, entries: []),
+        ),
+      ),
+    );
+    await tester.pumpAndSettle();
+
+    expect(_colorOf(tester, formatPoints(0)), AppColors.primary);
+  });
+
+  testWidgets('history total follows wholeNumbers', (tester) async {
+    await tester.pumpWidget(
+      ScreenUtilInit(
+        designSize: const Size(390, 844),
+        builder: (_, _) => MaterialApp(
+          home: PointsHistoryPage(
+            wholeNumbers: true,
+            summary: PointsSummaryModel(total: 1.5, entries: [_entry()]),
+          ),
+        ),
+      ),
+    );
+    await tester.pumpAndSettle();
+
+    expect(find.text('المجموع: ${formatPoints(1)}'), findsOneWidget);
+    expect(find.text('+0.5'), findsOneWidget);
+  });
+
   testWidgets('shows at most three recent entries', (tester) async {
     await tester.pumpWidget(
       _host(

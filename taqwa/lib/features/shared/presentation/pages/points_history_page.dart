@@ -27,7 +27,11 @@ class PointsHistoryPage extends StatefulWidget {
     this.reload,
     this.viewerId,
     this.viewerIsAdmin = false,
+    this.wholeNumbers = false,
   });
+
+  /// Shows the total without decimals; see [PointsBalanceCard.wholeNumbers].
+  final bool wholeNumbers;
 
   final PointsSummaryModel summary;
   final String title;
@@ -129,7 +133,7 @@ class _PointsHistoryPageState extends State<PointsHistoryPage> {
                 child: Align(
                   alignment: Alignment.centerRight,
                   child: AppText(
-                    'المجموع: ${formatPoints(summary.total)}',
+                    'المجموع: ${formatPoints(summary.total, whole: widget.wholeNumbers)}',
                     style: AppTextStyles.bodyMdBold.copyWith(
                       color: AppColors.onSurface,
                     ),

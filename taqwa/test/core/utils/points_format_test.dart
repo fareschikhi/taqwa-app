@@ -27,6 +27,14 @@ void main() {
       expect(plain(formatPoints(-0.001)), '0 نقطة');
     });
 
+    // Someone looking at points they can't change sees only the whole part.
+    test('drops the decimals when whole is asked for', () {
+      expect(plain(formatPoints(12.2, whole: true)), '12 نقطة');
+      expect(plain(formatPoints(1.5, whole: true)), '1 نقطة');
+      expect(plain(formatPoints(-1.5, whole: true)), '-1 نقطة');
+      expect(plain(formatPoints(-0.5, whole: true)), '0 نقطة');
+    });
+
     // AppText lays an Arabic string out right-to-left. Without the LRM, the
     // bidi algorithm puts the minus on the far side of the digit: "3-".
     for (final text in [formatPoints(-3), 'المجموع: ${formatPoints(-3)}']) {

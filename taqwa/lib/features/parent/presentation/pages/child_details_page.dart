@@ -177,11 +177,14 @@ class _ChildDetailsPageState extends ConsumerState<ChildDetailsPage> {
                         SizedBox(height: 16.h),
                         PointsBalanceCard(
                           summary: _points!,
+                          wholeNumbers: true,
                           onTap: () => Navigator.push(
                             context,
                             MaterialPageRoute(
-                              builder: (_) =>
-                                  PointsHistoryPage(summary: _points!),
+                              builder: (_) => PointsHistoryPage(
+                                summary: _points!,
+                                wholeNumbers: true,
+                              ),
                             ),
                           ),
                         ),

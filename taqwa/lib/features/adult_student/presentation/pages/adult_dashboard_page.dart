@@ -266,10 +266,14 @@ class _AdultDashboardPageState extends ConsumerState<AdultDashboardPage> {
   Widget _buildPoints(PointsSummaryModel points) {
     return PointsBalanceCard(
       summary: points,
+      wholeNumbers: true,
       title: 'نقاطي',
       onTap: () => Navigator.push(
         context,
-        MaterialPageRoute(builder: (_) => PointsHistoryPage(summary: points)),
+        MaterialPageRoute(
+          builder: (_) =>
+              PointsHistoryPage(summary: points, wholeNumbers: true),
+        ),
       ),
     );
   }

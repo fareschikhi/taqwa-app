@@ -155,12 +155,15 @@ class _ManagerDashboardPageState extends ConsumerState<ManagerDashboardPage> {
                             if (_points != null) ...[
                               PointsBalanceCard(
                                 summary: _points!,
+                                wholeNumbers: true,
                                 title: 'نقاطي',
                                 onTap: () => Navigator.push(
                                   context,
                                   MaterialPageRoute(
-                                    builder: (_) =>
-                                        PointsHistoryPage(summary: _points!),
+                                    builder: (_) => PointsHistoryPage(
+                                      summary: _points!,
+                                      wholeNumbers: true,
+                                    ),
                                   ),
                                 ),
                               ),

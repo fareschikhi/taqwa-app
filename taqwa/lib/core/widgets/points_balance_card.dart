@@ -18,11 +18,16 @@ class PointsBalanceCard extends StatelessWidget {
     required this.summary,
     this.title = 'النقاط',
     this.onTap,
+    this.wholeNumbers = false,
   });
 
   final PointsSummaryModel summary;
   final String title;
   final VoidCallback? onTap;
+
+  /// Shows the total without decimals, for a viewer who can't change these
+  /// points. The history rows stay exact either way.
+  final bool wholeNumbers;
 
   @override
   Widget build(BuildContext context) {
@@ -51,7 +56,9 @@ class PointsBalanceCard extends StatelessWidget {
             ],
           ),
           SizedBox(height: 12.h),
-          _TotalPill(total: summary.total),
+          _TotalPill(
+            total: shownPoints(summary.total, whole: wholeNumbers),
+          ),
           if (recent.isNotEmpty) ...[
             SizedBox(height: 16.h),
             Container(height: 1, color: AppColors.outlineVariant),
