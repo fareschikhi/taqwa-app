@@ -1,4 +1,4 @@
-import { AttendanceStatus, Memorization } from '@prisma/client';
+import { AttendanceStatus, Memorization, ProgressUnit } from '@prisma/client';
 
 /// The first day that earns automatic points (UTC day, as attendance dates are
 /// stored). Everyone starts at zero: days before it are never back-filled, even
@@ -15,6 +15,7 @@ export type AutoPointSource =
 export interface DayRecitation {
   memorizationType: Memorization;
   amountDone: number;
+  unit: ProgressUnit;
 }
 
 /// `milli` is thousandths of a point, so every rate and every half page stays
@@ -25,14 +26,21 @@ export interface DesiredPoint {
   milli: number;
 }
 
-// Per page for Quran, per hadith for Hadith — the same for both subjects.
-// Revision is priced as 2 points per 10 pages, paid proportionally (5 pages
-// earn 1 point). A rate change reprices a day only when its recitation is
-// edited — old days are not back-filled.
-const RECITATION_RATE: Record<Memorization, number> = {
-  MEMORIZING: 1000, // حفظ: 1 point per page
-  SMALLREVISION: 200, // جمع: 2 points per 10 pages
-  BIGREVISION: 200, // مراجعة وضبط: 2 points per 10 pages
+// Priced by the unit, not the subject: a hadith page earns what a Quran page
+// earns, and a single hadith earns half of that. Revision is paid
+// proportionally (5 pages earn 1 point). A rate change reprices a day only
+// when its recitation is edited — old days are not back-filled.
+const RECITATION_RATE: Record<ProgressUnit, Record<Memorization, number>> = {
+  PAGE: {
+    MEMORIZING: 1000, // حفظ: 1 point per page
+    SMALLREVISION: 200, // جمع: 2 points per 10 pages
+    BIGREVISION: 200, // مراجعة وضبط: 2 points per 10 pages
+  },
+  HADITH: {
+    MEMORIZING: 500, // حفظ: 0.5 point per hadith
+    SMALLREVISION: 100, // جمع: 1 point per 10 hadiths
+    BIGREVISION: 100, // مراجعة وضبط: 1 point per 10 hadiths
+  },
 };
 const PRESENT = 500;
 const ABSENCE = -1000;
@@ -59,7 +67,8 @@ export function desiredPoints(input: {
 
   const recited = recitations.reduce(
     (sum, r) =>
-      sum + Math.round(r.amountDone * RECITATION_RATE[r.memorizationType]),
+      sum +
+      Math.round(r.amountDone * RECITATION_RATE[r.unit][r.memorizationType]),
     0,
   );
   wanted.push({ source: 'MEMORIZATION', milli: recited });

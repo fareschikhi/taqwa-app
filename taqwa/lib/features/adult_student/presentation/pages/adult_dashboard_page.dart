@@ -353,6 +353,7 @@ class _AdultDashboardPageState extends ConsumerState<AdultDashboardPage> {
         HadithProgramCard(
           books: _hadithBooks,
           hadithsDone: _progress?['totalHadithsDone'] as num?,
+          hadithPagesDone: _progress?['totalHadithPagesDone'] as num?,
           onTap: () => _openTab(1),
         ),
       ],

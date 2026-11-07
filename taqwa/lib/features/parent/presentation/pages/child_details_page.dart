@@ -194,6 +194,7 @@ class _ChildDetailsPageState extends ConsumerState<ChildDetailsPage> {
                         HadithProgramCard(
                           books: hadithBooks,
                           hadithsDone: _progress?['totalHadithsDone'] as num?,
+                          hadithPagesDone: _progress?['totalHadithPagesDone'] as num?,
                           title: 'برنامج الحديث',
                         ),
                       ],

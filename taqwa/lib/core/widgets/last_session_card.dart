@@ -6,7 +6,8 @@ import 'package:taqwa/core/enums/memorization_type.dart';
 import 'package:taqwa/core/theme/app_colors.dart';
 import 'package:taqwa/core/theme/app_text_styles.dart';
 import 'package:taqwa/core/utils/last_session.dart';
-import 'package:taqwa/core/utils/hadith_label.dart' show hadithLabelOrFallback, kHadithUnitLabel;
+import 'package:taqwa/core/utils/hadith_label.dart'
+    show hadithLabelOrFallback, kHadithUnitLabel;
 import 'package:taqwa/core/widgets/app_card.dart';
 import 'package:taqwa/core/widgets/app_text.dart';
 import 'package:taqwa/core/utils/memorization_amount.dart';
@@ -86,12 +87,15 @@ class LastSessionCard extends StatelessWidget {
   Widget _buildEntry(LastSessionEntry entry) {
     final type = entry.type;
     final isHadith = entry.subject == MemorizationSubject.hadith;
+    final unitWord = isHadith && !entry.countsPages
+        ? kHadithUnitLabel
+        : kPageUnitLabel;
 
     // A type this build does not know about still happened, so the amount is
     // reported without claiming a unit for it.
     final amountText = type == null
         ? 'تسميع · ${formatAmount(entry.amount)}'
-        : '${type.label} · ${formatAmount(entry.amount)} ${isHadith ? kHadithUnitLabel : kPageUnitLabel}';
+        : '${type.label} · ${formatAmount(entry.amount)} $unitWord';
 
     final referenceText = isHadith
         ? hadithLabelOrFallback(entry.hadithReference)

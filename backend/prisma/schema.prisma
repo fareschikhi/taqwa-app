@@ -35,6 +35,13 @@ enum MemorizationSubject {
   HADITH
 }
 
+// What a memorization row's amountDone counts. Quran is always PAGE; a hadith
+// row is counted in single hadiths or in pages, as the teacher picks.
+enum ProgressUnit {
+  PAGE
+  HADITH
+}
+
 enum AttendanceStatus {
   PRESENT
   ABSENT
@@ -262,11 +269,12 @@ model MemorizationProgress {
   studentId        Int
   // QURAN-only: which surah. Nullable because a HADITH row has none.
   surahNumber      Int?
-  // Float so Quran entries can record half pages (1.5); the service keeps
-  // every Quran value on a 0.5 step, and whole for hadiths.
+  // Float so page entries can record half pages (1.5); the service keeps
+  // every page value on a 0.5 step, and single hadiths whole.
   amountDone       Float
   memorizationType Memorization        @default(MEMORIZING)
   subject          MemorizationSubject @default(QURAN)
+  unit             ProgressUnit        @default(PAGE)
   // HADITH-only free-text identity (a name, a number in whichever collection
   // the halaqa uses, a short description) — there is no fixed hadith list to
   // pick a number from the way surahNumber picks one off the mushaf.

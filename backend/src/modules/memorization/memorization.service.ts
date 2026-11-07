@@ -9,7 +9,7 @@ import {
   Memorization,
   MemorizationSubject,
 } from '@prisma/client';
-import { MAX_AMOUNT, unitFor } from './progress-unit';
+import { MAX_AMOUNT, ProgressUnit, unitFor } from './progress-unit';
 import { reconcileDayFines } from '../attendance/day-fines';
 import { reconcileDayPoints } from '../points/day-points';
 
@@ -34,11 +34,7 @@ export const MEMORIZATION_ERROR = {
 export class MemorizationService {
   constructor(private prisma: PrismaService) {}
 
-  private assertAmountFitsUnit(
-    subject: MemorizationSubject,
-    amountDone: number,
-  ) {
-    const unit = unitFor(subject);
+  private assertAmountFitsUnit(unit: ProgressUnit, amountDone: number) {
     // A half page is a real recitation; a half hadith is not recorded, and
     // nothing finer than a half is ever meant (1.3 is a typo).
     const step = unit === 'PAGE' ? 0.5 : 1;
@@ -159,7 +155,8 @@ export class MemorizationService {
     const subject = dto.subject ?? MemorizationSubject.QURAN;
 
     this.assertSubjectFields(subject, dto.surahNumber, dto.hadithReference);
-    this.assertAmountFitsUnit(subject, dto.amountDone);
+    const unit = unitFor(subject, dto.unit);
+    this.assertAmountFitsUnit(unit, dto.amountDone);
     if (subject === MemorizationSubject.HADITH) {
       await this.assertHadithEnabled(dto.studentId, dto.hadithReference);
     }
@@ -171,7 +168,7 @@ export class MemorizationService {
 
     return this.prisma.$transaction(async (tx) => {
       const record = await tx.memorizationProgress.create({
-        data: { ...dto, subject, date },
+        data: { ...dto, subject, unit, date },
       });
       // A recitation is what clears the day's "did not memorize" charge, so
       // the day is reconciled in the same write. With no attendance yet there
@@ -218,7 +215,12 @@ export class MemorizationService {
         : existing.hadithReference;
 
     this.assertSubjectFields(subject, surahNumber, hadithReference);
-    this.assertAmountFitsUnit(subject, dto.amountDone ?? existing.amountDone);
+    // An edit that moves the row to the other subject starts from that
+    // subject's default unit; otherwise the row keeps the unit it has.
+    const keptUnit =
+      subject === existing.subject ? existing.unit : undefined;
+    const unit = unitFor(subject, dto.unit ?? keptUnit);
+    this.assertAmountFitsUnit(unit, dto.amountDone ?? existing.amountDone);
     if (subject === MemorizationSubject.HADITH) {
       await this.assertHadithEnabled(existing.studentId, dto.hadithReference);
     }
@@ -229,7 +231,7 @@ export class MemorizationService {
     return this.prisma.$transaction(async (tx) => {
       const record = await tx.memorizationProgress.update({
         where: { id },
-        data: dto,
+        data: { ...dto, unit },
       });
       await reconcileDayPoints(tx, existing.studentId, existing.date);
       return record;
@@ -255,13 +257,19 @@ export class MemorizationService {
       .reduce((sum, r) => sum + r.amountDone, 0);
     const totalSurahs = new Set(quranRecords.map((r) => r.surahNumber)).size;
 
-    const totalHadithsDone = records
-      .filter(
-        (r) =>
-          r.subject === MemorizationSubject.HADITH &&
-          r.memorizationType === Memorization.MEMORIZING,
-      )
-      .reduce((sum, r) => sum + r.amountDone, 0);
+    // Single hadiths and hadith pages are different units, so each gets its
+    // own total rather than being added together.
+    const newHadith = records.filter(
+      (r) =>
+        r.subject === MemorizationSubject.HADITH &&
+        r.memorizationType === Memorization.MEMORIZING,
+    );
+    const sumIn = (unit: ProgressUnit) =>
+      newHadith
+        .filter((r) => unitFor(r.subject, r.unit) === unit)
+        .reduce((sum, r) => sum + r.amountDone, 0);
+    const totalHadithsDone = sumIn(ProgressUnit.HADITH);
+    const totalHadithPagesDone = sumIn(ProgressUnit.PAGE);
 
     const countTypes = (rows: typeof records) =>
       rows.reduce(
@@ -290,6 +298,7 @@ export class MemorizationService {
       records,
       totalPagesDone,
       totalHadithsDone,
+      totalHadithPagesDone,
       totalSurahs,
       typeCounts,
       hadithTypeCounts,

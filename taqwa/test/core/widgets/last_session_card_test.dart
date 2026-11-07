@@ -186,4 +186,29 @@ void main() {
     expect(find.text('حفظ · 2 حديث'), findsOneWidget);
     expect(find.text('حديث النية'), findsOneWidget);
   });
+
+  testWidgets('counts a hadith entry in pages when it was recorded so', (
+    tester,
+  ) async {
+    await tester.pumpWidget(
+      _host(
+        LastSessionCard(
+          session: _session(
+            entries: const [
+              LastSessionEntry(
+                amount: 1.5,
+                type: MemorizationType.hifz,
+                subject: MemorizationSubject.hadith,
+                countsPages: true,
+                hadithReference: 'حديث النية',
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
+    await tester.pumpAndSettle();
+
+    expect(find.text('حفظ · 1.5 صفحة'), findsOneWidget);
+  });
 }

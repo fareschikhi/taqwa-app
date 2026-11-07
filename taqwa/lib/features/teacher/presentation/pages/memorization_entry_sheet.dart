@@ -22,6 +22,10 @@ import 'package:taqwa/core/widgets/app_text.dart';
 /// the unit only sets where the counter starts and how far + and − move it.
 enum _AmountUnit { pages, hizb, surah }
 
+/// How the teacher counts a hadith entry. Unlike [_AmountUnit] this is stored
+/// with the entry: 2 pages and 2 hadiths are different amounts.
+enum _HadithUnit { hadiths, pages }
+
 /// What a saved entry hands back: the row the server created, and whether
 /// the teacher asked to go straight on to the next student.
 typedef MemorizationEntryResult = ({Map<String, dynamic> record, bool next});
@@ -50,6 +54,11 @@ class _MemorizationEntrySheetState extends State<MemorizationEntrySheet> {
   bool _hadithPrefillLoaded = false;
   double _amount = 1;
   _AmountUnit _unit = _AmountUnit.pages;
+  _HadithUnit _hadithUnit = _HadithUnit.hadiths;
+
+  /// Set once the teacher picks a hadith unit, so the history prefill never
+  /// overrides their choice.
+  bool _hadithUnitTouched = false;
   MemorizationType? _selectedType;
   bool _isSaving = false;
 
@@ -71,14 +80,16 @@ class _MemorizationEntrySheetState extends State<MemorizationEntrySheet> {
 
   bool get _isHadith => _selectedSubject == MemorizationSubject.hadith;
 
-  /// Hadith has no page concept, so it always counts in hadiths; every Quran
-  /// entry, whatever its type, counts in pages.
-  String get _amountLabel => _isHadith ? 'عدد الأحاديث' : kPageAmountLabel;
-  int get _maxAmount => _isHadith ? 50 : kMushafPages;
+  /// Every Quran entry counts in pages; a hadith entry counts in single
+  /// hadiths unless the teacher switched it to pages.
+  bool get _countsPages => !_isHadith || _hadithUnit == _HadithUnit.pages;
 
-  /// Quran is recited by the half page; a hadith is always whole. The server
-  /// enforces the same rule.
-  bool get _allowsHalf => !_isHadith;
+  String get _amountLabel => _countsPages ? kPageAmountLabel : 'عدد الأحاديث';
+  int get _maxAmount => _countsPages ? kMushafPages : 50;
+
+  /// Pages are recited by the half; a single hadith is always whole. The
+  /// server enforces the same rule.
+  bool get _allowsHalf => _countsPages;
   double get _minAmount => _allowsHalf ? 0.5 : 1;
 
   /// A hizb moves the counter ten pages at a time; pages and a whole surah
@@ -200,12 +211,14 @@ class _MemorizationEntrySheetState extends State<MemorizationEntrySheet> {
   ///
   /// A student assigned a single book needs no choosing at all, so that one
   /// is selected straight away.
+  ///
+  /// The unit follows the last hadith entry too: a teacher who counts a book
+  /// in pages keeps counting it in pages.
   Future<void> _loadHadithPrefill() async {
     _hadithPrefillLoaded = true;
     final books = widget.student.hadithBooks;
     if (books.length == 1) {
       setState(() => _selectedHadithBook = books.single);
-      return;
     }
     try {
       final history = await _loadHistory();
@@ -213,10 +226,13 @@ class _MemorizationEntrySheetState extends State<MemorizationEntrySheet> {
           .where((r) => r['subject'] == 'HADITH')
           .toList();
       final latest = recentMemorization(hadithRecords, limit: 1);
-      if (!mounted || latest.isEmpty) return;
+      if (!mounted || latest.isEmpty || !_isHadith) return;
       final reference = latest.first['hadithReference'] as String?;
       if (books.contains(reference) && _selectedHadithBook == null) {
         setState(() => _selectedHadithBook = reference);
+      }
+      if (!_hadithUnitTouched && latest.first['unit'] == 'PAGE') {
+        _onHadithUnitChanged(_HadithUnit.pages, byTeacher: false);
       }
     } catch (_) {
       // Prefill is a convenience, not a requirement — the teacher can still
@@ -227,6 +243,16 @@ class _MemorizationEntrySheetState extends State<MemorizationEntrySheet> {
   void _onUnitChanged(_AmountUnit unit) {
     setState(() => _unit = unit);
     _setAmount(_startAmountFor(unit));
+  }
+
+  /// Pages and hadiths are different quantities, so the count restarts at
+  /// one rather than carrying "2.5" over into hadiths.
+  void _onHadithUnitChanged(_HadithUnit unit, {bool byTeacher = true}) {
+    setState(() {
+      _hadithUnit = unit;
+      if (byTeacher) _hadithUnitTouched = true;
+    });
+    _setAmount(1);
   }
 
   /// While counting by surah, picking another surah means reciting that one,
@@ -271,6 +297,9 @@ class _MemorizationEntrySheetState extends State<MemorizationEntrySheet> {
         amountDone: _amount,
         memorizationType: _selectedType!.apiValue,
         subject: _selectedSubject.apiValue,
+        unit: _isHadith
+            ? (_hadithUnit == _HadithUnit.pages ? 'PAGE' : 'HADITH')
+            : null,
       );
       if (mounted) {
         Navigator.pop<MemorizationEntryResult>(context, (
@@ -507,14 +536,30 @@ class _MemorizationEntrySheetState extends State<MemorizationEntrySheet> {
                     ),
                     SizedBox(height: 12.h),
 
-                    if (!_isHadith) ...[
-                      AppText(
-                        'طريقة العد',
-                        style: AppTextStyles.labelMd.copyWith(
-                          color: AppColors.onSurfaceVariant,
-                        ),
+                    AppText(
+                      'طريقة العد',
+                      style: AppTextStyles.labelMd.copyWith(
+                        color: AppColors.onSurfaceVariant,
                       ),
-                      SizedBox(height: 6.h),
+                    ),
+                    SizedBox(height: 6.h),
+                    if (_isHadith) ...[
+                      SegmentedSelector<_HadithUnit>(
+                        options: const [
+                          SegmentOption(
+                            value: _HadithUnit.pages,
+                            label: 'صفحات',
+                          ),
+                          SegmentOption(
+                            value: _HadithUnit.hadiths,
+                            label: 'أحاديث',
+                          ),
+                        ],
+                        selected: _hadithUnit,
+                        onChanged: _onHadithUnitChanged,
+                      ),
+                      SizedBox(height: 12.h),
+                    ] else ...[
                       SegmentedSelector<_AmountUnit>(
                         options: const [
                           SegmentOption(

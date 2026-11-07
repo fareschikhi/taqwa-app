@@ -107,5 +107,17 @@ void main() {
 
       expect(summary, 'حديث · مراجعة وضبط · 2 حديث');
     });
+
+    test('names pages for a hadith entry counted in pages', () {
+      final summary = memorizationSummary({
+        'subject': 'HADITH',
+        'unit': 'PAGE',
+        'hadithReference': 'حديث النية',
+        'amountDone': 1.5,
+        'memorizationType': 'MEMORIZING',
+      });
+
+      expect(summary, 'حديث النية · حفظ جديد · 1.5 صفحة');
+    });
   });
 }

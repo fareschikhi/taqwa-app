@@ -1,4 +1,4 @@
-import { AttendanceStatus, Memorization } from '@prisma/client';
+import { AttendanceStatus, Memorization, ProgressUnit } from '@prisma/client';
 import {
   DayRecitation,
   DesiredPoint,
@@ -12,10 +12,11 @@ import {
 const fromStart = (days: number) =>
   new Date(new Date(POINTS_START_DATE).getTime() + days * 86_400_000);
 const D = fromStart(3);
-const r = (memorizationType: Memorization, amountDone: number): DayRecitation => ({
-  memorizationType,
-  amountDone,
-});
+const r = (
+  memorizationType: Memorization,
+  amountDone: number,
+  unit: ProgressUnit = ProgressUnit.PAGE,
+): DayRecitation => ({ memorizationType, amountDone, unit });
 const sorted = (points: DesiredPoint[]) =>
   [...points].sort((a, b) => a.source.localeCompare(b.source));
 const day = (
@@ -66,6 +67,32 @@ describe('desiredPoints', () => {
     expect(day(null, [r(Memorization.BIGREVISION, 10)])).toEqual([
       { source: 'MEMORIZATION', milli: 2000 },
     ]);
+  });
+
+  it('gives half a point for one hadith memorized', () => {
+    expect(
+      day(null, [r(Memorization.MEMORIZING, 1, ProgressUnit.HADITH)]),
+    ).toEqual([{ source: 'MEMORIZATION', milli: 500 }]);
+  });
+
+  it('gives 1 point for 10 hadiths of جمع or of مراجعة', () => {
+    expect(
+      day(null, [r(Memorization.SMALLREVISION, 10, ProgressUnit.HADITH)]),
+    ).toEqual([{ source: 'MEMORIZATION', milli: 1000 }]);
+    expect(
+      day(null, [r(Memorization.BIGREVISION, 10, ProgressUnit.HADITH)]),
+    ).toEqual([{ source: 'MEMORIZATION', milli: 1000 }]);
+  });
+
+  // A hadith page is priced exactly like a Quran page; the unit, not the
+  // subject, sets the rate.
+  it('prices a hadith page like a Quran page', () => {
+    expect(
+      day(null, [
+        r(Memorization.MEMORIZING, 1.5, ProgressUnit.PAGE),
+        r(Memorization.BIGREVISION, 10, ProgressUnit.PAGE),
+      ]),
+    ).toEqual([{ source: 'MEMORIZATION', milli: 3500 }]);
   });
 
   it('counts a partial ten proportionally', () => {

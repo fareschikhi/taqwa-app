@@ -340,7 +340,7 @@ class _ChildProgressPageState extends ConsumerState<ChildProgressPage> {
                       ),
                     ),
                     child: AppText(
-                      '${formatAmount(entry['amountDone'] as num?)} ${isHadith ? kHadithUnitLabel : kPageUnitLabel}',
+                      '${formatAmount(entry['amountDone'] as num?)} ${amountUnitLabel(entry)}',
                       style: AppTextStyles.labelMd.copyWith(
                         color: AppColors.onSurface,
                       ),

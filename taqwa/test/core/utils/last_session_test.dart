@@ -22,6 +22,7 @@ Map<String, dynamic> memorization(
   String type = 'MEMORIZING',
   String? subject,
   String? hadithReference,
+  String? unit,
 }) {
   return {
     'id': '$date$surahNumber$type'.hashCode,
@@ -31,6 +32,7 @@ Map<String, dynamic> memorization(
     'memorizationType': type,
     if (subject != null) 'subject': subject,
     if (hadithReference != null) 'hadithReference': hadithReference,
+    if (unit != null) 'unit': unit,
   };
 }
 
@@ -132,6 +134,18 @@ void main() {
 
       expect(session!.entries.single.amount, 2);
       expect(session.entries.single.type, MemorizationType.majorReview);
+    });
+
+    test('marks a hadith entry recorded in pages', () {
+      final session = lastSessionOf(
+        attendance: [attendance('2026-08-27', 'PRESENT')],
+        memorization: [
+          memorization('2026-08-27', subject: 'HADITH', unit: 'PAGE'),
+          memorization('2026-08-27', subject: 'HADITH', type: 'BIGREVISION'),
+        ],
+      );
+
+      expect(session!.entries.map((e) => e.countsPages), [true, false]);
     });
 
     test('resolves the surah number to its name', () {

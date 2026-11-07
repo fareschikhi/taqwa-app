@@ -8,7 +8,7 @@ import {
   Min,
   Max,
 } from 'class-validator';
-import { Memorization, MemorizationSubject } from '@prisma/client';
+import { Memorization, MemorizationSubject, ProgressUnit } from '@prisma/client';
 import { MAX_AMOUNT } from '../progress-unit';
 
 export class CreateMemorizationDto {
@@ -45,6 +45,12 @@ export class CreateMemorizationDto {
   @IsString()
   @MaxLength(500)
   hadithReference?: string;
+
+  // HADITH-only choice of what amountDone counts; omitted means single
+  // hadiths. A Quran entry is always pages and refuses HADITH.
+  @IsOptional()
+  @IsEnum(ProgressUnit)
+  unit?: ProgressUnit;
 }
 
 export class UpdateMemorizationDto {
@@ -72,4 +78,10 @@ export class UpdateMemorizationDto {
   @IsString()
   @MaxLength(500)
   hadithReference?: string;
+
+  // HADITH-only choice of what amountDone counts; omitted means single
+  // hadiths. A Quran entry is always pages and refuses HADITH.
+  @IsOptional()
+  @IsEnum(ProgressUnit)
+  unit?: ProgressUnit;
 }

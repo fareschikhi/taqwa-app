@@ -1,6 +1,6 @@
 import '../constants/surahs.dart';
 import '../enums/memorization_type.dart';
-import 'hadith_label.dart' show hadithLabelOrFallback, kHadithUnitLabel;
+import 'hadith_label.dart' show hadithLabelOrFallback, amountUnitLabel;
 import 'package:taqwa/core/utils/memorization_amount.dart';
 
 /// Helpers for spotting a student who already has recitation recorded today.
@@ -43,7 +43,7 @@ String memorizationSummary(Map<String, dynamic> record) {
   if (record['subject'] == 'HADITH') {
     final reference = record['hadithReference'] as String?;
     final label = hadithLabelOrFallback(reference);
-    return '$label · $typeLabel · $amount $kHadithUnitLabel';
+    return '$label · $typeLabel · $amount ${amountUnitLabel(record)}';
   }
 
   final surah = surahLabelOf((record['surahNumber'] as num?)?.toInt());

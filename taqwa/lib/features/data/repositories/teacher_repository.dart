@@ -155,6 +155,7 @@ class TeacherRepository {
     required String memorizationType,
     String subject = 'QURAN',
     String? hadithReference,
+    String? unit,
   }) async {
     return _ds.submitMemorization(
       studentId: studentId,
@@ -163,6 +164,7 @@ class TeacherRepository {
       memorizationType: memorizationType,
       subject: subject,
       hadithReference: hadithReference,
+      unit: unit,
     );
   }
 }

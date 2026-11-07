@@ -23,4 +23,20 @@ void main() {
       expect(hadithLabelOrFallback('  حديث الثلاثة  '), equals('  حديث الثلاثة  '));
     });
   });
+
+  group('amountUnitLabel', () {
+    test('a Quran entry is always pages', () {
+      expect(amountUnitLabel({'subject': 'QURAN'}), 'صفحة');
+    });
+
+    test('a hadith entry counted in pages says pages', () {
+      expect(amountUnitLabel({'subject': 'HADITH', 'unit': 'PAGE'}), 'صفحة');
+    });
+
+    // Rows from before the unit existed carry none, and counted hadiths.
+    test('a hadith entry with no unit counts hadiths', () {
+      expect(amountUnitLabel({'subject': 'HADITH'}), 'حديث');
+      expect(amountUnitLabel({'subject': 'HADITH', 'unit': 'HADITH'}), 'حديث');
+    });
+  });
 }

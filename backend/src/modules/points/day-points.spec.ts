@@ -1,4 +1,9 @@
-import { AttendanceStatus, Memorization, Prisma } from '@prisma/client';
+import {
+  AttendanceStatus,
+  Memorization,
+  Prisma,
+  ProgressUnit,
+} from '@prisma/client';
 import { reconcileDayPoints } from './day-points';
 import { POINTS_START_DATE } from './points-rules';
 
@@ -13,7 +18,11 @@ type Row = { id: number; source: string; amount: Prisma.Decimal };
 const makeTx = (opts: {
   role?: string | null;
   attendance?: { status: AttendanceStatus; justification: { id: number } | null } | null;
-  recitations?: Array<{ memorizationType: Memorization; amountDone: number }>;
+  recitations?: Array<{
+    memorizationType: Memorization;
+    amountDone: number;
+    unit?: ProgressUnit;
+  }>;
   existing?: Row[];
 }) => ({
   student: {
@@ -27,7 +36,11 @@ const makeTx = (opts: {
   },
   attendance: { findUnique: jest.fn().mockResolvedValue(opts.attendance ?? null) },
   memorizationProgress: {
-    findMany: jest.fn().mockResolvedValue(opts.recitations ?? []),
+    // The column is NOT NULL, so a stored row always has a unit; a test that
+    // doesn't name one means a page.
+    findMany: jest.fn().mockResolvedValue(
+      (opts.recitations ?? []).map((r) => ({ unit: ProgressUnit.PAGE, ...r })),
+    ),
   },
   pointEntry: {
     findMany: jest.fn().mockResolvedValue(opts.existing ?? []),
@@ -141,6 +154,29 @@ describe('reconcileDayPoints', () => {
     await run(tx);
     expect(tx.pointEntry.update).not.toHaveBeenCalled();
     expect(tx.pointEntry.create).not.toHaveBeenCalled();
+  });
+
+  // The unit must be read with the recitation, or every hadith would be
+  // priced as a page.
+  it('prices a hadith-counted recitation by the hadith rate', async () => {
+    const tx = makeTx({
+      recitations: [
+        {
+          memorizationType: Memorization.MEMORIZING,
+          amountDone: 3,
+          unit: ProgressUnit.HADITH,
+        },
+      ],
+    });
+    await run(tx);
+    expect(tx.memorizationProgress.findMany).toHaveBeenCalledWith(
+      expect.objectContaining({
+        select: expect.objectContaining({ unit: true }),
+      }),
+    );
+    expect(tx.pointEntry.create).toHaveBeenCalledWith({
+      data: { userId: 70, amount: '1.500', source: 'MEMORIZATION', date: D },
+    });
   });
 
   it('updates the memorization row when pages change', async () => {

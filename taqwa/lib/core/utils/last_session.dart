@@ -10,15 +10,19 @@ class LastSessionEntry {
     required this.type,
     this.subject = MemorizationSubject.quran,
     this.hadithReference,
+    this.countsPages = false,
   });
 
   /// QURAN-only; null for a HADITH entry.
   final int? surahNumber;
 
-  /// Pages for any Quran entry, hadiths for any hadith entry. Which one it is
-  /// follows from [subject], so nothing here re-derives the split. A half page
-  /// arrives as 1.5.
+  /// Pages for any Quran entry; hadiths for a hadith entry unless
+  /// [countsPages]. A half page arrives as 1.5.
   final num amount;
+
+  /// A hadith entry the teacher counted in pages. Ignored for Quran, which is
+  /// always pages.
+  final bool countsPages;
 
   /// Null when the API sends a type this build does not know about, so an
   /// unfamiliar value costs the label rather than the whole card.
@@ -98,6 +102,7 @@ LastSession? lastSessionOf({
                 MemorizationSubject.quran,
             surahNumber: (record['surahNumber'] as num?)?.toInt() ?? 0,
             hadithReference: record['hadithReference'] as String?,
+            countsPages: record['unit'] == 'PAGE',
             amount: (record['amountDone'] as num?) ?? 0,
             type: MemorizationTypeX.fromApi(
               record['memorizationType'] as String?,

@@ -7,6 +7,7 @@ import {
   AttendanceStatus,
   Memorization,
   MemorizationSubject,
+  ProgressUnit,
 } from '@prisma/client';
 import { MEMORIZATION_ERROR, MemorizationService } from './memorization.service';
 import { HADITH_BOOKS } from '../students/hadith-books';
@@ -325,6 +326,112 @@ describe('MemorizationService hadith subject', () => {
     ).rejects.toBeInstanceOf(BadRequestException);
   });
 
+  // Old app versions send no unit: a hadith entry then counts hadiths, as
+  // every hadith entry did before the choice existed.
+  it('stores an omitted hadith unit as HADITH', async () => {
+    const prisma = makePrisma({ attendanceStatus: AttendanceStatus.PRESENT });
+    await new MemorizationService(prisma as any).create(hadithDto as any);
+
+    expect(prisma.memorizationProgress.create).toHaveBeenCalledWith({
+      data: expect.objectContaining({ unit: ProgressUnit.HADITH }),
+    });
+  });
+
+  it('records a hadith entry counted in half pages', async () => {
+    const prisma = makePrisma({ attendanceStatus: AttendanceStatus.PRESENT });
+    await new MemorizationService(prisma as any).create({
+      ...hadithDto,
+      unit: ProgressUnit.PAGE,
+      amountDone: 1.5,
+    } as any);
+
+    expect(prisma.memorizationProgress.create).toHaveBeenCalledWith({
+      data: expect.objectContaining({ unit: ProgressUnit.PAGE, amountDone: 1.5 }),
+    });
+  });
+
+  it('allows more than 50 hadith pages, unlike single hadiths', async () => {
+    const prisma = makePrisma({ attendanceStatus: AttendanceStatus.PRESENT });
+    await new MemorizationService(prisma as any).create({
+      ...hadithDto,
+      unit: ProgressUnit.PAGE,
+      amountDone: 60,
+    } as any);
+
+    expect(prisma.memorizationProgress.create).toHaveBeenCalled();
+  });
+
+  it('refuses half a hadith', async () => {
+    const prisma = makePrisma({ attendanceStatus: AttendanceStatus.PRESENT });
+    await expect(
+      new MemorizationService(prisma as any).create({
+        ...hadithDto,
+        unit: ProgressUnit.HADITH,
+        amountDone: 1.5,
+      } as any),
+    ).rejects.toBeInstanceOf(BadRequestException);
+  });
+
+  it('refuses a Quran entry counted in hadiths', async () => {
+    const prisma = makePrisma({ attendanceStatus: AttendanceStatus.PRESENT });
+    await expect(
+      new MemorizationService(prisma as any).create({
+        studentId: 7,
+        surahNumber: 2,
+        amountDone: 1,
+        unit: ProgressUnit.HADITH,
+      } as any),
+    ).rejects.toBeInstanceOf(BadRequestException);
+  });
+
+  it('stores a Quran entry in pages', async () => {
+    const prisma = makePrisma({ attendanceStatus: AttendanceStatus.PRESENT });
+    await new MemorizationService(prisma as any).create({
+      studentId: 7,
+      surahNumber: 2,
+      amountDone: 1,
+    } as any);
+
+    expect(prisma.memorizationProgress.create).toHaveBeenCalledWith({
+      data: expect.objectContaining({ unit: ProgressUnit.PAGE }),
+    });
+  });
+
+  it('lets an edit switch a hadith entry to pages', async () => {
+    const prisma = makePrisma({ attendanceStatus: AttendanceStatus.PRESENT });
+    await new MemorizationService(prisma as any).update(20, {
+      unit: ProgressUnit.PAGE,
+      amountDone: 2.5,
+    } as any);
+
+    expect(prisma.memorizationProgress.update).toHaveBeenCalledWith({
+      where: { id: 20 },
+      data: expect.objectContaining({ unit: ProgressUnit.PAGE, amountDone: 2.5 }),
+    });
+  });
+
+  it('keeps the stored unit when an edit only changes the amount', async () => {
+    const prisma = makePrisma({ attendanceStatus: AttendanceStatus.PRESENT });
+    prisma.memorizationProgress.findUnique.mockResolvedValue({
+      id: 20,
+      studentId: 7,
+      subject: MemorizationSubject.HADITH,
+      unit: ProgressUnit.PAGE,
+      surahNumber: null,
+      hadithReference: HADITH_BOOKS[0],
+      memorizationType: Memorization.MEMORIZING,
+      amountDone: 1,
+    });
+    await new MemorizationService(prisma as any).update(20, {
+      amountDone: 0.5,
+    } as any);
+
+    expect(prisma.memorizationProgress.update).toHaveBeenCalledWith({
+      where: { id: 20 },
+      data: expect.objectContaining({ unit: ProgressUnit.PAGE, amountDone: 0.5 }),
+    });
+  });
+
   it('defaults an omitted subject to Quran without checking hadith eligibility', async () => {
     const prisma = makePrisma({ attendanceStatus: AttendanceStatus.PRESENT });
     const service = new MemorizationService(prisma as any);
@@ -386,6 +493,41 @@ describe('MemorizationService.getStudentProgress subject scoping', () => {
     expect(progress.totalPagesDone).toBe(3);
     expect(progress.totalSurahs).toBe(1);
     expect(progress.totalHadithsDone).toBe(5);
+  });
+
+  // Hadiths and hadith pages are different units, so they get separate
+  // totals instead of being added together.
+  it('sums hadith pages apart from single hadiths', async () => {
+    const prisma = {
+      memorizationProgress: {
+        findMany: jest.fn().mockResolvedValue([
+          record({
+            amountDone: 4,
+            subject: MemorizationSubject.HADITH,
+            unit: ProgressUnit.HADITH,
+          }),
+          record({
+            amountDone: 2.5,
+            subject: MemorizationSubject.HADITH,
+            unit: ProgressUnit.PAGE,
+          }),
+          record({
+            amountDone: 10,
+            subject: MemorizationSubject.HADITH,
+            unit: ProgressUnit.PAGE,
+            memorizationType: Memorization.BIGREVISION,
+          }),
+        ]),
+      },
+      student: { findUnique: jest.fn().mockResolvedValue(null) },
+    };
+    const progress = await new MemorizationService(
+      prisma as any,
+    ).getStudentProgress(7);
+
+    expect(progress.totalHadithsDone).toBe(4);
+    expect(progress.totalHadithPagesDone).toBe(2.5);
+    expect(progress.totalPagesDone).toBe(0);
   });
 
   it('counts hadith rows by type separately from the Quran type counts', async () => {

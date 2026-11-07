@@ -14,8 +14,11 @@ import 'package:taqwa/features/teacher/presentation/pages/memorization_entry_she
 /// sheet's hadith-history prefill fetch can be exercised without touching
 /// the network. Mirrors the stub used by student_remote_datasource_test.dart.
 class _StubAdapter implements HttpClientAdapter {
-  _StubAdapter(this.body);
+  _StubAdapter(this.body, {this.onRequest});
   final String body;
+
+  /// Sees every request, so a test can check what the sheet sent.
+  final void Function(RequestOptions options)? onRequest;
 
   @override
   Future<ResponseBody> fetch(
@@ -23,6 +26,7 @@ class _StubAdapter implements HttpClientAdapter {
     Stream<Uint8List>? requestStream,
     Future<void>? cancelFuture,
   ) async {
+    onRequest?.call(options);
     return ResponseBody.fromString(
       body,
       200,
@@ -431,7 +435,9 @@ void main() {
     expect(find.text('30'), findsOneWidget); // pages 77-106
   });
 
-  testWidgets('a hadith entry offers no page units', (tester) async {
+  testWidgets('a hadith entry counts hadiths by default, whole only', (
+    tester,
+  ) async {
     _setPhoneViewport(tester);
     await tester.pumpWidget(
       _host(
@@ -439,12 +445,104 @@ void main() {
       ),
     );
     await tester.pumpAndSettle();
-    expect(find.text('طريقة العد'), findsOneWidget);
 
     await tester.tap(find.text('الحديث'));
     await tester.pumpAndSettle();
-    expect(find.text('طريقة العد'), findsNothing);
+    // Hadith offers its own two units instead of the Quran's surah/hizb.
+    expect(find.text('طريقة العد'), findsOneWidget);
+    expect(find.text('أحاديث'), findsOneWidget);
+    expect(find.text('حزب'), findsNothing);
     expect(find.text('عدد الأحاديث'), findsOneWidget);
+    expect(find.textContaining('نصف صفحة'), findsNothing);
+  });
+
+  testWidgets('a hadith entry can be counted in half pages', (tester) async {
+    _setPhoneViewport(tester);
+    await tester.pumpWidget(
+      _host(
+        MemorizationEntrySheet(student: _student(hadithBooks: kHadithBooks)),
+      ),
+    );
+    await tester.pumpAndSettle();
+
+    await tester.tap(find.text('الحديث'));
+    await tester.pumpAndSettle();
+    await tester.tap(find.text('صفحات'));
+    await tester.pumpAndSettle();
+
+    expect(find.text('عدد الصفحات'), findsOneWidget);
+    expect(find.textContaining('نصف صفحة'), findsOneWidget);
+    await tester.enterText(find.byType(TextField), '2.5');
+    await tester.testTextInput.receiveAction(TextInputAction.done);
+    await tester.pumpAndSettle();
+    expect(find.text('2.5'), findsOneWidget);
+
+    // Back to hadiths: a half has no meaning there, so the count restarts.
+    await tester.tap(find.text('أحاديث'));
+    await tester.pumpAndSettle();
+    expect(find.text('1'), findsOneWidget);
+  });
+
+  testWidgets('sends the chosen hadith unit with the entry', (tester) async {
+    _setPhoneViewport(tester);
+    final sent = <Map<String, dynamic>>[];
+    DioClient.instance.httpClientAdapter = _StubAdapter(
+      jsonEncode({'id': 5}),
+      onRequest: (options) {
+        if (options.method == 'POST') {
+          sent.add(Map<String, dynamic>.from(options.data as Map));
+        }
+      },
+    );
+    await tester.pumpWidget(
+      _host(
+        MemorizationEntrySheet(
+          student: _student(hadithBooks: [kHadithBooks[0]]),
+        ),
+      ),
+    );
+    await tester.pumpAndSettle();
+
+    await tester.tap(find.text('الحديث'));
+    await tester.pumpAndSettle();
+    await tester.tap(find.text('صفحات'));
+    await tester.tap(find.text('حفظ'));
+    await tester.pumpAndSettle();
+    await tester.tap(find.text('تسجيل'));
+    await tester.pumpAndSettle();
+
+    expect(sent.single['subject'], 'HADITH');
+    expect(sent.single['unit'], 'PAGE');
+  });
+
+  // The teacher who counts a book in pages keeps doing so: the unit follows
+  // the student's last hadith entry.
+  testWidgets("preselects the unit of the student's last hadith entry", (
+    tester,
+  ) async {
+    _setPhoneViewport(tester);
+    DioClient.instance.httpClientAdapter = _StubAdapter(
+      jsonEncode([
+        {
+          'subject': 'HADITH',
+          'unit': 'PAGE',
+          'hadithReference': kHadithBooks[0],
+          'memorizationType': 'MEMORIZING',
+          'amountDone': 2,
+          'date': '2026-10-20',
+        },
+      ]),
+    );
+    await tester.pumpWidget(
+      _host(
+        MemorizationEntrySheet(student: _student(hadithBooks: kHadithBooks)),
+      ),
+    );
+    await tester.pumpAndSettle();
+
+    await tester.tap(find.text('الحديث'));
+    await tester.pumpAndSettle();
+    expect(find.text('عدد الصفحات'), findsOneWidget);
   });
 
   group('prefill from the last Quran entry', () {
