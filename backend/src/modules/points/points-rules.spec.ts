@@ -53,9 +53,24 @@ describe('desiredPoints', () => {
     ]);
   });
 
-  it('values half a page of مراجعة وضبط at 0.125', () => {
+  it('values half a page of مراجعة وضبط at 0.1', () => {
     expect(day(null, [r(Memorization.BIGREVISION, 0.5)])).toEqual([
-      { source: 'MEMORIZATION', milli: 125 },
+      { source: 'MEMORIZATION', milli: 100 },
+    ]);
+  });
+
+  it('gives 2 points for 10 pages of جمع or of مراجعة', () => {
+    expect(day(null, [r(Memorization.SMALLREVISION, 10)])).toEqual([
+      { source: 'MEMORIZATION', milli: 2000 },
+    ]);
+    expect(day(null, [r(Memorization.BIGREVISION, 10)])).toEqual([
+      { source: 'MEMORIZATION', milli: 2000 },
+    ]);
+  });
+
+  it('counts a partial ten proportionally', () => {
+    expect(day(null, [r(Memorization.SMALLREVISION, 5)])).toEqual([
+      { source: 'MEMORIZATION', milli: 1000 },
     ]);
   });
 
@@ -66,7 +81,7 @@ describe('desiredPoints', () => {
         r(Memorization.SMALLREVISION, 1),
         r(Memorization.BIGREVISION, 1.5),
       ]),
-    ).toEqual([{ source: 'MEMORIZATION', milli: 1875 }]);
+    ).toEqual([{ source: 'MEMORIZATION', milli: 1500 }]);
   });
 
   it('takes a point from a present student who recited nothing', () => {

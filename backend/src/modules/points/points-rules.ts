@@ -26,10 +26,13 @@ export interface DesiredPoint {
 }
 
 // Per page for Quran, per hadith for Hadith — the same for both subjects.
+// Revision is priced as 2 points per 10 pages, paid proportionally (5 pages
+// earn 1 point). A rate change reprices a day only when its recitation is
+// edited — old days are not back-filled.
 const RECITATION_RATE: Record<Memorization, number> = {
-  MEMORIZING: 1000, // حفظ
-  SMALLREVISION: 500, // جمع
-  BIGREVISION: 250, // مراجعة وضبط
+  MEMORIZING: 1000, // حفظ: 1 point per page
+  SMALLREVISION: 200, // جمع: 2 points per 10 pages
+  BIGREVISION: 200, // مراجعة وضبط: 2 points per 10 pages
 };
 const PRESENT = 500;
 const ABSENCE = -1000;

@@ -167,7 +167,7 @@ describe('reconcileDayPoints', () => {
       ],
       existing: [
         { id: 1, source: 'PRESENT', amount: dec('0.5') },
-        { id: 2, source: 'MEMORIZATION', amount: dec('0.125') },
+        { id: 2, source: 'MEMORIZATION', amount: dec('0.1') },
       ],
     });
     await run(tx);
