@@ -2,18 +2,28 @@
 class ChatChildModel {
   final int id;
   final String fullName;
+  final int? halaqaId;
   final String? halaqaName;
+
+  /// Inside the viewer's chat scope. A manager's inbox groups a parent only
+  /// under these children's halaqas, never under a sibling's halaqa they do
+  /// not manage. True when the server predates the field.
+  final bool inScope;
 
   const ChatChildModel({
     required this.id,
     required this.fullName,
+    this.halaqaId,
     this.halaqaName,
+    this.inScope = true,
   });
 
   factory ChatChildModel.fromJson(Map<String, dynamic> json) => ChatChildModel(
     id: (json['id'] as num).toInt(),
     fullName: (json['fullName'] as String?) ?? '',
+    halaqaId: (json['halaqaId'] as num?)?.toInt(),
     halaqaName: json['halaqaName'] as String?,
+    inScope: (json['inScope'] as bool?) ?? true,
   );
 }
 

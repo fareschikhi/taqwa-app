@@ -28,21 +28,48 @@ export async function chatParentWhere(
   prisma: PrismaService,
   user: ChatUser,
 ): Promise<Prisma.ParentWhereInput | null> {
-  if (user.role === 'ADMIN') return { students: { some: {} } };
+  return (await chatScope(prisma, user))?.where ?? null;
+}
+
+/** A staff user's chat reach, read two ways from one rule. */
+export interface ChatScope {
+  /** Parents this user may see: at least one child inside the scope. */
+  where: Prisma.ParentWhereInput;
+  /**
+   * Whether a child in `halaqaId` (null: unassigned) is inside the scope.
+   * The inbox groups threads by halaqa with it, so a manager never gets a
+   * group for a sibling's halaqa they do not manage.
+   */
+  covers: (halaqaId: number | null) => boolean;
+}
+
+/** Null when the user has no chat at all. */
+export async function chatScope(
+  prisma: PrismaService,
+  user: ChatUser,
+): Promise<ChatScope | null> {
+  if (user.role === 'ADMIN') {
+    return { where: { students: { some: {} } }, covers: () => true };
+  }
 
   if (user.role !== 'MANAGER' || !user.manager?.canChat) return null;
 
   const scope = await halaqaIdsFor(prisma, user);
   const halaqaIds = Array.isArray(scope) ? scope : [];
+  const unassigned = user.manager.canAccessUnassigned === true;
   return {
-    students: {
-      some: {
-        OR: [
-          { halaqaId: { in: halaqaIds } },
-          ...(user.manager.canAccessUnassigned ? [{ halaqaId: null }] : []),
-        ],
+    where: {
+      students: {
+        some: {
+          OR: [
+            { halaqaId: { in: halaqaIds } },
+            ...(unassigned ? [{ halaqaId: null }] : []),
+          ],
+        },
       },
     },
+    covers: (halaqaId) =>
+      halaqaId === null ? unassigned : halaqaIds.includes(halaqaId),
   };
 }
 

@@ -13,7 +13,7 @@ import '../../../data/models/chat/chat_inbox_item_model.dart';
 import '../../../data/models/chat/chat_target.dart';
 import '../../../data/repositories/chat_repository.dart';
 import '../../data/chat_push.dart';
-import '../widgets/chat_inbox_tile.dart';
+import '../widgets/chat_grouped_list.dart';
 import 'chat_parent_picker_page.dart';
 import 'chat_thread_page.dart';
 
@@ -158,7 +158,7 @@ class _ChatInboxPageState extends ConsumerState<ChatInboxPage> {
                   ),
                   SizedBox(height: 12.h),
                   SearchBarWidget(
-                    hint: 'ابحث باسم ولي الأمر أو الطالب',
+                    hint: 'ابحث باسم ولي الأمر أو الطالب أو الحلقة',
                     controller: _search,
                     onChanged: _onSearch,
                   ),
@@ -217,11 +217,10 @@ class _ChatInboxPageState extends ConsumerState<ChatInboxPage> {
                   : 'لا توجد نتائج لهذا البحث',
               AppColors.onSurfaceVariant,
             )
-          : ListView.builder(
-              physics: const AlwaysScrollableScrollPhysics(),
-              itemCount: _items.length,
-              itemBuilder: (_, i) =>
-                  ChatInboxTile(item: _items[i], onTap: () => _open(_items[i])),
+          : ChatGroupedList(
+              items: _items,
+              onTap: _open,
+              countLabel: chatCountLabel,
             ),
     );
   }

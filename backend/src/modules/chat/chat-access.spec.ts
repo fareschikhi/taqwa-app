@@ -2,6 +2,7 @@ import {
   canStaffSeeParent,
   chatParentIdForParentUser,
   chatParentWhere,
+  chatScope,
   staffUserIdsForParent,
 } from './chat-access';
 
@@ -86,6 +87,39 @@ describe('chatParentWhere', () => {
       ).resolves.toBeNull();
     },
   );
+});
+
+describe('chatScope.covers', () => {
+  it('covers every halaqa, and unassigned, for an admin', async () => {
+    const scope = await chatScope(makePrisma({}) as never, {
+      role: 'ADMIN',
+      id: 1,
+    });
+
+    expect(scope?.covers(4)).toBe(true);
+    expect(scope?.covers(null)).toBe(true);
+  });
+
+  it("covers only a manager's own halaqas", async () => {
+    const prisma = makePrisma({ managerHalaqas: [{ halaqaId: 4 }] });
+
+    const scope = await chatScope(prisma as never, manager({ canChat: true }));
+
+    expect(scope?.covers(4)).toBe(true);
+    expect(scope?.covers(7)).toBe(false);
+    expect(scope?.covers(null)).toBe(false);
+  });
+
+  it('covers unassigned children with canAccessUnassigned', async () => {
+    const prisma = makePrisma({ managerHalaqas: [] });
+
+    const scope = await chatScope(
+      prisma as never,
+      manager({ canChat: true, canAccessUnassigned: true }),
+    );
+
+    expect(scope?.covers(null)).toBe(true);
+  });
 });
 
 describe('canStaffSeeParent', () => {

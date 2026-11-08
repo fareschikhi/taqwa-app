@@ -11,6 +11,7 @@ import {
   canStaffSeeParent,
   chatParentIdForParentUser,
   chatParentWhere,
+  chatScope,
   ChatUser,
 } from './chat-access';
 import { ChatNotifier } from './chat-notifier';
@@ -53,7 +54,14 @@ export interface ChatInboxItem {
   parentId: number;
   parentName: string;
   parentAvatar: string | null;
-  children: { id: number; fullName: string; halaqaName: string | null }[];
+  children: {
+    id: number;
+    fullName: string;
+    halaqaId: number | null;
+    halaqaName: string | null;
+    /** Inside this viewer's chat scope: the inbox groups by these halaqas. */
+    inScope: boolean;
+  }[];
   lastMessage: { preview: string; fromStaff: boolean; at: Date } | null;
   unread: number;
 }
@@ -360,16 +368,17 @@ export class ChatService {
     search: string | undefined,
     withConversationOnly: boolean,
   ): Promise<ChatInboxItem[]> {
-    const scope = await chatParentWhere(this.prisma, user);
+    const scope = await chatScope(this.prisma, user);
     if (!scope) throw new ForbiddenException(NO_ACCESS);
 
     const term = search?.trim();
-    const and: Prisma.ParentWhereInput[] = [scope];
+    const and: Prisma.ParentWhereInput[] = [scope.where];
     if (term) {
       and.push({
         OR: [
           { user: { fullName: { contains: term } } },
           { students: { some: { user: { fullName: { contains: term } } } } },
+          { students: { some: { halaqa: { name: { contains: term } } } } },
         ],
       });
     }
@@ -388,7 +397,7 @@ export class ChatService {
           select: {
             id: true,
             user: { select: { fullName: true } },
-            halaqa: { select: { name: true } },
+            halaqa: { select: { id: true, name: true } },
           },
         },
         chatConversation: {
@@ -417,7 +426,9 @@ export class ChatService {
         children: p.students.map((s) => ({
           id: s.id,
           fullName: s.user.fullName,
+          halaqaId: s.halaqa?.id ?? null,
           halaqaName: s.halaqa?.name ?? null,
+          inScope: scope.covers(s.halaqa?.id ?? null),
         })),
         lastMessage: last
           ? {

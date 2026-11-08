@@ -88,6 +88,10 @@ beforeEach(() => {
   mocked.chatParentIdForParentUser.mockResolvedValue(9);
   mocked.canStaffSeeParent.mockResolvedValue(true);
   mocked.chatParentWhere.mockResolvedValue({ students: { some: {} } });
+  mocked.chatScope.mockResolvedValue({
+    where: { students: { some: {} } },
+    covers: () => true,
+  });
 });
 
 describe('ChatService access', () => {
@@ -381,8 +385,77 @@ describe('ChatService inbox', () => {
     expect(item.lastMessage?.preview).toBe('تم حذف هذه الرسالة');
   });
 
+  it("marks only the children inside the viewer's scope", async () => {
+    // A manager of halaqa 4 whose parent also has a child in halaqa 7.
+    mocked.chatScope.mockResolvedValue({
+      where: { students: { some: {} } },
+      covers: (id) => id === 4,
+    });
+    const prisma = makePrisma();
+    prisma.parent.findMany.mockResolvedValue([
+      {
+        id: 9,
+        user: { fullName: 'محمد بن علي', avatar: null },
+        students: [
+          {
+            id: 1,
+            user: { fullName: 'يوسف' },
+            halaqa: { id: 4, name: 'الفرقان' },
+          },
+          {
+            id: 2,
+            user: { fullName: 'سارة' },
+            halaqa: { id: 7, name: 'النور' },
+          },
+          { id: 3, user: { fullName: 'علي' }, halaqa: null },
+        ],
+        chatConversation: null,
+      },
+    ]);
+    const { service } = makeService(prisma);
+
+    const [item] = await service.pickableParents(admin, undefined);
+
+    expect(item.children).toEqual([
+      {
+        id: 1,
+        fullName: 'يوسف',
+        halaqaId: 4,
+        halaqaName: 'الفرقان',
+        inScope: true,
+      },
+      {
+        id: 2,
+        fullName: 'سارة',
+        halaqaId: 7,
+        halaqaName: 'النور',
+        inScope: false,
+      },
+      {
+        id: 3,
+        fullName: 'علي',
+        halaqaId: null,
+        halaqaName: null,
+        inScope: false,
+      },
+    ]);
+  });
+
+  it("finds parents by their child's halaqa name too", async () => {
+    const prisma = makePrisma();
+    prisma.parent.findMany.mockResolvedValue([]);
+    const { service } = makeService(prisma);
+
+    await service.inbox(admin, ' الفرقان ');
+
+    const where = prisma.parent.findMany.mock.calls[0][0].where;
+    expect(where.AND[1].OR).toContainEqual({
+      students: { some: { halaqa: { name: { contains: 'الفرقان' } } } },
+    });
+  });
+
   it('refuses a user with no chat scope', async () => {
-    mocked.chatParentWhere.mockResolvedValue(null);
+    mocked.chatScope.mockResolvedValue(null);
     const { service } = makeService();
 
     await expect(service.inbox(admin, undefined)).rejects.toBeInstanceOf(

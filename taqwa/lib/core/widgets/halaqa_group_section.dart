@@ -26,6 +26,8 @@ class HalaqaGroupSection extends StatelessWidget {
     required this.children,
     this.isUnassigned = false,
     this.loaded,
+    this.countLabel,
+    this.badge = 0,
   });
 
   final String title;
@@ -43,6 +45,13 @@ class HalaqaGroupSection extends StatelessWidget {
   /// a circle, so it is tinted apart from the rest.
   final bool isUnassigned;
 
+  /// Replaces the students wording for a group of something else, such as
+  /// the chat inbox's parents. Wins over [loaded].
+  final String? countLabel;
+
+  /// An unread count shown as a pill beside the title; hidden at zero.
+  final int badge;
+
   @override
   Widget build(BuildContext context) {
     final accent = isUnassigned ? AppColors.outline : AppColors.primary;
@@ -58,7 +67,9 @@ class HalaqaGroupSection extends StatelessWidget {
             decoration: BoxDecoration(
               color: AppColors.surfaceContainerLow,
               borderRadius: BorderRadius.circular(AppConstants.radiusMd),
-              border: Border(right: BorderSide(color: accent, width: 3.w)),
+              border: Border(
+                right: BorderSide(color: accent, width: 3.w),
+              ),
             ),
             child: Row(
               children: [
@@ -69,14 +80,39 @@ class HalaqaGroupSection extends StatelessWidget {
                 ),
                 const Spacer(),
                 AppText(
-                  loaded != null && loaded! < count
-                      ? '$loaded من ${studentCountLabel(count)}'
-                      : studentCountLabel(count),
+                  countLabel ??
+                      (loaded != null && loaded! < count
+                          ? '$loaded من ${studentCountLabel(count)}'
+                          : studentCountLabel(count)),
                   style: AppTextStyles.labelSm.copyWith(
                     color: AppColors.onSurfaceVariant,
                   ),
                 ),
                 SizedBox(width: 8.w),
+                if (badge > 0) ...[
+                  Container(
+                    constraints: BoxConstraints(minWidth: 22.w),
+                    padding: EdgeInsets.symmetric(
+                      horizontal: 6.w,
+                      vertical: 1.h,
+                    ),
+                    decoration: BoxDecoration(
+                      color: AppColors.primary,
+                      borderRadius: BorderRadius.circular(
+                        AppConstants.radiusFull,
+                      ),
+                    ),
+                    child: AppText(
+                      '$badge',
+                      textAlign: TextAlign.center,
+                      style: AppTextStyles.labelSm.copyWith(
+                        color: AppColors.onPrimary,
+                        fontWeight: FontWeight.w700,
+                      ),
+                    ),
+                  ),
+                  SizedBox(width: 8.w),
+                ],
                 Flexible(
                   child: AppText(
                     title,
@@ -89,10 +125,7 @@ class HalaqaGroupSection extends StatelessWidget {
             ),
           ),
         ),
-        if (isExpanded) ...[
-          SizedBox(height: 12.h),
-          ...children,
-        ],
+        if (isExpanded) ...[SizedBox(height: 12.h), ...children],
       ],
     );
   }

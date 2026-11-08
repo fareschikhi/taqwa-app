@@ -36,7 +36,45 @@ void main() {
 
     expect(find.text('محمد بن علي'), findsOneWidget);
     expect(find.text('كان مريضاً'), findsOneWidget);
-    expect(find.text('2'), findsOneWidget);
+    // Once on the thread, once on its halaqa's header.
+    expect(find.text('2'), findsNWidgets(2));
+  });
+
+  testWidgets('groups threads by halaqa and folds a group on tap', (
+    tester,
+  ) async {
+    ChatInboxItemModel thread(int id, String name, int halaqaId, String h) =>
+        ChatInboxItemModel(
+          parentId: id,
+          parentName: name,
+          children: [
+            ChatChildModel(
+              id: id,
+              fullName: 'طالب',
+              halaqaId: halaqaId,
+              halaqaName: h,
+            ),
+          ],
+        );
+    final repo = _InboxRepo([
+      thread(1, 'محمد', 4, 'حلقة الفرقان'),
+      thread(2, 'أحمد', 7, 'حلقة النور'),
+      thread(3, 'خالد', 4, 'حلقة الفرقان'),
+    ]);
+
+    await tester.pumpWidget(host(const ChatInboxPage(), repo: repo));
+    await tester.pumpAndSettle();
+
+    expect(find.text('حلقة الفرقان'), findsOneWidget);
+    expect(find.text('محادثتان'), findsOneWidget);
+
+    await tester.tap(find.text('حلقة الفرقان'));
+    await tester.pumpAndSettle();
+
+    // Folding the first band brings the next one into view.
+    expect(find.text('محمد'), findsNothing);
+    expect(find.text('حلقة النور'), findsOneWidget);
+    expect(find.text('أحمد'), findsOneWidget);
   });
 
   // A manager opens the inbox from the dashboard, on top of it; the admin

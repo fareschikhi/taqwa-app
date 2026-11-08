@@ -9,7 +9,7 @@ import '../../../../core/widgets/app_text.dart';
 import '../../../../core/widgets/search_bar_widget.dart';
 import '../../../data/models/chat/chat_inbox_item_model.dart';
 import '../../../data/repositories/chat_repository.dart';
-import '../widgets/chat_inbox_tile.dart';
+import '../widgets/chat_grouped_list.dart';
 import '../../../data/models/chat/chat_target.dart';
 import 'chat_thread_page.dart';
 
@@ -100,7 +100,7 @@ class _ChatParentPickerPageState extends ConsumerState<ChatParentPickerPage> {
             Padding(
               padding: EdgeInsets.all(16.w),
               child: SearchBarWidget(
-                hint: 'ابحث باسم ولي الأمر أو الطالب',
+                hint: 'ابحث باسم ولي الأمر أو الطالب أو الحلقة',
                 controller: _search,
                 onChanged: _onSearch,
               ),
@@ -137,10 +137,11 @@ class _ChatParentPickerPageState extends ConsumerState<ChatParentPickerPage> {
         ),
       );
     }
-    return ListView.builder(
-      itemCount: _parents.length,
-      itemBuilder: (_, i) =>
-          ChatInboxTile(item: _parents[i], onTap: () => _open(_parents[i])),
+    return ChatGroupedList(
+      items: _parents,
+      onTap: _open,
+      countLabel: parentCountLabel,
+      byName: true,
     );
   }
 }
