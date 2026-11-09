@@ -10,6 +10,7 @@ import 'package:taqwa/features/data/models/halaqa/halaqa_model.dart';
 import '../../../../core/theme/app_colors.dart';
 import '../../../../core/theme/app_text_styles.dart';
 import '../../../../core/constants/app_constants.dart';
+import '../../../../core/constants/halaqa_levels.dart';
 import '../../../../core/widgets/app_button.dart';
 import '../../../../core/widgets/app_text_field.dart';
 import '../../../../core/widgets/user_selector_field.dart';
@@ -46,9 +47,8 @@ Map<String, dynamic> buildHalaqaPayload({
   return <String, dynamic>{
     'name': name,
     'teacherId': teacherId,
-    // An edit always sends the key so that emptying the field clears the
-    // column; a create with a blank field leaves it out and keeps the NULL.
-    if (isEditing || level.isNotEmpty) 'level': level.isEmpty ? null : level,
+    // One of kHalaqaLevels: the form will not submit without a pick.
+    'level': level,
     if (isEditing ? rosterLoaded : studentIds.isNotEmpty)
       'studentIds': studentIds,
     'isAdult': isAdult,
@@ -104,7 +104,6 @@ class _CreateHalaqaPageState extends State<CreateHalaqaPage> {
   final _teacherRepository = TeacherRepository();
   final _studentRepository = StudentRepository();
   final _nameController = TextEditingController();
-  final _levelController = TextEditingController();
   final _studentSearchController = TextEditingController();
   final _absenceFeeController = TextEditingController();
   final _lateFeeController = TextEditingController();
@@ -127,6 +126,11 @@ class _CreateHalaqaPageState extends State<CreateHalaqaPage> {
   bool _isAdultHalaqa = false;
   int? _selectedTeacherId;
 
+  /// One of [kHalaqaLevels]. A halaqa saved back when the level was free
+  /// text (e.g. "مبتدئ") opens with nothing picked, so the admin has to
+  /// choose a real category before the edit can be saved.
+  String? _selectedLevel;
+
   /// On edit, [_selectedStudents] starts as the halaqa's current roster. Until
   /// that roster has arrived the picker stays hidden and the save sends no
   /// `studentIds`, so a slow or failed load can never disconnect anyone.
@@ -143,7 +147,7 @@ class _CreateHalaqaPageState extends State<CreateHalaqaPage> {
     if (_isEditing) {
       final h = widget.editHalaqa!;
       _nameController.text = h.name;
-      _levelController.text = h.level ?? '';
+      _selectedLevel = kHalaqaLevels.contains(h.level) ? h.level : null;
       _selectedTeacherId = h.teacherId;
       _isAdultHalaqa = h.isAdult;
       _absenceFeeController.text = h.absenceFee.toString();
@@ -313,7 +317,8 @@ class _CreateHalaqaPageState extends State<CreateHalaqaPage> {
       final data = buildHalaqaPayload(
         name: _nameController.text.trim(),
         teacherId: _selectedTeacherId!,
-        level: _levelController.text.trim(),
+        // validate() above refuses to get here without a pick.
+        level: _selectedLevel!,
         studentIds: _selectedStudents
             .map((s) => s.id)
             .whereType<int>()
@@ -357,7 +362,6 @@ class _CreateHalaqaPageState extends State<CreateHalaqaPage> {
   @override
   void dispose() {
     _nameController.dispose();
-    _levelController.dispose();
     _studentSearchController.dispose();
     _absenceFeeController.dispose();
     _lateFeeController.dispose();
@@ -431,25 +435,9 @@ class _CreateHalaqaPageState extends State<CreateHalaqaPage> {
                                 ),
                               ),
                               SizedBox(height: 16.h),
-                              // Level
-                              _FieldLabel(label: 'المستوى'),
+                              _FieldLabel(label: 'المستوى *'),
                               SizedBox(height: 6.h),
-                              AppTextField(
-                                hint: 'مثال: مبتدئ',
-                                controller: _levelController,
-                                validator: (v) {
-                                  // Mirrors the column's VarChar(100), so the
-                                  // admin sees the limit before the request.
-                                  if ((v ?? '').trim().length > 100) {
-                                    return 'المستوى يجب ألا يتجاوز 100 حرف';
-                                  }
-                                  return null;
-                                },
-                                prefixIcon: const Icon(
-                                  Icons.stairs_outlined,
-                                  color: AppColors.onSurfaceVariant,
-                                ),
-                              ),
+                              _buildLevelPicker(),
                               SizedBox(height: 16.h),
                               // Teacher
                               UserSelectorField(
@@ -820,6 +808,46 @@ class _CreateHalaqaPageState extends State<CreateHalaqaPage> {
             ],
           ),
         ),
+      ),
+    );
+  }
+
+  /// The four categories as chips, styled like the student form's chips. A
+  /// [FormField] so the form's single validate() call also checks this one
+  /// and shows the error under it. RTL so the list reads ابتدائي → جامعي from
+  /// the right and a wrapped second line stays right-aligned.
+  Widget _buildLevelPicker() {
+    return FormField<String>(
+      initialValue: _selectedLevel,
+      validator: (v) => v == null ? 'يرجى اختيار مستوى الحلقة' : null,
+      builder: (field) => Column(
+        crossAxisAlignment: CrossAxisAlignment.end,
+        children: [
+          Wrap(
+            textDirection: TextDirection.rtl,
+            spacing: 8.w,
+            runSpacing: 8.h,
+            children: [
+              for (final level in kHalaqaLevels)
+                ChoiceChip(
+                  label: AppText(level, style: AppTextStyles.labelMd),
+                  selected: _selectedLevel == level,
+                  selectedColor: AppColors.primary.withValues(alpha: 0.15),
+                  onSelected: (_) {
+                    setState(() => _selectedLevel = level);
+                    field.didChange(level);
+                  },
+                ),
+            ],
+          ),
+          if (field.hasError) ...[
+            SizedBox(height: 6.h),
+            AppText(
+              field.errorText!,
+              style: AppTextStyles.labelSm.copyWith(color: AppColors.error),
+            ),
+          ],
+        ],
       ),
     );
   }

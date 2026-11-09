@@ -3,7 +3,11 @@ import {
   BadRequestException,
   ValidationPipe,
 } from '@nestjs/common';
-import { CreateHalaqaDto, UpdateHalaqaDto } from './halaqa.dto';
+import {
+  CreateHalaqaDto,
+  HALAQA_LEVELS,
+  UpdateHalaqaDto,
+} from './halaqa.dto';
 
 // Same configuration main.ts installs globally, so these exercise the real
 // request path rather than class-validator in isolation.
@@ -16,36 +20,56 @@ const body = (metatype: unknown): ArgumentMetadata => ({
 });
 
 describe('halaqa DTOs', () => {
-  it('keeps the level an admin picked on create', async () => {
-    const dto = (await pipe.transform(
-      { name: 'حلقة النور', teacherId: 1, level: 'مبتدئ' },
-      body(CreateHalaqaDto),
-    )) as CreateHalaqaDto;
+  it('accepts each of the four categories on create', async () => {
+    for (const level of HALAQA_LEVELS) {
+      const dto = (await pipe.transform(
+        { name: 'حلقة النور', teacherId: 1, level },
+        body(CreateHalaqaDto),
+      )) as CreateHalaqaDto;
 
-    expect(dto.level).toBe('مبتدئ');
+      expect(dto.level).toBe(level);
+    }
   });
 
-  it('rejects a level longer than the column holds', async () => {
+  it('rejects a create with no category', async () => {
+    await expect(
+      pipe.transform({ name: 'حلقة النور', teacherId: 1 }, body(CreateHalaqaDto)),
+    ).rejects.toBeInstanceOf(BadRequestException);
+  });
+
+  it('rejects free text that is not one of the categories', async () => {
     await expect(
       pipe.transform(
-        { name: 'حلقة النور', teacherId: 1, level: 'م'.repeat(101) },
+        { name: 'حلقة النور', teacherId: 1, level: 'مبتدئ' },
         body(CreateHalaqaDto),
       ),
     ).rejects.toBeInstanceOf(BadRequestException);
   });
 
-  it('accepts a null level on update so an admin can clear it', async () => {
+  it('lets an update leave the category untouched', async () => {
     const dto = (await pipe.transform(
-      { level: null },
+      { name: 'حلقة النور' },
       body(UpdateHalaqaDto),
     )) as UpdateHalaqaDto;
 
-    expect(dto.level).toBeNull();
+    expect(dto.level).toBeUndefined();
+  });
+
+  it('rejects clearing the category on update', async () => {
+    await expect(
+      pipe.transform({ level: null }, body(UpdateHalaqaDto)),
+    ).rejects.toBeInstanceOf(BadRequestException);
+  });
+
+  it('rejects an unknown category on update', async () => {
+    await expect(
+      pipe.transform({ level: 'متقدم' }, body(UpdateHalaqaDto)),
+    ).rejects.toBeInstanceOf(BadRequestException);
   });
 
   it('drops a description an outdated client still sends', async () => {
     const dto = (await pipe.transform(
-      { name: 'حلقة النور', teacherId: 1, description: 'وصف' },
+      { name: 'حلقة النور', teacherId: 1, level: 'ثانوي', description: 'وصف' },
       body(CreateHalaqaDto),
     )) as CreateHalaqaDto;
 
@@ -68,6 +92,7 @@ describe('halaqa DTOs', () => {
       {
         name: 'حلقة الكبار',
         teacherId: 1,
+        level: 'جامعي (كبار)',
         isAdult: true,
         absenceFee: 50,
         lateFee: 20,

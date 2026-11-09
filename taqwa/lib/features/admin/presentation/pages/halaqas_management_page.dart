@@ -226,15 +226,21 @@ class _HalaqaCard extends StatelessWidget {
   final VoidCallback onEdit;
   final VoidCallback onDelete;
 
+  // Keyed by kHalaqaLevels. A halaqa still holding an old free-text level
+  // falls back to the generic icon and the tertiary colour until an admin
+  // edits it and picks a category.
   static const _levelIcons = {
-    'متقدم': Icons.wb_sunny,
+    'ابتدائي': Icons.menu_book,
     'متوسط': Icons.auto_awesome,
-    'مبتدئ': Icons.menu_book,
+    'ثانوي': Icons.wb_sunny,
+    'جامعي (كبار)': Icons.school,
   };
 
   Color _levelColor(String level) {
     switch (level) {
-      case 'متقدم':
+      case 'جامعي (كبار)':
+        return AppColors.onPrimaryFixedVariant;
+      case 'ثانوي':
         return AppColors.primary;
       case 'متوسط':
         return AppColors.secondary;

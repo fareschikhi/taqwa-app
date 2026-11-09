@@ -55,6 +55,7 @@ describe('HalaqasService enrolment validation', () => {
 
     await service.create({
       name: 'حلقة الكبار',
+      level: 'جامعي (كبار)',
       teacherId: 1,
       isAdult: true,
       studentIds: [21, 22],
@@ -66,7 +67,7 @@ describe('HalaqasService enrolment validation', () => {
   it('skips the check when no students are being connected', async () => {
     const { service, prisma } = makeService([]);
 
-    await service.create({ name: 'حلقة النور', teacherId: 1 });
+    await service.create({ name: 'حلقة النور', level: 'ابتدائي', teacherId: 1 });
 
     expect(prisma.student.findMany).not.toHaveBeenCalled();
     expect(prisma.halaqa.create).toHaveBeenCalled();

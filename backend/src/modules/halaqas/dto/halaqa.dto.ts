@@ -1,16 +1,28 @@
 import {
   IsArray,
   IsBoolean,
+  IsIn,
   IsInt,
   IsOptional,
   IsString,
-  MaxLength,
   Min,
+  ValidateIf,
 } from 'class-validator';
+
+// A halaqa's category (the `level` column). The Arabic label itself is what
+// is stored, so every screen that already prints `level` shows it as-is. It is
+// independent of `isAdult`: a جامعي halaqa only runs on fines if the admin
+// turns that on. Keep in step with kHalaqaLevels in the Flutter app.
+export const HALAQA_LEVELS = [
+  'ابتدائي',
+  'متوسط',
+  'ثانوي',
+  'جامعي (كبار)',
+] as const;
 
 export class CreateHalaqaDto {
   @IsString() name: string;
-  @IsOptional() @IsString() @MaxLength(100) level?: string;
+  @IsIn(HALAQA_LEVELS) level: string;
   @IsInt() teacherId: number;
   @IsOptional() @IsArray() @IsInt({ each: true }) studentIds?: number[];
 
@@ -24,9 +36,11 @@ export class CreateHalaqaDto {
 
 export class UpdateHalaqaDto {
   @IsOptional() @IsString() name?: string;
-  // Null clears the column: @IsOptional() waves null past @IsString(), and
-  // Prisma writes it straight through as NULL.
-  @IsOptional() @IsString() @MaxLength(100) level?: string | null;
+  // Left out = unchanged. Null is rejected rather than waved through the way
+  // @IsOptional() would: every halaqa must keep a category once it has one.
+  @ValidateIf((o: UpdateHalaqaDto) => o.level !== undefined)
+  @IsIn(HALAQA_LEVELS)
+  level?: string;
   @IsOptional() @IsInt() teacherId?: number;
 
   @IsOptional() @IsArray() @IsInt({ each: true }) studentIds?: number[];

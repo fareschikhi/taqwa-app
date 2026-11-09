@@ -68,9 +68,9 @@ async function main() {
 
   // ── Halaqas ──────────────────────────────────────────────────────
   const halaqaSeed = [
-    { name: 'حلقة الفرقان', level: 'مبتدئ', teacherId: teachers[0].id },
+    { name: 'حلقة الفرقان', level: 'ابتدائي', teacherId: teachers[0].id },
     { name: 'حلقة النور', level: 'متوسط', teacherId: teachers[1].id },
-    { name: 'حلقة الهدى', level: 'متقدم', teacherId: teachers[2].id },
+    { name: 'حلقة الهدى', level: 'ثانوي', teacherId: teachers[2].id },
   ];
 
   const halaqas = [];

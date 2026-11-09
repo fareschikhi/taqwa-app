@@ -24,7 +24,7 @@ void main() {
       final data = buildHalaqaPayload(
         name: 'حلقة النور',
         teacherId: 7,
-        level: '',
+        level: 'ابتدائي',
         studentIds: const [1, 3],
         isEditing: true,
         rosterLoaded: true,
@@ -37,7 +37,7 @@ void main() {
       final data = buildHalaqaPayload(
         name: 'حلقة النور',
         teacherId: 7,
-        level: '',
+        level: 'ابتدائي',
         studentIds: const [],
         isEditing: true,
         rosterLoaded: true,
@@ -51,7 +51,7 @@ void main() {
       final data = buildHalaqaPayload(
         name: 'حلقة النور',
         teacherId: 7,
-        level: '',
+        level: 'ابتدائي',
         studentIds: const [1, 2, 3],
         isEditing: false,
       );
@@ -63,7 +63,7 @@ void main() {
       final data = buildHalaqaPayload(
         name: 'حلقة النور',
         teacherId: 7,
-        level: '',
+        level: 'ابتدائي',
         studentIds: const [],
         isEditing: false,
       );
@@ -71,52 +71,39 @@ void main() {
       expect(data.containsKey('studentIds'), isFalse);
     });
 
-    test('a create payload carries the level', () {
+    test('create and edit payloads both carry the picked category', () {
+      for (final isEditing in [false, true]) {
+        final data = buildHalaqaPayload(
+          name: 'حلقة النور',
+          teacherId: 7,
+          level: 'جامعي (كبار)',
+          studentIds: const [],
+          isEditing: isEditing,
+        );
+
+        expect(data['level'], 'جامعي (كبار)');
+      }
+    });
+
+    test('the category does not switch on adult fines by itself', () {
       final data = buildHalaqaPayload(
         name: 'حلقة النور',
         teacherId: 7,
-        level: 'مبتدئ',
+        level: 'جامعي (كبار)',
         studentIds: const [],
         isEditing: false,
       );
 
-      expect(data['level'], 'مبتدئ');
-    });
-
-    test('a create payload with a blank level omits the key', () {
-      final data = buildHalaqaPayload(
-        name: 'حلقة النور',
-        teacherId: 7,
-        level: '',
-        studentIds: const [],
-        isEditing: false,
-      );
-
-      // Leaving the field untouched must not write an empty string over the
-      // column's NULL default.
-      expect(data.containsKey('level'), isFalse);
-    });
-
-    test('an edit payload with a blank level sends null to clear it', () {
-      final data = buildHalaqaPayload(
-        name: 'حلقة النور',
-        teacherId: 7,
-        level: '',
-        studentIds: const [],
-        isEditing: true,
-      );
-
-      // Omitting the key would leave the old level in place forever, so an
-      // emptied field has to travel as an explicit null.
-      expect(data.containsKey('level'), isTrue);
-      expect(data['level'], isNull);
+      // The admin decides; a جامعي halaqa is not an adults' halaqa unless the
+      // switch was turned on.
+      expect(data['isAdult'], isFalse);
     });
 
     test('carries the fine rates for an adults halaqa', () {
       final data = buildHalaqaPayload(
         name: 'حلقة الكبار',
         teacherId: 1,
-        level: '',
+        level: 'ابتدائي',
         studentIds: const [],
         isEditing: false,
         isAdult: true,
@@ -138,7 +125,7 @@ void main() {
       final data = buildHalaqaPayload(
         name: 'حلقة الكبار',
         teacherId: 1,
-        level: '',
+        level: 'ابتدائي',
         studentIds: const [],
         isEditing: false,
         isAdult: true,
@@ -157,7 +144,7 @@ void main() {
       final data = buildHalaqaPayload(
         name: 'حلقة النور',
         teacherId: 1,
-        level: '',
+        level: 'ابتدائي',
         studentIds: const [],
         isEditing: false,
       );
