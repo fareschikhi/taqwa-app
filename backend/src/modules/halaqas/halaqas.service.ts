@@ -50,38 +50,41 @@ export class HalaqasService {
     return this.withSupervisors(halaqas);
   }
 
-  /// Adds each halaqa's معلم مشرف list: the teachers the admin named for its
-  /// level. One query for the whole list, matched by the level label. A halaqa
-  /// with no level, or an old free-text one, gets an empty list.
+  /// Adds each halaqa's معلم مشرف list: the teachers switched on as supervisor
+  /// who run a halaqa at the same level. The level comes from their halaqas,
+  /// never from a stored pick, so it follows a halaqa that changes level or
+  /// teacher. One query for the whole list. A halaqa with no level gets [].
   private async withSupervisors<T extends { level: string | null }>(
     halaqas: T[],
   ) {
     const levels = [
       ...new Set(halaqas.map((h) => h.level).filter((l) => l != null)),
     ];
-    const rows = levels.length
-      ? await this.prisma.levelSupervisor.findMany({
-          where: { level: { in: levels } },
+    const teachers = levels.length
+      ? await this.prisma.teacher.findMany({
+          where: {
+            isSupervisor: true,
+            halaqas: { some: { level: { in: levels } } },
+          },
           select: {
-            level: true,
-            teacher: {
-              select: {
-                id: true,
-                user: { select: { fullName: true, avatar: true } },
-              },
+            id: true,
+            user: { select: { fullName: true, avatar: true } },
+            halaqas: {
+              where: { level: { in: levels } },
+              select: { level: true },
             },
           },
-          orderBy: { teacher: { user: { fullName: 'asc' } } },
+          orderBy: { user: { fullName: 'asc' } },
         })
       : [];
     return halaqas.map((h) => ({
       ...h,
-      supervisors: rows
-        .filter((r) => r.level === h.level)
-        .map((r) => ({
-          teacherId: r.teacher.id,
-          fullName: r.teacher.user.fullName,
-          avatar: r.teacher.user.avatar,
+      supervisors: teachers
+        .filter((t) => t.halaqas.some((th) => th.level === h.level))
+        .map((t) => ({
+          teacherId: t.id,
+          fullName: t.user.fullName,
+          avatar: t.user.avatar,
         })),
     }));
   }

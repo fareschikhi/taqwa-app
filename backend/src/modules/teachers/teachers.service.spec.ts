@@ -1,4 +1,8 @@
-import { ConflictException, NotFoundException } from '@nestjs/common';
+import {
+  BadRequestException,
+  ConflictException,
+  NotFoundException,
+} from '@nestjs/common';
 import { Prisma } from '@prisma/client';
 import { TeachersService } from './teachers.service';
 
@@ -146,15 +150,17 @@ describe('TeachersService dashboard scoped to one halaqa', () => {
   });
 });
 
-// معلم مشرف: the admin picks the levels on the teacher form. Sending the list
-// replaces the whole set; leaving it out must not touch it.
-describe('TeachersService supervised levels', () => {
-  const makePrisma = () => ({
-    user: {
-      create: jest.fn().mockResolvedValue({ id: 42, teacher: { id: 6 } }),
-      update: jest.fn().mockResolvedValue({ id: 42 }),
+// معلم مشرف is an on/off flag; the level comes from the teacher's halaqas, so
+// it may only be switched on once he runs a halaqa that has a level.
+describe('TeachersService supervisor flag', () => {
+  const makePrisma = (isSupervisor: boolean, levelledHalaqas: number) => ({
+    user: { update: jest.fn().mockResolvedValue({ id: 42 }) },
+    teacher: {
+      findUnique: jest
+        .fn()
+        .mockResolvedValue({ id: 6, userId: 42, isSupervisor }),
     },
-    teacher: { findUnique: jest.fn().mockResolvedValue({ id: 6, userId: 42 }) },
+    halaqa: { count: jest.fn().mockResolvedValue(levelledHalaqas) },
   });
 
   const makeService = (prisma: ReturnType<typeof makePrisma>) => {
@@ -166,45 +172,49 @@ describe('TeachersService supervised levels', () => {
   const teacherData = (prisma: ReturnType<typeof makePrisma>) =>
     prisma.user.update.mock.calls[0][0].data.teacher;
 
-  it('creates a teacher with the picked levels', async () => {
-    const prisma = makePrisma();
+  it('switches on a teacher who runs a levelled halaqa', async () => {
+    const prisma = makePrisma(false, 1);
 
-    await makeService(prisma).create({
+    await makeService(prisma).update(6, { isSupervisor: true } as any);
+
+    expect(prisma.halaqa.count).toHaveBeenCalledWith({
+      where: { teacherId: 6, level: { not: null } },
+    });
+    expect(teacherData(prisma)).toEqual({ update: { isSupervisor: true } });
+  });
+
+  it('refuses to switch on a teacher with no levelled halaqa', async () => {
+    const prisma = makePrisma(false, 0);
+
+    await expect(
+      makeService(prisma).update(6, { isSupervisor: true } as any),
+    ).rejects.toBeInstanceOf(BadRequestException);
+    expect(prisma.user.update).not.toHaveBeenCalled();
+  });
+
+  it('always lets the admin switch it off', async () => {
+    const prisma = makePrisma(true, 0);
+
+    await makeService(prisma).update(6, { isSupervisor: false } as any);
+
+    expect(prisma.halaqa.count).not.toHaveBeenCalled();
+    expect(teacherData(prisma)).toEqual({ update: { isSupervisor: false } });
+  });
+
+  it('saves other fields of a supervisor who lost his halaqa', async () => {
+    const prisma = makePrisma(true, 0);
+
+    await makeService(prisma).update(6, {
       fullName: 'Amine Rahmani',
-      password: 'secret123',
-      supervisedLevels: ['ابتدائي', 'متوسط'],
+      isSupervisor: true,
     } as any);
 
-    expect(
-      prisma.user.create.mock.calls[0][0].data.teacher.create.supervises,
-    ).toEqual({ create: [{ level: 'ابتدائي' }, { level: 'متوسط' }] });
+    expect(prisma.halaqa.count).not.toHaveBeenCalled();
+    expect(prisma.user.update).toHaveBeenCalled();
   });
 
-  it('replaces the old set on update', async () => {
-    const prisma = makePrisma();
-
-    await makeService(prisma).update(6, { supervisedLevels: ['ثانوي'] } as any);
-
-    expect(teacherData(prisma)).toEqual({
-      update: {
-        supervises: { deleteMany: {}, create: [{ level: 'ثانوي' }] },
-      },
-    });
-  });
-
-  it('clears every level when sent an empty list', async () => {
-    const prisma = makePrisma();
-
-    await makeService(prisma).update(6, { supervisedLevels: [] } as any);
-
-    expect(teacherData(prisma).update.supervises).toEqual({
-      deleteMany: {},
-      create: [],
-    });
-  });
-
-  it('leaves the levels alone when the list is not sent', async () => {
-    const prisma = makePrisma();
+  it('leaves the flag alone when it is not sent', async () => {
+    const prisma = makePrisma(false, 0);
 
     await makeService(prisma).update(6, { canPostNews: true } as any);
 

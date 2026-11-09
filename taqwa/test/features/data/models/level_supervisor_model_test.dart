@@ -47,24 +47,34 @@ void main() {
       expect(again.supervisors.single.fullName, 'Nadia');
     });
 
-    test('a teacher row reads the levels they supervise', () {
+    test('a teacher row reads the flag and his halaqa levels', () {
       final t = TeacherModel.fromJson({
         'id': 6,
         'userId': 42,
-        'supervisedLevels': ['ابتدائي', 'ثانوي'],
+        'isSupervisor': true,
+        'halaqaLevels': ['ابتدائي', 'ثانوي'],
         'user': {'id': 42, 'fullName': 'Amine', 'role': 'TEACHER'},
       });
 
-      expect(t.supervisedLevels, ['ابتدائي', 'ثانوي']);
+      expect(t.isSupervisor, isTrue);
+      expect(t.halaqaLevels, ['ابتدائي', 'ثانوي']);
     });
 
-    test('the create payload sends an empty list as-is', () {
-      final json = const TeacherPayloadDto(
-        fullName: 'Amine',
-        supervisedLevels: [],
-      ).toJson();
+    test('an older teacher row is not a supervisor and has no levels', () {
+      final t = TeacherModel.fromJson({
+        'id': 6,
+        'userId': 42,
+        'user': {'id': 42, 'fullName': 'Amine', 'role': 'TEACHER'},
+      });
 
-      expect(json['supervisedLevels'], isEmpty);
+      expect(t.isSupervisor, isFalse);
+      expect(t.halaqaLevels, isEmpty);
+    });
+
+    test('the create payload never sends the flag', () {
+      final json = const TeacherPayloadDto(fullName: 'Amine').toJson();
+
+      expect(json.containsKey('isSupervisor'), isFalse);
     });
   });
 }

@@ -1,9 +1,19 @@
-import { Injectable, NotFoundException } from '@nestjs/common';
+import {
+  BadRequestException,
+  Injectable,
+  NotFoundException,
+} from '@nestjs/common';
 import { PrismaService } from '../../prisma/prisma.service';
 import { CreateTeacherDto, UpdateTeacherDto } from './dto/teacher.dto';
 import * as bcrypt from 'bcrypt';
 import { Memorization, Prisma } from '@prisma/client';
 import { explainRestrictedDelete } from '../../common/prisma/restricted-delete';
+
+/// The distinct levels of a teacher's halaqas: what he is معلم مشرف of when
+/// switched on. The form shows them, and greys the switch out when empty.
+const levelsOf = (halaqas: { level: string | null }[]) => [
+  ...new Set(halaqas.map((h) => h.level).filter((l) => l != null)),
+];
 
 @Injectable()
 export class TeachersService {
@@ -22,16 +32,17 @@ export class TeachersService {
             isActive: true,
           },
         },
-        halaqas: { select: { _count: { select: { students: true } } } },
+        halaqas: {
+          select: { level: true, _count: { select: { students: true } } },
+        },
         _count: { select: { halaqas: true } },
-        supervises: { select: { level: true } },
       },
       orderBy: { user: { fullName: 'asc' } },
     });
 
-    return teachers.map(({ halaqas, _count, supervises, ...rest }) => ({
+    return teachers.map(({ halaqas, _count, ...rest }) => ({
       ...rest,
-      supervisedLevels: supervises.map((s) => s.level),
+      halaqaLevels: levelsOf(halaqas),
       _count: {
         halaqas: _count.halaqas,
         students: halaqas.reduce((sum, h) => sum + h._count.students, 0),
@@ -62,17 +73,16 @@ export class TeachersService {
             _count: { select: { students: true } },
           },
         },
-        supervises: { select: { level: true } },
       },
     });
     if (!t) throw new NotFoundException('المعلم غير موجود');
 
-    const { halaqas, supervises, ...rest } = t;
+    const { halaqas, ...rest } = t;
     const studentCount = halaqas.reduce((sum, h) => sum + h._count.students, 0);
 
     return {
       ...rest,
-      supervisedLevels: supervises.map((s) => s.level),
+      halaqaLevels: levelsOf(halaqas),
       halaqas,
       _count: { students: studentCount, halaqas: halaqas.length },
     };
@@ -95,12 +105,7 @@ export class TeachersService {
         role: 'TEACHER',
         avatar: dto.avatar,
         teacher: {
-          create: {
-            canPostNews: dto.canPostNews ?? false,
-            supervises: {
-              create: (dto.supervisedLevels ?? []).map((level) => ({ level })),
-            },
-          },
+          create: { canPostNews: dto.canPostNews ?? false },
         },
       },
       include: { teacher: true },
@@ -135,13 +140,15 @@ export class TeachersService {
     if (dto.canPostNews !== undefined) {
       teacherUpdate.canPostNews = dto.canPostNews;
     }
-    // Sent = the full new set: drop the old rows and write the picked ones,
-    // inside the same nested update so a failure leaves the old set intact.
-    if (dto.supervisedLevels !== undefined) {
-      teacherUpdate.supervises = {
-        deleteMany: {},
-        create: dto.supervisedLevels.map((level) => ({ level })),
-      };
+    if (dto.isSupervisor !== undefined) {
+      // Only switching it ON is checked: the role means "supervisor of my
+      // halaqa's level", so a teacher with no levelled halaqa has nothing to
+      // supervise. Keeping it on (a save of other fields) or switching it off
+      // always passes, so losing his halaqa never locks his form.
+      if (dto.isSupervisor && !teacher.isSupervisor) {
+        await this.assertHasLevelledHalaqa(id);
+      }
+      teacherUpdate.isSupervisor = dto.isSupervisor;
     }
     if (Object.keys(teacherUpdate).length > 0) {
       userUpdate.teacher = { update: teacherUpdate };
@@ -152,6 +159,17 @@ export class TeachersService {
       data: userUpdate,
     });
     return await this.findOne(id);
+  }
+
+  private async assertHasLevelledHalaqa(teacherId: number) {
+    const count = await this.prisma.halaqa.count({
+      where: { teacherId, level: { not: null } },
+    });
+    if (count === 0) {
+      throw new BadRequestException(
+        'لا يمكن تعيينه معلماً مشرفاً قبل إسناد حلقة ذات مستوى إليه',
+      );
+    }
   }
 
   async remove(id: number) {

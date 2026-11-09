@@ -10,9 +10,13 @@ class TeacherModel {
   /// Granted by the admin: may post news to their own halaqas.
   final bool canPostNews;
 
-  /// The halaqa levels (from kHalaqaLevels) this teacher is معلم مشرف of,
-  /// as picked by the admin. Shown to every teacher of a halaqa at that level.
-  final List<String> supervisedLevels;
+  /// معلم مشرف, switched on by the admin. He supervises the level of each
+  /// halaqa he runs ([halaqaLevels]); the level itself is never picked.
+  final bool isSupervisor;
+
+  /// The distinct levels of the halaqas he runs. Empty means the supervisor
+  /// switch cannot be turned on: there is no level for him to supervise.
+  final List<String> halaqaLevels;
   final UserModel user;
 
   TeacherModel({
@@ -23,7 +27,8 @@ class TeacherModel {
     this.studentCount = 0,
     this.halaqaCount = 0,
     this.canPostNews = false,
-    this.supervisedLevels = const [],
+    this.isSupervisor = false,
+    this.halaqaLevels = const [],
   });
 
   String get fullName => user.fullName;
@@ -69,7 +74,8 @@ class TeacherModel {
       studentCount: (json['_count']?['students'] as num?)?.toInt() ?? 0,
       halaqaCount: (json['_count']?['halaqas'] as num?)?.toInt() ?? 0,
       canPostNews: (json['canPostNews'] as bool?) ?? false,
-      supervisedLevels: (json['supervisedLevels'] as List<dynamic>?)
+      isSupervisor: (json['isSupervisor'] as bool?) ?? false,
+      halaqaLevels: (json['halaqaLevels'] as List<dynamic>?)
               ?.whereType<String>()
               .toList() ??
           const [],

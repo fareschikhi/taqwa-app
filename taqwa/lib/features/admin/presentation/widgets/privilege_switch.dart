@@ -7,6 +7,8 @@ import 'package:taqwa/core/widgets/app_text.dart';
 
 /// One privilege the admin grants or withholds on an account form — the
 /// manager's account rights and the teacher's news right look the same.
+/// A null [onChanged] locks it: the switch greys out and [subtitle] should
+/// say what unlocks it.
 class PrivilegeSwitch extends StatelessWidget {
   const PrivilegeSwitch({
     super.key,
@@ -18,50 +20,56 @@ class PrivilegeSwitch extends StatelessWidget {
   final String title;
   final String subtitle;
   final bool value;
-  final ValueChanged<bool> onChanged;
+  final ValueChanged<bool>? onChanged;
 
   @override
   Widget build(BuildContext context) {
-    return Container(
-      padding: EdgeInsets.symmetric(horizontal: 12.w, vertical: 8.h),
-      decoration: BoxDecoration(
-        color: value
-            ? AppColors.primaryContainer.withValues(alpha: 0.3)
-            : AppColors.surfaceContainerLowest,
-        borderRadius: BorderRadius.circular(AppConstants.radiusMd),
-        border: Border.all(
-          color: value ? AppColors.primaryContainer : AppColors.outlineVariant,
+    final enabled = onChanged != null;
+    return Opacity(
+      opacity: enabled ? 1 : 0.6,
+      child: Container(
+        padding: EdgeInsets.symmetric(horizontal: 12.w, vertical: 8.h),
+        decoration: BoxDecoration(
+          color: value
+              ? AppColors.primaryContainer.withValues(alpha: 0.3)
+              : AppColors.surfaceContainerLowest,
+          borderRadius: BorderRadius.circular(AppConstants.radiusMd),
+          border: Border.all(
+            color: value
+                ? AppColors.primaryContainer
+                : AppColors.outlineVariant,
+          ),
         ),
-      ),
-      child: Row(
-        children: [
-          Switch(
-            value: value,
-            onChanged: onChanged,
-            activeThumbColor: AppColors.primary,
-          ),
-          Expanded(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.end,
-              children: [
-                AppText(
-                  title,
-                  style: AppTextStyles.bodyMd.copyWith(
-                    color: AppColors.onSurface,
-                    fontWeight: value ? FontWeight.w600 : FontWeight.w400,
-                  ),
-                ),
-                AppText(
-                  subtitle,
-                  style: AppTextStyles.labelSm.copyWith(
-                    color: AppColors.onSurfaceVariant,
-                  ),
-                  textAlign: TextAlign.end,
-                ),
-              ],
+        child: Row(
+          children: [
+            Switch(
+              value: value,
+              onChanged: onChanged,
+              activeThumbColor: AppColors.primary,
             ),
-          ),
-        ],
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.end,
+                children: [
+                  AppText(
+                    title,
+                    style: AppTextStyles.bodyMd.copyWith(
+                      color: AppColors.onSurface,
+                      fontWeight: value ? FontWeight.w600 : FontWeight.w400,
+                    ),
+                  ),
+                  AppText(
+                    subtitle,
+                    style: AppTextStyles.labelSm.copyWith(
+                      color: AppColors.onSurfaceVariant,
+                    ),
+                    textAlign: TextAlign.end,
+                  ),
+                ],
+              ),
+            ),
+          ],
+        ),
       ),
     );
   }
