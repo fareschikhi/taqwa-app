@@ -1,4 +1,4 @@
-import { IsArray, IsEnum, IsInt, IsOptional, IsString, ValidateNested } from 'class-validator';
+import { IsArray, IsEnum, IsInt, IsOptional, IsString, Max, Min, ValidateNested } from 'class-validator';
 import { Type } from 'class-transformer';
 import { AttendanceStatus } from '@prisma/client';
 
@@ -11,6 +11,11 @@ export class CreateAttendanceDto {
   @IsString() date: string; // ISO date string YYYY-MM-DD
   @IsEnum(AttendanceStatus) status: AttendanceStatus;
   @IsOptional() @IsString() notes?: string;
+
+  // What the teacher chose to charge for this late arrival, in DA. Only read
+  // when status is LATE; 0 waives it. Left out (older app builds), the
+  // halaqa's own late fee applies as before.
+  @IsOptional() @IsInt() @Min(0) @Max(100000) lateFee?: number;
 }
 
 export class UpdateAttendanceDto {

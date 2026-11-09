@@ -948,6 +948,68 @@ describe('AttendanceService fine reconciliation', () => {
     );
   });
 
+  it('charges the late fee the teacher chose instead of the halaqa rate', async () => {
+    const prisma = makePrisma();
+    await svcWith(prisma).create({ ...dto(AttendanceStatus.LATE), lateFee: 35 });
+
+    expect(prisma.tx.fineEntry.create).toHaveBeenCalledTimes(1);
+    expect(prisma.tx.fineEntry.create).toHaveBeenCalledWith(
+      expect.objectContaining({
+        data: expect.objectContaining({ source: 'LATE', amount: 35 }),
+      }),
+    );
+  });
+
+  it('falls back to the halaqa late rate when no amount is sent', async () => {
+    const prisma = makePrisma();
+    await svcWith(prisma).create(dto(AttendanceStatus.LATE));
+
+    expect(prisma.tx.fineEntry.create).toHaveBeenCalledWith(
+      expect.objectContaining({
+        data: expect.objectContaining({ source: 'LATE', amount: 20 }),
+      }),
+    );
+  });
+
+  it('charges nothing when the teacher waives the late fee with 0', async () => {
+    const prisma = makePrisma({
+      existing: [{ id: 100, source: 'LATE', amount: 20 } as any],
+    });
+    await svcWith(prisma).create({ ...dto(AttendanceStatus.LATE), lateFee: 0 });
+
+    expect(prisma.tx.fineEntry.create).not.toHaveBeenCalled();
+    expect(prisma.tx.fineEntry.deleteMany).toHaveBeenCalledWith({
+      where: { id: { in: [100] } },
+    });
+  });
+
+  it('reprices a late charge already on file when the teacher sends a new amount', async () => {
+    const prisma = makePrisma({
+      existing: [{ id: 100, source: 'LATE', amount: 20 } as any],
+    });
+    (prisma.tx.fineEntry as any).update = jest.fn().mockResolvedValue({});
+    await svcWith(prisma).create({ ...dto(AttendanceStatus.LATE), lateFee: 5 });
+
+    expect((prisma.tx.fineEntry as any).update).toHaveBeenCalledWith({
+      where: { id: 100 },
+      data: { amount: 5 },
+    });
+    expect(prisma.tx.fineEntry.create).not.toHaveBeenCalled();
+  });
+
+  it('applies each record\'s own late fee in a batch', async () => {
+    const prisma = makePrisma();
+    await svcWith(prisma).createBatch({
+      records: [{ ...dto(AttendanceStatus.LATE), lateFee: 15 }],
+    });
+
+    expect(prisma.tx.fineEntry.create).toHaveBeenCalledWith(
+      expect.objectContaining({
+        data: expect.objectContaining({ source: 'LATE', amount: 15 }),
+      }),
+    );
+  });
+
   // At roll call the memorization fee is provisional — the student usually
   // has not recited yet — so the late notice names only the late fee.
   it('leaves the provisional memorization fee out of the notification amount', async () => {

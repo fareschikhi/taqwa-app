@@ -19,12 +19,19 @@ import { desiredCharges, HalaqaFineRates } from './fine-reconciliation';
 /// notification body. The memorization charge is left out on purpose: at roll
 /// call it is provisional — the student has usually not recited *yet* — so
 /// announcing it would tell him he was fined for something still undecided.
+///
+/// [lateFee] is the amount the teacher chose for this late arrival. It
+/// replaces the halaqa's rate, and — unlike a rate change — it does reprice a
+/// late charge already on file, because the teacher is deciding *this* day.
+/// Left undefined (memorization saves, older app builds), the stored charge
+/// keeps its amount.
 export async function reconcileDayFines(
   tx: Prisma.TransactionClient,
   studentId: number,
   date: Date,
   status: AttendanceStatus,
   actorUserId: number | null,
+  lateFee?: number,
 ): Promise<number> {
   const student = await tx.student.findUnique({
     where: { id: studentId },
@@ -49,7 +56,7 @@ export async function reconcileDayFines(
     halaqa && halaqa.isAdult
       ? {
           absenceFee: halaqa.absenceFee,
-          lateFee: halaqa.lateFee,
+          lateFee: lateFee ?? halaqa.lateFee,
           missedMemorizationFee: halaqa.missedMemorizationFee,
         }
       : null;
@@ -72,7 +79,7 @@ export async function reconcileDayFines(
 
   const existing = await tx.fineEntry.findMany({
     where: { studentId, date, source: { not: 'MANUAL' } },
-    select: { id: true, source: true },
+    select: { id: true, source: true, amount: true },
   });
 
   const wantedSources = new Set<string>(wanted.map((c) => c.source));
@@ -83,16 +90,33 @@ export async function reconcileDayFines(
     await tx.fineEntry.deleteMany({ where: { id: { in: stale } } });
   }
 
-  const kept = new Set(
-    existing.filter((row) => wantedSources.has(row.source)).map((r) => r.source),
+  const kept = new Map(
+    existing
+      .filter((row) => wantedSources.has(row.source))
+      .map((r) => [r.source, r] as const),
   );
 
   let charged = 0;
   for (const charge of wanted) {
     // An existing charge keeps the amount it was created at. Raising a
     // halaqa's rate must not reprice a day that was already charged, and
-    // re-saving an old sheet is exactly how that would happen.
-    if (kept.has(charge.source)) continue;
+    // re-saving an old sheet is exactly how that would happen. The one
+    // exception is a late amount the teacher typed for this very day.
+    const row = kept.get(charge.source);
+    if (row) {
+      const repriced =
+        charge.source === 'LATE' &&
+        lateFee !== undefined &&
+        row.amount !== charge.amount;
+      if (repriced) {
+        await tx.fineEntry.update({
+          where: { id: row.id },
+          data: { amount: charge.amount },
+        });
+        charged += charge.amount;
+      }
+      continue;
+    }
     await tx.fineEntry.create({
       data: {
         studentId,

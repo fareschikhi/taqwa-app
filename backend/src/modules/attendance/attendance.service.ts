@@ -185,6 +185,7 @@ export class AttendanceService {
           date,
           dto.status,
           actorUserId,
+          dto.lateFee,
         );
         await reconcileDayPoints(tx, dto.studentId, date);
         return { record: written, previous: before?.status ?? null, charged };
@@ -244,6 +245,7 @@ export class AttendanceService {
           date,
           r.status,
           actorUserId,
+          r.lateFee,
         );
         await reconcileDayPoints(tx, r.studentId, date);
         transitions.push({

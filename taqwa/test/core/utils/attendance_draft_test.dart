@@ -73,6 +73,54 @@ void main() {
     });
   });
 
+  group('teacher-chosen late fee', () {
+    test('rides along on a late record', () {
+      final payload = attendanceBatchPayload(
+        draft: {1: AttendanceStatus.late},
+        saved: {},
+        date: '2026-08-28',
+        lateFees: {1: 25},
+      );
+
+      expect(payload, [
+        {'studentId': 1, 'date': '2026-08-28', 'status': 'LATE', 'lateFee': 25},
+      ]);
+    });
+
+    test('sends 0 to waive the fee rather than dropping it', () {
+      final payload = attendanceBatchPayload(
+        draft: {1: AttendanceStatus.late},
+        saved: {},
+        date: '2026-08-28',
+        lateFees: {1: 0},
+      );
+
+      expect(payload.single['lateFee'], 0);
+    });
+
+    test('is never sent on a status that is not late', () {
+      final payload = attendanceBatchPayload(
+        draft: {1: AttendanceStatus.present},
+        saved: {},
+        date: '2026-08-28',
+        lateFees: {1: 25},
+      );
+
+      expect(payload.single.containsKey('lateFee'), isFalse);
+    });
+
+    // Already late on the server, re-marked at a new price: still a change.
+    test('makes an already-saved late student pending again', () {
+      final pending = pendingAttendanceIds(
+        draft: {1: AttendanceStatus.late},
+        saved: {1: AttendanceStatus.late},
+        lateFees: {1: 5},
+      );
+
+      expect(pending, {1});
+    });
+  });
+
   group('status mapping', () {
     test('round-trips every real status', () {
       for (final status in [

@@ -148,10 +148,16 @@ class TeacherRemoteDatasource {
     required int studentId,
     required String date,
     required String status,
+    int? lateFee,
   }) async {
     final response = await _dio.post(
       ApiEndpoints.attendance,
-      data: {'studentId': studentId, 'date': date, 'status': status},
+      data: {
+        'studentId': studentId,
+        'date': date,
+        'status': status,
+        'lateFee': ?lateFee,
+      },
     );
     return response.data as Map<String, dynamic>;
   }

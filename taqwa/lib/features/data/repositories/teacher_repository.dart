@@ -96,8 +96,14 @@ class TeacherRepository {
     required int studentId,
     required String date,
     required String status,
+    int? lateFee,
   }) async {
-    await _ds.upsertAttendance(studentId: studentId, date: date, status: status);
+    await _ds.upsertAttendance(
+      studentId: studentId,
+      date: date,
+      status: status,
+      lateFee: lateFee,
+    );
   }
 
   // ─── Notes ─────────────────────────────────────────────────────────────────

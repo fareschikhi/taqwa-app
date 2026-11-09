@@ -28,15 +28,22 @@ AttendanceStatus attendanceStatusFromApi(String? value) =>
 ///
 /// There is deliberately no "did not memorize" input here: the server derives
 /// it from whether a recitation was recorded that day.
+///
+/// [lateFees] holds late amounts the teacher chose that the server has not
+/// taken yet. A late student with one is pending even when the server already
+/// has him late: re-marking him at a different price is still a change.
 Set<int> pendingAttendanceIds({
   required Map<int, AttendanceStatus> draft,
   required Map<int, AttendanceStatus> saved,
+  Map<int, int> lateFees = const {},
 }) {
   return {
     for (final entry in draft.entries)
       // An undecided student has no status to send.
       if (entry.value != AttendanceStatus.unset &&
-          saved[entry.key] != entry.value)
+          (saved[entry.key] != entry.value ||
+              (entry.value == AttendanceStatus.late &&
+                  lateFees.containsKey(entry.key))))
         entry.key,
   };
 }
@@ -44,12 +51,20 @@ Set<int> pendingAttendanceIds({
 /// The `records` array for `POST /attendance/batch`, one entry per pending
 /// student. Ordering follows [draft] so a failure reads against the list the
 /// teacher was looking at.
+///
+/// A late record carries `lateFee` when the teacher chose one; without it the
+/// server falls back to the halaqa's rate (a child student is never fined).
 List<Map<String, dynamic>> attendanceBatchPayload({
   required Map<int, AttendanceStatus> draft,
   required Map<int, AttendanceStatus> saved,
   required String date,
+  Map<int, int> lateFees = const {},
 }) {
-  final pending = pendingAttendanceIds(draft: draft, saved: saved);
+  final pending = pendingAttendanceIds(
+    draft: draft,
+    saved: saved,
+    lateFees: lateFees,
+  );
   return [
     for (final entry in draft.entries)
       if (pending.contains(entry.key))
@@ -57,6 +72,9 @@ List<Map<String, dynamic>> attendanceBatchPayload({
           'studentId': entry.key,
           'date': date,
           'status': attendanceStatusToApi(entry.value)!,
+          if (entry.value == AttendanceStatus.late &&
+              lateFees.containsKey(entry.key))
+            'lateFee': lateFees[entry.key],
         },
   ];
 }

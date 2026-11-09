@@ -17,6 +17,7 @@ import '../../../../core/widgets/attendance_controls.dart';
 import '../../../../core/widgets/confirm_discard_attendance_dialog.dart';
 import '../../../../core/widgets/confirm_discard_memorization_dialog.dart';
 import '../../../../core/widgets/confirm_duplicate_memorization_dialog.dart';
+import '../../../../core/widgets/late_fee_dialog.dart';
 import '../../../../core/utils/memorization_duplicates.dart';
 import '../../../../core/providers/auth_provider.dart';
 import '../../../../core/providers/selected_halaqa_provider.dart';
@@ -92,6 +93,11 @@ class _AttendancePageState extends ConsumerState<AttendancePage>
 
   int _lateFeeFor(int studentId) => _studentHalaqa[studentId]?.lateFee ?? 0;
 
+  /// Late amounts the teacher picked in the fee dialog that the server has
+  /// not taken yet (studentId -> DA). Cleared per student once a save carries
+  /// it, so a later re-save without a new choice leaves the charge alone.
+  final Map<int, int> _lateFees = {};
+
   final _queueStore = AttendanceQueueStore();
 
   /// Marks the server has not taken yet. Mirrors what is on disk, so the
@@ -138,6 +144,7 @@ class _AttendancePageState extends ConsumerState<AttendancePage>
     return pendingAttendanceIds(
       draft: _attendance,
       saved: _savedAttendance,
+      lateFees: _lateFees,
     ).where(visible.contains).toSet();
   }
 
@@ -148,7 +155,18 @@ class _AttendancePageState extends ConsumerState<AttendancePage>
   Set<int> get _handEditedIds => pendingAttendanceIds(
     draft: _attendance,
     saved: _initialAttendance,
+    lateFees: _lateFees,
   );
+
+  /// Forgets the fees a successful save carried — but only where the teacher
+  /// has not picked another one while the request was out.
+  void _clearSentLateFees(List<Map<String, dynamic>> sent) {
+    for (final record in sent) {
+      final id = record['studentId'] as int;
+      final fee = record['lateFee'];
+      if (fee != null && _lateFees[id] == fee) _lateFees.remove(id);
+    }
+  }
 
   @override
   void initState() {
@@ -320,6 +338,8 @@ class _AttendancePageState extends ConsumerState<AttendancePage>
         final id = record['studentId'] as int;
         if (record['date'] != today || stillPending.contains(id)) continue;
         _attendance[id] = attendanceStatusFromApi(record['status'] as String);
+        final fee = record['lateFee'];
+        if (fee is int) _lateFees[id] = fee;
       }
       _copySavedAt = fromCache ? roster.savedAt : null;
       _isLoading = false;
@@ -434,6 +454,7 @@ class _AttendancePageState extends ConsumerState<AttendancePage>
       draft: {studentId: status},
       saved: const {},
       date: _todayStr,
+      lateFees: _lateFees,
     ).first;
 
     setState(() => _savingStudentIds.add(studentId));
@@ -442,9 +463,13 @@ class _AttendancePageState extends ConsumerState<AttendancePage>
         studentId: studentId,
         date: _todayStr,
         status: apiStatus,
+        lateFee: record['lateFee'] as int?,
       );
       if (mounted) {
-        setState(() => _savedAttendance[studentId] = status);
+        setState(() {
+          _savedAttendance[studentId] = status;
+          _clearSentLateFees([record]);
+        });
       }
       await _flushQueue();
       return true;
@@ -476,6 +501,7 @@ class _AttendancePageState extends ConsumerState<AttendancePage>
       },
       saved: _savedAttendance,
       date: _todayStr,
+      lateFees: _lateFees,
     );
     if (payload.isEmpty) {
       setState(() => _isSaving = false);
@@ -494,6 +520,7 @@ class _AttendancePageState extends ConsumerState<AttendancePage>
             record['status'] as String,
           );
         }
+        _clearSentLateFees(payload);
       });
       _showSnack('تم حفظ حضور ${payload.length} طالب', isError: false);
       // The connection is evidently back, so drain anything held earlier.
@@ -618,6 +645,7 @@ class _AttendancePageState extends ConsumerState<AttendancePage>
           // board and marks the halaqa a second time.
           _attendance[id] = status;
         }
+        _clearSentLateFees(sending);
       });
       _showSnack('تم حفظ ${sending.length} حضور مؤجل', isError: false);
     } catch (_) {
@@ -646,8 +674,28 @@ class _AttendancePageState extends ConsumerState<AttendancePage>
       if (!confirmed) return;
     }
 
+    // Lateness costs what the teacher says it costs, not a flat rate: five
+    // minutes and an hour are not the same offence. Only adult halaqas are
+    // fined at all, so a child goes straight to late with no question.
+    int? lateFee;
+    if (!mounted) return;
+    if (tapped == AttendanceStatus.late && _isAdultStudent(student.id)) {
+      lateFee = await LateFeeDialog.show(
+        context,
+        title: student.fullName,
+        defaultFee: _lateFeeFor(student.id),
+      );
+      // Backing out of the dialog means "not late after all".
+      if (lateFee == null || !mounted) return;
+    }
+
     setState(() {
       _attendance[student.id] = tapped;
+      if (lateFee != null) {
+        _lateFees[student.id] = lateFee;
+      } else {
+        _lateFees.remove(student.id);
+      }
       if (tapped == AttendanceStatus.absent) {
         _memorizedStudentIds.remove(student.id);
         _todayMemorization.remove(student.id);
@@ -898,7 +946,33 @@ class _AttendancePageState extends ConsumerState<AttendancePage>
   /// Going absent wipes recitation already entered, which the single-row tap
   /// confirms per student. Asking once per student in bulk would be a wall of
   /// dialogs, so those students are left as they are and the teacher is told.
-  void _markAll(AttendanceStatus status) {
+  ///
+  /// Marking late asks for one fee for the whole group, applied to the adult
+  /// students who were not late already — a student marked late earlier keeps
+  /// the amount chosen for him.
+  Future<void> _markAll(AttendanceStatus status) async {
+    int? lateFee;
+    if (status == AttendanceStatus.late) {
+      final newlyLateAdults = _students
+          .where(
+            (s) =>
+                !_savingStudentIds.contains(s.id) &&
+                _attendance[s.id] != AttendanceStatus.late &&
+                _isAdultStudent(s.id),
+          )
+          .toList();
+      if (newlyLateAdults.isNotEmpty) {
+        lateFee = await LateFeeDialog.show(
+          context,
+          title: newlyLateAdults.length == 1
+              ? newlyLateAdults.first.fullName
+              : 'تحديد ${newlyLateAdults.length} طالب كمتأخرين',
+          defaultFee: _lateFeeFor(newlyLateAdults.first.id),
+        );
+        if (lateFee == null || !mounted) return;
+      }
+    }
+
     var skipped = 0;
     setState(() {
       for (final s in _students) {
@@ -908,6 +982,15 @@ class _AttendancePageState extends ConsumerState<AttendancePage>
             if (_attendance[s.id] != AttendanceStatus.absent) skipped++;
             continue;
           }
+        }
+        if (status == AttendanceStatus.late) {
+          if (_attendance[s.id] != AttendanceStatus.late &&
+              lateFee != null &&
+              _isAdultStudent(s.id)) {
+            _lateFees[s.id] = lateFee;
+          }
+        } else {
+          _lateFees.remove(s.id);
         }
         _attendance[s.id] = status;
       }
