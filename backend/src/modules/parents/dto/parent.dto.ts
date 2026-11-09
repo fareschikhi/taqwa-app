@@ -1,5 +1,6 @@
 import { IsArray, IsInt, IsOptional, IsString } from 'class-validator';
 import {
+  IsExtraPhones,
   IsFullName,
   IsOptionalEmail,
   IsOptionalPhone,
@@ -10,6 +11,7 @@ export class CreateParentDto {
   @IsFullName() fullName: string;
   @IsOptionalEmail() email?: string;
   @IsOptionalPhone() phone?: string;
+  @IsExtraPhones() extraPhones?: string[];
   @IsPassword() password: string;
   @IsOptional() @IsString() address?: string;
   @IsOptional() @IsString() avatar?: string;
@@ -20,6 +22,7 @@ export class UpdateParentDto {
   @IsOptional() @IsFullName() fullName?: string;
   @IsOptionalEmail() email?: string;
   @IsOptionalPhone() phone?: string;
+  @IsExtraPhones() extraPhones?: string[];
   @IsOptional() @IsPassword() password?: string;
   @IsOptional() @IsString() address?: string;
   @IsOptional() @IsString() avatar?: string;

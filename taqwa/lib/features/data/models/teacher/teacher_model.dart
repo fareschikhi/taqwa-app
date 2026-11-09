@@ -33,6 +33,7 @@ class TeacherModel {
 
   String get fullName => user.fullName;
   String? get phone => user.phone;
+  List<String> get extraPhones => user.extraPhones;
   String? get email => user.email;
   String? get avatar => user.avatar;
   bool get isActive => user.isActive;

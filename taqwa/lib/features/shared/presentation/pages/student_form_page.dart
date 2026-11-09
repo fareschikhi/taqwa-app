@@ -64,6 +64,7 @@ class _StudentFormPageState extends State<StudentFormPage> {
   final _formKey = GlobalKey<FormState>();
   final _nameController = TextEditingController();
   final _phoneController = TextEditingController();
+  final _extraPhones = ExtraPhonesController();
   final _dobController = TextEditingController();
   final _addressController = TextEditingController();
   final _passwordController = TextEditingController();
@@ -115,6 +116,7 @@ class _StudentFormPageState extends State<StudentFormPage> {
     if (student != null) {
       _nameController.text = student.fullName;
       _phoneController.text = student.phone ?? '';
+      _extraPhones.load(student.extraPhones);
       _addressController.text = student.address;
       _selectedHalaqaId = student.halaqaId;
       _selectedParentId = student.parentId;
@@ -142,6 +144,7 @@ class _StudentFormPageState extends State<StudentFormPage> {
   void dispose() {
     _nameController.dispose();
     _phoneController.dispose();
+    _extraPhones.dispose();
     _dobController.dispose();
     _addressController.dispose();
     _passwordController.dispose();
@@ -237,6 +240,7 @@ class _StudentFormPageState extends State<StudentFormPage> {
           if (_isAdultForm && newPassword.isNotEmpty) 'password': newPassword,
           'fullName': _nameController.text.trim(),
           'phone': _phoneController.text.trim(),
+          'extraPhones': _extraPhones.values,
           'address': _addressController.text.trim(),
           if (birthDate != null) 'birthDate': _isoDate(birthDate),
           'halaqaId': ?_selectedHalaqaId,
@@ -250,6 +254,7 @@ class _StudentFormPageState extends State<StudentFormPage> {
           StudentPayloadDto(
             fullName: _nameController.text.trim(),
             phone: _phoneController.text.trim(),
+            extraPhones: _extraPhones.values,
             birthDate: birthDate == null ? null : _isoDate(birthDate),
             address: _addressController.text.trim(),
             halaqaId: _selectedHalaqaId,
@@ -405,12 +410,14 @@ class _StudentFormPageState extends State<StudentFormPage> {
             // login, and many were imported with a name alone, so requiring
             // it would block every later edit (such as picking a halaqa).
             validator: (v) => AccountValidators.phone(v, required: _isAdult),
+            extraPhones: _extraPhones,
           ),
           ContactOwnersHint(
             controller: _phoneController,
             field: ContactField.phone,
             excludeUserId: widget.student?.userId,
           ),
+          ExtraPhoneFields(controller: _extraPhones),
           SizedBox(height: 24.h),
           const FormSectionHeader(
             icon: Icons.school_outlined,

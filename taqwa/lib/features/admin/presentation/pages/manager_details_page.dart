@@ -111,6 +111,19 @@ class _ManagerDetailsPageState extends State<ManagerDetailsPage> {
                             SizedBox(height: 12.h),
                             TelegramButton(phone: _manager.phone),
                           ],
+                          for (final extra in _manager.extraPhones) ...[
+                            SizedBox(height: 12.h),
+                            DetailInfoRow(
+                              icon: Icons.phone_outlined,
+                              label: 'رقم هاتف إضافي',
+                              value: extra,
+                              isLtr: true,
+                            ),
+                            if (telegramUri(extra) != null) ...[
+                              SizedBox(height: 12.h),
+                              TelegramButton(phone: extra),
+                            ],
+                          ],
                           SizedBox(height: 12.h),
                           DetailInfoRow(
                             icon: Icons.email_outlined,

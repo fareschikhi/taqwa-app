@@ -7,6 +7,7 @@ import {
   UpdateManagerStatusDto,
 } from './dto/manager.dto';
 import * as bcrypt from 'bcrypt';
+import { extraPhonesData } from '../../common/validators/account-fields';
 import { explainRestrictedDelete } from '../../common/prisma/restricted-delete';
 
 @Injectable()
@@ -18,6 +19,7 @@ export class ManagersService {
     fullName: true,
     email: true,
     phone: true,
+    extraPhones: true,
     avatar: true,
     isActive: true,
     createdAt: true,
@@ -79,6 +81,7 @@ export class ManagersService {
         fullName: rest.fullName,
         email,
         phone,
+        extraPhones: extraPhonesData(rest.extraPhones ?? [], phone),
         passwordHash: hash,
         mustChangePassword: true,
         role: 'MANAGER',
@@ -123,9 +126,13 @@ export class ManagersService {
       canDeleteAccounts,
       canAccessUnassigned,
       canChat,
+      extraPhones,
       ...rest
     } = dto;
     const userUpdate: any = { ...rest };
+    if (extraPhones !== undefined) {
+      userUpdate.extraPhones = extraPhonesData(extraPhones, rest.phone);
+    }
     if (password) {
       userUpdate.passwordHash = await bcrypt.hash(password, 10);
       userUpdate.mustChangePassword = true;

@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:taqwa/core/utils/extra_phones.dart';
 import 'package:taqwa/core/widgets/phone_field.dart';
 
 Widget _host(Widget child) => ScreenUtilInit(
@@ -60,5 +61,58 @@ void main() {
 
     expect(find.text('1001'), findsOneWidget);
     expect(controller.text, '1001');
+  });
+
+  group('extra phones', () {
+    Widget form(TextEditingController main, ExtraPhonesController extra) =>
+        _host(SingleChildScrollView(child: Column(children: [
+          PhoneField(controller: main, extraPhones: extra),
+          ExtraPhoneFields(controller: extra),
+        ])));
+
+    testWidgets('+ adds a row whose number lands in the values',
+        (tester) async {
+      final extra = ExtraPhonesController();
+      await tester.pumpWidget(form(TextEditingController(), extra));
+
+      await tester.tap(find.byTooltip('إضافة رقم هاتف آخر'));
+      await tester.pump();
+      expect(find.text('رقم هاتف إضافي 1'), findsOneWidget);
+
+      await tester.enterText(find.byType(TextFormField).last, '661234567');
+      expect(extra.values, ['0661234567']);
+    });
+
+    testWidgets('a blank row is left out and a removed row is gone',
+        (tester) async {
+      final extra = ExtraPhonesController()..load(['0661234567']);
+      await tester.pumpWidget(form(TextEditingController(), extra));
+
+      await tester.tap(find.byTooltip('إضافة رقم هاتف آخر'));
+      await tester.pump();
+      expect(extra.rows, hasLength(2));
+      expect(extra.values, ['0661234567']);
+
+      await tester.tap(find.byTooltip('حذف هذا الرقم').first);
+      await tester.pump();
+      expect(extra.values, isEmpty);
+      expect(find.text('رقم هاتف إضافي 2'), findsNothing);
+    });
+
+    testWidgets('+ is disabled once the limit is reached', (tester) async {
+      final extra = ExtraPhonesController()
+        ..load(List.filled(kMaxExtraPhones, '0661234567'));
+      await tester.pumpWidget(form(TextEditingController(), extra));
+
+      expect(extra.canAdd, isFalse);
+      expect(find.byTooltip('إضافة رقم هاتف آخر'), findsNothing);
+      final button = tester.widget<IconButton>(
+        find.ancestor(
+          of: find.byTooltip('الحد الأقصى $kMaxExtraPhones أرقام إضافية'),
+          matching: find.byType(IconButton),
+        ),
+      );
+      expect(button.onPressed, isNull);
+    });
   });
 }

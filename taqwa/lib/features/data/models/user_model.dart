@@ -1,3 +1,4 @@
+import 'package:taqwa/core/utils/extra_phones.dart';
 enum UserRole { admin, teacher, parent, student, adultStudent, manager }
 
 class UserModel {
@@ -5,6 +6,7 @@ class UserModel {
   final String fullName;
   final String? email;
   final String? phone;
+  final List<String> extraPhones;
   final UserRole role;
   final String? avatar;
   final bool isActive;
@@ -30,6 +32,7 @@ class UserModel {
     required this.fullName,
     this.email,
     this.phone,
+    this.extraPhones = const [],
     required this.role,
     this.avatar,
     this.isActive = true,
@@ -49,6 +52,7 @@ class UserModel {
     fullName: fullName,
     email: email,
     phone: phone,
+    extraPhones: extraPhones,
     role: role,
     avatar: avatar,
     isActive: isActive,
@@ -118,6 +122,7 @@ class UserModel {
       fullName: (json['fullName'] as String?) ?? '',
       email: json['email'] as String?,
       phone: json['phone'] as String?,
+      extraPhones: parseExtraPhones(json['extraPhones']),
       role: roleVal,
       avatar: (json['avatar'] as String?) ?? (json['image'] as String?),
       isActive: (json['isActive'] as bool?) ?? true,
@@ -139,6 +144,7 @@ class UserModel {
       'fullName': fullName,
       'email': email,
       'phone': phone,
+      'extraPhones': extraPhones,
       // Written out explicitly rather than derived from the Dart identifier:
       // `role.name.toUpperCase()` would turn `adultStudent` into
       // `ADULTSTUDENT`, which the API does not recognise.

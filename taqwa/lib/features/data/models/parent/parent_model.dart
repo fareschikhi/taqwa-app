@@ -1,3 +1,4 @@
+import 'package:taqwa/core/utils/extra_phones.dart';
 import 'parent_child_model.dart';
 
 class ParentModel {
@@ -5,6 +6,7 @@ class ParentModel {
   final int? userId;
   final String fullName;
   final String? phone;
+  final List<String> extraPhones;
   final String? email;
   final String? avatar;
   final String? address;
@@ -16,6 +18,7 @@ class ParentModel {
     this.userId,
     required this.fullName,
     this.phone,
+    this.extraPhones = const [],
     this.email,
     this.avatar,
     this.address,
@@ -52,6 +55,7 @@ class ParentModel {
           (userMap?['fullName'] as String?) ??
           '',
       phone: (json['phone'] as String?) ?? (userMap?['phone'] as String?),
+      extraPhones: parseExtraPhones(json['extraPhones'] ?? userMap?['extraPhones']),
       email: (json['email'] as String?) ?? (userMap?['email'] as String?),
       avatar: (json['avatar'] as String?) ?? (userMap?['avatar'] as String?),
       isActive:

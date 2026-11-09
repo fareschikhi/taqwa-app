@@ -6,6 +6,7 @@ import {
 import { PrismaService } from '../../prisma/prisma.service';
 import { CreateParentDto, UpdateParentDto } from './dto/parent.dto';
 import * as bcrypt from 'bcrypt';
+import { extraPhonesData } from '../../common/validators/account-fields';
 
 @Injectable()
 export class ParentsService {
@@ -18,6 +19,7 @@ export class ParentsService {
         fullName: true,
         email: true,
         phone: true,
+        extraPhones: true,
         avatar: true,
         isActive: true,
       },
@@ -91,6 +93,7 @@ export class ParentsService {
         fullName: dto.fullName,
         email,
         phone,
+        extraPhones: extraPhonesData(dto.extraPhones ?? [], phone),
         passwordHash: hash,
         mustChangePassword: true,
         role: 'PARENT',
@@ -110,6 +113,7 @@ export class ParentsService {
         fullName: true,
         email: true,
         phone: true,
+        extraPhones: true,
         avatar: true,
         isActive: true,
         createdAt: true,
@@ -130,6 +134,9 @@ export class ParentsService {
     }
     if (dto.phone !== undefined) {
       userUpdate.phone = dto.phone && dto.phone.trim() !== '' ? dto.phone.trim() : null;
+    }
+    if (dto.extraPhones !== undefined) {
+      userUpdate.extraPhones = extraPhonesData(dto.extraPhones, dto.phone);
     }
     if (dto.avatar) userUpdate.avatar = dto.avatar;
     if (dto.password) {

@@ -10,6 +10,7 @@ import {
   MaxLength,
 } from 'class-validator';
 import {
+  IsExtraPhones,
   IsFullName,
   IsOptionalEmail,
   IsOptionalPhone,
@@ -33,6 +34,7 @@ export class StudentRegistrationDto {
 export class CreateStudentDto extends StudentRegistrationDto {
   @IsFullName() fullName: string;
   @IsOptionalPhone() phone?: string;
+  @IsExtraPhones() extraPhones?: string[];
   // The adults' form asks for it; a child's record has no use for one.
   @IsOptionalEmail() email?: string;
   @IsOptional() @IsString() address?: string;
@@ -59,6 +61,7 @@ export class UpdateStudentDto extends StudentRegistrationDto {
   @IsOptional() @IsString() currentRating?: string;
   @IsOptionalEmail() email?: string;
   @IsOptionalPhone() phone?: string;
+  @IsExtraPhones() extraPhones?: string[];
   @IsOptional() @IsString() address?: string;
   @IsOptional() @IsDateString() birthDate?: string;
   @IsOptional() @IsInt() parentId?: number;

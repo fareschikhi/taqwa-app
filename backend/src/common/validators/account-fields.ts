@@ -1,6 +1,9 @@
 import { applyDecorators } from '@nestjs/common';
+import { Prisma } from '@prisma/client';
 import { Transform } from 'class-transformer';
 import {
+  ArrayMaxSize,
+  IsArray,
   IsEmail,
   IsNotEmpty,
   IsOptional,
@@ -66,6 +69,42 @@ export const IsOptionalPhone = () =>
     IsString(),
     Matches(STORED_PHONE, { message: PHONE_ERROR }),
   );
+
+/** How many numbers the + button may add beside the main phone. */
+export const MAX_EXTRA_PHONES = 4;
+
+/**
+ * Extra contact numbers beside the login phone. Each is normalized like the
+ * main one and blank rows are dropped, so an empty box left by the + button
+ * never fails the save. [] clears them; omitting the field leaves them as
+ * they are.
+ */
+export const IsExtraPhones = () =>
+  applyDecorators(
+    IsOptional(),
+    Transform(({ value }) =>
+      Array.isArray(value)
+        ? value.map(normalizePhone).filter((v) => v !== '')
+        : value,
+    ),
+    IsArray(),
+    ArrayMaxSize(MAX_EXTRA_PHONES, { message: 'عدد أرقام الهاتف كبير جداً' }),
+    IsString({ each: true }),
+    Matches(STORED_PHONE, { each: true, message: PHONE_ERROR }),
+  );
+
+/**
+ * The column value for validated extra phones: repeats and the main phone
+ * itself are dropped, and an empty list is stored as NULL.
+ */
+export function extraPhonesData(
+  extraPhones: string[],
+  mainPhone?: string | null,
+): string[] | typeof Prisma.DbNull {
+  const main = mainPhone?.trim();
+  const list = [...new Set(extraPhones)].filter((p) => p !== main);
+  return list.length > 0 ? list : Prisma.DbNull;
+}
 
 export const IsOptionalEmail = () =>
   applyDecorators(

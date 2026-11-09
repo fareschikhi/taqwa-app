@@ -110,6 +110,19 @@ class _ParentDetailsPageState extends State<ParentDetailsPage> {
                             SizedBox(height: 12.h),
                             TelegramButton(phone: _parent.phone),
                           ],
+                          for (final extra in _parent.extraPhones) ...[
+                            SizedBox(height: 12.h),
+                            DetailInfoRow(
+                              icon: Icons.phone_outlined,
+                              label: 'رقم هاتف إضافي',
+                              value: extra,
+                              isLtr: true,
+                            ),
+                            if (telegramUri(extra) != null) ...[
+                              SizedBox(height: 12.h),
+                              TelegramButton(phone: extra),
+                            ],
+                          ],
                           SizedBox(height: 12.h),
                           DetailInfoRow(
                             icon: Icons.email_outlined,

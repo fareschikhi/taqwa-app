@@ -1,8 +1,10 @@
+import 'package:taqwa/core/utils/extra_phones.dart';
 class ManagerModel {
   final int? id;
   final int? userId;
   final String fullName;
   final String? phone;
+  final List<String> extraPhones;
   final String? email;
   final String? avatar;
   final bool? isActive;
@@ -26,6 +28,7 @@ class ManagerModel {
     this.userId,
     required this.fullName,
     this.phone,
+    this.extraPhones = const [],
     this.email,
     this.avatar,
     this.isActive,
@@ -53,6 +56,7 @@ class ManagerModel {
           (user?['id'] as num?)?.toInt() ?? (json['userId'] as num?)?.toInt(),
       fullName: user?['fullName'] ?? json['fullName'] ?? '',
       phone: user?['phone'] ?? json['phone'],
+      extraPhones: parseExtraPhones(user?['extraPhones'] ?? json['extraPhones']),
       email: user?['email'] ?? json['email'],
       avatar: user?['avatar'] ?? json['avatar'],
       isActive: user?['isActive'] ?? json['isActive'],

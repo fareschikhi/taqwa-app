@@ -1,3 +1,4 @@
+import 'package:taqwa/core/utils/extra_phones.dart';
 import 'package:taqwa/core/constants/hadith_books.dart';
 
 class StudentModel {
@@ -5,6 +6,7 @@ class StudentModel {
   final int? userId;
   final String fullName;
   final String? phone;
+  final List<String> extraPhones;
   final String birthDate;
   final String address;
   final int? halaqaId;
@@ -43,6 +45,7 @@ class StudentModel {
     this.userId,
     required this.fullName,
     this.phone,
+    this.extraPhones = const [],
     this.birthDate = '',
     this.address = '',
     this.halaqaId,
@@ -87,6 +90,7 @@ class StudentModel {
           (userMap?['fullName'] as String?) ??
           '',
       phone: (json['phone'] as String?) ?? (userMap?['phone'] as String?),
+      extraPhones: parseExtraPhones(json['extraPhones'] ?? userMap?['extraPhones']),
       birthDate: birthDateRaw,
       address: addressRaw,
       halaqaId:

@@ -5,6 +5,7 @@ import '../constants/country_dial_codes.dart';
 import '../theme/app_colors.dart';
 import '../theme/app_text_styles.dart';
 import '../utils/account_validators.dart';
+import '../utils/extra_phones.dart';
 import 'app_text.dart';
 import 'app_text_field.dart';
 
@@ -22,10 +23,23 @@ class PhoneField extends StatefulWidget {
     this.label = 'رقم الهاتف',
     this.validator,
     this.enabled = true,
+    this.extraPhones,
+    this.onRemove,
+    this.autofocus = false,
   });
 
   final TextEditingController controller;
   final String label;
+
+  /// When set, the phone icon becomes a + button that adds an empty row to
+  /// it. Place an [ExtraPhoneFields] on the same controller to show the rows.
+  final ExtraPhonesController? extraPhones;
+
+  /// When set, the phone icon becomes a button that removes this row. Used by
+  /// [ExtraPhoneFields] for the added numbers.
+  final VoidCallback? onRemove;
+
+  final bool autofocus;
 
   /// Called with the stored form, not with what is in the number box.
   final FormFieldValidator<String>? validator;
@@ -115,6 +129,7 @@ class _PhoneFieldState extends State<PhoneField> {
       hint: 'XXXXXXXXX',
       controller: _number,
       enabled: widget.enabled,
+      autofocus: widget.autofocus,
       keyboardType: TextInputType.phone,
       maxLength: AccountValidators.phoneLength,
       inputFormatters: AccountValidators.phoneInputFormatters,
@@ -130,10 +145,132 @@ class _PhoneFieldState extends State<PhoneField> {
         country: _country,
         onTap: widget.enabled ? _pickCountry : null,
       ),
-      suffixIcon: const Icon(
-        Icons.phone_outlined,
-        color: AppColors.onSurfaceVariant,
-      ),
+      suffixIcon: _suffix(),
+    );
+  }
+
+  Widget _suffix() {
+    final onRemove = widget.onRemove;
+    if (onRemove != null) {
+      return IconButton(
+        tooltip: 'حذف هذا الرقم',
+        onPressed: widget.enabled ? onRemove : null,
+        icon: const Icon(Icons.remove_circle_outline, color: AppColors.error),
+      );
+    }
+    final extra = widget.extraPhones;
+    if (extra != null) {
+      return ListenableBuilder(
+        listenable: extra,
+        builder: (context, _) => IconButton(
+          tooltip: extra.canAdd
+              ? 'إضافة رقم هاتف آخر'
+              : 'الحد الأقصى $kMaxExtraPhones أرقام إضافية',
+          onPressed: widget.enabled && extra.canAdd ? extra.add : null,
+          icon: Icon(
+            Icons.add_circle_outline,
+            color: extra.canAdd ? AppColors.primary : AppColors.outline,
+          ),
+        ),
+      );
+    }
+    return const Icon(Icons.phone_outlined, color: AppColors.onSurfaceVariant);
+  }
+}
+
+/// The numbers a person has beside their main (login) phone, one controller
+/// per row. Contact only: login always uses the main phone.
+class ExtraPhonesController extends ChangeNotifier {
+  final List<TextEditingController> _rows = [];
+
+  /// The row the last [add] created, so only that one grabs focus.
+  TextEditingController? _justAdded;
+
+  List<TextEditingController> get rows => List.unmodifiable(_rows);
+  bool get canAdd => _rows.length < kMaxExtraPhones;
+
+  /// The typed numbers in stored form, blank rows left out.
+  List<String> get values => [
+    for (final row in _rows)
+      if (row.text.trim().isNotEmpty) row.text.trim(),
+  ];
+
+  /// Prefills the rows from a saved account.
+  void load(List<String> phones) {
+    for (final row in _rows) {
+      row.dispose();
+    }
+    _rows
+      ..clear()
+      ..addAll(
+        phones.take(kMaxExtraPhones).map((p) => TextEditingController(text: p)),
+      );
+    _justAdded = null;
+    notifyListeners();
+  }
+
+  void add() {
+    if (!canAdd) return;
+    _justAdded = TextEditingController();
+    _rows.add(_justAdded!);
+    notifyListeners();
+  }
+
+  void remove(TextEditingController row) {
+    if (!_rows.remove(row)) return;
+    if (identical(row, _justAdded)) _justAdded = null;
+    notifyListeners();
+    // The row's PhoneField still holds it until this rebuild ends.
+    WidgetsBinding.instance.addPostFrameCallback((_) => row.dispose());
+  }
+
+  @override
+  void dispose() {
+    for (final row in _rows) {
+      row.dispose();
+    }
+    super.dispose();
+  }
+}
+
+/// The rows the + button on a [PhoneField] adds, each with its own remove
+/// button. Shows nothing until a number is added.
+class ExtraPhoneFields extends StatelessWidget {
+  const ExtraPhoneFields({
+    super.key,
+    required this.controller,
+    this.enabled = true,
+  });
+
+  final ExtraPhonesController controller;
+  final bool enabled;
+
+  @override
+  Widget build(BuildContext context) {
+    return ListenableBuilder(
+      listenable: controller,
+      builder: (context, _) {
+        final rows = controller.rows;
+        return Column(
+          children: [
+            for (var i = 0; i < rows.length; i++)
+              Padding(
+                // Keyed by controller so removing a middle row keeps the
+                // country picked in the rows after it.
+                key: ObjectKey(rows[i]),
+                padding: EdgeInsets.only(top: 12.h),
+                child: PhoneField(
+                  controller: rows[i],
+                  label: 'رقم هاتف إضافي ${i + 1}',
+                  validator: AccountValidators.phone,
+                  enabled: enabled,
+                  autofocus: identical(rows[i], controller._justAdded),
+                  onRemove: () => controller.remove(rows[i]),
+                ),
+              ),
+          ],
+        );
+      },
     );
   }
 }

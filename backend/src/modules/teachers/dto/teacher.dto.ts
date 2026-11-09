@@ -1,5 +1,6 @@
 import { IsBoolean, IsDateString, IsOptional, IsString } from 'class-validator';
 import {
+  IsExtraPhones,
   IsFullName,
   IsOptionalEmail,
   IsOptionalPhone,
@@ -10,6 +11,7 @@ export class CreateTeacherDto {
   @IsFullName() fullName: string;
   @IsOptionalEmail() email?: string;
   @IsOptionalPhone() phone?: string;
+  @IsExtraPhones() extraPhones?: string[];
   @IsPassword() password: string;
   @IsOptional() @IsDateString() hireDate?: string;
   @IsOptional() @IsString() avatar?: string;
@@ -22,6 +24,7 @@ export class UpdateTeacherDto {
   @IsOptional() @IsFullName() fullName?: string;
   @IsOptionalEmail() email?: string;
   @IsOptionalPhone() phone?: string;
+  @IsExtraPhones() extraPhones?: string[];
   @IsOptional() @IsPassword() password?: string;
   @IsOptional() @IsDateString() hireDate?: string;
   @IsOptional() @IsString() avatar?: string;

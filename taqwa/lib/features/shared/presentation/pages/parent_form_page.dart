@@ -43,6 +43,7 @@ class _ParentFormPageState extends State<ParentFormPage> {
   final _formKey = GlobalKey<FormState>();
   final _nameController = TextEditingController();
   final _phoneController = TextEditingController();
+  final _extraPhones = ExtraPhonesController();
   final _emailController = TextEditingController();
   final _passwordController = TextEditingController();
   final _addressController = TextEditingController();
@@ -66,6 +67,7 @@ class _ParentFormPageState extends State<ParentFormPage> {
     if (parent != null) {
       _nameController.text = parent.fullName;
       _phoneController.text = parent.phone ?? '';
+      _extraPhones.load(parent.extraPhones);
       _emailController.text = parent.email ?? '';
       _addressController.text = parent.address ?? '';
     }
@@ -103,6 +105,7 @@ class _ParentFormPageState extends State<ParentFormPage> {
   void dispose() {
     _nameController.dispose();
     _phoneController.dispose();
+    _extraPhones.dispose();
     _emailController.dispose();
     _passwordController.dispose();
     _addressController.dispose();
@@ -125,6 +128,7 @@ class _ParentFormPageState extends State<ParentFormPage> {
         await _repo.updateParent(widget.parent!.id!, {
           'fullName': _nameController.text.trim(),
           'phone': _phoneController.text.trim(),
+          'extraPhones': _extraPhones.values,
           'email': _emailController.text.trim(),
           'address': _addressController.text.trim(),
           'avatar': ?avatarUrl,
@@ -137,6 +141,7 @@ class _ParentFormPageState extends State<ParentFormPage> {
             fullName: _nameController.text.trim(),
             password: password,
             phone: _phoneController.text.trim(),
+            extraPhones: _extraPhones.values,
             email: _emailController.text.trim(),
             address: _addressController.text.trim(),
             avatar: avatarUrl,
@@ -314,12 +319,14 @@ class _ParentFormPageState extends State<ParentFormPage> {
           PhoneField(
             controller: _phoneController,
             validator: AccountValidators.phone,
+            extraPhones: _extraPhones,
           ),
           ContactOwnersHint(
             controller: _phoneController,
             field: ContactField.phone,
             excludeUserId: widget.parent?.userId,
           ),
+          ExtraPhoneFields(controller: _extraPhones),
           SizedBox(height: 16.h),
           AppTextField(
             label: 'البريد الإلكتروني (اختياري)',

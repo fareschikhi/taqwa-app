@@ -34,6 +34,7 @@ class _CreateManagerPageState extends State<CreateManagerPage> {
   final _formKey = GlobalKey<FormState>();
   final _nameController = TextEditingController();
   final _phoneController = TextEditingController();
+  final _extraPhones = ExtraPhonesController();
   final _emailController = TextEditingController();
   final _passwordController = TextEditingController();
   bool _isLoading = false;
@@ -55,6 +56,7 @@ class _CreateManagerPageState extends State<CreateManagerPage> {
       final m = widget.editManager!;
       _nameController.text = m.fullName;
       _phoneController.text = m.phone ?? '';
+      _extraPhones.load(m.extraPhones);
       _emailController.text = m.email ?? '';
       _canManageAccounts = m.canManageAccounts;
       _canDeleteAccounts = m.canDeleteAccounts;
@@ -140,6 +142,7 @@ class _CreateManagerPageState extends State<CreateManagerPage> {
 
       final data = <String, dynamic>{
         'fullName': _nameController.text.trim(),
+        'extraPhones': _extraPhones.values,
         if (_phoneController.text.trim().isNotEmpty)
           'phone': _phoneController.text.trim(),
         if (_emailController.text.trim().isNotEmpty)
@@ -177,6 +180,7 @@ class _CreateManagerPageState extends State<CreateManagerPage> {
         _formKey.currentState!.reset();
         _nameController.clear();
         _phoneController.clear();
+        _extraPhones.load(const []);
         _emailController.clear();
         _passwordController.clear();
         setState(() {
@@ -201,6 +205,7 @@ class _CreateManagerPageState extends State<CreateManagerPage> {
   void dispose() {
     _nameController.dispose();
     _phoneController.dispose();
+    _extraPhones.dispose();
     _emailController.dispose();
     _passwordController.dispose();
     super.dispose();
@@ -319,12 +324,14 @@ class _CreateManagerPageState extends State<CreateManagerPage> {
                       PhoneField(
                         controller: _phoneController,
                         validator: AccountValidators.phone,
+                        extraPhones: _extraPhones,
                       ),
                       ContactOwnersHint(
                         controller: _phoneController,
                         field: ContactField.phone,
                         excludeUserId: widget.editManager?.userId,
                       ),
+                      ExtraPhoneFields(controller: _extraPhones),
                       SizedBox(height: 16.h),
                       AppTextField(
                         label: 'البريد الإلكتروني',

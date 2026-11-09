@@ -28,6 +28,7 @@ void main() {
       expect(payload.toJson(), {
         'fullName': 'Bilal Cherguini',
         'phone': '4008',
+        'extraPhones': <String>[],
         'birthDate': '2012-05-01',
         'address': 'الجزائر العاصمة',
         'halaqaId': 2,

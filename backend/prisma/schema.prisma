@@ -82,6 +82,10 @@ model User {
   id                 Int      @id @default(autoincrement())
   fullName           String   @db.VarChar(100)
   phone              String?  @db.VarChar(20)
+  // More numbers for the same person (a family with two phones), as a JSON
+  // string array in the stored phone form. Contact only: login, duplicate
+  // warnings and notifications all use `phone` alone.
+  extraPhones        Json?
   email              String?  @db.VarChar(150)
   passwordHash       String?  @db.VarChar(255)
   // Set whenever an admin sets the password (new account or reset), so the

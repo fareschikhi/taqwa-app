@@ -66,7 +66,7 @@ class _ManagersManagementPageState extends State<ManagersManagementPage> {
   void _applyFilter() {
     final q = _searchController.text;
     var list = _managers
-        .where((m) => matchesSearch(q, [m.fullName, m.phone]))
+        .where((m) => matchesSearch(q, [m.fullName, m.phone, ...m.extraPhones]))
         .toList();
 
     if (_filterIndex == 1) {

@@ -85,7 +85,7 @@ class _ManagerParentsPageState extends ConsumerState<ManagerParentsPage> {
   void _applyFilter() {
     final q = _searchController.text;
     var list = _parents
-        .where((p) => matchesSearch(q, [p.fullName, p.phone]))
+        .where((p) => matchesSearch(q, [p.fullName, p.phone, ...p.extraPhones]))
         .toList();
 
     if (_filterIndex == 1) {

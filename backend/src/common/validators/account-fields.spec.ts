@@ -5,7 +5,8 @@ import {
 } from '@nestjs/common';
 import { CreateParentDto, UpdateParentDto } from '../../modules/parents/dto/parent.dto';
 import { LoginDto } from '../../modules/auth/dto/login.dto';
-import { normalizePhone, PHONE_ERROR } from './account-fields';
+import { Prisma } from '@prisma/client';
+import { extraPhonesData, normalizePhone, PHONE_ERROR } from './account-fields';
 
 // Same configuration main.ts installs globally, so these exercise the real
 // request path rather than class-validator in isolation.
@@ -124,5 +125,29 @@ describe('LoginDto', () => {
 
     // Accounts created before the rule existed must still sign in.
     expect(await errorsFor(LoginDto, { phone: '1001', password: 'secret1' })).toEqual([]);
+  });
+});
+
+describe('extra phones', () => {
+  const transform = async (input: object) =>
+    (await pipe.transform({ ...valid, ...input }, body(CreateParentDto))) as CreateParentDto;
+
+  it('normalizes each number and drops blank rows', async () => {
+    const dto = await transform({ extraPhones: ['+213 771 23 45 67', '  ', '', '+33 6 12 34 56 78'] });
+    expect(dto.extraPhones).toEqual(['0771234567', '+33612345678']);
+  });
+
+  it('refuses a malformed number', async () => {
+    expect(await errorsFor(CreateParentDto, { ...valid, extraPhones: ['abc'] })).toContain(PHONE_ERROR);
+  });
+
+  it('refuses more than four numbers', async () => {
+    const five = ['0551000001', '0551000002', '0551000003', '0551000004', '0551000005'];
+    expect(await errorsFor(CreateParentDto, { ...valid, extraPhones: five })).not.toEqual([]);
+  });
+
+  it('stores repeats and the main phone once, and an empty list as NULL', () => {
+    expect(extraPhonesData(['0551', '0661', '0661'], '0551')).toEqual(['0661']);
+    expect(extraPhonesData([], '0551')).toBe(Prisma.DbNull);
   });
 });

@@ -6,6 +6,7 @@ import {
   IsString,
 } from 'class-validator';
 import {
+  IsExtraPhones,
   IsFullName,
   IsOptionalEmail,
   IsOptionalPhone,
@@ -16,6 +17,7 @@ export class CreateManagerDto {
   @IsFullName() fullName: string;
   @IsOptionalEmail() email?: string;
   @IsOptionalPhone() phone?: string;
+  @IsExtraPhones() extraPhones?: string[];
   @IsPassword() password: string;
   @IsOptional() @IsString() avatar?: string;
   @IsOptional() @IsArray() @IsInt({ each: true }) halaqaIds?: number[];
@@ -29,6 +31,7 @@ export class UpdateManagerDto {
   @IsOptional() @IsFullName() fullName?: string;
   @IsOptionalEmail() email?: string;
   @IsOptionalPhone() phone?: string;
+  @IsExtraPhones() extraPhones?: string[];
   @IsOptional() @IsPassword() password?: string;
   @IsOptional() @IsString() avatar?: string;
   @IsOptional() @IsArray() @IsInt({ each: true }) halaqaIds?: number[];

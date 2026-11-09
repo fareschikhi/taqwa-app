@@ -1,6 +1,9 @@
 class TeacherPayloadDto {
   final String? fullName;
   final String? phone;
+  /// More contact numbers beside [phone]; sent even when empty so an edit
+  /// that removes them all clears them.
+  final List<String> extraPhones;
   final String? password;
   final String? email;
   final String? dateOfBirth;
@@ -11,6 +14,7 @@ class TeacherPayloadDto {
   const TeacherPayloadDto({
     this.fullName,
     this.phone,
+    this.extraPhones = const [],
     this.password,
     this.email,
     this.dateOfBirth,
@@ -22,6 +26,7 @@ class TeacherPayloadDto {
   Map<String, dynamic> toJson() => {
     if (fullName != null) 'fullName': fullName,
     if (phone != null) 'phone': phone,
+    'extraPhones': extraPhones,
     if (password != null) 'password': password,
     if (email != null) 'email': email,
     if (dateOfBirth != null) 'dateOfBirth': dateOfBirth,

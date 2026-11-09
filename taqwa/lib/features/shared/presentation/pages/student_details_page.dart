@@ -5,6 +5,7 @@ import '../../../../core/theme/app_text_styles.dart';
 import '../../../../core/constants/app_constants.dart';
 import '../../../../core/constants/surahs.dart';
 import '../../../../core/enums/memorization_type.dart';
+import '../../../../core/utils/extra_phones.dart';
 import '../../../../core/utils/fine_balance.dart';
 import '../../../../core/utils/hadith_label.dart'
     show amountUnitLabel, hadithLabelOrFallback;
@@ -591,6 +592,13 @@ class _StudentDetailsPageState extends State<StudentDetailsPage> {
         value: user?['phone'] as String?,
         isLtr: true,
       ),
+      for (final extra in parseExtraPhones(user?['extraPhones']))
+        DetailInfoRow(
+          icon: Icons.phone_outlined,
+          label: 'رقم هاتف إضافي',
+          value: extra,
+          isLtr: true,
+        ),
       if (isAdult)
         DetailInfoRow(
           icon: Icons.email_outlined,

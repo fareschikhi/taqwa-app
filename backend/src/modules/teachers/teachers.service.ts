@@ -6,6 +6,7 @@ import {
 import { PrismaService } from '../../prisma/prisma.service';
 import { CreateTeacherDto, UpdateTeacherDto } from './dto/teacher.dto';
 import * as bcrypt from 'bcrypt';
+import { extraPhonesData } from '../../common/validators/account-fields';
 import { Memorization, Prisma } from '@prisma/client';
 import { explainRestrictedDelete } from '../../common/prisma/restricted-delete';
 
@@ -28,6 +29,7 @@ export class TeachersService {
             fullName: true,
             email: true,
             phone: true,
+            extraPhones: true,
             avatar: true,
             isActive: true,
           },
@@ -60,6 +62,7 @@ export class TeachersService {
             fullName: true,
             email: true,
             phone: true,
+            extraPhones: true,
             avatar: true,
             isActive: true,
             createdAt: true,
@@ -100,6 +103,7 @@ export class TeachersService {
         fullName: dto.fullName,
         email,
         phone,
+        extraPhones: extraPhonesData(dto.extraPhones ?? [], phone),
         passwordHash: hash,
         mustChangePassword: true,
         role: 'TEACHER',
@@ -130,6 +134,9 @@ export class TeachersService {
     if (dto.phone !== undefined) {
       userUpdate.phone =
         dto.phone && dto.phone.trim() !== '' ? dto.phone.trim() : null;
+    }
+    if (dto.extraPhones !== undefined) {
+      userUpdate.extraPhones = extraPhonesData(dto.extraPhones, dto.phone);
     }
     if (dto.avatar) userUpdate.avatar = dto.avatar;
     if (dto.password) {

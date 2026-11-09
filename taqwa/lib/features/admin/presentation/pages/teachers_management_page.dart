@@ -174,7 +174,7 @@ class _TeachersManagementPageState extends State<TeachersManagementPage> {
   void _applyFilter() {
     final q = _searchController.text;
     var list = _teachers
-        .where((t) => matchesSearch(q, [t.fullName, t.phone]))
+        .where((t) => matchesSearch(q, [t.fullName, t.phone, ...t.extraPhones]))
         .toList();
 
     if (_filterIndex == 1) {

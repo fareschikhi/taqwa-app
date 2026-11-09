@@ -33,6 +33,7 @@ class _CreateTeacherPageState extends State<CreateTeacherPage> {
   final _dobController = TextEditingController();
   final _nameController = TextEditingController();
   final _phoneController = TextEditingController();
+  final _extraPhones = ExtraPhonesController();
   final _emailController = TextEditingController();
   final _passwordController = TextEditingController();
   final _addressController = TextEditingController();
@@ -52,6 +53,7 @@ class _CreateTeacherPageState extends State<CreateTeacherPage> {
       final t = widget.editTeacher!;
       _nameController.text = t.fullName;
       _phoneController.text = t.phone ?? '';
+      _extraPhones.load(t.extraPhones);
       _emailController.text = t.email ?? '';
       _canPostNews = t.canPostNews;
       _isSupervisor = t.isSupervisor;
@@ -146,6 +148,7 @@ class _CreateTeacherPageState extends State<CreateTeacherPage> {
       if (_isEditing) {
         final data = <String, dynamic>{
           'fullName': _nameController.text.trim(),
+          'extraPhones': _extraPhones.values,
           if (_phoneController.text.trim().isNotEmpty)
             'phone': _phoneController.text.trim(),
           if (_emailController.text.trim().isNotEmpty)
@@ -165,6 +168,7 @@ class _CreateTeacherPageState extends State<CreateTeacherPage> {
           TeacherPayloadDto(
             fullName: _nameController.text.trim(),
             phone: _phoneController.text.trim(),
+            extraPhones: _extraPhones.values,
             password: _passwordController.text,
             email: _emailController.text.trim().isEmpty
                 ? null
@@ -206,6 +210,7 @@ class _CreateTeacherPageState extends State<CreateTeacherPage> {
   void dispose() {
     _nameController.dispose();
     _phoneController.dispose();
+    _extraPhones.dispose();
     _emailController.dispose();
     _passwordController.dispose();
     _addressController.dispose();
@@ -355,12 +360,14 @@ class _CreateTeacherPageState extends State<CreateTeacherPage> {
                       PhoneField(
                         controller: _phoneController,
                         validator: AccountValidators.phone,
+                        extraPhones: _extraPhones,
                       ),
                       ContactOwnersHint(
                         controller: _phoneController,
                         field: ContactField.phone,
                         excludeUserId: widget.editTeacher?.userId,
                       ),
+                      ExtraPhoneFields(controller: _extraPhones),
                       SizedBox(height: 16.h),
                       AppTextField(
                         label: 'البريد الإلكتروني',

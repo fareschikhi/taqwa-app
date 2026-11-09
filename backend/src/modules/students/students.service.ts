@@ -4,6 +4,7 @@ import {
   BadRequestException,
 } from '@nestjs/common';
 import * as bcrypt from 'bcrypt';
+import { extraPhonesData } from '../../common/validators/account-fields';
 import { PrismaService } from '../../prisma/prisma.service';
 import {
   CreateStudentDto,
@@ -24,6 +25,7 @@ export class StudentsService {
         fullName: true,
         email: true,
         phone: true,
+        extraPhones: true,
         avatar: true,
         isActive: true,
         // The admin forms need to tell an adult student from a child one
@@ -247,6 +249,7 @@ export class StudentsService {
       data: {
         fullName: dto.fullName,
         phone,
+        extraPhones: extraPhonesData(dto.extraPhones ?? [], phone),
         email,
         // A child student is a record, not an account: the role classifies
         // the row while the null hash keeps the login door shut. An adult
@@ -300,6 +303,9 @@ export class StudentsService {
       userUpdate.email = dto.email.trim() === '' ? null : dto.email.trim();
     }
 
+    if (dto.extraPhones !== undefined) {
+      userUpdate.extraPhones = extraPhonesData(dto.extraPhones, dto.phone);
+    }
     if (dto.avatar) userUpdate.avatar = dto.avatar;
 
     // Only an adult student signs in; a child's record keeps its null hash
@@ -358,6 +364,7 @@ export class StudentsService {
             fullName: true,
             email: true,
             phone: true,
+            extraPhones: true,
             avatar: true,
             role: true,
           },
@@ -388,7 +395,7 @@ export class StudentsService {
         // profile simply carries null and the UI omits the card.
         parent: {
           select: {
-            user: { select: { fullName: true, phone: true, avatar: true } },
+            user: { select: { fullName: true, phone: true, extraPhones: true, avatar: true } },
           },
         },
         memorization: { orderBy: { recordedAt: 'desc' }, take: 10 },
