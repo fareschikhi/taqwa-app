@@ -12,6 +12,7 @@ import {
   UpdateStudentDto,
 } from './dto/student.dto';
 import { normalizeHadithBooks } from './hadith-books';
+import { RATED_STATUSES } from '../attendance/attendance-status';
 import { userIdsMatching } from '../../common/search/name-search';
 
 @Injectable()
@@ -423,11 +424,16 @@ export class StudentsService {
     if (!student) throw new NotFoundException('الطالب غير موجود');
 
     // Arriving late is still arriving, so LATE counts towards the rate
-    // alongside PRESENT — only an ABSENT day is held against the student.
-    const attendedCount = await this.prisma.attendance.count({
-      where: { studentId: id, status: { in: ['PRESENT', 'LATE'] } },
-    });
-    const totalAttendance = student._count.attendance;
+    // alongside PRESENT — only an ABSENT day is held against the student. An
+    // excused day (عذر) is neither, so it stays out of the total as well.
+    const [attendedCount, totalAttendance] = await Promise.all([
+      this.prisma.attendance.count({
+        where: { studentId: id, status: { in: ['PRESENT', 'LATE'] } },
+      }),
+      this.prisma.attendance.count({
+        where: { studentId: id, status: { in: RATED_STATUSES } },
+      }),
+    ]);
     const attendanceRate =
       totalAttendance > 0
         ? Math.round((attendedCount / totalAttendance) * 100)

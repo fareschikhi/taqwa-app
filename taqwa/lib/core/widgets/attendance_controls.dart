@@ -6,7 +6,17 @@ import '../theme/app_text_styles.dart';
 import '../constants/app_constants.dart';
 import 'package:taqwa/core/widgets/app_text.dart';
 
-enum AttendanceStatus { present, absent, late, unset }
+/// [excused] is عذر: away with a reason. It is neither present nor absent —
+/// the server leaves it out of rates, skips it in the streak and never fines
+/// it — but like absent the student was not there, so there is nothing to
+/// recite.
+enum AttendanceStatus { present, absent, late, excused, unset }
+
+extension AttendanceStatusX on AttendanceStatus {
+  /// Not in the halaqa that day (absent or excused): no recitation is taken.
+  bool get isAway =>
+      this == AttendanceStatus.absent || this == AttendanceStatus.excused;
+}
 
 /// One of the two recitation controls under a student's name: an icon with
 /// its label beneath it.
@@ -179,6 +189,10 @@ class RecitationButton extends StatelessWidget {
         ink: AppColors.onError,
       ),
       AttendanceStatus.late => (fill: AppColors.late, ink: AppColors.onSurface),
+      AttendanceStatus.excused => (
+        fill: AppColors.excused,
+        ink: AppColors.onPrimary,
+      ),
       AttendanceStatus.unset => (
         fill: AppColors.surfaceContainerLowest,
         ink: AppColors.onSurfaceVariant,
@@ -211,6 +225,7 @@ class AttendanceSelector extends StatelessWidget {
   final bool enabled;
 
   static const _options = [
+    (AttendanceStatus.excused, 'عذر'),
     (AttendanceStatus.absent, 'غائب'),
     (AttendanceStatus.late, 'متأخر'),
     (AttendanceStatus.present, 'حاضر'),

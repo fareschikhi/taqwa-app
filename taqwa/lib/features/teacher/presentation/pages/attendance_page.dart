@@ -417,7 +417,7 @@ class _AttendancePageState extends ConsumerState<AttendancePage>
 
   /// Students still waiting to recite: here today, with nothing on file yet.
   bool _awaitsRecitation(TeacherStudentModel s) =>
-      _attendance[s.id] != AttendanceStatus.absent &&
+      _attendance[s.id]?.isAway != true &&
       !_memorizedStudentIds.contains(s.id);
 
   /// The first student after [after] — or from the top, without it — still
@@ -662,14 +662,15 @@ class _AttendancePageState extends ConsumerState<AttendancePage>
   ) async {
     if (_attendance[student.id] == tapped) return;
 
-    // Going absent discards recitation the teacher already entered. The write
-    // only happens on save, but the badge disappears the moment the chip is
-    // tapped, so the warning belongs here rather than at save time.
-    if (tapped == AttendanceStatus.absent &&
-        _memorizedStudentIds.contains(student.id)) {
+    // Going absent or excused discards recitation the teacher already
+    // entered. The write only happens on save, but the badge disappears the
+    // moment the chip is tapped, so the warning belongs here rather than at
+    // save time.
+    if (tapped.isAway && _memorizedStudentIds.contains(student.id)) {
       final confirmed = await ConfirmDiscardMemorizationDialog.show(
         context,
         studentName: student.fullName,
+        markLabel: tapped == AttendanceStatus.excused ? 'كصاحب عذر' : 'كغائب',
       );
       if (!confirmed) return;
     }
@@ -696,7 +697,7 @@ class _AttendancePageState extends ConsumerState<AttendancePage>
       } else {
         _lateFees.remove(student.id);
       }
-      if (tapped == AttendanceStatus.absent) {
+      if (tapped.isAway) {
         _memorizedStudentIds.remove(student.id);
         _todayMemorization.remove(student.id);
       }
@@ -824,7 +825,7 @@ class _AttendancePageState extends ConsumerState<AttendancePage>
     final total = _students.length;
     final unsavedCount = total - _savedCount;
     final here = _students
-        .where((s) => _attendance[s.id] != AttendanceStatus.absent)
+        .where((s) => _attendance[s.id]?.isAway != true)
         .length;
     final recited = here - _students.where(_awaitsRecitation).length;
     final firstToRecite = _nextToRecite();
@@ -961,9 +962,9 @@ class _AttendancePageState extends ConsumerState<AttendancePage>
     setState(() {
       for (final s in _students) {
         if (_savingStudentIds.contains(s.id)) continue;
-        if (status == AttendanceStatus.absent) {
+        if (status.isAway) {
           if (_memorizedStudentIds.contains(s.id)) {
-            if (_attendance[s.id] != AttendanceStatus.absent) skipped++;
+            if (_attendance[s.id] != status) skipped++;
             continue;
           }
         }
@@ -1070,13 +1071,15 @@ class _AttendancePageState extends ConsumerState<AttendancePage>
   }
 }
 
-/// Width of every mark column. 48 keeps each circle a full touch target while
-/// leaving the name column room for two-word names on a 360-wide phone.
-double get _markColumnWidth => 48.w;
+/// Width of every mark column. With four marks, 44 keeps each circle a full
+/// touch target while leaving the name column room for two-word names on a
+/// 360-wide phone.
+double get _markColumnWidth => 44.w;
 
 /// The status columns, laid out left to right. The app lays rows out LTR, so
 /// present is listed last to sit right next to the name for an Arabic reader.
 const _markColumns = [
+  (AttendanceStatus.excused, 'عذر'),
   (AttendanceStatus.late, 'متأخر'),
   (AttendanceStatus.absent, 'غائب'),
   (AttendanceStatus.present, 'حاضر'),
@@ -1217,7 +1220,7 @@ class _AttendanceTableRow extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     const divider = BorderSide(color: AppColors.outlineVariant, width: 0.6);
-    final canMemorize = status != AttendanceStatus.absent;
+    final canMemorize = !status.isAway;
     final enabled = !isSaving;
 
     Widget cell(Widget? child) => Container(

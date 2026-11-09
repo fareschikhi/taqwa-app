@@ -3,12 +3,13 @@ import '../widgets/attendance_controls.dart';
 /// The API's spelling of a chip, or null when there is nothing to send.
 ///
 /// `unset` is the teacher not having decided yet. An attendance row has no way
-/// to express that — every row is present, absent or late — so it is dropped
+/// to express that — every row is present, absent, late or excused — so it is dropped
 /// rather than defaulted, which would silently mark a whole halaqa present.
 String? attendanceStatusToApi(AttendanceStatus status) => switch (status) {
   AttendanceStatus.present => 'PRESENT',
   AttendanceStatus.absent => 'ABSENT',
   AttendanceStatus.late => 'LATE',
+  AttendanceStatus.excused => 'EXCUSED',
   AttendanceStatus.unset => null,
 };
 
@@ -18,6 +19,7 @@ AttendanceStatus attendanceStatusFromApi(String? value) =>
       'PRESENT' => AttendanceStatus.present,
       'ABSENT' => AttendanceStatus.absent,
       'LATE' => AttendanceStatus.late,
+      'EXCUSED' => AttendanceStatus.excused,
       _ => AttendanceStatus.unset,
     };
 

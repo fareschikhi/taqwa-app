@@ -1,4 +1,5 @@
 import { AttendanceStatus } from '@prisma/client';
+import { isAway } from './attendance-status';
 
 /// The reasons the system charges on its own. A manual entry uses the MANUAL
 /// source instead and never comes through here.
@@ -40,8 +41,9 @@ export function desiredCharges(input: {
   }
 
   // An absent student is already paying for the absence; the missed recitation
-  // follows from it rather than being a second thing he did wrong.
-  if (missedMemorization && status !== AttendanceStatus.ABSENT) {
+  // follows from it rather than being a second thing he did wrong. An excused
+  // student (عذر) was not there to recite, so he owes nothing at all.
+  if (missedMemorization && !isAway(status)) {
     charges.push({
       source: 'MISSED_MEMORIZATION',
       amount: rates.missedMemorizationFee,

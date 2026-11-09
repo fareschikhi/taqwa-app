@@ -9,6 +9,7 @@ import { AttendanceStatus, Prisma } from '@prisma/client';
 import { NotificationsService } from '../notifications/notifications.service';
 import { reconcileDayFines } from './day-fines';
 import { reconcileDayPoints } from '../points/day-points';
+import { isAway } from './attendance-status';
 
 /// Who is recording the attendance. Carries the teacher id because the halaqa
 /// a student sits in is what decides whether a given teacher may write for him.
@@ -38,8 +39,9 @@ export class AttendanceService {
     date: Date,
     status: AttendanceStatus,
   ) {
-    // LATE still means the student turned up, so only ABSENT discards work.
-    if (status !== AttendanceStatus.ABSENT) return;
+    // LATE still means the student turned up, so only a day away (absent or
+    // excused) discards work.
+    if (!isAway(status)) return;
     await tx.memorizationProgress.deleteMany({ where: { studentId, date } });
   }
 
@@ -375,10 +377,12 @@ export class AttendanceService {
       present,
       absent,
       late,
+      excused,
       total,
       monthPresent,
       monthAbsent,
       monthLate,
+      monthExcused,
       recent,
     ] = await Promise.all([
         this.prisma.attendance.count({
@@ -386,6 +390,9 @@ export class AttendanceService {
         }),
         this.prisma.attendance.count({ where: { studentId, status: 'ABSENT' } }),
         this.prisma.attendance.count({ where: { studentId, status: 'LATE' } }),
+        this.prisma.attendance.count({
+          where: { studentId, status: 'EXCUSED' },
+        }),
         this.prisma.attendance.count({ where: { studentId } }),
         this.prisma.attendance.count({
           where: { studentId, status: 'PRESENT', date: inMonth },
@@ -395,6 +402,9 @@ export class AttendanceService {
         }),
         this.prisma.attendance.count({
           where: { studentId, status: 'LATE', date: inMonth },
+        }),
+        this.prisma.attendance.count({
+          where: { studentId, status: 'EXCUSED', date: inMonth },
         }),
         // Newest first: the streak is the run ending at the latest record.
         this.prisma.attendance.findMany({
@@ -411,8 +421,12 @@ export class AttendanceService {
     //
     // These are attendance rows, not calendar days: Halaqa carries no
     // schedule, so the server cannot tell a day off from a day missed.
+    //
+    // An excused day (عذر) is stepped over: it neither breaks the run nor
+    // adds to it, so a sick day does not cost the student his streak.
     let currentStreak = 0;
     for (const record of recent) {
+      if (record.status === 'EXCUSED') continue;
       if (record.status === 'ABSENT') break;
       currentStreak++;
     }
@@ -420,24 +434,28 @@ export class AttendanceService {
     // A student who turned up late still turned up: LATE counts as attendance,
     // never as an absence. It sits on the numerator of both rates so the
     // figures agree with the day-by-day record the parent reads them against.
+    // EXCUSED sits on neither side, so it is taken out of the denominator.
     const attended = present + late;
+    const rated = attended + absent;
     const monthAttended = monthPresent + monthLate;
     const monthTotal = monthAttended + monthAbsent;
 
     return {
       // All-time counts, kept as a breakdown so a caller can still tell a
-      // punctual day from a late one.
+      // punctual day from a late one. `total` is every row, excused included.
       present,
       absent,
       late,
+      excused,
       total,
-      rate: total > 0 ? Math.round((attended / total) * 100) : 0,
+      rate: rated > 0 ? Math.round((attended / rated) * 100) : 0,
 
       // This month, for the parent dashboard card and attendance tab.
       month: now.getUTCMonth() + 1,
       monthPresent,
       monthAbsent,
       monthLate,
+      monthExcused,
       monthRate:
         monthTotal > 0 ? Math.round((monthAttended / monthTotal) * 100) : 0,
 

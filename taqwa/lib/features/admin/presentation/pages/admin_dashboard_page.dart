@@ -99,11 +99,15 @@ class _AdminDashboardPageState extends ConsumerState<AdminDashboardPage> {
         final attList = await _teacherRepo.getAttendanceByDate(dateStr);
         if (attList.isNotEmpty) {
           // A late arrival is attendance, not an absence — the same rule the
-          // server applies to every other rate in the app.
+          // server applies to every other rate in the app. An excused day
+          // (عذر) is neither, so it is left out of both sides.
           final present = attList
               .where((a) => a['status'] == 'PRESENT' || a['status'] == 'LATE')
               .length;
-          attendedToday = '$present من ${attList.length}';
+          final rated = attList
+              .where((a) => a['status'] != 'EXCUSED')
+              .length;
+          attendedToday = '$present من $rated';
         }
       } catch (_) {}
 

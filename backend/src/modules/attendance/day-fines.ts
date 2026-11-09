@@ -1,5 +1,6 @@
 import { AttendanceStatus, Prisma } from '@prisma/client';
 import { desiredCharges, HalaqaFineRates } from './fine-reconciliation';
+import { isAway } from './attendance-status';
 
 /// Brings one student's auto-charges for one day in line with what is on
 /// file for that day, inside the caller's transaction — so a fine can never
@@ -61,10 +62,10 @@ export async function reconcileDayFines(
         }
       : null;
 
-  // An absent student cannot have recited, and is already paying for the
-  // absence, so the lookup is skipped rather than answered.
+  // A student who was away (absent, or excused) cannot have recited, so the
+  // lookup is skipped rather than answered.
   const missedMemorization =
-    status !== AttendanceStatus.ABSENT &&
+    !isAway(status) &&
     (await tx.memorizationProgress.count({ where: { studentId, date } })) ===
       0;
 

@@ -46,6 +46,9 @@ enum AttendanceStatus {
   PRESENT
   ABSENT
   LATE
+  // عذر: the student was away with a reason. Neither attendance nor absence —
+  // it is left out of rates, skipped by the streak, and never charged.
+  EXCUSED
 }
 
 enum JustificationReasonType {

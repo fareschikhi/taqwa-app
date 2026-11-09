@@ -103,6 +103,10 @@ class AppColors {
   static const Color absent = Color(0xFFBA1A1A);
   static const Color late = Color(0xFFE6A817);
 
+  /// عذر: the calm info teal, so it reads as neither good (present) nor bad
+  /// (absent). White on it is about 6:1.
+  static const Color excused = info;
+
   // ═══════════════════════════════════════
   // Input Field
   // ═══════════════════════════════════════

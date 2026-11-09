@@ -59,6 +59,17 @@ describe('desiredCharges', () => {
     ).toEqual([{ source: 'ABSENCE', amount: 50 }]);
   });
 
+  // عذر: away with a reason. Not an absence, and not there to recite either.
+  it('charges an excused student nothing, not even for not memorizing', () => {
+    expect(
+      desiredCharges({
+        status: AttendanceStatus.EXCUSED,
+        missedMemorization: true,
+        rates: RATES,
+      }),
+    ).toEqual([]);
+  });
+
   it('charges nothing when the student has no halaqa', () => {
     expect(
       desiredCharges({

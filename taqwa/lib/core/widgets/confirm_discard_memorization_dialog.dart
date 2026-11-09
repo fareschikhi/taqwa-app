@@ -15,20 +15,28 @@ class ConfirmDiscardMemorizationDialog extends StatelessWidget {
   const ConfirmDiscardMemorizationDialog({
     super.key,
     required this.studentName,
+    this.markLabel = 'كغائب',
   });
 
   final String studentName;
+
+  /// How the new mark reads after "تحديد": 'كغائب' for absent, 'كصاحب عذر'
+  /// for excused. Both take the student out of the halaqa for the day.
+  final String markLabel;
 
   /// Shows the dialog and returns `true` only if the teacher confirmed.
   /// A tap outside dismisses with `null`, which counts as declining.
   static Future<bool> show(
     BuildContext context, {
     required String studentName,
+    String markLabel = 'كغائب',
   }) async {
     final result = await showDialog<bool>(
       context: context,
-      builder: (_) =>
-          ConfirmDiscardMemorizationDialog(studentName: studentName),
+      builder: (_) => ConfirmDiscardMemorizationDialog(
+        studentName: studentName,
+        markLabel: markLabel,
+      ),
     );
     return result ?? false;
   }
@@ -78,7 +86,7 @@ class ConfirmDiscardMemorizationDialog extends StatelessWidget {
               ),
               SizedBox(height: 12.h),
               AppText(
-                'تم تسجيل تسميع لـ $studentName اليوم. تحديده كغائب سيحذف هذا '
+                'تم تسجيل تسميع لـ $studentName اليوم. تحديده $markLabel سيحذف هذا '
                 'التسجيل نهائياً.',
                 style: AppTextStyles.bodyMd.copyWith(
                   color: AppColors.onSurfaceVariant,
@@ -124,7 +132,7 @@ class ConfirmDiscardMemorizationDialog extends StatelessWidget {
                         ),
                       ),
                       child: AppText(
-                        'تحديد كغائب',
+                        'تحديد $markLabel',
                         style: AppTextStyles.button.copyWith(
                           color: AppColors.onError,
                         ),

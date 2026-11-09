@@ -2,6 +2,7 @@ import { Injectable, NotFoundException } from '@nestjs/common';
 import { PrismaService } from '../../prisma/prisma.service';
 import { CreateUserDto, UpdateMeDto, UpdateUserDto } from './dto/user.dto';
 import * as bcrypt from 'bcrypt';
+import { RATED_STATUSES } from '../attendance/attendance-status';
 
 @Injectable()
 export class UsersService {
@@ -143,8 +144,12 @@ export class UsersService {
       }),
     ]);
 
+    // Excused days (عذر) are neither attended nor missed, so they stay out.
     const totalAttendanceToday = await this.prisma.attendance.count({
-      where: { date: new Date(new Date().setHours(0, 0, 0, 0)) },
+      where: {
+        date: new Date(new Date().setHours(0, 0, 0, 0)),
+        status: { in: RATED_STATUSES },
+      },
     });
 
     return {

@@ -40,11 +40,12 @@ class LastSessionCard extends StatelessWidget {
       );
     }
 
-    // The same three-way split the attendance history reads, so a parent who
-    // moves between the two screens sees one vocabulary.
+    // The same split the attendance history reads, so a parent who moves
+    // between the two screens sees one vocabulary.
     final (label, color, icon) = switch (session.status) {
       'PRESENT' => ('حاضر', AppColors.present, Icons.check),
       'LATE' => ('متأخر', AppColors.late, Icons.schedule),
+      'EXCUSED' => ('عذر', AppColors.excused, Icons.event_busy_outlined),
       _ => ('غائب', AppColors.absent, Icons.close),
     };
 

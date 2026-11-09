@@ -127,9 +127,14 @@ void main() {
         AttendanceStatus.present,
         AttendanceStatus.absent,
         AttendanceStatus.late,
+        AttendanceStatus.excused,
       ]) {
         expect(attendanceStatusFromApi(attendanceStatusToApi(status)), status);
       }
+    });
+
+    test('sends عذر as EXCUSED', () {
+      expect(attendanceStatusToApi(AttendanceStatus.excused), 'EXCUSED');
     });
 
     test('has no wire spelling for an undecided chip', () {
@@ -138,7 +143,18 @@ void main() {
 
     test('reads an unknown or missing status as undecided', () {
       expect(attendanceStatusFromApi(null), AttendanceStatus.unset);
-      expect(attendanceStatusFromApi('EXCUSED'), AttendanceStatus.unset);
+      expect(attendanceStatusFromApi('HOLIDAY'), AttendanceStatus.unset);
+    });
+  });
+
+  group('isAway', () {
+    // Both keep the student out of recitation; only absent counts against him.
+    test('is true for absent and excused only', () {
+      expect(AttendanceStatus.absent.isAway, isTrue);
+      expect(AttendanceStatus.excused.isAway, isTrue);
+      expect(AttendanceStatus.present.isAway, isFalse);
+      expect(AttendanceStatus.late.isAway, isFalse);
+      expect(AttendanceStatus.unset.isAway, isFalse);
     });
   });
 

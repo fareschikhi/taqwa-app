@@ -11,6 +11,7 @@ import {
 } from '@prisma/client';
 import { MAX_AMOUNT, ProgressUnit, unitFor } from './progress-unit';
 import { reconcileDayFines } from '../attendance/day-fines';
+import { isAway } from '../attendance/attendance-status';
 import { reconcileDayPoints } from '../points/day-points';
 
 // Attendance rows are written as new Date('YYYY-MM-DD'), which parses to UTC
@@ -133,8 +134,9 @@ export class MemorizationService {
     });
 
     // Attendance not taken yet is not the same as being absent, so only an
-    // explicit ABSENT blocks the record. LATE still means the student showed up.
-    if (attendance?.status === AttendanceStatus.ABSENT) {
+    // explicit day away (ABSENT or EXCUSED) blocks the record. LATE still
+    // means the student showed up.
+    if (isAway(attendance?.status)) {
       // Every rejection on this route is a 400, so the status alone cannot tell
       // the app that absence is what blocked it. The reason travels as a stable
       // code rather than as prose the client would have to pattern-match.

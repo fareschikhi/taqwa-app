@@ -158,10 +158,17 @@ describe('AttendanceService.getStudentAttendanceSummary', () => {
     monthPresent: number;
     monthAbsent: number;
     monthLate: number;
+    excused?: number;
+    monthExcused?: number;
   }) => ({
     attendance: {
       count: jest.fn(({ where }: any) => {
         const scoped = where.date !== undefined;
+        if (where.status === 'EXCUSED') {
+          return Promise.resolve(
+            scoped ? (rows.monthExcused ?? 0) : (rows.excused ?? 0),
+          );
+        }
         if (where.status === 'PRESENT') {
           return Promise.resolve(scoped ? rows.monthPresent : rows.present);
         }
@@ -171,7 +178,9 @@ describe('AttendanceService.getStudentAttendanceSummary', () => {
         if (where.status === 'LATE') {
           return Promise.resolve(scoped ? rows.monthLate : rows.late);
         }
-        return Promise.resolve(rows.present + rows.absent + rows.late);
+        return Promise.resolve(
+          rows.present + rows.absent + rows.late + (rows.excused ?? 0),
+        );
       }),
       // The summary also walks the records for the streak; these tests are
       // about the counts, so there is nothing to walk.
@@ -215,6 +224,24 @@ describe('AttendanceService.getStudentAttendanceSummary', () => {
     expect(summary.monthRate).toBe(67);
   });
 
+  // عذر is neither side of the rate, so it must not dilute it.
+  it('leaves excused days out of both rates', async () => {
+    const service = svc(
+      makePrisma({ ...counts, excused: 5, monthExcused: 4 }) as any,
+    );
+
+    const summary = await service.getStudentAttendanceSummary(7);
+
+    expect(summary).toMatchObject({
+      excused: 5,
+      monthExcused: 4,
+      total: 15,
+      // Still 7 of 10 rated days, and 2 of 3 this month.
+      rate: 70,
+      monthRate: 67,
+    });
+  });
+
   it('scopes the month counts to a UTC window over the current month', async () => {
     const prisma = makePrisma(counts);
     const service = svc(prisma as any);
@@ -225,7 +252,7 @@ describe('AttendanceService.getStudentAttendanceSummary', () => {
       .map(([arg]: any) => arg.where)
       .filter((w: any) => w.date !== undefined);
 
-    expect(scoped).toHaveLength(3);
+    expect(scoped).toHaveLength(4);
     for (const where of scoped) {
       const { gte, lte } = where.date;
       // A local-time window would sit hours off the UTC-midnight date column
@@ -774,6 +801,17 @@ describe('AttendanceService attendance streak', () => {
 
   it('is zero for a student with no attendance at all', async () => {
     expect(await streakOf([])).toBe(0);
+  });
+
+  // عذر neither breaks the run nor lengthens it.
+  it('steps over an excused day', async () => {
+    expect(
+      await streakOf(['PRESENT', 'EXCUSED', 'PRESENT', 'EXCUSED', 'ABSENT']),
+    ).toBe(2);
+  });
+
+  it('is zero when the only records are excused', async () => {
+    expect(await streakOf(['EXCUSED', 'EXCUSED'])).toBe(0);
   });
 
   it('reads the records newest first', async () => {

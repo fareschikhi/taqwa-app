@@ -269,6 +269,7 @@ class _ChildAttendanceHistoryPageState
     final (label, color, icon) = switch (status) {
       'PRESENT' => ('حاضر', AppColors.present, Icons.check),
       'LATE' => ('متأخر', AppColors.late, Icons.schedule),
+      'EXCUSED' => ('عذر', AppColors.excused, Icons.event_busy_outlined),
       _ => ('غائب', AppColors.absent, Icons.close),
     };
 
