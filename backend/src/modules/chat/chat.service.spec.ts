@@ -441,16 +441,45 @@ describe('ChatService inbox', () => {
     ]);
   });
 
-  it("finds parents by their child's halaqa name too", async () => {
+  const withNames = () => {
     const prisma = makePrisma();
-    prisma.parent.findMany.mockResolvedValue([]);
+    prisma.user = {
+      findMany: jest.fn().mockResolvedValue([
+        { id: 5, fullName: 'عبد الرّحمان بن علي' },
+        { id: 6, fullName: 'سارة' },
+      ]),
+    };
+    prisma.halaqa = {
+      findMany: jest.fn().mockResolvedValue([
+        { id: 4, name: 'الفرقان' },
+        { id: 7, name: 'النور' },
+      ]),
+    };
+    return prisma;
+  };
+
+  it("finds parents by their child's halaqa name too", async () => {
+    const prisma = withNames();
     const { service } = makeService(prisma);
 
     await service.inbox(admin, ' الفرقان ');
 
     const where = prisma.parent.findMany.mock.calls[0][0].where;
     expect(where.AND[1].OR).toContainEqual({
-      students: { some: { halaqa: { name: { contains: 'الفرقان' } } } },
+      students: { some: { halaqaId: { in: [4] } } },
+    });
+  });
+
+  it('finds a name typed without its shadda or space', async () => {
+    const prisma = withNames();
+    const { service } = makeService(prisma);
+
+    await service.pickableParents(admin, 'عبدالرحمان');
+
+    const where = prisma.parent.findMany.mock.calls[0][0].where;
+    expect(where.AND[1].OR).toContainEqual({ userId: { in: [5] } });
+    expect(where.AND[1].OR).toContainEqual({
+      students: { some: { userId: { in: [5] } } },
     });
   });
 

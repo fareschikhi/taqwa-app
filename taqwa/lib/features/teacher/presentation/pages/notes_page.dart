@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:taqwa/core/utils/search_text.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
 import '../../../../core/theme/app_colors.dart';
@@ -198,9 +199,7 @@ class _NotesPageState extends ConsumerState<NotesPage> {
         return StatefulBuilder(
           builder: (ctx, setSheetState) {
             final filtered = _students
-                .where(
-                  (s) => s.fullName.toLowerCase().contains(query.toLowerCase()),
-                )
+                .where((s) => matchesSearch(query, [s.fullName]))
                 .toList();
             final allPicked =
                 _students.isNotEmpty && picked.length == _students.length;

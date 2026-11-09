@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:taqwa/core/utils/search_text.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
 import '../../../../core/constants/app_constants.dart';
 import '../../../../core/theme/app_colors.dart';
@@ -64,10 +65,10 @@ class _ChildrenPickerState extends State<ChildrenPicker> {
       _focusNode.hasFocus || _searchController.text.trim().isNotEmpty;
 
   List<ParentChildModel> get _results {
-    final q = _searchController.text.trim().toLowerCase();
+    final q = _searchController.text;
     return widget.candidates
         .where((c) => !widget.selected.any((s) => s.id == c.id))
-        .where((c) => c.fullName.toLowerCase().contains(q))
+        .where((c) => matchesSearch(q, [c.fullName]))
         .toList();
   }
 
@@ -299,7 +300,11 @@ class _ChildrenPickerState extends State<ChildrenPicker> {
                 ],
               ),
             ),
-            Icon(Icons.add_circle_outline, color: AppColors.primary, size: 22.w),
+            Icon(
+              Icons.add_circle_outline,
+              color: AppColors.primary,
+              size: 22.w,
+            ),
           ],
         ),
       ),

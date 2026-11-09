@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:taqwa/core/utils/search_text.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
 import '../../../../core/theme/app_colors.dart';
 import '../../../../core/theme/app_text_styles.dart';
@@ -39,16 +40,17 @@ class _HalaqasManagementPageState extends State<HalaqasManagementPage> {
     final confirmed = await ConfirmDeleteDialog.show(
       context,
       title: 'حذف الحلقة',
-      message: 'سيتم حذف الحلقة نهائياً. '
+      message:
+          'سيتم حذف الحلقة نهائياً. '
           'سيبقى الطلاب في النظام دون حلقة مسندة.',
     );
     if (!confirmed) return;
     try {
       await _halaqaRepo.deleteHalaqa(id);
       if (!mounted) return;
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: AppText('تم حذف الحلقة بنجاح')),
-      );
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(const SnackBar(content: AppText('تم حذف الحلقة بنجاح')));
       _load();
     } catch (e) {
       if (!mounted) return;
@@ -86,14 +88,10 @@ class _HalaqasManagementPageState extends State<HalaqasManagementPage> {
   }
 
   void _applyFilter() {
-    final q = _searchController.text.toLowerCase();
-    _filtered = q.isEmpty
-        ? _halaqas
-        : _halaqas.where((h) {
-            final name = h.name.toLowerCase();
-            final teacherName = (h.teacherName ?? '').toLowerCase();
-            return name.contains(q) || teacherName.contains(q);
-          }).toList();
+    final q = _searchController.text;
+    _filtered = _halaqas
+        .where((h) => matchesSearch(q, [h.name, h.teacherName]))
+        .toList();
   }
 
   @override
@@ -121,8 +119,9 @@ class _HalaqasManagementPageState extends State<HalaqasManagementPage> {
                             height: 40.w,
                             decoration: BoxDecoration(
                               color: AppColors.surfaceContainer,
-                              borderRadius:
-                                  BorderRadius.circular(AppConstants.radiusMd),
+                              borderRadius: BorderRadius.circular(
+                                AppConstants.radiusMd,
+                              ),
                             ),
                             child: const Icon(
                               Icons.menu,
@@ -161,38 +160,40 @@ class _HalaqasManagementPageState extends State<HalaqasManagementPage> {
               Expanded(
                 child: _isLoading
                     ? const Center(
-                        child:
-                            CircularProgressIndicator(color: AppColors.primary))
+                        child: CircularProgressIndicator(
+                          color: AppColors.primary,
+                        ),
+                      )
                     : _filtered.isEmpty
-                        ? SingleChildScrollView(
-                            physics: const AlwaysScrollableScrollPhysics(),
-                            child: Container(
-                              height: 300.h,
-                              alignment: Alignment.center,
-                              child: AppText(
-                                'لا توجد حلقات',
-                                style: AppTextStyles.bodyMd
-                                    .copyWith(color: AppColors.onSurfaceVariant),
-                              ),
-                            ),
-                          )
-                        : GridView.builder(
-                            physics: const AlwaysScrollableScrollPhysics(),
-                            padding: EdgeInsets.symmetric(horizontal: 16.w),
-                            gridDelegate:
-                                SliverGridDelegateWithFixedCrossAxisCount(
-                              crossAxisCount: 2,
-                              crossAxisSpacing: 12.w,
-                              mainAxisSpacing: 12.h,
-                              childAspectRatio: 0.62,
-                            ),
-                            itemCount: _filtered.length,
-                            itemBuilder: (_, i) => _HalaqaCard(
-                              halaqa: _filtered[i],
-                              onEdit: () => _openForm(_filtered[i]),
-                              onDelete: () => _deleteHalaqa(_filtered[i].id),
+                    ? SingleChildScrollView(
+                        physics: const AlwaysScrollableScrollPhysics(),
+                        child: Container(
+                          height: 300.h,
+                          alignment: Alignment.center,
+                          child: AppText(
+                            'لا توجد حلقات',
+                            style: AppTextStyles.bodyMd.copyWith(
+                              color: AppColors.onSurfaceVariant,
                             ),
                           ),
+                        ),
+                      )
+                    : GridView.builder(
+                        physics: const AlwaysScrollableScrollPhysics(),
+                        padding: EdgeInsets.symmetric(horizontal: 16.w),
+                        gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
+                          crossAxisCount: 2,
+                          crossAxisSpacing: 12.w,
+                          mainAxisSpacing: 12.h,
+                          childAspectRatio: 0.62,
+                        ),
+                        itemCount: _filtered.length,
+                        itemBuilder: (_, i) => _HalaqaCard(
+                          halaqa: _filtered[i],
+                          onEdit: () => _openForm(_filtered[i]),
+                          onDelete: () => _deleteHalaqa(_filtered[i].id),
+                        ),
+                      ),
               ),
             ],
           ),
@@ -282,8 +283,9 @@ class _HalaqaCard extends StatelessWidget {
           SizedBox(height: 12.h),
           AppText(
             name,
-            style: AppTextStyles.headlineSm
-                .copyWith(color: AppColors.onSurface),
+            style: AppTextStyles.headlineSm.copyWith(
+              color: AppColors.onSurface,
+            ),
             textAlign: TextAlign.end,
             maxLines: 2,
             overflow: TextOverflow.ellipsis,
@@ -291,8 +293,9 @@ class _HalaqaCard extends StatelessWidget {
           SizedBox(height: 4.h),
           AppText(
             teacherName.isNotEmpty ? teacherName : '—',
-            style: AppTextStyles.labelSm
-                .copyWith(color: AppColors.onSurfaceVariant),
+            style: AppTextStyles.labelSm.copyWith(
+              color: AppColors.onSurfaceVariant,
+            ),
             textAlign: TextAlign.end,
             maxLines: 1,
             overflow: TextOverflow.ellipsis,
@@ -302,12 +305,10 @@ class _HalaqaCard extends StatelessWidget {
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
               Container(
-                padding:
-                    EdgeInsets.symmetric(horizontal: 8.w, vertical: 4.h),
+                padding: EdgeInsets.symmetric(horizontal: 8.w, vertical: 4.h),
                 decoration: BoxDecoration(
                   color: levelColor.withValues(alpha: 0.1),
-                  borderRadius:
-                      BorderRadius.circular(AppConstants.radiusFull),
+                  borderRadius: BorderRadius.circular(AppConstants.radiusFull),
                 ),
                 child: AppText(
                   level.isNotEmpty ? level : '—',
@@ -318,12 +319,16 @@ class _HalaqaCard extends StatelessWidget {
                 children: [
                   AppText(
                     '$studentCount',
-                    style: AppTextStyles.labelMdBold
-                        .copyWith(color: AppColors.onSurface),
+                    style: AppTextStyles.labelMdBold.copyWith(
+                      color: AppColors.onSurface,
+                    ),
                   ),
                   SizedBox(width: 4.w),
-                  const Icon(Icons.group,
-                      size: 14, color: AppColors.onSurfaceVariant),
+                  const Icon(
+                    Icons.group,
+                    size: 14,
+                    color: AppColors.onSurfaceVariant,
+                  ),
                 ],
               ),
             ],

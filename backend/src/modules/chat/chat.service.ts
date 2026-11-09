@@ -8,6 +8,10 @@ import {
 import { Prisma } from '@prisma/client';
 import { PrismaService } from '../../prisma/prisma.service';
 import {
+  halaqaIdsMatching,
+  userIdsMatching,
+} from '../../common/search/name-search';
+import {
   canStaffSeeParent,
   chatParentIdForParentUser,
   chatParentWhere,
@@ -374,11 +378,15 @@ export class ChatService {
     const term = search?.trim();
     const and: Prisma.ParentWhereInput[] = [scope.where];
     if (term) {
+      const [userIds, halaqaIds] = await Promise.all([
+        userIdsMatching(this.prisma, term),
+        halaqaIdsMatching(this.prisma, term),
+      ]);
       and.push({
         OR: [
-          { user: { fullName: { contains: term } } },
-          { students: { some: { user: { fullName: { contains: term } } } } },
-          { students: { some: { halaqa: { name: { contains: term } } } } },
+          { userId: { in: userIds } },
+          { students: { some: { userId: { in: userIds } } } },
+          { students: { some: { halaqaId: { in: halaqaIds } } } },
         ],
       });
     }

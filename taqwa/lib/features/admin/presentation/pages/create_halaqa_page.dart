@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:taqwa/core/utils/search_text.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:taqwa/features/data/network/api_endpoints.dart';
 import 'package:taqwa/features/data/models/teacher/teacher_model.dart';
@@ -216,11 +217,10 @@ class _CreateHalaqaPageState extends State<CreateHalaqaPage> {
   /// [_isAdultHalaqa] rather than ever offering a student who can't actually
   /// be added.
   List<StudentModel> _eligibleStudents(String query) {
-    final normalizedQuery = query.trim().toLowerCase();
     return _allStudents
         .where((s) => s.isAdult == _isAdultHalaqa)
         .where((s) => !_selectedStudents.any((sel) => sel.id == s.id))
-        .where((s) => s.fullName.toLowerCase().contains(normalizedQuery))
+        .where((s) => matchesSearch(query, [s.fullName]))
         .toList();
   }
 

@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:taqwa/core/utils/search_text.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
 import '../../../../core/theme/app_colors.dart';
@@ -172,12 +173,13 @@ class _ManagerStudentsPageState extends ConsumerState<ManagerStudentsPage> {
   }
 
   void _applyFilter() {
-    final q = _searchController.text.toLowerCase();
+    final q = _searchController.text;
     var list = _students.where((s) {
       final user = s['user'] as Map<String, dynamic>? ?? {};
-      final name = (user['fullName'] ?? '').toString().toLowerCase();
-      final phone = (user['phone'] ?? '').toString().toLowerCase();
-      return q.isEmpty || name.contains(q) || phone.contains(q);
+      return matchesSearch(q, [
+        user['fullName']?.toString(),
+        user['phone']?.toString(),
+      ]);
     }).toList();
 
     if (_filterIndex == 1) {

@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:taqwa/core/utils/search_text.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
 import '../../../../core/theme/app_colors.dart';
@@ -82,12 +83,10 @@ class _ManagerParentsPageState extends ConsumerState<ManagerParentsPage> {
   }
 
   void _applyFilter() {
-    final q = _searchController.text.toLowerCase();
-    var list = _parents.where((p) {
-      final name = p.fullName.toLowerCase();
-      final phone = (p.phone ?? '').toLowerCase();
-      return q.isEmpty || name.contains(q) || phone.contains(q);
-    }).toList();
+    final q = _searchController.text;
+    var list = _parents
+        .where((p) => matchesSearch(q, [p.fullName, p.phone]))
+        .toList();
 
     if (_filterIndex == 1) {
       list = list.where((p) => p.isActive == true).toList();
@@ -263,9 +262,10 @@ class _ManagerParentsPageState extends ConsumerState<ManagerParentsPage> {
                             itemBuilder: (_, row) => CardGridRow(
                               columns: columns,
                               children: [
-                                for (final parent in _filtered.skip(
-                                  row * columns,
-                                ).take(columns))
+                                for (final parent
+                                    in _filtered
+                                        .skip(row * columns)
+                                        .take(columns))
                                   _ParentGridCard(
                                     parent: parent,
                                     canManage: canManage,

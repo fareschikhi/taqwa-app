@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:taqwa/core/utils/search_text.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
 import '../theme/app_colors.dart';
 import '../theme/app_text_styles.dart';
@@ -95,10 +96,8 @@ class _UserSelectorFieldState extends State<UserSelectorField> {
   }
 
   List<UserOption> get _results {
-    final q = _searchController.text.trim().toLowerCase();
-    if (q.isEmpty) return widget.options;
     return widget.options
-        .where((o) => o.fullName.toLowerCase().contains(q))
+        .where((o) => matchesSearch(_searchController.text, [o.fullName]))
         .toList();
   }
 

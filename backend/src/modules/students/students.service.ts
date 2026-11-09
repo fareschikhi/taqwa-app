@@ -11,6 +11,7 @@ import {
   UpdateStudentDto,
 } from './dto/student.dto';
 import { normalizeHadithBooks } from './hadith-books';
+import { userIdsMatching } from '../../common/search/name-search';
 
 @Injectable()
 export class StudentsService {
@@ -72,7 +73,7 @@ export class StudentsService {
     }
     if (params?.search && params.search.trim() !== '') {
       whereConditions.push({
-        user: { fullName: { contains: params.search.trim() } },
+        userId: { in: await userIdsMatching(this.prisma, params.search) },
       });
     }
 

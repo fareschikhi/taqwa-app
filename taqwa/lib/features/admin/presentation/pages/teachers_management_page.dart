@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:taqwa/core/utils/search_text.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
 import '../../../../core/theme/app_colors.dart';
 import '../../../../core/theme/app_text_styles.dart';
@@ -171,12 +172,10 @@ class _TeachersManagementPageState extends State<TeachersManagementPage> {
   }
 
   void _applyFilter() {
-    final q = _searchController.text.toLowerCase();
-    var list = _teachers.where((t) {
-      final name = t.fullName.toLowerCase();
-      final phone = t.phone ?? '';
-      return q.isEmpty || name.contains(q) || phone.contains(q);
-    }).toList();
+    final q = _searchController.text;
+    var list = _teachers
+        .where((t) => matchesSearch(q, [t.fullName, t.phone]))
+        .toList();
 
     if (_filterIndex == 1) {
       list = list.where((t) => t.isActive == true).toList();
