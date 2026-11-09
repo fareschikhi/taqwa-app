@@ -79,32 +79,33 @@ enum PointSource {
 // ─────────────────────────────────────────────────────────────────────────────
 
 model User {
-  id           Int       @id @default(autoincrement())
-  fullName     String    @db.VarChar(100)
-  phone        String?   @db.VarChar(20)
-  email        String?   @db.VarChar(150)
-  passwordHash String?   @db.VarChar(255)
+  id                 Int      @id @default(autoincrement())
+  fullName           String   @db.VarChar(100)
+  phone              String?  @db.VarChar(20)
+  email              String?  @db.VarChar(150)
+  passwordHash       String?  @db.VarChar(255)
   // Set whenever an admin sets the password (new account or reset), so the
   // holder replaces it on their next login. Never set for an ADMIN.
-  mustChangePassword Boolean @default(false)
-  role         Role
-  avatar       String?   @db.VarChar(500)
-  isActive     Boolean   @default(true)
-  createdAt    DateTime  @default(now())
-  updatedAt    DateTime  @updatedAt
+  mustChangePassword Boolean  @default(false)
+  role               Role
+  avatar             String?  @db.VarChar(500)
+  isActive           Boolean  @default(true)
+  createdAt          DateTime @default(now())
+  updatedAt          DateTime @updatedAt
 
-  teacher       Teacher?
-  parent        Parent?
-  student       Student?
-  manager       Manager?
-  notifications Notification[]
-  deviceTokens  DeviceToken[]
-  finesCreated  FineEntry[]
-  points        PointEntry[] @relation("PointOwner")
-  pointsCreated PointEntry[] @relation("PointCreator")
-  announcements HalaqaAnnouncement[]
-  chatMessages  ChatMessage[] @relation("ChatMessageSender")
-  chatReads     ChatRead[]
+  teacher             Teacher?
+  parent              Parent?
+  student             Student?
+  manager             Manager?
+  notifications       Notification[]
+  deviceTokens        DeviceToken[]
+  finesCreated        FineEntry[]
+  points              PointEntry[]         @relation("PointOwner")
+  pointsCreated       PointEntry[]         @relation("PointCreator")
+  announcements       HalaqaAnnouncement[]
+  chatMessages        ChatMessage[]        @relation("ChatMessageSender")
+  chatReads           ChatRead[]
+  studentOfMonthPicks StudentOfMonth[]
 
   @@index([phone])
   @@index([email])
@@ -118,12 +119,12 @@ model User {
 // ─────────────────────────────────────────────────────────────────────────────
 
 model Teacher {
-  id             Int       @id @default(autoincrement())
-  userId         Int       @unique
-  hireDate       DateTime  @default(now())
+  id          Int      @id @default(autoincrement())
+  userId      Int      @unique
+  hireDate    DateTime @default(now())
   // Granted by the admin: lets the teacher post news to their own halaqas,
   // the way a manager does to the halaqas assigned to them.
-  canPostNews    Boolean   @default(false)
+  canPostNews Boolean  @default(false)
 
   user        User          @relation(fields: [userId], references: [id], onDelete: Cascade)
   halaqas     Halaqa[]
@@ -142,8 +143,8 @@ model Parent {
   userId  Int     @unique
   address String? @db.VarChar(300)
 
-  user     User            @relation(fields: [userId], references: [id], onDelete: Cascade)
-  students    Student[]
+  user             User              @relation(fields: [userId], references: [id], onDelete: Cascade)
+  students         Student[]
   chatConversation ChatConversation?
 
   @@map("parents")
@@ -162,7 +163,7 @@ model Student {
   address        String?
   halaqaId       Int?
   enrollmentDate DateTime  @default(now())
-  parentId      Int?
+  parentId       Int?
   finishedMemo   Boolean   @default(false)
   // Free text rather than an enum: teachers word the overall rating however
   // they like ("ممتاز", "جيد جداً", "يحتاج مراجعة"), so the set is not fixed.
@@ -190,9 +191,9 @@ model Student {
   externalActivities String?  @db.VarChar(255)
   isMarried          Boolean?
 
-  user        User                   @relation(fields: [userId], references: [id], onDelete: Cascade)
-  parent      Parent?                @relation(fields: [parentId], references: [id], onDelete: SetNull)
-  halaqa      Halaqa?                @relation(fields: [halaqaId], references: [id])
+  user           User                   @relation(fields: [userId], references: [id], onDelete: Cascade)
+  parent         Parent?                @relation(fields: [parentId], references: [id], onDelete: SetNull)
+  halaqa         Halaqa?                @relation(fields: [halaqaId], references: [id])
   attendance     Attendance[]
   memorization   MemorizationProgress[]
   evaluations    Evaluation[]
@@ -200,6 +201,7 @@ model Student {
   justifications AbsenceJustification[]
   fines          FineEntry[]
   notifications  Notification[]
+  monthAwards    StudentOfMonth[]
 
   @@index([parentId])
   @@map("students")
@@ -210,10 +212,10 @@ model Student {
 // ─────────────────────────────────────────────────────────────────────────────
 
 model Halaqa {
-  id          Int     @id @default(autoincrement())
-  name        String  @db.VarChar(150)
-  level       String? @db.VarChar(100)
-  teacherId   Int
+  id        Int     @id @default(autoincrement())
+  name      String  @db.VarChar(150)
+  level     String? @db.VarChar(100)
+  teacherId Int
 
   // An adults' halaqa runs on fines. The flag is stored rather than derived
   // from whether the rates are set, so a half-filled rate set can never make
@@ -223,10 +225,11 @@ model Halaqa {
   lateFee               Int     @default(0)
   missedMemorizationFee Int     @default(0)
 
-  teacher  Teacher         @relation(fields: [teacherId], references: [id], onDelete: Cascade)
-  students Student[]
-  managers ManagerHalaqa[]
-  announcements HalaqaAnnouncement[]
+  teacher         Teacher              @relation(fields: [teacherId], references: [id], onDelete: Cascade)
+  students        Student[]
+  managers        ManagerHalaqa[]
+  announcements   HalaqaAnnouncement[]
+  studentsOfMonth StudentOfMonth[]
 
   @@index([teacherId])
   @@map("halaqas")
@@ -247,8 +250,8 @@ model Attendance {
   // forgiven, the day was still a day he did not memorize.
   missedMemorization Boolean @default(false)
 
-  notes     String?          @db.Text
-  createdAt DateTime         @default(now())
+  notes     String?  @db.Text
+  createdAt DateTime @default(now())
 
   student       Student               @relation(fields: [studentId], references: [id], onDelete: Cascade)
   justification AbsenceJustification?
@@ -280,7 +283,7 @@ model MemorizationProgress {
   // pick a number from the way surahNumber picks one off the mushaf.
   hadithReference  String?             @db.VarChar(500)
   recordedAt       DateTime            @default(now())
-  date             DateTime            @db.Date 
+  date             DateTime            @db.Date
   updatedAt        DateTime            @updatedAt
 
   student Student @relation(fields: [studentId], references: [id], onDelete: Cascade)
@@ -295,16 +298,16 @@ model MemorizationProgress {
 // ─────────────────────────────────────────────────────────────────────────────
 
 model Evaluation {
-  id               Int      @id @default(autoincrement())
-  studentId        Int
-  teacherId        Int
+  id                Int      @id @default(autoincrement())
+  studentId         Int
+  teacherId         Int
   memorizationScore Float?
-  tajweedScore     Float?
-  fluencyScore     Float?
-  disciplineScore  Float?
-  overallScore     Float?
-  notes            String?  @db.Text
-  createdAt        DateTime @default(now())
+  tajweedScore      Float?
+  fluencyScore      Float?
+  disciplineScore   Float?
+  overallScore      Float?
+  notes             String?  @db.Text
+  createdAt         DateTime @default(now())
 
   student Student @relation(fields: [studentId], references: [id], onDelete: Cascade)
   teacher Teacher @relation(fields: [teacherId], references: [id], onDelete: Cascade)
@@ -355,13 +358,13 @@ model StudentNoteRecipient {
 // session moves to 6pm, the halaqa is off for the holidays. Read by everyone
 // tied to the halaqa; written by a manager assigned to it, or by an admin.
 model HalaqaAnnouncement {
-  id       Int    @id @default(autoincrement())
+  id       Int     @id @default(autoincrement())
   halaqaId Int
   // The User who posted, not the Manager: an admin posts too and has no
   // manager row.
   authorId Int
-  title    String @db.VarChar(200)
-  body     String @db.Text
+  title    String  @db.VarChar(200)
+  body     String  @db.Text
   // Shared by the rows of one "all halaqas" post: one row per halaqa keeps
   // every reader's scope a plain halaqaId match, and the batch is what the
   // feed collapses back into one item and what edit and delete act on.
@@ -374,7 +377,7 @@ model HalaqaAnnouncement {
   halaqa Halaqa @relation(fields: [halaqaId], references: [id], onDelete: Cascade)
   // Restrict, not Cascade: deleting a manager's account must not silently
   // erase what a halaqa was told.
-  author User @relation(fields: [authorId], references: [id], onDelete: Restrict)
+  author User   @relation(fields: [authorId], references: [id], onDelete: Restrict)
 
   // Matches the only two queries there are — one halaqa's history, and a feed
   // over a set of halaqa ids — both ordered by createdAt.
@@ -435,18 +438,18 @@ model DeviceToken {
 // ─────────────────────────────────────────────────────────────────────────────
 
 model Manager {
-  id                Int      @id @default(autoincrement())
-  userId            Int      @unique
-  canManageAccounts Boolean  @default(false)
-  canDeleteAccounts Boolean  @default(false)
+  id                  Int      @id @default(autoincrement())
+  userId              Int      @unique
+  canManageAccounts   Boolean  @default(false)
+  canDeleteAccounts   Boolean  @default(false)
   // Students with no halaqa have no ManagerHalaqa row to reach them through,
   // so the admin grants them to a manager with this flag instead.
-  canAccessUnassigned Boolean @default(false)
+  canAccessUnassigned Boolean  @default(false)
   // Lets the manager answer parents in the shared "الإدارة" chat, for the
   // parents whose children they can already reach. Admins always can.
-  canChat           Boolean  @default(false)
-  createdAt         DateTime @default(now())
-  updatedAt         DateTime @updatedAt
+  canChat             Boolean  @default(false)
+  createdAt           DateTime @default(now())
+  updatedAt           DateTime @updatedAt
 
   user           User                   @relation(fields: [userId], references: [id], onDelete: Cascade)
   halaqas        ManagerHalaqa[]
@@ -460,8 +463,8 @@ model Manager {
 // ─────────────────────────────────────────────────────────────────────────────
 
 model ManagerHalaqa {
-  managerId Int
-  halaqaId  Int
+  managerId  Int
+  halaqaId   Int
   assignedAt DateTime @default(now())
 
   manager Manager @relation(fields: [managerId], references: [id], onDelete: Cascade)
@@ -519,10 +522,10 @@ model FineEntry {
   createdById Int
   createdAt   DateTime   @default(now())
 
-  student Student @relation(fields: [studentId], references: [id], onDelete: Cascade)
+  student   Student @relation(fields: [studentId], references: [id], onDelete: Cascade)
   // Restrict, not Cascade: deleting a teacher's account must not silently
   // erase what her students were charged.
-  createdBy User @relation(fields: [createdById], references: [id], onDelete: Restrict)
+  createdBy User    @relation(fields: [createdById], references: [id], onDelete: Restrict)
 
   @@unique([studentId, date, source])
   @@index([studentId])
@@ -627,4 +630,38 @@ model ChatRead {
   @@id([conversationId, userId])
   @@index([userId])
   @@map("chat_reads")
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// طالب الشهر — one pick per halaqa per month
+// ─────────────────────────────────────────────────────────────────────────────
+
+// The teacher's validated choice for one finished month. The ranking itself is
+// never stored: it is recomputed from the points and fines ledgers whenever the
+// teacher opens the picker, so a late correction to the month still counts.
+// `score` and `wasTopScorer` are a snapshot taken when the teacher validated,
+// kept so the choice can be explained later even if the ledgers move.
+//
+// `month` is the month whose points were counted ("2026-11"), not the month
+// the card is shown in: November's pick is shown through December.
+model StudentOfMonth {
+  id           Int      @id @default(autoincrement())
+  halaqaId     Int
+  month        String   @db.VarChar(7)
+  studentId    Int
+  score        Decimal  @db.Decimal(10, 3)
+  wasTopScorer Boolean
+  selectedById Int
+  createdAt    DateTime @default(now())
+
+  halaqa     Halaqa  @relation(fields: [halaqaId], references: [id], onDelete: Cascade)
+  student    Student @relation(fields: [studentId], references: [id], onDelete: Cascade)
+  // Restrict, as on points and fines: removing a teacher must not erase the
+  // record of whom they chose.
+  selectedBy User    @relation(fields: [selectedById], references: [id], onDelete: Restrict)
+
+  @@unique([halaqaId, month])
+  @@index([studentId])
+  @@index([selectedById])
+  @@map("students_of_month")
 }

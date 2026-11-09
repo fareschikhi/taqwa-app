@@ -20,6 +20,9 @@ import 'package:taqwa/core/widgets/shell_tab_scope.dart';
 import 'package:taqwa/core/widgets/app_logo.dart';
 import 'package:taqwa/core/widgets/halaqa_news_card.dart';
 import 'package:taqwa/core/widgets/points_balance_card.dart';
+import 'package:taqwa/core/widgets/student_of_month_card.dart';
+import 'package:taqwa/features/data/models/student_of_month_model.dart';
+import 'package:taqwa/features/data/repositories/student_of_month_repository.dart';
 import 'package:taqwa/features/data/models/points/points_summary_model.dart';
 import 'package:taqwa/features/data/repositories/points_repository.dart';
 import 'package:taqwa/features/shared/presentation/pages/points_history_page.dart';
@@ -41,6 +44,8 @@ class _TeacherDashboardPageState extends ConsumerState<TeacherDashboardPage> {
   final _repo = TeacherRepository();
   final _newsRepo = HalaqaAnnouncementRepository();
   final _pointsRepo = PointsRepository();
+  final _monthRepo = StudentOfMonthRepository();
+  List<StudentOfMonthModel> _picks = [];
 
   /// The teacher's own points. Not tied to the selected halaqa, so it lives
   /// outside [loadData]; [_loadData] fetches both side by side (the halaqa
@@ -114,7 +119,20 @@ class _TeacherDashboardPageState extends ConsumerState<TeacherDashboardPage> {
     }
   }
 
-  Future<void> _loadData() => Future.wait([loadData(), _loadPoints()]);
+  Future<void> _loadData() =>
+      Future.wait([loadData(), _loadPoints(), loadStudentsOfMonth()]);
+
+  /// Validated picks for all the teacher's halaqas; the card shows the
+  /// selected one's. Public so the shell can refresh it after the teacher
+  /// validates in the popup.
+  Future<void> loadStudentsOfMonth() async {
+    try {
+      final picks = await _monthRepo.mine();
+      if (mounted) setState(() => _picks = picks);
+    } catch (_) {
+      if (mounted) setState(() => _picks = []);
+    }
+  }
 
   Future<void> _loadPoints() async {
     try {
@@ -248,6 +266,7 @@ class _TeacherDashboardPageState extends ConsumerState<TeacherDashboardPage> {
                           SizedBox(height: 24.h),
                           _buildGreeting(user?.fullName),
                           SizedBox(height: 24.h),
+                          ..._buildStudentOfMonth(),
                           _buildBentoGrid(),
                           SizedBox(height: 24.h),
                           if (_points != null) ...[
@@ -341,6 +360,17 @@ class _TeacherDashboardPageState extends ConsumerState<TeacherDashboardPage> {
         ),
       ),
     );
+  }
+
+  /// The selected halaqa's validated pick; with no halaqa selected (a single
+  /// halaqa teacher before the switcher loads) the first one is shown.
+  List<Widget> _buildStudentOfMonth() {
+    final halaqaId = ref.read(selectedHalaqaProvider).selected?.id;
+    final pick = halaqaId == null
+        ? _picks.firstOrNull
+        : _picks.where((p) => p.halaqaId == halaqaId).firstOrNull;
+    if (pick == null) return const [];
+    return [StudentOfMonthCard(pick: pick), SizedBox(height: 24.h)];
   }
 
   Widget _buildGreeting(String? name) {

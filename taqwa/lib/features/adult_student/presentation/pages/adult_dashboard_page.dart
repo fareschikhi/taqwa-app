@@ -17,6 +17,9 @@ import 'package:taqwa/core/widgets/app_logo.dart';
 import 'package:taqwa/core/widgets/expandable_text.dart';
 import 'package:taqwa/core/widgets/fine_balance_card.dart';
 import 'package:taqwa/core/widgets/points_balance_card.dart';
+import 'package:taqwa/core/widgets/student_of_month_card.dart';
+import 'package:taqwa/features/data/models/student_of_month_model.dart';
+import 'package:taqwa/features/data/repositories/student_of_month_repository.dart';
 import 'package:taqwa/features/data/models/points/points_summary_model.dart';
 import 'package:taqwa/features/data/repositories/points_repository.dart';
 import 'package:taqwa/features/shared/presentation/pages/points_history_page.dart';
@@ -50,6 +53,8 @@ class _AdultDashboardPageState extends ConsumerState<AdultDashboardPage> {
   final _fineRepo = FineRepository();
   final _pointsRepo = PointsRepository();
   final _newsRepo = HalaqaAnnouncementRepository();
+  final _monthRepo = StudentOfMonthRepository();
+  StudentOfMonthModel? _studentOfMonth;
 
   bool _isLoading = true;
   int? _loadedStudentId;
@@ -113,7 +118,25 @@ class _AdultDashboardPageState extends ConsumerState<AdultDashboardPage> {
     } catch (_) {
       if (mounted) setState(() => _isLoading = false);
     }
-    await _loadPoints();
+    await Future.wait([_loadPoints(), _loadStudentOfMonth()]);
+  }
+
+  /// His halaqa's طالب الشهر, once the teacher has validated one. Any failure
+  /// just leaves the card off.
+  Future<void> _loadStudentOfMonth() async {
+    try {
+      final picks = await _monthRepo.mine();
+      final halaqaId = ref.read(selectedStudentProvider).selected?.halaqaId;
+      if (mounted) {
+        setState(
+          () => _studentOfMonth = picks
+              .where((p) => p.halaqaId == halaqaId)
+              .firstOrNull,
+        );
+      }
+    } catch (_) {
+      if (mounted) setState(() => _studentOfMonth = null);
+    }
   }
 
   /// Loaded on its own, after the dashboard: a points failure leaves the card
@@ -178,6 +201,13 @@ class _AdultDashboardPageState extends ConsumerState<AdultDashboardPage> {
                         ),
                       )
                     else ...[
+                      if (_studentOfMonth != null) ...[
+                        StudentOfMonthCard(
+                          pick: _studentOfMonth!,
+                          isViewer: _studentOfMonth!.studentId == self.id,
+                        ),
+                        SizedBox(height: 20.h),
+                      ],
                       _buildFineBalance(),
                       SizedBox(height: 20.h),
                       if (_points != null) ...[

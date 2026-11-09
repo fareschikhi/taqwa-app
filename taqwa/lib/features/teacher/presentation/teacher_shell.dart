@@ -10,6 +10,7 @@ import 'pages/teacher_dashboard_page.dart';
 import 'pages/student_list_page.dart';
 import 'pages/attendance_page.dart';
 import 'pages/notes_page.dart';
+import 'widgets/student_of_month_picker_dialog.dart';
 import '../../shared/presentation/pages/profile_page.dart';
 import 'package:taqwa/core/widgets/app_text.dart';
 import 'package:taqwa/core/widgets/shell_tab_scope.dart';
@@ -21,7 +22,8 @@ class TeacherShell extends ConsumerStatefulWidget {
   ConsumerState<TeacherShell> createState() => _TeacherShellState();
 }
 
-class _TeacherShellState extends ConsumerState<TeacherShell> {
+class _TeacherShellState extends ConsumerState<TeacherShell>
+    with WidgetsBindingObserver {
   int _currentIndex = 0;
   final GlobalKey _dashboardKey = GlobalKey();
 
@@ -30,6 +32,7 @@ class _TeacherShellState extends ConsumerState<TeacherShell> {
   @override
   void initState() {
     super.initState();
+    WidgetsBinding.instance.addObserver(this);
     _pages = [
       TeacherDashboardPage(key: _dashboardKey),
       const StudentListPage(),
@@ -37,9 +40,32 @@ class _TeacherShellState extends ConsumerState<TeacherShell> {
       const NotesPage(),
       const ProfilePage(role: 'teacher'),
     ];
-    WidgetsBinding.instance.addPostFrameCallback((_) {
-      ref.read(selectedHalaqaProvider.notifier).load();
+    WidgetsBinding.instance.addPostFrameCallback((_) async {
+      await ref.read(selectedHalaqaProvider.notifier).load();
+      _promptStudentOfMonth();
     });
+  }
+
+  @override
+  void dispose() {
+    WidgetsBinding.instance.removeObserver(this);
+    super.dispose();
+  }
+
+  /// Coming back to the app counts as entering it again: a teacher who chose
+  /// "لاحقاً" is asked once more until the month's pick is validated.
+  @override
+  void didChangeAppLifecycleState(AppLifecycleState state) {
+    if (state == AppLifecycleState.resumed) _promptStudentOfMonth();
+  }
+
+  Future<void> _promptStudentOfMonth() async {
+    if (!mounted) return;
+    final validated = await StudentOfMonthPrompt.maybeShow(context);
+    if (validated && mounted) {
+      dynamic state = _dashboardKey.currentState;
+      state?.loadStudentsOfMonth();
+    }
   }
 
   void _onTabTapped(int index) {

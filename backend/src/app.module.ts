@@ -24,6 +24,7 @@ import { UploadsModule } from './modules/uploads/uploads.module';
 import { DevicesModule } from './modules/devices/devices.module';
 import { FinesModule } from './modules/fines/fines.module';
 import { PointsModule } from './modules/points/points.module';
+import { StudentOfMonthModule } from './modules/student-of-month/student-of-month.module';
 
 @Module({
   imports: [
@@ -55,6 +56,7 @@ import { PointsModule } from './modules/points/points.module';
     DevicesModule,
     FinesModule,
     PointsModule,
+    StudentOfMonthModule,
     ChatModule,
   ],
   controllers: [AppController],

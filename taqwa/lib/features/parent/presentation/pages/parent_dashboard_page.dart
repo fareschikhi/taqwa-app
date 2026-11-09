@@ -23,6 +23,9 @@ import 'package:taqwa/core/widgets/app_text.dart';
 import 'package:taqwa/core/widgets/shell_tab_scope.dart';
 import 'package:taqwa/core/widgets/app_logo.dart';
 import 'package:taqwa/core/widgets/halaqa_news_card.dart';
+import 'package:taqwa/core/widgets/student_of_month_card.dart';
+import 'package:taqwa/features/data/models/student_of_month_model.dart';
+import 'package:taqwa/features/data/repositories/student_of_month_repository.dart';
 import 'package:taqwa/features/data/models/halaqa/halaqa_announcement_model.dart';
 import 'package:taqwa/features/data/repositories/halaqa_announcement_repository.dart';
 import 'package:taqwa/features/shared/presentation/pages/halaqa_news_page.dart';
@@ -42,6 +45,8 @@ class ParentDashboardPage extends ConsumerStatefulWidget {
 class _ParentDashboardPageState extends ConsumerState<ParentDashboardPage> {
   final _repo = StudentRepository();
   final _newsRepo = HalaqaAnnouncementRepository();
+  final _monthRepo = StudentOfMonthRepository();
+  List<StudentOfMonthModel> _picks = [];
   bool _isLoading = true;
   int? _loadedChildId;
   AttendanceSummaryModel? _attendance;
@@ -77,6 +82,11 @@ class _ParentDashboardPageState extends ConsumerState<ParentDashboardPage> {
       final news = await _newsRepo.myAnnouncements().catchError(
         (_) => <HalaqaAnnouncementModel>[],
       );
+      // One call covers every child's halaqa; the card picks the selected
+      // child's at build time. A failure only leaves the card off.
+      final picks = await _monthRepo.mine().catchError(
+        (_) => <StudentOfMonthModel>[],
+      );
       // The parent may have switched child while this was in flight. The
       // newer load owns the page; this one must not paint the previous
       // child's notes and figures under the new child's name.
@@ -92,6 +102,7 @@ class _ParentDashboardPageState extends ConsumerState<ParentDashboardPage> {
           _attendanceHistory = results[3] as List<Map<String, dynamic>>;
           _rating = ratingOf(profile);
           _news = news;
+          _picks = picks;
           _isLoading = false;
         });
       }
@@ -100,6 +111,21 @@ class _ParentDashboardPageState extends ConsumerState<ParentDashboardPage> {
         setState(() => _isLoading = false);
       }
     }
+  }
+
+  /// The selected child's halaqa's طالب الشهر, or nothing while its teacher
+  /// has not validated one.
+  List<Widget> _buildStudentOfMonth(ParentChildModel child) {
+    final pick = _picks.where((p) => p.halaqaId == child.halaqaId).firstOrNull;
+    if (pick == null) return const [];
+    return [
+      StudentOfMonthCard(
+        pick: pick,
+        isViewer: pick.studentId == child.id,
+        viewerIsParent: true,
+      ),
+      SizedBox(height: 20.h),
+    ];
   }
 
   Future<void> _openNews() async {
@@ -155,6 +181,7 @@ class _ParentDashboardPageState extends ConsumerState<ParentDashboardPage> {
                         ),
                       )
                     else ...[
+                      ..._buildStudentOfMonth(child),
                       _buildLastSession(),
                       SizedBox(height: 20.h),
                       if (_news.isNotEmpty) ...[
