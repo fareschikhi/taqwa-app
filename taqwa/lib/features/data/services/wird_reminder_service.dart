@@ -36,9 +36,28 @@ class WirdReminderService {
   static const int _notificationId = 7001;
   static const String _enabledKey = 'wird_reminder_enabled';
   static const String _minutesKey = 'wird_reminder_minutes';
+  static const String _promptedKeyPrefix = 'wird_reminder_prompted_';
 
   final _plugin = FlutterLocalNotificationsPlugin();
   Future<void>? _initializing;
+  final _revision = ValueNotifier<int>(0);
+
+  /// Ticks after every saved change, so a card already on screen picks up a
+  /// time the sign-in popup set behind it.
+  Listenable get changes => _revision;
+
+  /// True until [userId] has seen the "choose your wird time" popup on this
+  /// phone. Kept per account: someone else signing in on the same phone is
+  /// asked too, while the same person signing in again is not.
+  Future<bool> shouldPrompt(int userId) async {
+    final prefs = await SharedPreferences.getInstance();
+    return !(prefs.getBool('$_promptedKeyPrefix$userId') ?? false);
+  }
+
+  Future<void> markPrompted(int userId) async {
+    final prefs = await SharedPreferences.getInstance();
+    await prefs.setBool('$_promptedKeyPrefix$userId', true);
+  }
 
   /// No local notifications in the web build, so the card hides itself there.
   static bool get isSupported =>
@@ -106,6 +125,7 @@ class WirdReminderService {
     final prefs = await SharedPreferences.getInstance();
     await prefs.setBool(_enabledKey, enabled);
     await prefs.setInt(_minutesKey, time.hour * 60 + time.minute);
+    _revision.value++;
   }
 
   Future<void> _ensureInitialized() => _initializing ??= _initialize();

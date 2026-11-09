@@ -4,6 +4,7 @@ import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:taqwa/core/providers/auth_provider.dart';
 import 'package:taqwa/core/theme/app_colors.dart';
 import 'package:taqwa/core/widgets/app_logo.dart';
+import 'package:taqwa/core/widgets/wird_reminder_prompt.dart';
 import 'package:taqwa/features/auth/presentation/role_home.dart';
 import 'package:taqwa/features/auth/presentation/startup_destination.dart';
 import 'force_password_change_page.dart';
@@ -28,7 +29,13 @@ class AuthGate extends ConsumerWidget {
     return switch (startupDestinationFor(auth)) {
       StartupDestination.restoring => const _RestoringSession(),
       StartupDestination.login => const LoginPage(),
-      StartupDestination.home => homeForRole(auth.user!.role),
+      // Keyed by account, so a different person signing in on this phone
+      // gets a fresh prompt instead of reusing the last one's state.
+      StartupDestination.home => WirdReminderPrompt(
+        key: ValueKey(auth.user!.id),
+        userId: auth.user!.id,
+        child: homeForRole(auth.user!.role),
+      ),
       StartupDestination.changePassword => const ForcePasswordChangePage(),
     };
   }

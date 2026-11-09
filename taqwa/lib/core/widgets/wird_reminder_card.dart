@@ -46,7 +46,16 @@ class _WirdReminderCardState extends State<WirdReminderCard> {
   @override
   void initState() {
     super.initState();
+    // The sign-in popup can turn the reminder on while this card is already
+    // drawn underneath it; reload whenever the service saves.
+    _service.changes.addListener(_load);
     _load();
+  }
+
+  @override
+  void dispose() {
+    _service.changes.removeListener(_load);
+    super.dispose();
   }
 
   Future<void> _load() async {

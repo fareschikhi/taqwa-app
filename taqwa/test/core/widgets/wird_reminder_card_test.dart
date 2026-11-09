@@ -18,6 +18,16 @@ class _FakeService implements WirdReminderService {
   WirdReminderResult result;
   final enabledAt = <TimeOfDay>[];
   int disabled = 0;
+  final revision = ValueNotifier<int>(0);
+
+  @override
+  Listenable get changes => revision;
+
+  @override
+  Future<bool> shouldPrompt(int userId) async => false;
+
+  @override
+  Future<void> markPrompted(int userId) async {}
 
   @override
   Future<WirdReminderSettings> load() async => stored;
@@ -101,5 +111,23 @@ void main() {
 
     expect(tester.widget<Switch>(find.byType(Switch)).value, isFalse);
     expect(find.textContaining('الإشعارات مغلقة'), findsOneWidget);
+  });
+
+  testWidgets('picks up a change saved behind it by the sign-in popup', (
+    tester,
+  ) async {
+    final service = _FakeService();
+    await _pump(tester, service);
+    expect(tester.widget<Switch>(find.byType(Switch)).value, isFalse);
+
+    service.stored = const WirdReminderSettings(
+      enabled: true,
+      time: TimeOfDay(hour: 21, minute: 15),
+    );
+    service.revision.value++;
+    await tester.pumpAndSettle();
+
+    expect(tester.widget<Switch>(find.byType(Switch)).value, isTrue);
+    expect(find.text('9:15 م'), findsOneWidget);
   });
 }
