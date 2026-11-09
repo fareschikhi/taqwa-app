@@ -29,8 +29,9 @@ Widget _host(int unread) => ProviderScope(
   ],
   child: ScreenUtilInit(
     designSize: const Size(390, 844),
-    builder: (_, _) =>
-        const MaterialApp(home: Scaffold(body: Center(child: StaffChatButton()))),
+    builder: (_, _) => const MaterialApp(
+      home: Scaffold(body: Center(child: StaffChatButton())),
+    ),
   ),
 );
 

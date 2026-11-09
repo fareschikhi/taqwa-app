@@ -7,6 +7,7 @@ import 'package:flutter_localizations/flutter_localizations.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'core/theme/app_theme.dart';
+import 'core/widgets/app_update_prompt.dart';
 import 'core/widgets/mobile_frame.dart';
 import 'features/auth/presentation/pages/intro_page.dart';
 
@@ -67,7 +68,9 @@ class TaqwaApp extends StatelessWidget {
             builder: (context, widget) {
               return Directionality(
                 textDirection: TextDirection.ltr,
-                child: MobileFrame(child: ResumeIntro(child: widget!)),
+                child: MobileFrame(
+                  child: ResumeIntro(child: AppUpdatePrompt(child: widget!)),
+                ),
               );
             },
             home: const StartupIntro(),
