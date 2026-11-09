@@ -13,7 +13,6 @@ import 'package:taqwa/core/widgets/app_text.dart';
 import 'package:taqwa/core/widgets/shell_tab_scope.dart';
 import 'package:taqwa/features/data/models/chat/chat_target.dart';
 import 'package:taqwa/features/chat/presentation/widgets/staff_chat_button.dart';
-import 'package:taqwa/core/widgets/app_logo.dart';
 import 'package:taqwa/core/widgets/halaqa_news_card.dart';
 import 'package:taqwa/core/widgets/points_balance_card.dart';
 import 'package:taqwa/features/data/models/points/points_summary_model.dart';
@@ -147,7 +146,7 @@ class _ManagerDashboardPageState extends ConsumerState<ManagerDashboardPage> {
                         child: Column(
                           crossAxisAlignment: CrossAxisAlignment.start,
                           children: [
-                            SizedBox(height: 20.h),
+                            SizedBox(height: 16.h),
                             _buildWelcomeBanner(user?.fullName ?? 'المدير'),
                             SizedBox(height: 20.h),
                             _buildStatCards(),
@@ -231,23 +230,15 @@ class _ManagerDashboardPageState extends ConsumerState<ManagerDashboardPage> {
   }
 
   Widget _buildAppBar(String name) {
+    // Logout lives on the الحساب tab; this corner is the chat's, as on the
+    // parent's pages, for managers the admin let answer parents. Without
+    // chat there is nothing to show, so the row is dropped entirely.
+    if (!canUseStaffChat(ref.watch(authProvider).user)) {
+      return const SizedBox.shrink();
+    }
     return Padding(
       padding: EdgeInsets.fromLTRB(16.w, 16.h, 16.w, 0),
-      child: Row(
-        children: [
-          // Logout lives on the الحساب tab; this corner is the chat's, as on
-          // the parent's pages, for managers the admin let answer parents.
-          if (canUseStaffChat(ref.watch(authProvider).user))
-            const StaffChatButton(),
-          const Spacer(),
-          AppText(
-            'التقوى',
-            style: AppTextStyles.headlineMd.copyWith(color: AppColors.primary),
-          ),
-          SizedBox(width: 6.w),
-          AppLogo(height: 30.w),
-        ],
-      ),
+      child: const Row(children: [StaffChatButton()]),
     );
   }
 

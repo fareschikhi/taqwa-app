@@ -220,41 +220,24 @@ class _TeachersManagementPageState extends State<TeachersManagementPage> {
                         ),
                       ),
                     ),
-                    const Spacer(),
-                    Container(
-                      width: 40.w,
-                      height: 40.w,
-                      decoration: const BoxDecoration(
-                        color: AppColors.primaryContainer,
-                        shape: BoxShape.circle,
-                      ),
-                      child: Icon(
-                        Icons.person,
-                        color: AppColors.onPrimaryContainer,
-                        size: 22.w,
-                      ),
-                    ),
-                    SizedBox(width: 8.w),
-                    AppText(
-                      'التقوى',
-                      style: AppTextStyles.headlineMd.copyWith(
-                        color: AppColors.primary,
+                    SizedBox(width: 12.w),
+                    Expanded(
+                      child: AppText(
+                        'إدارة المعلمين',
+                        textAlign: TextAlign.right,
+                        style: AppTextStyles.headlineLgMobile.copyWith(
+                          color: AppColors.onSurface,
+                        ),
                       ),
                     ),
                   ],
                 ),
               ),
               Padding(
-                padding: EdgeInsets.fromLTRB(16.w, 20.h, 16.w, 0),
+                padding: EdgeInsets.symmetric(horizontal: 16.w),
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.end,
                   children: [
-                    AppText(
-                      'إدارة المعلمين',
-                      style: AppTextStyles.headlineLgMobile.copyWith(
-                        color: AppColors.onSurface,
-                      ),
-                    ),
                     AppText(
                       'إدارة وتوجيه المدرسة القرآنية',
                       style: AppTextStyles.bodyMd.copyWith(

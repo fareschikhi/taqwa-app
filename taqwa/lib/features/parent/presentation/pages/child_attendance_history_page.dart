@@ -96,21 +96,17 @@ class _ChildAttendanceHistoryPageState
                 Row(
                   children: [
                     const ParentChatButton(),
-                    const Spacer(),
-                    AppText(
-                      'التقوى',
-                      style: AppTextStyles.headlineMd.copyWith(
-                        color: AppColors.primary,
+                    SizedBox(width: 12.w),
+                    Expanded(
+                      child: AppText(
+                        'سجل الحضور التفصيلي',
+                        textAlign: TextAlign.right,
+                        style: AppTextStyles.headlineLgMobile.copyWith(
+                          color: AppColors.onSurface,
+                        ),
                       ),
                     ),
                   ],
-                ),
-                SizedBox(height: 16.h),
-                AppText(
-                  'سجل الحضور التفصيلي',
-                  style: AppTextStyles.headlineLgMobile.copyWith(
-                    color: AppColors.onSurface,
-                  ),
                 ),
                 SizedBox(height: 4.h),
                 AppText(

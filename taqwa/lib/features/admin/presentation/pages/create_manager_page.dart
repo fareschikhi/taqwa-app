@@ -481,18 +481,6 @@ class _CreateManagerPageState extends State<CreateManagerPage> {
               ),
               const Spacer(),
               AppText(
-                'التقوى',
-                style: AppTextStyles.headlineMd.copyWith(
-                  color: AppColors.primary,
-                ),
-              ),
-            ],
-          ),
-          SizedBox(height: 4.h),
-          Row(
-            mainAxisAlignment: MainAxisAlignment.end,
-            children: [
-              AppText(
                 _isEditing ? 'تعديل مدير' : 'إضافة مدير جديد',
                 style: AppTextStyles.labelSm.copyWith(
                   color: AppColors.onSurfaceVariant,

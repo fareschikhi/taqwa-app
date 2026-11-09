@@ -130,21 +130,17 @@ class _HalaqasManagementPageState extends State<HalaqasManagementPage> {
                             ),
                           ),
                         ),
-                        const Spacer(),
-                        AppText(
-                          'التقوى',
-                          style: AppTextStyles.headlineMd.copyWith(
-                            color: AppColors.primary,
+                        SizedBox(width: 12.w),
+                        Expanded(
+                          child: AppText(
+                            'إدارة الحلقات',
+                            textAlign: TextAlign.right,
+                            style: AppTextStyles.headlineLgMobile.copyWith(
+                              color: AppColors.onSurface,
+                            ),
                           ),
                         ),
                       ],
-                    ),
-                    SizedBox(height: 16.h),
-                    AppText(
-                      'إدارة الحلقات',
-                      style: AppTextStyles.headlineLgMobile.copyWith(
-                        color: AppColors.onSurface,
-                      ),
                     ),
                     AppText(
                       'عرض الحلقات وحالاتها والمعلمين المسندين.',

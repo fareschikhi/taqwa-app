@@ -197,21 +197,17 @@ class _ParentsManagementPageState extends State<ParentsManagementPage> {
                             ),
                           ),
                         ),
-                        const Spacer(),
-                        AppText(
-                          'التقوى',
-                          style: AppTextStyles.headlineMd.copyWith(
-                            color: AppColors.primary,
+                        SizedBox(width: 12.w),
+                        Expanded(
+                          child: AppText(
+                            'أولياء الأمور',
+                            textAlign: TextAlign.right,
+                            style: AppTextStyles.headlineLgMobile.copyWith(
+                              color: AppColors.onSurface,
+                            ),
                           ),
                         ),
                       ],
-                    ),
-                    SizedBox(height: 16.h),
-                    AppText(
-                      'أولياء الأمور',
-                      style: AppTextStyles.headlineLgMobile.copyWith(
-                        color: AppColors.onSurface,
-                      ),
                     ),
                     AppText(
                       'متابعة التواصل مع أولياء أمور الطلاب.',

@@ -217,20 +217,6 @@ class _ManagerStudentsPageState extends ConsumerState<ManagerStudentsPage> {
               // Header
               Padding(
                 padding: EdgeInsets.fromLTRB(16.w, 16.h, 16.w, 0),
-                child: Row(
-                  children: [
-                    const Spacer(),
-                    AppText(
-                      'التقوى',
-                      style: AppTextStyles.headlineMd.copyWith(
-                        color: AppColors.primary,
-                      ),
-                    ),
-                  ],
-                ),
-              ),
-              Padding(
-                padding: EdgeInsets.fromLTRB(16.w, 20.h, 16.w, 0),
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.end,
                   children: [

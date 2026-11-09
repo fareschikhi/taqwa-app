@@ -15,7 +15,6 @@ import 'package:taqwa/features/data/repositories/halaqa_repository.dart';
 import 'package:taqwa/features/data/repositories/manager_repository.dart';
 import '../admin_shell.dart';
 import 'package:taqwa/core/widgets/app_text.dart';
-import 'package:taqwa/core/widgets/app_logo.dart';
 import 'package:taqwa/core/widgets/halaqa_news_card.dart';
 import 'package:taqwa/features/data/models/halaqa/halaqa_announcement_model.dart';
 import 'package:taqwa/features/data/repositories/halaqa_announcement_repository.dart';
@@ -148,14 +147,13 @@ class _AdminDashboardPageState extends ConsumerState<AdminDashboardPage> {
           onRefresh: _loadStats,
           child: CustomScrollView(
             slivers: [
-              _buildAppBar(context),
               SliverPadding(
                 padding: EdgeInsets.symmetric(
                   horizontal: AppConstants.cardPadding,
                 ),
                 sliver: SliverList(
                   delegate: SliverChildListDelegate([
-                    SizedBox(height: 24.h),
+                    SizedBox(height: 16.h),
                     _buildGreeting(name),
                     SizedBox(height: 24.h),
                     _buildKpiGrid(),
@@ -207,62 +205,48 @@ class _AdminDashboardPageState extends ConsumerState<AdminDashboardPage> {
     await _loadStats();
   }
 
-  Widget _buildAppBar(BuildContext context) {
-    return SliverAppBar(
-      floating: true,
-      backgroundColor: AppColors.background,
-      elevation: 0,
-      scrolledUnderElevation: 0,
-      flexibleSpace: Padding(
-        padding: EdgeInsets.symmetric(horizontal: 16.w, vertical: 8.h),
-        child: Row(
-          children: [
-            GestureDetector(
-              onTap: () => AdminShellScope.of(context)?.openMenu(),
-              child: Container(
-                width: 40.w,
-                height: 40.w,
-                decoration: BoxDecoration(
-                  color: AppColors.surfaceContainer,
-                  borderRadius: BorderRadius.circular(AppConstants.radiusMd),
+  /// The drawer's menu button sits beside the greeting instead of on a bar of
+  /// its own, so the page starts one row higher.
+  Widget _buildGreeting(String name) {
+    return Row(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        GestureDetector(
+          onTap: () => AdminShellScope.of(context)?.openMenu(),
+          child: Container(
+            width: 40.w,
+            height: 40.w,
+            decoration: BoxDecoration(
+              color: AppColors.surfaceContainer,
+              borderRadius: BorderRadius.circular(AppConstants.radiusMd),
+            ),
+            child: const Icon(
+              Icons.menu,
+              color: AppColors.onSurfaceVariant,
+            ),
+          ),
+        ),
+        SizedBox(width: 12.w),
+        Expanded(
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.end,
+            children: [
+              AppText(
+                'مرحباً بك، $name',
+                textAlign: TextAlign.right,
+                style: AppTextStyles.headlineLgMobile.copyWith(
+                  color: AppColors.primary,
                 ),
-                child: const Icon(
-                  Icons.menu,
+              ),
+              SizedBox(height: 4.h),
+              AppText(
+                'إليك نظرة عامة على أداء المدرسة القرآنية اليوم.',
+                textAlign: TextAlign.right,
+                style: AppTextStyles.bodyMd.copyWith(
                   color: AppColors.onSurfaceVariant,
                 ),
               ),
-            ),
-            const Spacer(),
-            AppText(
-              'التقوى',
-              style: AppTextStyles.headlineMd.copyWith(
-                color: AppColors.primary,
-              ),
-            ),
-            SizedBox(width: 6.w),
-            AppLogo(height: 30.w),
-          ],
-        ),
-      ),
-      toolbarHeight: 56.h,
-    );
-  }
-
-  Widget _buildGreeting(String name) {
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.end,
-      children: [
-        AppText(
-          'مرحباً بك، $name',
-          style: AppTextStyles.headlineLgMobile.copyWith(
-            color: AppColors.primary,
-          ),
-        ),
-        SizedBox(height: 4.h),
-        AppText(
-          'إليك نظرة عامة على أداء المدرسة القرآنية اليوم.',
-          style: AppTextStyles.bodyMd.copyWith(
-            color: AppColors.onSurfaceVariant,
+            ],
           ),
         ),
       ],

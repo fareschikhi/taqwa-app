@@ -98,21 +98,7 @@ class _JustificationListPageState extends ConsumerState<JustificationListPage> {
             crossAxisAlignment: CrossAxisAlignment.end,
             children: [
               Padding(
-                padding: EdgeInsets.fromLTRB(16.w, 16.h, 16.w, 0),
-                child: Row(
-                  children: [
-                    const Spacer(),
-                    AppText(
-                      'التقوى',
-                      style: AppTextStyles.headlineMd.copyWith(
-                        color: AppColors.primary,
-                      ),
-                    ),
-                  ],
-                ),
-              ),
-              Padding(
-                padding: EdgeInsets.fromLTRB(16.w, 20.h, 16.w, 16.h),
+                padding: EdgeInsets.fromLTRB(16.w, 16.h, 16.w, 16.h),
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.end,
                   children: [

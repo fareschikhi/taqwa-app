@@ -784,22 +784,6 @@ class _AttendancePageState extends ConsumerState<AttendancePage>
         crossAxisAlignment: CrossAxisAlignment.end,
         children: [
           Row(
-            children: [
-              const Icon(
-                Icons.notifications_outlined,
-                color: AppColors.onSurfaceVariant,
-              ),
-              const Spacer(),
-              AppText(
-                'التقوى',
-                style: AppTextStyles.headlineMd.copyWith(
-                  color: AppColors.primary,
-                ),
-              ),
-            ],
-          ),
-          SizedBox(height: 12.h),
-          Row(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
               const Spacer(),

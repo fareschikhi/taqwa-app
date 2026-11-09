@@ -311,35 +311,17 @@ class _StudentsManagementPageState extends State<StudentsManagementPage> {
                             ),
                           ),
                         ),
-                        const Spacer(),
-                        Container(
-                          width: 32.w,
-                          height: 32.w,
-                          decoration: const BoxDecoration(
-                            color: AppColors.primaryContainer,
-                            shape: BoxShape.circle,
-                          ),
-                          child: Icon(
-                            Icons.person,
-                            color: AppColors.onPrimaryContainer,
-                            size: 18.w,
-                          ),
-                        ),
-                        SizedBox(width: 8.w),
-                        AppText(
-                          'التقوى',
-                          style: AppTextStyles.headlineMd.copyWith(
-                            color: AppColors.primary,
+                        SizedBox(width: 12.w),
+                        Expanded(
+                          child: AppText(
+                            'قائمة الطلاب',
+                            textAlign: TextAlign.right,
+                            style: AppTextStyles.headlineLgMobile.copyWith(
+                              color: AppColors.onSurface,
+                            ),
                           ),
                         ),
                       ],
-                    ),
-                    SizedBox(height: 16.h),
-                    AppText(
-                      'قائمة الطلاب',
-                      style: AppTextStyles.headlineLgMobile.copyWith(
-                        color: AppColors.onSurface,
-                      ),
                     ),
                     AppText(
                       'إدارة متابعة حفظ الطلاب وحضورهم.',

@@ -17,7 +17,6 @@ import '../../../data/models/teacher_student_model.dart';
 import 'memorization_entry_sheet.dart';
 import 'package:taqwa/core/widgets/app_text.dart';
 import 'package:taqwa/core/widgets/shell_tab_scope.dart';
-import 'package:taqwa/core/widgets/app_logo.dart';
 import 'package:taqwa/core/widgets/halaqa_news_card.dart';
 import 'package:taqwa/core/widgets/points_balance_card.dart';
 import 'package:taqwa/core/widgets/student_of_month_card.dart';
@@ -259,12 +258,11 @@ class _TeacherDashboardPageState extends ConsumerState<TeacherDashboardPage> {
                 child: CustomScrollView(
                   physics: const AlwaysScrollableScrollPhysics(),
                   slivers: [
-                    _buildAppBar(),
                     SliverPadding(
                       padding: EdgeInsets.symmetric(horizontal: 16.w),
                       sliver: SliverList(
                         delegate: SliverChildListDelegate([
-                          SizedBox(height: 24.h),
+                          SizedBox(height: 16.h),
                           _buildGreeting(user?.fullName),
                           SizedBox(height: 24.h),
                           ..._buildSupervisors(),
@@ -319,47 +317,6 @@ class _TeacherDashboardPageState extends ConsumerState<TeacherDashboardPage> {
                   ],
                 ),
               ),
-      ),
-    );
-  }
-
-  Widget _buildAppBar() {
-    return SliverAppBar(
-      floating: true,
-      backgroundColor: AppColors.background,
-      elevation: 0,
-      scrolledUnderElevation: 0,
-      toolbarHeight: 56.h,
-      flexibleSpace: Padding(
-        padding: EdgeInsets.symmetric(horizontal: 16.w, vertical: 8.h),
-        child: Row(
-          children: [
-            GestureDetector(
-              onTap: () {},
-              child: Container(
-                width: 40.w,
-                height: 40.w,
-                decoration: BoxDecoration(
-                  color: AppColors.surfaceContainer,
-                  borderRadius: BorderRadius.circular(AppConstants.radiusMd),
-                ),
-                child: const Icon(
-                  Icons.notifications_outlined,
-                  color: AppColors.onSurfaceVariant,
-                ),
-              ),
-            ),
-            const Spacer(),
-            AppText(
-              'التقوى',
-              style: AppTextStyles.headlineMd.copyWith(
-                color: AppColors.primary,
-              ),
-            ),
-            SizedBox(width: 6.w),
-            AppLogo(height: 30.w),
-          ],
-        ),
       ),
     );
   }

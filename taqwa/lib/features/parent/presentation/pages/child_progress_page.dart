@@ -112,21 +112,17 @@ class _ChildProgressPageState extends ConsumerState<ChildProgressPage> {
                     Row(
                       children: [
                         const ParentChatButton(),
-                        const Spacer(),
-                        AppText(
-                          'التقوى',
-                          style: AppTextStyles.headlineMd.copyWith(
-                            color: AppColors.primary,
+                        SizedBox(width: 12.w),
+                        Expanded(
+                          child: AppText(
+                            'تقدم المدرسة القرآنية',
+                            textAlign: TextAlign.right,
+                            style: AppTextStyles.headlineLgMobile.copyWith(
+                              color: AppColors.onSurface,
+                            ),
                           ),
                         ),
                       ],
-                    ),
-                    SizedBox(height: 16.h),
-                    AppText(
-                      'تقدم المدرسة القرآنية',
-                      style: AppTextStyles.headlineLgMobile.copyWith(
-                        color: AppColors.onSurface,
-                      ),
                     ),
                     AppText(
                       'تتبع رحلة ${child.fullName} في حفظ القرآن الكريم.',

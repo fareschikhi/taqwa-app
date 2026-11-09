@@ -892,13 +892,6 @@ class _CreateHalaqaPageState extends State<CreateHalaqaPage> {
             onPressed: () => Navigator.pop(context),
             icon: const Icon(Icons.arrow_forward_ios),
           ),
-          const Spacer(),
-          Icon(Icons.home, color: AppColors.primary, size: 22.w),
-          SizedBox(width: 8.w),
-          AppText(
-            'التقوى',
-            style: AppTextStyles.labelMd.copyWith(color: AppColors.primary),
-          ),
         ],
       ),
     );

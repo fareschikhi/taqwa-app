@@ -13,7 +13,6 @@ import 'package:taqwa/core/utils/student_rating.dart';
 import 'package:taqwa/core/widgets/app_card.dart';
 import 'package:taqwa/core/widgets/app_text.dart';
 import 'package:taqwa/core/widgets/shell_tab_scope.dart';
-import 'package:taqwa/core/widgets/app_logo.dart';
 import 'package:taqwa/core/widgets/expandable_text.dart';
 import 'package:taqwa/core/widgets/fine_balance_card.dart';
 import 'package:taqwa/core/widgets/points_balance_card.dart';
@@ -183,12 +182,11 @@ class _AdultDashboardPageState extends ConsumerState<AdultDashboardPage> {
           child: CustomScrollView(
             physics: const AlwaysScrollableScrollPhysics(),
             slivers: [
-              _buildAppBar(),
               SliverPadding(
                 padding: EdgeInsets.symmetric(horizontal: 16.w),
                 sliver: SliverList(
                   delegate: SliverChildListDelegate([
-                    SizedBox(height: 20.h),
+                    SizedBox(height: 16.h),
                     _buildGreeting(userName),
                     SizedBox(height: 24.h),
                     if (_isLoading)
@@ -241,32 +239,6 @@ class _AdultDashboardPageState extends ConsumerState<AdultDashboardPage> {
               ),
             ],
           ),
-        ),
-      ),
-    );
-  }
-
-  Widget _buildAppBar() {
-    return SliverAppBar(
-      floating: true,
-      backgroundColor: AppColors.background,
-      elevation: 0,
-      scrolledUnderElevation: 0,
-      toolbarHeight: 56.h,
-      flexibleSpace: Padding(
-        padding: EdgeInsets.symmetric(horizontal: 16.w, vertical: 8.h),
-        child: Row(
-          children: [
-            const Spacer(),
-            AppText(
-              'التقوى',
-              style: AppTextStyles.headlineMd.copyWith(
-                color: AppColors.primary,
-              ),
-            ),
-            SizedBox(width: 6.w),
-            AppLogo(height: 30.w),
-          ],
         ),
       ),
     );

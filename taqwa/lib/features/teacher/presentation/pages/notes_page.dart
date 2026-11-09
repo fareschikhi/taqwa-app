@@ -414,22 +414,6 @@ class _NotesPageState extends ConsumerState<NotesPage> {
                       child: Column(
                         crossAxisAlignment: CrossAxisAlignment.end,
                         children: [
-                          Row(
-                            children: [
-                              const Icon(
-                                Icons.notifications_outlined,
-                                color: AppColors.onSurfaceVariant,
-                              ),
-                              const Spacer(),
-                              AppText(
-                                'التقوى',
-                                style: AppTextStyles.headlineMd.copyWith(
-                                  color: AppColors.primary,
-                                ),
-                              ),
-                            ],
-                          ),
-                          SizedBox(height: 16.h),
                           SizedBox(
                             height: 44.h,
                             child: AppButton(

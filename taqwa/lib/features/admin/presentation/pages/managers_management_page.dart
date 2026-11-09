@@ -268,21 +268,17 @@ class _ManagersManagementPageState extends State<ManagersManagementPage> {
                   ),
                 ),
               ),
-              const Spacer(),
-              AppText(
-                'التقوى',
-                style: AppTextStyles.headlineMd.copyWith(
-                  color: AppColors.primary,
+              SizedBox(width: 12.w),
+              Expanded(
+                child: AppText(
+                  'الإدارة',
+                  textAlign: TextAlign.right,
+                  style: AppTextStyles.headlineLgMobile.copyWith(
+                    color: AppColors.onSurface,
+                  ),
                 ),
               ),
             ],
-          ),
-          SizedBox(height: 4.h),
-          AppText(
-            'الإدارة',
-            style: AppTextStyles.headlineLgMobile.copyWith(
-              color: AppColors.onSurface,
-            ),
           ),
           AppText(
             'تنظيم ومتابعة المديرين.',

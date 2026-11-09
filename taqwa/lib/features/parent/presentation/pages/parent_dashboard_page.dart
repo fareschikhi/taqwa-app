@@ -21,7 +21,6 @@ import 'child_notes_page.dart';
 import '../widgets/parent_chat_button.dart';
 import 'package:taqwa/core/widgets/app_text.dart';
 import 'package:taqwa/core/widgets/shell_tab_scope.dart';
-import 'package:taqwa/core/widgets/app_logo.dart';
 import 'package:taqwa/core/widgets/halaqa_news_card.dart';
 import 'package:taqwa/core/widgets/student_of_month_card.dart';
 import 'package:taqwa/features/data/models/student_of_month_model.dart';
@@ -161,12 +160,11 @@ class _ParentDashboardPageState extends ConsumerState<ParentDashboardPage> {
           child: CustomScrollView(
             physics: const AlwaysScrollableScrollPhysics(),
             slivers: [
-              _buildAppBar(),
               SliverPadding(
                 padding: EdgeInsets.symmetric(horizontal: 16.w),
                 sliver: SliverList(
                   delegate: SliverChildListDelegate([
-                    SizedBox(height: 20.h),
+                    SizedBox(height: 16.h),
                     _buildGreeting(parentName),
                     SizedBox(height: 24.h),
                     _buildChildCard(context, child),
@@ -208,48 +206,34 @@ class _ParentDashboardPageState extends ConsumerState<ParentDashboardPage> {
     );
   }
 
-  Widget _buildAppBar() {
-    return SliverAppBar(
-      floating: true,
-      backgroundColor: AppColors.background,
-      elevation: 0,
-      scrolledUnderElevation: 0,
-      toolbarHeight: 56.h,
-      flexibleSpace: Padding(
-        padding: EdgeInsets.symmetric(horizontal: 16.w, vertical: 8.h),
-        child: Row(
-          children: [
-            const ParentChatButton(),
-            const Spacer(),
-            AppText(
-              'التقوى',
-              style: AppTextStyles.headlineMd.copyWith(
-                color: AppColors.primary,
-              ),
-            ),
-            SizedBox(width: 6.w),
-            AppLogo(height: 30.w),
-          ],
-        ),
-      ),
-    );
-  }
-
+  /// The chat button sits beside the greeting instead of on a bar of its
+  /// own, so the page starts one row higher.
   Widget _buildGreeting(String parentName) {
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.end,
+    return Row(
+      crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        AppText(
-          parentName.isNotEmpty ? 'أهلاً، $parentName' : 'أهلاً بك',
-          style: AppTextStyles.headlineLgMobile.copyWith(
-            color: AppColors.onBackground,
-          ),
-        ),
-        SizedBox(height: 4.h),
-        AppText(
-          'تابع تقدم أبنائك في حفظ القرآن الكريم.',
-          style: AppTextStyles.bodyMd.copyWith(
-            color: AppColors.onSurfaceVariant,
+        const ParentChatButton(),
+        SizedBox(width: 12.w),
+        Expanded(
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.end,
+            children: [
+              AppText(
+                parentName.isNotEmpty ? 'أهلاً، $parentName' : 'أهلاً بك',
+                textAlign: TextAlign.right,
+                style: AppTextStyles.headlineLgMobile.copyWith(
+                  color: AppColors.onBackground,
+                ),
+              ),
+              SizedBox(height: 4.h),
+              AppText(
+                'تابع تقدم أبنائك في حفظ القرآن الكريم.',
+                textAlign: TextAlign.right,
+                style: AppTextStyles.bodyMd.copyWith(
+                  color: AppColors.onSurfaceVariant,
+                ),
+              ),
+            ],
           ),
         ),
       ],

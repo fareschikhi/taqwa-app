@@ -129,27 +129,24 @@ class _ChatInboxPageState extends ConsumerState<ChatInboxPage> {
                     widget.leading!
                   else if (ModalRoute.of(context)?.canPop ?? false)
                     const BackButton(),
-                  const Spacer(),
-                  AppText(
-                    'التقوى',
-                    style: AppTextStyles.headlineMd.copyWith(
-                      color: AppColors.primary,
+                  SizedBox(width: 12.w),
+                  Expanded(
+                    child: AppText(
+                      'المحادثات',
+                      textAlign: TextAlign.right,
+                      style: AppTextStyles.headlineLgMobile.copyWith(
+                        color: AppColors.onSurface,
+                      ),
                     ),
                   ),
                 ],
               ),
             ),
             Padding(
-              padding: EdgeInsets.fromLTRB(16.w, 20.h, 16.w, 0),
+              padding: EdgeInsets.symmetric(horizontal: 16.w),
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.end,
                 children: [
-                  AppText(
-                    'المحادثات',
-                    style: AppTextStyles.headlineLgMobile.copyWith(
-                      color: AppColors.onSurface,
-                    ),
-                  ),
                   AppText(
                     'رسائل أولياء الأمور إلى الإدارة. ردك يظهر لهم باسم الإدارة.',
                     style: AppTextStyles.labelMd.copyWith(

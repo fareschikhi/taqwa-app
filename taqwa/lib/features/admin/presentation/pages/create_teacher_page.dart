@@ -480,18 +480,6 @@ class _CreateTeacherPageState extends State<CreateTeacherPage> {
               ),
               const Spacer(),
               AppText(
-                'التقوى',
-                style: AppTextStyles.headlineMd.copyWith(
-                  color: AppColors.primary,
-                ),
-              ),
-            ],
-          ),
-          SizedBox(height: 4.h),
-          Row(
-            mainAxisAlignment: MainAxisAlignment.end,
-            children: [
-              AppText(
                 _isEditing ? 'تعديل معلم' : 'إضافة معلم جديد',
                 style: AppTextStyles.labelSm.copyWith(
                   color: AppColors.onSurfaceVariant,
