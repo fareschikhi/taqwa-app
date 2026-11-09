@@ -22,6 +22,7 @@ import 'package:taqwa/core/widgets/halaqa_news_card.dart';
 import 'package:taqwa/core/widgets/points_balance_card.dart';
 import 'package:taqwa/core/widgets/student_of_month_card.dart';
 import 'package:taqwa/features/data/models/student_of_month_model.dart';
+import 'package:taqwa/features/data/models/halaqa/halaqa_model.dart';
 import 'package:taqwa/features/data/repositories/student_of_month_repository.dart';
 import 'package:taqwa/features/data/models/points/points_summary_model.dart';
 import 'package:taqwa/features/data/repositories/points_repository.dart';
@@ -266,6 +267,7 @@ class _TeacherDashboardPageState extends ConsumerState<TeacherDashboardPage> {
                           SizedBox(height: 24.h),
                           _buildGreeting(user?.fullName),
                           SizedBox(height: 24.h),
+                          ..._buildSupervisors(),
                           ..._buildStudentOfMonth(),
                           _buildBentoGrid(),
                           SizedBox(height: 24.h),
@@ -371,6 +373,23 @@ class _TeacherDashboardPageState extends ConsumerState<TeacherDashboardPage> {
         : _picks.where((p) => p.halaqaId == halaqaId).firstOrNull;
     if (pick == null) return const [];
     return [StudentOfMonthCard(pick: pick), SizedBox(height: 24.h)];
+  }
+
+  /// The معلم مشرف of the selected halaqa's level. Informational only: the
+  /// role carries no privileges yet. Hidden when the level has none.
+  List<Widget> _buildSupervisors() {
+    final halaqa = ref.watch(selectedHalaqaProvider).selected;
+    final supervisors = halaqa?.supervisors ?? const <HalaqaSupervisor>[];
+    if (halaqa == null || supervisors.isEmpty) return const [];
+    final myTeacherId = ref.read(authProvider).user?.teacherId;
+    return [
+      _SupervisorsCard(
+        level: halaqa.level ?? '',
+        supervisors: supervisors,
+        myTeacherId: myTeacherId,
+      ),
+      SizedBox(height: 24.h),
+    ];
   }
 
   Widget _buildGreeting(String? name) {
@@ -577,6 +596,94 @@ class _TeacherDashboardPageState extends ConsumerState<TeacherDashboardPage> {
             total: mem?.studentsCount ?? 0,
             color: AppColors.tertiary,
           ),
+        ],
+      ),
+    );
+  }
+}
+
+class _SupervisorsCard extends StatelessWidget {
+  const _SupervisorsCard({
+    required this.level,
+    required this.supervisors,
+    required this.myTeacherId,
+  });
+  final String level;
+  final List<HalaqaSupervisor> supervisors;
+
+  /// Marks the viewer's own row when they supervise their own level too.
+  final int? myTeacherId;
+
+  @override
+  Widget build(BuildContext context) {
+    final title = supervisors.length > 1 ? 'المعلمون المشرفون' : 'المعلم المشرف';
+    return AppCard(
+      padding: EdgeInsets.all(16.w),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.end,
+        children: [
+          Row(
+            mainAxisAlignment: MainAxisAlignment.end,
+            children: [
+              AppText(
+                title,
+                style: AppTextStyles.headlineSm.copyWith(
+                  color: AppColors.onBackground,
+                ),
+              ),
+              SizedBox(width: 8.w),
+              Icon(
+                Icons.supervisor_account_outlined,
+                color: AppColors.primary,
+                size: 22.w,
+              ),
+            ],
+          ),
+          SizedBox(height: 4.h),
+          AppText(
+            'مستوى $level',
+            style: AppTextStyles.labelMd.copyWith(
+              color: AppColors.onSurfaceVariant,
+            ),
+          ),
+          SizedBox(height: 12.h),
+          for (final (i, s) in supervisors.indexed) ...[
+            if (i > 0) SizedBox(height: 8.h),
+            Row(
+              mainAxisAlignment: MainAxisAlignment.end,
+              children: [
+                Flexible(
+                  child: AppText(
+                    s.teacherId == myTeacherId
+                        ? 'أ. ${s.fullName} (أنت)'
+                        : 'أ. ${s.fullName}',
+                    style: AppTextStyles.bodyMd.copyWith(
+                      fontWeight: FontWeight.w500,
+                      color: AppColors.onBackground,
+                    ),
+                    textAlign: TextAlign.end,
+                  ),
+                ),
+                SizedBox(width: 12.w),
+                Container(
+                  width: 36.w,
+                  height: 36.w,
+                  decoration: const BoxDecoration(
+                    color: AppColors.primaryContainer,
+                    shape: BoxShape.circle,
+                  ),
+                  child: Center(
+                    child: AppText(
+                      s.fullName.isNotEmpty ? s.fullName[0] : '؟',
+                      style: AppTextStyles.bodyMdBold.copyWith(
+                        color: AppColors.onPrimaryContainer,
+                      ),
+                    ),
+                  ),
+                ),
+              ],
+            ),
+          ],
         ],
       ),
     );

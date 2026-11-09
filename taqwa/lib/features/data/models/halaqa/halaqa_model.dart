@@ -1,5 +1,31 @@
 import 'halaqa_student_model.dart';
 
+/// A معلم مشرف of the halaqa's level, as `GET /halaqas` lists them.
+class HalaqaSupervisor {
+  final int teacherId;
+  final String fullName;
+  final String? avatar;
+
+  const HalaqaSupervisor({
+    required this.teacherId,
+    required this.fullName,
+    this.avatar,
+  });
+
+  factory HalaqaSupervisor.fromJson(Map<String, dynamic> json) =>
+      HalaqaSupervisor(
+        teacherId: (json['teacherId'] as num).toInt(),
+        fullName: json['fullName'] as String? ?? '',
+        avatar: json['avatar'] as String?,
+      );
+
+  Map<String, dynamic> toJson() => {
+    'teacherId': teacherId,
+    'fullName': fullName,
+    'avatar': avatar,
+  };
+}
+
 class HalaqaModel {
   final int id;
   final String name;
@@ -16,6 +42,11 @@ class HalaqaModel {
   final int absenceFee;
   final int lateFee;
   final int missedMemorizationFee;
+
+  /// The teachers the admin named معلم مشرف for this halaqa's [level]. Empty
+  /// for a halaqa with no level, an old free-text one, or a payload that
+  /// predates the feature.
+  final List<HalaqaSupervisor> supervisors;
 
   /// Always empty as of today's API. `GET /halaqas` (`findAll`) selects only
   /// the teacher and `_count.students`, so no student rows arrive at all; and
@@ -38,6 +69,7 @@ class HalaqaModel {
     this.absenceFee = 0,
     this.lateFee = 0,
     this.missedMemorizationFee = 0,
+    this.supervisors = const [],
   });
 
   factory HalaqaModel.fromJson(Map<String, dynamic> json) {
@@ -72,6 +104,10 @@ class HalaqaModel {
       lateFee: (json['lateFee'] as num?)?.toInt() ?? 0,
       missedMemorizationFee:
           (json['missedMemorizationFee'] as num?)?.toInt() ?? 0,
+      supervisors: (json['supervisors'] as List<dynamic>? ?? const [])
+          .whereType<Map<String, dynamic>>()
+          .map(HalaqaSupervisor.fromJson)
+          .toList(),
     );
   }
 
@@ -92,6 +128,7 @@ class HalaqaModel {
     'absenceFee': absenceFee,
     'lateFee': lateFee,
     'missedMemorizationFee': missedMemorizationFee,
+    'supervisors': supervisors.map((s) => s.toJson()).toList(),
   };
 
   Map<String, dynamic> toJson() {

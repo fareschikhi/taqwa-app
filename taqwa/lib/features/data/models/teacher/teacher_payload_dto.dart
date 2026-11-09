@@ -7,6 +7,7 @@ class TeacherPayloadDto {
   final String? address;
   final String? avatar;
   final bool? canPostNews;
+  final List<String>? supervisedLevels;
 
   const TeacherPayloadDto({
     this.fullName,
@@ -17,6 +18,7 @@ class TeacherPayloadDto {
     this.address,
     this.avatar,
     this.canPostNews,
+    this.supervisedLevels,
   });
 
   Map<String, dynamic> toJson() => {
@@ -28,6 +30,7 @@ class TeacherPayloadDto {
     if (address != null) 'address': address,
     if (avatar != null) 'avatar': avatar,
     if (canPostNews != null) 'canPostNews': canPostNews,
+    if (supervisedLevels != null) 'supervisedLevels': supervisedLevels,
     'role': 'TEACHER',
   };
 }

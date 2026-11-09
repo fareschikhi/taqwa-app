@@ -9,6 +9,10 @@ class TeacherModel {
 
   /// Granted by the admin: may post news to their own halaqas.
   final bool canPostNews;
+
+  /// The halaqa levels (from kHalaqaLevels) this teacher is معلم مشرف of,
+  /// as picked by the admin. Shown to every teacher of a halaqa at that level.
+  final List<String> supervisedLevels;
   final UserModel user;
 
   TeacherModel({
@@ -19,6 +23,7 @@ class TeacherModel {
     this.studentCount = 0,
     this.halaqaCount = 0,
     this.canPostNews = false,
+    this.supervisedLevels = const [],
   });
 
   String get fullName => user.fullName;
@@ -64,6 +69,10 @@ class TeacherModel {
       studentCount: (json['_count']?['students'] as num?)?.toInt() ?? 0,
       halaqaCount: (json['_count']?['halaqas'] as num?)?.toInt() ?? 0,
       canPostNews: (json['canPostNews'] as bool?) ?? false,
+      supervisedLevels: (json['supervisedLevels'] as List<dynamic>?)
+              ?.whereType<String>()
+              .toList() ??
+          const [],
     );
   }
 

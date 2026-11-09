@@ -197,3 +197,68 @@ describe('HalaqasService.findAll scoping', () => {
     expect(whereOf(prisma)).toEqual({});
   });
 });
+
+// Every halaqa carries the معلم مشرف list of its level, so a teacher sees who
+// supervises the level of the halaqa she has open.
+describe('HalaqasService.findAll supervisors', () => {
+  const supervisor = (id: number, level: string, fullName: string) => ({
+    level,
+    teacher: { id, user: { fullName, avatar: null } },
+  });
+
+  const makeService = (halaqas: object[], rows: object[]) => {
+    const prisma = {
+      halaqa: { findMany: jest.fn().mockResolvedValue(halaqas) },
+      levelSupervisor: { findMany: jest.fn().mockResolvedValue(rows) },
+    };
+    return { service: new HalaqasService(prisma as any), prisma };
+  };
+
+  it('gives each halaqa the supervisors of its own level', async () => {
+    const { service } = makeService(
+      [
+        { id: 1, level: 'ابتدائي' },
+        { id: 2, level: 'متوسط' },
+      ],
+      [
+        supervisor(7, 'ابتدائي', 'Karim'),
+        supervisor(8, 'ابتدائي', 'Salim'),
+        supervisor(9, 'متوسط', 'Nadia'),
+      ],
+    );
+
+    const result = await service.findAll({ id: 1, role: 'ADMIN' });
+
+    expect(result[0].supervisors.map((s) => s.teacherId)).toEqual([7, 8]);
+    expect(result[1].supervisors).toEqual([
+      { teacherId: 9, fullName: 'Nadia', avatar: null },
+    ]);
+  });
+
+  it('looks up only the levels in the list, once', async () => {
+    const { service, prisma } = makeService(
+      [
+        { id: 1, level: 'ابتدائي' },
+        { id: 2, level: 'ابتدائي' },
+        { id: 3, level: null },
+      ],
+      [],
+    );
+
+    await service.findAll({ id: 1, role: 'ADMIN' });
+
+    expect(prisma.levelSupervisor.findMany).toHaveBeenCalledTimes(1);
+    expect(prisma.levelSupervisor.findMany.mock.calls[0][0].where).toEqual({
+      level: { in: ['ابتدائي'] },
+    });
+  });
+
+  it('gives a halaqa with no level an empty list without querying', async () => {
+    const { service, prisma } = makeService([{ id: 3, level: null }], []);
+
+    const result = await service.findAll({ id: 1, role: 'ADMIN' });
+
+    expect(result[0].supervisors).toEqual([]);
+    expect(prisma.levelSupervisor.findMany).not.toHaveBeenCalled();
+  });
+});

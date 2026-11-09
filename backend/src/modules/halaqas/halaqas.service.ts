@@ -37,7 +37,7 @@ export class HalaqasService {
       where.teacherId = teacherId;
     }
 
-    return this.prisma.halaqa.findMany({
+    const halaqas = await this.prisma.halaqa.findMany({
       where,
       include: {
         teacher: {
@@ -47,6 +47,43 @@ export class HalaqasService {
       },
       orderBy: { name: 'asc' },
     });
+    return this.withSupervisors(halaqas);
+  }
+
+  /// Adds each halaqa's معلم مشرف list: the teachers the admin named for its
+  /// level. One query for the whole list, matched by the level label. A halaqa
+  /// with no level, or an old free-text one, gets an empty list.
+  private async withSupervisors<T extends { level: string | null }>(
+    halaqas: T[],
+  ) {
+    const levels = [
+      ...new Set(halaqas.map((h) => h.level).filter((l) => l != null)),
+    ];
+    const rows = levels.length
+      ? await this.prisma.levelSupervisor.findMany({
+          where: { level: { in: levels } },
+          select: {
+            level: true,
+            teacher: {
+              select: {
+                id: true,
+                user: { select: { fullName: true, avatar: true } },
+              },
+            },
+          },
+          orderBy: { teacher: { user: { fullName: 'asc' } } },
+        })
+      : [];
+    return halaqas.map((h) => ({
+      ...h,
+      supervisors: rows
+        .filter((r) => r.level === h.level)
+        .map((r) => ({
+          teacherId: r.teacher.id,
+          fullName: r.teacher.user.fullName,
+          avatar: r.teacher.user.avatar,
+        })),
+    }));
   }
 
   async findOne(id: number) {

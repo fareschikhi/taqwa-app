@@ -17,6 +17,7 @@ import '../../../data/repositories/teacher_repository.dart';
 import 'package:taqwa/core/widgets/app_text.dart';
 import 'package:taqwa/core/widgets/phone_field.dart';
 import 'package:taqwa/features/admin/presentation/widgets/privilege_switch.dart';
+import 'package:taqwa/core/constants/halaqa_levels.dart';
 
 class CreateTeacherPage extends StatefulWidget {
   /// Pass [editTeacher] to pre-fill the form for editing an existing teacher.
@@ -38,6 +39,10 @@ class _CreateTeacherPageState extends State<CreateTeacherPage> {
   final _addressController = TextEditingController();
   bool _isLoading = false;
   bool _canPostNews = false;
+
+  /// The levels this teacher is معلم مشرف of. Several teachers may share a
+  /// level, and one teacher may supervise several levels.
+  final Set<String> _supervisedLevels = {};
   XFile? _selectedImage;
   final ImagePicker _picker = ImagePicker();
   bool get _isEditing => widget.editTeacher != null;
@@ -51,6 +56,7 @@ class _CreateTeacherPageState extends State<CreateTeacherPage> {
       _phoneController.text = t.phone ?? '';
       _emailController.text = t.email ?? '';
       _canPostNews = t.canPostNews;
+      _supervisedLevels.addAll(t.supervisedLevels);
     }
   }
 
@@ -149,6 +155,9 @@ class _CreateTeacherPageState extends State<CreateTeacherPage> {
           if (_passwordController.text.isNotEmpty)
             'password': _passwordController.text,
           'canPostNews': _canPostNews,
+          // Always sent: the server replaces the whole set, so unticking the
+          // last level must reach it as an empty list.
+          'supervisedLevels': _orderedSupervisedLevels,
           // No dateOfBirth/address here: UpdateTeacherDto declares neither and
           // the API's whitelisting ValidationPipe drops them without an error,
           // so the fields are hidden on edit rather than silently discarded.
@@ -172,6 +181,7 @@ class _CreateTeacherPageState extends State<CreateTeacherPage> {
                 : _addressController.text.trim(),
             avatar: avatarUrl,
             canPostNews: _canPostNews,
+            supervisedLevels: _orderedSupervisedLevels,
           ),
         );
       }
@@ -402,6 +412,21 @@ class _CreateTeacherPageState extends State<CreateTeacherPage> {
                         value: _canPostNews,
                         onChanged: (v) => setState(() => _canPostNews = v),
                       ),
+                      SizedBox(height: 24.h),
+                      _SectionHeader(
+                        icon: Icons.supervisor_account_outlined,
+                        title: 'معلم مشرف',
+                      ),
+                      SizedBox(height: 4.h),
+                      AppText(
+                        'يظهر اسمه لمعلمي كل حلقات المستوى المختار',
+                        style: AppTextStyles.labelSm.copyWith(
+                          color: AppColors.onSurfaceVariant,
+                        ),
+                        textAlign: TextAlign.end,
+                      ),
+                      SizedBox(height: 12.h),
+                      _buildSupervisedLevelsPicker(),
                       SizedBox(height: 32.h),
                       // Buttons
                       AppButton(
@@ -426,6 +451,34 @@ class _CreateTeacherPageState extends State<CreateTeacherPage> {
           ],
         ),
       ),
+    );
+  }
+
+  /// In kHalaqaLevels order, so the payload does not depend on tap order.
+  List<String> get _orderedSupervisedLevels =>
+      kHalaqaLevels.where(_supervisedLevels.contains).toList();
+
+  /// Same chips as the halaqa form's level picker, but several may be on.
+  /// None picked is a normal answer: most teachers supervise nothing.
+  Widget _buildSupervisedLevelsPicker() {
+    return Wrap(
+      textDirection: TextDirection.rtl,
+      spacing: 8.w,
+      runSpacing: 8.h,
+      children: [
+        for (final level in kHalaqaLevels)
+          FilterChip(
+            label: AppText(level, style: AppTextStyles.labelMd),
+            selected: _supervisedLevels.contains(level),
+            selectedColor: AppColors.primary.withValues(alpha: 0.15),
+            checkmarkColor: AppColors.primary,
+            onSelected: (on) => setState(
+              () => on
+                  ? _supervisedLevels.add(level)
+                  : _supervisedLevels.remove(level),
+            ),
+          ),
+      ],
     );
   }
 

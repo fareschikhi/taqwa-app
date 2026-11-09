@@ -2,7 +2,7 @@ import { Injectable, NotFoundException } from '@nestjs/common';
 import { PrismaService } from '../../prisma/prisma.service';
 import { CreateTeacherDto, UpdateTeacherDto } from './dto/teacher.dto';
 import * as bcrypt from 'bcrypt';
-import { Memorization } from '@prisma/client';
+import { Memorization, Prisma } from '@prisma/client';
 import { explainRestrictedDelete } from '../../common/prisma/restricted-delete';
 
 @Injectable()
@@ -24,12 +24,14 @@ export class TeachersService {
         },
         halaqas: { select: { _count: { select: { students: true } } } },
         _count: { select: { halaqas: true } },
+        supervises: { select: { level: true } },
       },
       orderBy: { user: { fullName: 'asc' } },
     });
 
-    return teachers.map(({ halaqas, _count, ...rest }) => ({
+    return teachers.map(({ halaqas, _count, supervises, ...rest }) => ({
       ...rest,
+      supervisedLevels: supervises.map((s) => s.level),
       _count: {
         halaqas: _count.halaqas,
         students: halaqas.reduce((sum, h) => sum + h._count.students, 0),
@@ -60,15 +62,17 @@ export class TeachersService {
             _count: { select: { students: true } },
           },
         },
+        supervises: { select: { level: true } },
       },
     });
     if (!t) throw new NotFoundException('المعلم غير موجود');
 
-    const { halaqas, ...rest } = t;
+    const { halaqas, supervises, ...rest } = t;
     const studentCount = halaqas.reduce((sum, h) => sum + h._count.students, 0);
 
     return {
       ...rest,
+      supervisedLevels: supervises.map((s) => s.level),
       halaqas,
       _count: { students: studentCount, halaqas: halaqas.length },
     };
@@ -91,7 +95,12 @@ export class TeachersService {
         role: 'TEACHER',
         avatar: dto.avatar,
         teacher: {
-          create: { canPostNews: dto.canPostNews ?? false },
+          create: {
+            canPostNews: dto.canPostNews ?? false,
+            supervises: {
+              create: (dto.supervisedLevels ?? []).map((level) => ({ level })),
+            },
+          },
         },
       },
       include: { teacher: true },
@@ -122,8 +131,20 @@ export class TeachersService {
       userUpdate.passwordHash = await bcrypt.hash(dto.password, 10);
       userUpdate.mustChangePassword = true;
     }
+    const teacherUpdate: Prisma.TeacherUpdateWithoutUserInput = {};
     if (dto.canPostNews !== undefined) {
-      userUpdate.teacher = { update: { canPostNews: dto.canPostNews } };
+      teacherUpdate.canPostNews = dto.canPostNews;
+    }
+    // Sent = the full new set: drop the old rows and write the picked ones,
+    // inside the same nested update so a failure leaves the old set intact.
+    if (dto.supervisedLevels !== undefined) {
+      teacherUpdate.supervises = {
+        deleteMany: {},
+        create: dto.supervisedLevels.map((level) => ({ level })),
+      };
+    }
+    if (Object.keys(teacherUpdate).length > 0) {
+      userUpdate.teacher = { update: teacherUpdate };
     }
 
     await this.prisma.user.update({

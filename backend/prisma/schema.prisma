@@ -130,8 +130,29 @@ model Teacher {
   halaqas     Halaqa[]
   evaluations Evaluation[]
   notes       StudentNote[]
+  supervises  LevelSupervisor[]
 
   @@map("teachers")
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// Level supervisor (معلم مشرف)
+// ─────────────────────────────────────────────────────────────────────────────
+// The admin names one or more teachers as supervisors of a halaqa level; every
+// teacher of a halaqa at that level sees them on the dashboard. No privileges
+// come with it yet. `level` holds one of HALAQA_LEVELS, the same label stored
+// on Halaqa.level, so the two are matched by plain equality.
+model LevelSupervisor {
+  id        Int      @id @default(autoincrement())
+  level     String   @db.VarChar(100)
+  teacherId Int
+  createdAt DateTime @default(now())
+
+  teacher Teacher @relation(fields: [teacherId], references: [id], onDelete: Cascade)
+
+  @@unique([level, teacherId])
+  @@index([teacherId])
+  @@map("level_supervisors")
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
