@@ -114,4 +114,92 @@ void main() {
     expect(api.sent('GET', '/points/student/7'), hasLength(2));
     expect(find.text('تم تعديل النقاط'), findsOneWidget);
   });
+
+  group('− / + stepper', () {
+    final plus = find.byTooltip('إضافة نقطة');
+    final minus = find.byTooltip('خصم نقطة');
+    const wait = Duration(milliseconds: 1500);
+
+    testWidgets('read-only sections have no stepper', (tester) async {
+      await _pump(tester, section());
+      expect(plus, findsNothing);
+      expect(minus, findsNothing);
+    });
+
+    testWidgets('batches taps into one entry after the pause', (tester) async {
+      await _pump(tester, section(canAdjust: true));
+
+      await tester.tap(plus);
+      await tester.tap(plus);
+      await tester.tap(plus);
+      await tester.pump();
+      // The number moves at once; nothing is sent yet.
+      expect(find.text('+3'), findsOneWidget);
+      expect(find.text('3 → 6'), findsOneWidget);
+      expect(api.sent('POST', '/points'), isEmpty);
+
+      await tester.pump(wait);
+      await tester.pumpAndSettle();
+
+      expect(api.sent('POST', '/points').single.data, {
+        'userId': 70,
+        'amount': 3.0,
+      });
+      expect(api.sent('GET', '/points/student/7'), hasLength(2));
+      expect(find.text('تعديل سريع'), findsOneWidget);
+    });
+
+    testWidgets('each tap restarts the pause', (tester) async {
+      await _pump(tester, section(canAdjust: true));
+
+      await tester.tap(minus);
+      await tester.pump(const Duration(milliseconds: 1000));
+      await tester.tap(minus);
+      await tester.pump(const Duration(milliseconds: 1000));
+      expect(api.sent('POST', '/points'), isEmpty);
+
+      await tester.pump(wait);
+      await tester.pumpAndSettle();
+      expect(api.sent('POST', '/points').single.data['amount'], -2.0);
+    });
+
+    testWidgets('taps that cancel out send nothing', (tester) async {
+      await _pump(tester, section(canAdjust: true));
+
+      await tester.tap(plus);
+      await tester.tap(minus);
+      await tester.pump(wait);
+      await tester.pumpAndSettle();
+
+      expect(api.sent('POST', '/points'), isEmpty);
+    });
+
+    testWidgets('a refused save says why and drops the batch', (tester) async {
+      await _pump(tester, section(canAdjust: true));
+      api.reply = (r) => r.method == 'POST'
+          ? (403, {'message': 'لا يمكنك تعديل نقاط هذا الحساب'})
+          : (200, {'userId': 70, 'total': '3', 'entries': []});
+
+      await tester.tap(plus);
+      await tester.pump(wait);
+      await tester.pumpAndSettle();
+
+      expect(
+        find.text('لم يُحفظ التعديل: لا يمكنك تعديل نقاط هذا الحساب'),
+        findsOneWidget,
+      );
+      expect(find.text('تعديل سريع'), findsOneWidget);
+    });
+
+    testWidgets('leaving before the pause still saves', (tester) async {
+      await _pump(tester, section(canAdjust: true));
+
+      await tester.tap(plus);
+      await tester.tap(plus);
+      await tester.pumpWidget(const SizedBox());
+      await tester.pumpAndSettle();
+
+      expect(api.sent('POST', '/points').single.data['amount'], 2.0);
+    });
+  });
 }

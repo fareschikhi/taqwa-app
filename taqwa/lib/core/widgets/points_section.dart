@@ -9,6 +9,7 @@ import 'package:taqwa/core/widgets/app_card.dart';
 import 'package:taqwa/core/widgets/app_text.dart';
 import 'package:taqwa/core/widgets/points_adjust_dialog.dart';
 import 'package:taqwa/core/widgets/points_balance_card.dart';
+import 'package:taqwa/core/widgets/points_stepper.dart';
 import 'package:taqwa/features/data/models/points/points_summary_model.dart';
 import 'package:taqwa/features/data/models/user_model.dart';
 import 'package:taqwa/features/data/repositories/points_repository.dart';
@@ -30,7 +31,12 @@ class PointsSection extends ConsumerStatefulWidget {
     this.title = 'النقاط',
     this.refreshKey,
     this.padding = EdgeInsets.zero,
+    this.stepDelay = const Duration(milliseconds: 1500),
   });
+
+  /// How long the − / + taps wait for more before they are saved as one
+  /// entry. Tests shorten it.
+  final Duration stepDelay;
 
   final Future<PointsSummaryModel> Function() load;
   final bool canAdjust;
@@ -130,6 +136,15 @@ class _PointsSectionState extends ConsumerState<PointsSection> {
           ),
           if (widget.canAdjust && userId != null) ...[
             SizedBox(height: 12.h),
+            PointsStepper(
+              total: summary.total,
+              stepDelay: widget.stepDelay,
+              onCommit: (delta) async {
+                await _repo.adjust(userId: userId, amount: delta);
+                if (mounted) await _reload();
+              },
+            ),
+            SizedBox(height: 8.h),
             AppButton(
               label: 'تعديل النقاط',
               variant: AppButtonVariant.secondary,
