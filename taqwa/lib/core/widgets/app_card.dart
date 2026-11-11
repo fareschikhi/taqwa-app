@@ -41,7 +41,9 @@ class _AppCardState extends State<AppCard> {
         color: widget.color ?? AppColors.surfaceContainerLowest,
         borderRadius: BorderRadius.circular(radius),
         boxShadow: _isHovered ? AppShadows.cardHover : AppShadows.card,
-        border: widget.border,
+        // The hairline every card shares, so a white card still reads as one
+        // on the near-white background.
+        border: widget.border ?? Border.all(color: AppColors.cardBorder),
       ),
       child: Material(
         color: Colors.transparent,
@@ -53,8 +55,7 @@ class _AppCardState extends State<AppCard> {
               ? (val) => setState(() => _isHovered = val)
               : null,
           child: Padding(
-            padding: widget.padding ??
-                EdgeInsets.all(AppConstants.cardPadding),
+            padding: widget.padding ?? EdgeInsets.all(AppConstants.cardPadding),
             child: widget.child,
           ),
         ),
@@ -62,4 +63,3 @@ class _AppCardState extends State<AppCard> {
     );
   }
 }
-

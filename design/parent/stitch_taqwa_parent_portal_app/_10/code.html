@@ -1,0 +1,491 @@
+<!DOCTYPE html>
+
+<html class="h-full bg-background text-on-surface antialiased" dir="rtl" lang="ar"><head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" name="viewport"/>
+<title>ملاحظات يوسف - مدرسة التقوى</title>
+<!-- Google Fonts: Cairo & Tajawal -->
+<link href="https://fonts.googleapis.com" rel="preconnect"/>
+<link crossorigin="" href="https://fonts.gstatic.com" rel="preconnect"/>
+<link href="https://fonts.googleapis.com/css2?family=Cairo:wght@600;700&amp;family=Tajawal:wght@400;500;700&amp;display=swap" rel="stylesheet"/>
+<!-- Material Symbols Outlined -->
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<!-- Tailwind CSS with Forms & Container Queries -->
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<script id="tailwind-config">
+    tailwind.config = {
+      darkMode: "class",
+      theme: {
+        extend: {
+          "colors": {
+            "on-background": "#131e13",
+            "on-primary": "#ffffff",
+            "on-primary-fixed": "#002200",
+            "tertiary-container": "#6c7b20",
+            "inverse-surface": "#283327",
+            "secondary": "#006b57",
+            "on-surface-variant": "#3e4a39",
+            "secondary-fixed-dim": "#7bd7bd",
+            "on-tertiary-fixed": "#181e00",
+            "on-secondary-fixed": "#002019",
+            "background": "#f0fdeb",
+            "surface-container": "#e4f2e0",
+            "surface-container-high": "#dfecda",
+            "surface-bright": "#f0fdeb",
+            "primary-container": "#008800",
+            "surface-container-low": "#eaf8e5",
+            "surface-tint": "#006e00",
+            "on-secondary": "#ffffff",
+            "on-secondary-container": "#00725d",
+            "primary-fixed-dim": "#68e054",
+            "outline": "#6e7b68",
+            "error-container": "#ffdad6",
+            "surface": "#f0fdeb",
+            "outline-variant": "#bdcbb5",
+            "error": "#ba1a1a",
+            "secondary-fixed": "#97f4d9",
+            "primary-fixed": "#84fd6e",
+            "surface-container-highest": "#d9e6d4",
+            "secondary-container": "#97f4d9",
+            "on-error-container": "#93000a",
+            "surface-dim": "#d0decc",
+            "on-primary-container": "#f8ffef",
+            "inverse-on-surface": "#e7f5e2",
+            "on-secondary-fixed-variant": "#005141",
+            "primary": "#006c00",
+            "surface-container-lowest": "#ffffff",
+            "on-tertiary": "#ffffff",
+            "inverse-primary": "#68e054",
+            "on-tertiary-container": "#fcffe0",
+            "on-surface": "#131e13",
+            "tertiary-fixed-dim": "#becf6b",
+            "tertiary": "#546204",
+            "on-error": "#ffffff",
+            "on-primary-fixed-variant": "#005300",
+            "surface-variant": "#d9e6d4",
+            "tertiary-fixed": "#d9ec84",
+            "on-tertiary-fixed-variant": "#404c00"
+          },
+          "borderRadius": {
+            "DEFAULT": "0.25rem",
+            "lg": "0.5rem",
+            "xl": "0.75rem",
+            "2xl": "1rem",
+            "3xl": "1.25rem",
+            "full": "9999px"
+          },
+          "spacing": {
+            "margin": "1rem",
+            "space-xl": "1.5rem",
+            "space-lg": "1.25rem",
+            "gutter": "1rem",
+            "space-md": "1rem",
+            "space-sm": "0.5rem",
+            "space-xs": "0.25rem"
+          },
+          "fontFamily": {
+            "body-lg": ["Tajawal"],
+            "label-sm": ["Tajawal"],
+            "label-md": ["Tajawal"],
+            "headline-xl": ["Cairo"],
+            "label-lg": ["Tajawal"],
+            "headline-md": ["Cairo"],
+            "numeral-hero": ["Cairo"],
+            "body-md": ["Tajawal"],
+            "body-sm": ["Tajawal"],
+            "headline-sm": ["Cairo"],
+            "headline-lg": ["Cairo"]
+          },
+          "fontSize": {
+            "body-lg": ["16px", { "lineHeight": "26px", "fontWeight": "500" }],
+            "label-sm": ["10px", { "lineHeight": "14px", "fontWeight": "500" }],
+            "label-md": ["12px", { "lineHeight": "16px", "fontWeight": "500" }],
+            "headline-xl": ["32px", { "lineHeight": "44px", "fontWeight": "700" }],
+            "label-lg": ["14px", { "lineHeight": "20px", "fontWeight": "700" }],
+            "headline-md": ["20px", { "lineHeight": "30px", "fontWeight": "600" }],
+            "numeral-hero": ["36px", { "lineHeight": "44px", "fontWeight": "700" }],
+            "body-md": ["14px", { "lineHeight": "22px", "fontWeight": "400" }],
+            "body-sm": ["12px", { "lineHeight": "18px", "fontWeight": "400" }],
+            "headline-sm": ["18px", { "lineHeight": "28px", "fontWeight": "600" }],
+            "headline-lg": ["26px", { "lineHeight": "38px", "fontWeight": "700" }]
+          }
+        }
+      }
+    }
+  </script>
+<style>
+    .material-symbols-outlined {
+      font-variation-settings: 'FILL' 0, 'wght' 400, 'GRAD' 0, 'opsz' 24;
+      display: inline-block;
+      vertical-align: middle;
+      line-height: 1;
+    }
+    .material-symbols-outlined.fill-1 {
+      font-variation-settings: 'FILL' 1;
+    }
+    /* Subtle touch active feedback */
+    .touch-press:active {
+      transform: scale(0.97);
+    }
+  </style>
+<style>
+    body {
+      min-height: max(884px, 100dvh);
+    }
+  </style>
+  </head>
+<body class="min-h-full bg-background flex flex-col font-body-md text-on-surface antialiased selection:bg-surface-container select-none">
+<!-- Canvas Wrap (Mobile Container Shell) -->
+<div class="w-full max-w-md mx-auto min-h-screen flex flex-col bg-surface shadow-md relative pb-10">
+<!-- Top Navigation Bar (Pushed Detail View: Back Right, Screen Title, Action Left) -->
+<header class="sticky top-0 z-40 bg-surface-container-lowest/95 backdrop-blur-md px-space-md py-space-sm flex items-center justify-between shadow-sm">
+<!-- Right Side: Back Navigation (RTL: arrow pointing right or forward) -->
+<button aria-label="الرجوع للقائمة السابقة" class="w-10 h-10 flex items-center justify-center rounded-xl bg-surface-container-low text-primary touch-press hover:bg-surface-container transition-all" type="button">
+<span class="material-symbols-outlined text-[24px]">arrow_forward</span>
+</button>
+<!-- Center: Screen Title in Cairo -->
+<div class="text-center">
+<h1 class="font-headline-sm text-headline-sm text-on-surface font-bold tracking-tight">ملاحظات يوسف</h1>
+<p class="font-label-sm text-label-sm text-on-surface-variant font-medium">سجل المتابعة اليومية</p>
+</div>
+<!-- Left Side: Action Icon (Filter / Refresh) -->
+<div class="flex items-center gap-1">
+<button aria-label="تصفية الملاحظات" class="w-10 h-10 flex items-center justify-center rounded-xl bg-surface-container-low text-on-surface-variant touch-press hover:text-primary transition-all" type="button">
+<span class="material-symbols-outlined text-[22px]">tune</span>
+</button>
+</div>
+</header>
+<!-- Student Sub-Bar & Context Card -->
+<section class="px-space-md pt-space-sm pb-space-xs">
+<div class="bg-surface-container-lowest rounded-2xl p-space-md border border-outline-variant/30 shadow-[0_4px_16px_rgba(0,40,0,0.04)] flex items-center justify-between">
+<div class="flex items-center gap-3">
+<!-- Yusuf Avatar with vibrant green border ring -->
+<div class="relative w-12 h-12 rounded-full ring-2 ring-primary/80 ring-offset-2 ring-offset-surface-container-lowest overflow-hidden bg-surface-container flex-shrink-0 flex items-center justify-center shadow-inner">
+<img class="w-full h-full object-cover" data-alt="A warm, candid portrait photograph of a young Arab student named Yusuf, around nine years old, wearing traditional white educational attire with a gentle smile. The photograph is shot with soft diffused daylight against a serene sage green and warm wood classroom background, styled with pristine high-key lighting that perfectly matches the spiritual learning interface." src="https://lh3.googleusercontent.com/aida-public/AB6AXuD6mwjEXWkRn9T6HwAKIWAKEfzMHzM7UvO3SAbQMoZ4c7dJOjnEnZc23rR599wkMPfoFkqaTY5xh0d5pLoU-GSZvk_TV4R0TsM2fD8_UuzMN2Xy0JS8PtsU9aO47PSOvuo_rGP-KBQ7IjB0iIoJLLZeov2WgkJWr9aVMUjCXBY-qOUmMyj5vmXFAHUVohgXaIj_kvHydY3mvUEHpGNFLlb3PneoZ2HQOMtLWjV4V5dp"/>
+</div>
+<div>
+<div class="flex items-center gap-1.5">
+<span class="font-headline-sm text-headline-sm text-on-surface font-bold">يوسف بن سالم</span>
+<span class="material-symbols-outlined text-primary fill-1 text-[16px]" style="font-variation-settings: 'FILL' 1;">verified</span>
+</div>
+<p class="font-body-sm text-body-sm text-on-surface-variant flex items-center gap-1 mt-0.5">
+<span class="material-symbols-outlined text-[16px] text-tertiary">groups</span>
+              حلقة الفرقان · الشيخ عبد الرحمن
+            </p>
+</div>
+</div>
+<!-- Total Notes Indicator Badge -->
+<div class="bg-surface-container-low px-3 py-1.5 rounded-full border border-primary/20 flex items-center gap-1.5">
+<span class="w-2 h-2 rounded-full bg-primary animate-pulse"></span>
+<span class="font-label-md text-label-md text-primary font-bold">8 ملاحظات</span>
+</div>
+</div>
+</section>
+<!-- Subtle Pull-To-Refresh Visual Indicator -->
+<div class="w-full flex items-center justify-center py-2">
+<div class="inline-flex items-center gap-2 px-3.5 py-1 rounded-full bg-surface-container text-on-surface-variant text-label-sm font-label-sm shadow-sm opacity-90">
+<span class="material-symbols-outlined text-[16px] text-primary animate-spin" style="animation-duration: 2.5s;">progress_activity</span>
+<span>اسحب للتحديث</span>
+</div>
+</div>
+<!-- Timeline Main Content Container -->
+<main class="flex-1 px-space-md relative mt-1">
+<!-- Connected Vertical Timeline Spine (Placed aligned to the right side next to dots) -->
+<div class="relative pr-6">
+<!-- The Continuous Timeline Line -->
+<div aria-hidden="true" class="absolute right-[11px] top-4 bottom-8 w-[2px] bg-primary/20 rounded-full"></div>
+<!-- 8 Teacher Notes List (Chronological: Newest to Oldest) -->
+<div class="space-y-space-md">
+<!-- Entry 1 (Newest) -->
+<article class="relative">
+<!-- Timeline Dot -->
+<div class="absolute -right-6 top-3 w-6 h-6 flex items-center justify-center">
+<div class="w-3.5 h-3.5 rounded-full bg-primary ring-4 ring-primary/20 shadow-sm"></div>
+</div>
+<!-- Date/Time Stamp -->
+<div class="flex items-center justify-between mb-1.5 mr-2">
+<span class="font-label-md text-label-md text-primary font-bold flex items-center gap-1">
+<span class="material-symbols-outlined text-[15px]">schedule</span>
+                اليوم، 18 نوفمبر 2024 · 05:15 م
+              </span>
+<span class="font-label-sm text-label-sm bg-primary/10 text-primary px-2 py-0.5 rounded-full font-bold">الأحدث</span>
+</div>
+<!-- Card Body -->
+<div class="bg-surface-container-lowest p-space-md rounded-2xl border border-outline-variant/40 shadow-[0_4px_16px_rgba(0,40,0,0.05)]">
+<div class="flex items-center justify-between mb-2">
+<span class="font-headline-sm text-body-lg font-bold text-on-surface flex items-center gap-1.5">
+<span class="material-symbols-outlined text-primary text-[18px]">person</span>
+                  الشيخ عبد الرحمن
+                </span>
+<span class="bg-emerald-50 text-[#0E7C66] text-label-sm font-label-sm px-2.5 py-1 rounded-full font-bold border border-[#0E7C66]/20">
+                  حفظ جديد وتجويد
+                </span>
+</div>
+<p class="font-body-md text-body-md text-on-surface-variant leading-relaxed">
+                ما شاء الله تبارك الله، إتقان ممتاز لأحكام التجويد ومخارج الحروف في سورة الملك اليوم من الآية (1) حتى (12). يرجى الاستمرار بنفس العزيمة والتركيز على الغنن في المقطع القادم.
+              </p>
+<div class="mt-3 pt-2.5 border-t border-surface-container flex items-center justify-between text-label-sm text-on-surface-variant">
+<span class="flex items-center gap-1">
+<span class="material-symbols-outlined text-[15px] text-tertiary">menu_book</span>
+                  سورة الملك (1-12)
+                </span>
+<span class="text-primary font-bold flex items-center gap-0.5">
+<span class="material-symbols-outlined text-[16px] fill-1 text-primary">star</span>
+                  تقدير: ممتاز
+                </span>
+</div>
+</div>
+</article>
+<!-- Entry 2 -->
+<article class="relative">
+<!-- Timeline Dot -->
+<div class="absolute -right-6 top-3 w-6 h-6 flex items-center justify-center">
+<div class="w-3 h-3 rounded-full bg-primary ring-2 ring-primary/15 shadow-sm"></div>
+</div>
+<!-- Date/Time Stamp -->
+<div class="mb-1.5 mr-2">
+<span class="font-label-md text-label-md text-on-surface-variant font-medium flex items-center gap-1">
+<span class="material-symbols-outlined text-[15px]">event</span>
+                17 نوفمبر 2024 · 04:30 م
+              </span>
+</div>
+<!-- Card Body -->
+<div class="bg-surface-container-lowest p-space-md rounded-2xl border border-outline-variant/30 shadow-[0_4px_16px_rgba(0,40,0,0.04)]">
+<div class="flex items-center justify-between mb-2">
+<span class="font-headline-sm text-body-lg font-bold text-on-surface flex items-center gap-1.5">
+<span class="material-symbols-outlined text-primary text-[18px]">person</span>
+                  الأستاذ محمد المنصور
+                </span>
+<span class="bg-[#becf6b]/25 text-tertiary text-label-sm font-label-sm px-2.5 py-1 rounded-full font-bold border border-tertiary/20">
+                  تنبيه مراجعة
+                </span>
+</div>
+<p class="font-body-md text-body-md text-on-surface-variant leading-relaxed">
+                تمت مراجعة حزب سبح بالكامل مع التنبيه على تشديد الراء في مواضع محددة من سورة الغاشية وسورة البلد. يوسف طالب حريص ومتجاوب ونسأل الله له التوفيق والبركة في حفظه.
+              </p>
+<div class="mt-3 pt-2.5 border-t border-surface-container flex items-center justify-between text-label-sm text-on-surface-variant">
+<span class="flex items-center gap-1">
+<span class="material-symbols-outlined text-[15px] text-tertiary">menu_book</span>
+                  حزب سبح كاملاً
+                </span>
+<span class="text-tertiary font-bold">تقدير: جيد جداً</span>
+</div>
+</div>
+</article>
+<!-- Entry 3 -->
+<article class="relative">
+<!-- Timeline Dot -->
+<div class="absolute -right-6 top-3 w-6 h-6 flex items-center justify-center">
+<div class="w-3 h-3 rounded-full bg-primary ring-2 ring-primary/15 shadow-sm"></div>
+</div>
+<!-- Date/Time Stamp -->
+<div class="mb-1.5 mr-2">
+<span class="font-label-md text-label-md text-on-surface-variant font-medium flex items-center gap-1">
+<span class="material-symbols-outlined text-[15px]">event</span>
+                14 نوفمبر 2024 · 05:00 م
+              </span>
+</div>
+<!-- Card Body -->
+<div class="bg-surface-container-lowest p-space-md rounded-2xl border border-outline-variant/30 shadow-[0_4px_16px_rgba(0,40,0,0.04)]">
+<div class="flex items-center justify-between mb-2">
+<span class="font-headline-sm text-body-lg font-bold text-on-surface flex items-center gap-1.5">
+<span class="material-symbols-outlined text-primary text-[18px]">person</span>
+                  الشيخ عبد الرحمن
+                </span>
+<span class="bg-[#97f4d9]/40 text-[#006b57] text-label-sm font-label-sm px-2.5 py-1 rounded-full font-bold border border-[#006b57]/20">
+                  إشادة وتميز
+                </span>
+</div>
+<p class="font-body-md text-body-md text-on-surface-variant leading-relaxed">
+                أظهر يوسف أدباً رفيعاً وهدوءاً يحتذى به في الحلقة اليوم، كما ساعد زميله في مراجعة المتشابهات اللفظية قبل بدء التسميع. بارك الله في تربيته وأسعد والديه.
+              </p>
+<div class="mt-2.5 flex items-center gap-1.5 text-label-sm text-secondary font-bold">
+<span class="material-symbols-outlined text-[16px]">sentiment_very_satisfied</span>
+                وسام الطالب المؤدب للأسبوع
+              </div>
+</div>
+</article>
+<!-- Entry 4 -->
+<article class="relative">
+<!-- Timeline Dot -->
+<div class="absolute -right-6 top-3 w-6 h-6 flex items-center justify-center">
+<div class="w-3 h-3 rounded-full bg-primary ring-2 ring-primary/15 shadow-sm"></div>
+</div>
+<!-- Date/Time Stamp -->
+<div class="mb-1.5 mr-2">
+<span class="font-label-md text-label-md text-on-surface-variant font-medium flex items-center gap-1">
+<span class="material-symbols-outlined text-[15px]">event</span>
+                11 نوفمبر 2024 · 04:45 م
+              </span>
+</div>
+<!-- Card Body -->
+<div class="bg-surface-container-lowest p-space-md rounded-2xl border border-outline-variant/30 shadow-[0_4px_16px_rgba(0,40,0,0.04)]">
+<div class="flex items-center justify-between mb-2">
+<span class="font-headline-sm text-body-lg font-bold text-on-surface flex items-center gap-1.5">
+<span class="material-symbols-outlined text-primary text-[18px]">person</span>
+                  الشيخ عبد الرحمن
+                </span>
+<span class="bg-emerald-50 text-[#0E7C66] text-label-sm font-label-sm px-2.5 py-1 rounded-full font-bold border border-[#0E7C66]/20">
+                  حفظ جديد وتجويد
+                </span>
+</div>
+<p class="font-body-md text-body-md text-on-surface-variant leading-relaxed">
+                تسميع متقن لسورة التحريم. الترديد الصوتي واضح ومخارج حرفي (الضاد والظاء) أصبحت أكثر انضباطاً بفضل التدريب المنزلي الملحوظ.
+              </p>
+<div class="mt-3 pt-2.5 border-t border-surface-container flex items-center justify-between text-label-sm text-on-surface-variant">
+<span class="flex items-center gap-1">
+<span class="material-symbols-outlined text-[15px] text-tertiary">menu_book</span>
+                  سورة التحريم
+                </span>
+<span class="text-primary font-bold">تقدير: ممتاز</span>
+</div>
+</div>
+</article>
+<!-- Entry 5 -->
+<article class="relative">
+<!-- Timeline Dot -->
+<div class="absolute -right-6 top-3 w-6 h-6 flex items-center justify-center">
+<div class="w-3 h-3 rounded-full bg-primary ring-2 ring-primary/15 shadow-sm"></div>
+</div>
+<!-- Date/Time Stamp -->
+<div class="mb-1.5 mr-2">
+<span class="font-label-md text-label-md text-on-surface-variant font-medium flex items-center gap-1">
+<span class="material-symbols-outlined text-[15px]">event</span>
+                8 نوفمبر 2024 · 05:10 م
+              </span>
+</div>
+<!-- Card Body -->
+<div class="bg-surface-container-lowest p-space-md rounded-2xl border border-outline-variant/30 shadow-[0_4px_16px_rgba(0,40,0,0.04)]">
+<div class="flex items-center justify-between mb-2">
+<span class="font-headline-sm text-body-lg font-bold text-on-surface flex items-center gap-1.5">
+<span class="material-symbols-outlined text-primary text-[18px]">person</span>
+                  الأستاذ إبراهيم القاضي
+                </span>
+<span class="bg-[#d9e6d4] text-on-surface-variant text-label-sm font-label-sm px-2.5 py-1 rounded-full font-bold">
+                  سلوك وانضباط
+                </span>
+</div>
+<p class="font-body-md text-body-md text-on-surface-variant leading-relaxed">
+                حضر يوسف في الموعد المحدد مبكراً مصطحباً مصحفه الخاص ومذكرة التدوين. انتباهه مستمر طوال فترة التسميع الشفهي.
+              </p>
+</div>
+</article>
+<!-- Entry 6 -->
+<article class="relative">
+<!-- Timeline Dot -->
+<div class="absolute -right-6 top-3 w-6 h-6 flex items-center justify-center">
+<div class="w-3 h-3 rounded-full bg-primary ring-2 ring-primary/15 shadow-sm"></div>
+</div>
+<!-- Date/Time Stamp -->
+<div class="mb-1.5 mr-2">
+<span class="font-label-md text-label-md text-on-surface-variant font-medium flex items-center gap-1">
+<span class="material-symbols-outlined text-[15px]">event</span>
+                4 نوفمبر 2024 · 04:40 م
+              </span>
+</div>
+<!-- Card Body -->
+<div class="bg-surface-container-lowest p-space-md rounded-2xl border border-outline-variant/30 shadow-[0_4px_16px_rgba(0,40,0,0.04)]">
+<div class="flex items-center justify-between mb-2">
+<span class="font-headline-sm text-body-lg font-bold text-on-surface flex items-center gap-1.5">
+<span class="material-symbols-outlined text-primary text-[18px]">person</span>
+                  الشيخ عبد الرحمن
+                </span>
+<span class="bg-[#becf6b]/25 text-tertiary text-label-sm font-label-sm px-2.5 py-1 rounded-full font-bold border border-tertiary/20">
+                  تنبيه مراجعة
+                </span>
+</div>
+<p class="font-body-md text-body-md text-on-surface-variant leading-relaxed">
+                لوحظ تردد بسيط في أواخر سورة الطلاق من الآية (8 إلى 12). تمت إعادة التسميع ثلاث مرات مع الشيخ والتصحيح، ويُرجى إعادة الاستماع للمقطع عبر القارئ الصوتي في التطبيق.
+              </p>
+</div>
+</article>
+<!-- Entry 7 -->
+<article class="relative">
+<!-- Timeline Dot -->
+<div class="absolute -right-6 top-3 w-6 h-6 flex items-center justify-center">
+<div class="w-3 h-3 rounded-full bg-primary ring-2 ring-primary/15 shadow-sm"></div>
+</div>
+<!-- Date/Time Stamp -->
+<div class="mb-1.5 mr-2">
+<span class="font-label-md text-label-md text-on-surface-variant font-medium flex items-center gap-1">
+<span class="material-symbols-outlined text-[15px]">event</span>
+                1 نوفمبر 2024 · 05:20 م
+              </span>
+</div>
+<!-- Card Body -->
+<div class="bg-surface-container-lowest p-space-md rounded-2xl border border-outline-variant/30 shadow-[0_4px_16px_rgba(0,40,0,0.04)]">
+<div class="flex items-center justify-between mb-2">
+<span class="font-headline-sm text-body-lg font-bold text-on-surface flex items-center gap-1.5">
+<span class="material-symbols-outlined text-primary text-[18px]">person</span>
+                  الشيخ عبد الرحمن
+                </span>
+<span class="bg-emerald-50 text-[#0E7C66] text-label-sm font-label-sm px-2.5 py-1 rounded-full font-bold border border-[#0E7C66]/20">
+                  حفظ جديد وتجويد
+                </span>
+</div>
+<p class="font-body-md text-body-md text-on-surface-variant leading-relaxed">
+                بدء حفظ سورة المنافقون. الطالب متفهم لأسباب النزول والمعاني الإجمالية للآيات مما ينعكس إيجابياً على جودة الحفظ والترتيل.
+              </p>
+</div>
+</article>
+<!-- Entry 8 (Oldest) -->
+<article class="relative">
+<!-- Timeline Dot -->
+<div class="absolute -right-6 top-3 w-6 h-6 flex items-center justify-center">
+<div class="w-3 h-3 rounded-full bg-outline-variant ring-2 ring-outline-variant/20 shadow-sm"></div>
+</div>
+<!-- Date/Time Stamp -->
+<div class="mb-1.5 mr-2">
+<span class="font-label-md text-label-md text-on-surface-variant font-medium flex items-center gap-1">
+<span class="material-symbols-outlined text-[15px]">event</span>
+                28 أكتوبر 2024 · 04:15 م
+              </span>
+</div>
+<!-- Card Body -->
+<div class="bg-surface-container-lowest p-space-md rounded-2xl border border-outline-variant/30 shadow-[0_4px_16px_rgba(0,40,0,0.04)]">
+<div class="flex items-center justify-between mb-2">
+<span class="font-headline-sm text-body-lg font-bold text-on-surface flex items-center gap-1.5">
+<span class="material-symbols-outlined text-primary text-[18px]">person</span>
+                  الشيخ عبد الرحمن
+                </span>
+<span class="bg-[#97f4d9]/40 text-[#006b57] text-label-sm font-label-sm px-2.5 py-1 rounded-full font-bold border border-[#006b57]/20">
+                  إشادة وتميز
+                </span>
+</div>
+<p class="font-body-md text-body-md text-on-surface-variant leading-relaxed">
+                اجتاز يوسف الاختبار الشهري لجزء قد سمع بتقدير 98%. نبارك للأسرة الكريمة ونسأل الله أن يجعله من أهل القرآن وخاصته.
+              </p>
+</div>
+</article>
+</div>
+</div>
+<!-- Bottom Error State Card Variant (Network/Sync Warning with Retry) -->
+<section class="mt-8 mb-4">
+<div class="bg-error-container/30 border border-error/20 rounded-2xl p-space-md flex flex-col sm:flex-row items-center justify-between gap-3 text-right">
+<div class="flex items-start gap-3 w-full sm:w-auto">
+<div class="w-9 h-9 rounded-xl bg-error-container text-error flex items-center justify-center flex-shrink-0 mt-0.5">
+<span class="material-symbols-outlined text-[20px]">wifi_off</span>
+</div>
+<div>
+<h2 class="font-headline-sm text-body-md font-bold text-on-surface">تعذر تحميل الملاحظات القديمة</h2>
+<p class="font-body-sm text-body-sm text-on-surface-variant mt-0.5">
+                اسحب للأسفل لإعادة المحاولة أو اضغط زر التحديث
+              </p>
+</div>
+</div>
+<!-- Retry Button -->
+<button class="w-full sm:w-auto px-4 py-2 bg-surface-container-lowest text-primary hover:bg-surface-container-low border border-primary/20 rounded-xl font-label-lg text-label-lg flex items-center justify-center gap-1.5 touch-press transition-all shadow-sm flex-shrink-0" type="button">
+<span class="material-symbols-outlined text-[18px]">refresh</span>
+<span>إعادة المحاولة</span>
+</button>
+</div>
+</section>
+<!-- Soft spiritual footer touch -->
+<div class="text-center py-4 text-on-surface-variant/70 text-label-sm flex items-center justify-center gap-1.5">
+<span class="material-symbols-outlined text-[14px]">auto_stories</span>
+<span>مدرسة التقوى لتحفيظ القرآن الكريم · إشراف تربوي متكامل</span>
+</div>
+</main>
+</div>
+</body></html>

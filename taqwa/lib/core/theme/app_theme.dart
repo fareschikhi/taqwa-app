@@ -46,47 +46,83 @@ class AppTheme {
       fontFamilyFallback: AppFonts.fallbackFor(),
       textTheme: TextTheme(
         displayLarge: AppFonts.cairo(fontSize: 40, fontWeight: FontWeight.w700),
-        headlineLarge: AppFonts.cairo(fontSize: 32, fontWeight: FontWeight.w700),
-        headlineMedium: AppFonts.cairo(fontSize: 24, fontWeight: FontWeight.w600),
-        headlineSmall: AppFonts.cairo(fontSize: 20, fontWeight: FontWeight.w600),
+        headlineLarge: AppFonts.cairo(
+          fontSize: 32,
+          fontWeight: FontWeight.w700,
+        ),
+        headlineMedium: AppFonts.cairo(
+          fontSize: 24,
+          fontWeight: FontWeight.w600,
+        ),
+        headlineSmall: AppFonts.cairo(
+          fontSize: 20,
+          fontWeight: FontWeight.w600,
+        ),
         bodyLarge: AppFonts.cairo(fontSize: 18, fontWeight: FontWeight.w400),
         bodyMedium: AppFonts.cairo(fontSize: 16, fontWeight: FontWeight.w400),
         labelLarge: AppFonts.tajawal(fontSize: 14, fontWeight: FontWeight.w500),
-        labelMedium: AppFonts.tajawal(fontSize: 12, fontWeight: FontWeight.w500),
+        labelMedium: AppFonts.tajawal(
+          fontSize: 12,
+          fontWeight: FontWeight.w500,
+        ),
         labelSmall: AppFonts.tajawal(fontSize: 10, fontWeight: FontWeight.w500),
       ),
       appBarTheme: AppBarTheme(
         backgroundColor: AppColors.background,
         elevation: 0,
         scrolledUnderElevation: 1,
-        shadowColor: const Color.fromRGBO(18, 52, 59, 0.04),
+        shadowColor: const Color.fromRGBO(0, 40, 0, 0.04),
         titleTextStyle: AppFonts.cairo(
           fontSize: 22,
           fontWeight: FontWeight.w700,
-          color: AppColors.primary,
+          color: AppColors.onSurface,
         ),
         iconTheme: const IconThemeData(color: AppColors.onSurface),
       ),
+      // Button labels are small white text, so they sit on primaryDark, not
+      // on the brand green (see AppColors).
       elevatedButtonTheme: ElevatedButtonThemeData(
         style: ElevatedButton.styleFrom(
-          backgroundColor: AppColors.primary,
+          backgroundColor: AppColors.primaryDark,
           foregroundColor: AppColors.onPrimary,
           minimumSize: const Size(double.infinity, 48),
           shape: RoundedRectangleBorder(
-            borderRadius: BorderRadius.circular(12),
+            borderRadius: BorderRadius.circular(14),
           ),
-          textStyle: AppFonts.tajawal(fontSize: 14, fontWeight: FontWeight.w700),
+          textStyle: AppFonts.tajawal(
+            fontSize: 15,
+            fontWeight: FontWeight.w700,
+          ),
         ),
+      ),
+      filledButtonTheme: FilledButtonThemeData(
+        style: FilledButton.styleFrom(
+          backgroundColor: AppColors.primaryDark,
+          foregroundColor: AppColors.onPrimary,
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(14),
+          ),
+          textStyle: AppFonts.tajawal(
+            fontSize: 15,
+            fontWeight: FontWeight.w700,
+          ),
+        ),
+      ),
+      textButtonTheme: TextButtonThemeData(
+        style: TextButton.styleFrom(foregroundColor: AppColors.primaryDark),
       ),
       outlinedButtonTheme: OutlinedButtonThemeData(
         style: OutlinedButton.styleFrom(
-          foregroundColor: AppColors.secondary,
+          foregroundColor: AppColors.primaryDark,
           side: const BorderSide(color: AppColors.outlineVariant),
           minimumSize: const Size(double.infinity, 48),
           shape: RoundedRectangleBorder(
-            borderRadius: BorderRadius.circular(12),
+            borderRadius: BorderRadius.circular(14),
           ),
-          textStyle: AppFonts.tajawal(fontSize: 14, fontWeight: FontWeight.w700),
+          textStyle: AppFonts.tajawal(
+            fontSize: 15,
+            fontWeight: FontWeight.w700,
+          ),
         ),
       ),
       inputDecorationTheme: InputDecorationTheme(
@@ -102,19 +138,26 @@ class AppTheme {
         ),
         focusedBorder: OutlineInputBorder(
           borderRadius: BorderRadius.circular(12),
-          borderSide: const BorderSide(color: AppColors.inputFocusBorder, width: 1.5),
+          borderSide: const BorderSide(
+            color: AppColors.inputFocusBorder,
+            width: 1.5,
+          ),
         ),
         hintStyle: AppFonts.tajawal(
           fontSize: 14,
           color: AppColors.inputPlaceholder,
         ),
-        contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
+        contentPadding: const EdgeInsets.symmetric(
+          horizontal: 16,
+          vertical: 14,
+        ),
       ),
       cardTheme: CardThemeData(
         color: AppColors.surfaceContainerLowest,
         elevation: 0,
         shape: RoundedRectangleBorder(
-          borderRadius: BorderRadius.circular(24),
+          borderRadius: BorderRadius.circular(20),
+          side: const BorderSide(color: AppColors.cardBorder),
         ),
         margin: EdgeInsets.zero,
       ),
@@ -137,4 +180,3 @@ class AppTheme {
     );
   }
 }
-

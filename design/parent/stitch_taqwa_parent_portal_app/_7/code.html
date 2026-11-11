@@ -1,0 +1,416 @@
+<!DOCTYPE html>
+
+<html dir="rtl" lang="ar"><head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<title>مدرسة التقوى - حسابي</title>
+<!-- Google Fonts: Cairo & Tajawal -->
+<link href="https://fonts.googleapis.com" rel="preconnect"/>
+<link crossorigin="" href="https://fonts.gstatic.com" rel="preconnect"/>
+<link href="https://fonts.googleapis.com/css2?family=Cairo:wght@400;600;700;800&amp;family=Tajawal:wght@400;500;700&amp;display=swap" rel="stylesheet"/>
+<!-- Material Symbols Outlined -->
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<!-- Tailwind CSS -->
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<script id="tailwind-config">
+    tailwind.config = {
+      darkMode: "class",
+      theme: {
+        extend: {
+          "colors": {
+            "on-tertiary-container": "#fcffe0",
+            "secondary-container": "#97f4d9",
+            "inverse-surface": "#283327",
+            "on-surface": "#131e13",
+            "background": "#f0fdeb",
+            "surface-dim": "#d0decc",
+            "secondary-fixed": "#97f4d9",
+            "tertiary-container": "#6c7b20",
+            "on-tertiary": "#ffffff",
+            "surface-bright": "#f0fdeb",
+            "inverse-on-surface": "#e7f5e2",
+            "outline-variant": "#bdcbb5",
+            "on-tertiary-fixed": "#181e00",
+            "inverse-primary": "#68e054",
+            "primary": "#006c00",
+            "tertiary-fixed-dim": "#becf6b",
+            "on-secondary-fixed": "#002019",
+            "on-primary": "#ffffff",
+            "on-secondary-container": "#00725d",
+            "surface-container-highest": "#d9e6d4",
+            "primary-fixed-dim": "#68e054",
+            "primary-fixed": "#84fd6e",
+            "surface-container-high": "#dfecda",
+            "on-error": "#ffffff",
+            "tertiary-fixed": "#d9ec84",
+            "on-tertiary-fixed-variant": "#404c00",
+            "surface-container": "#e4f2e0",
+            "on-background": "#131e13",
+            "surface-container-low": "#eaf8e5",
+            "surface-tint": "#006e00",
+            "surface-container-lowest": "#ffffff",
+            "on-secondary-fixed-variant": "#005141",
+            "tertiary": "#546204",
+            "on-surface-variant": "#3e4a39",
+            "error": "#ba1a1a",
+            "surface": "#f0fdeb",
+            "on-primary-fixed-variant": "#005300",
+            "on-error-container": "#93000a",
+            "on-secondary": "#ffffff",
+            "on-primary-fixed": "#002200",
+            "secondary-fixed-dim": "#7bd7bd",
+            "primary-container": "#008800",
+            "on-primary-container": "#f8ffef",
+            "outline": "#6e7b68",
+            "secondary": "#006b57",
+            "surface-variant": "#d9e6d4",
+            "error-container": "#ffdad6"
+          },
+          "borderRadius": {
+            "DEFAULT": "0.25rem",
+            "lg": "0.5rem",
+            "xl": "0.75rem",
+            "full": "9999px"
+          },
+          "spacing": {
+            "space-md": "1rem",
+            "margin": "1rem",
+            "space-xs": "0.25rem",
+            "gutter": "1rem",
+            "space-sm": "0.5rem",
+            "space-xl": "1.5rem",
+            "space-lg": "1.25rem"
+          },
+          "fontFamily": {
+            "headline-md": ["Cairo"],
+            "label-sm": ["Tajawal"],
+            "body-lg": ["Tajawal"],
+            "headline-lg": ["Cairo"],
+            "headline-xl": ["Cairo"],
+            "body-sm": ["Tajawal"],
+            "numeral-hero": ["Cairo"],
+            "label-md": ["Tajawal"],
+            "body-md": ["Tajawal"],
+            "headline-sm": ["Cairo"],
+            "label-lg": ["Tajawal"]
+          },
+          "fontSize": {
+            "headline-md": ["20px", { "lineHeight": "30px", "fontWeight": "600" }],
+            "label-sm": ["10px", { "lineHeight": "14px", "fontWeight": "500" }],
+            "body-lg": ["16px", { "lineHeight": "26px", "fontWeight": "500" }],
+            "headline-lg": ["26px", { "lineHeight": "38px", "fontWeight": "700" }],
+            "headline-xl": ["32px", { "lineHeight": "44px", "fontWeight": "700" }],
+            "body-sm": ["12px", { "lineHeight": "18px", "fontWeight": "400" }],
+            "numeral-hero": ["36px", { "lineHeight": "44px", "fontWeight": "700" }],
+            "label-md": ["12px", { "lineHeight": "16px", "fontWeight": "500" }],
+            "body-md": ["14px", { "lineHeight": "22px", "fontWeight": "400" }],
+            "headline-sm": ["18px", { "lineHeight": "28px", "fontWeight": "600" }],
+            "label-lg": ["14px", { "lineHeight": "20px", "fontWeight": "700" }]
+          }
+        },
+      },
+    }
+  </script>
+<style>
+    .material-symbols-outlined {
+      font-variation-settings: 'FILL' 0, 'wght' 400, 'GRAD' 0, 'opsz' 24;
+      display: inline-block;
+      vertical-align: middle;
+      line-height: 1;
+    }
+    body {
+      background-color: #F5F8F5;
+      font-family: 'Tajawal', sans-serif;
+      -webkit-font-smoothing: antialiased;
+      -webkit-tap-highlight-color: transparent;
+    }
+    .custom-card-shadow {
+      box-shadow: 0 4px 16px rgba(0, 40, 0, 0.05);
+    }
+    .subtle-ring {
+      box-shadow: 0 0 0 4px rgba(0, 144, 0, 0.08);
+    }
+  </style>
+<style>
+    body {
+      min-height: max(884px, 100dvh);
+    }
+  </style>
+  </head>
+<body class="bg-surface text-on-surface flex justify-center min-h-screen">
+<!-- Mobile Screen Canvas Constraint: 390px -->
+<div class="w-full max-w-[390px] min-h-screen bg-[#F5F8F5] flex flex-col relative pb-28">
+<!-- Top Navigation Header (Shared Component: TopAppBar) -->
+<header class="sticky top-0 z-40 bg-surface dark:bg-inverse-surface shadow-sm dark:shadow-none flex justify-between items-center w-full px-space-md py-space-sm backdrop-blur-md bg-opacity-95">
+<!-- Leading: Guardian Avatar & School Title -->
+<div class="flex items-center gap-3">
+<div class="w-10 h-10 rounded-full border border-[#E3EAE3] p-0.5 bg-surface-container-lowest overflow-hidden flex-shrink-0 shadow-sm">
+<img class="w-full h-full object-cover rounded-full" data-alt="A dignified Middle Eastern male parent portrait with a gentle warm smile in soft natural morning light, wearing a crisp traditional white thobe, subtle emerald green background tones reflecting serene educational Islamic atmosphere." src="https://lh3.googleusercontent.com/aida-public/AB6AXuD64GyT_pk9cZ5yx6GJWvgR8p4cr50Gvcv9V2sMZwSia-WlLN_DRUZeIthPXLtQBTowh04eiHPsOJB3GW6CLmF8D7Qk2yNx2WP5OnLNxBxvXpTstN5g-JbWimDK18hmXA6bXmORuq8hyYHX8BBgBzjCZTbQzPC9qKPRg55k_pr_a1fPu62K3XflklszSnbIPXhhiCWhakQOT_QhIeLHmi4I1HWsxLuXbF_TVmiXkRo4"/>
+</div>
+<div class="flex flex-col text-right">
+<span class="text-headline-md font-headline-md font-bold text-primary dark:text-inverse-primary tracking-tight">مدرسة التقوى</span>
+<span class="text-label-md font-label-md text-on-surface-variant leading-none">بوابة أولياء الأمور</span>
+</div>
+</div>
+<!-- Trailing: Admin Chat Bubble Action Button -->
+<button aria-label="محادثة الإدارة" class="w-10 h-10 rounded-full bg-surface-container hover:bg-surface-container-high text-primary flex items-center justify-center transition-all duration-150 active:scale-95 shadow-sm">
+<span class="material-symbols-outlined text-primary text-[22px]">chat_bubble</span>
+</button>
+</header>
+<!-- Main Scrollable Body Content -->
+<main class="flex-1 px-4 pt-3 flex flex-col gap-4">
+<!-- Page Headline Anchor -->
+<div class="flex items-center justify-between mt-1 px-1">
+<h1 class="text-headline-lg font-headline-lg font-bold text-on-surface tracking-tight">حسابي</h1>
+<span class="text-label-md font-label-md bg-[#E6F4E6] text-[#005A00] px-3 py-1 rounded-full font-bold">الحساب نشط</span>
+</div>
+<!-- 1. Profile Header Card -->
+<div class="bg-surface-container-lowest border border-[#E3EAE3] rounded-[20px] p-5 custom-card-shadow flex flex-col items-center text-center relative overflow-hidden">
+<!-- Ambient decorative corner glow -->
+<div class="absolute -top-12 -right-12 w-28 h-28 bg-[#E6F4E6] rounded-full filter blur-2xl opacity-60 pointer-events-none"></div>
+<div class="absolute -bottom-10 -left-10 w-24 h-24 bg-[#E6F4E6] rounded-full filter blur-xl opacity-40 pointer-events-none"></div>
+<!-- Avatar Container with Camera Badge -->
+<div class="relative mb-3.5">
+<div class="w-[88px] h-[88px] rounded-full border-2 border-[#009000] p-1 bg-surface-container-lowest shadow-md">
+<img class="w-full h-full object-cover rounded-full" data-alt="Close up photographic portrait of an Arabic father named Ahmed with a neat trim beard and kind eyes, looking directly into the lens with gentle dignity, set against an elegant muted green patterned backdrop in bright high quality studio lighting." src="https://lh3.googleusercontent.com/aida-public/AB6AXuBkklcw5R6i0Y6QpXh_I28XqWdMJIBOizKGheSMJmW8OUG-CCrG_N-f5KQUfDyPqXGSHE_PVpGcKI3lanGpD8NM4hZwK11FSdLKR00Tv7e7RfyhGlTbHO3Ez_tteLykIKy62cG7jBiU-jPtLzmTwmy3PN1wxgA6dZTgLkhsOYr8erAbmpksdRfaj5E8ksEKmkRCHG_XKpVihAskEZC5pgYjq4w5V68hA1b28q8W-xJr"/>
+</div>
+<!-- Edit Photo Button -->
+<button aria-label="تغيير الصورة الشخصية" class="absolute bottom-0 left-0 bg-[#009000] text-on-primary w-8 h-8 rounded-full flex items-center justify-center shadow-md active:scale-90 transition-transform duration-150 border-2 border-surface-container-lowest">
+<span class="material-symbols-outlined text-[17px]">photo_camera</span>
+</button>
+</div>
+<!-- User Information -->
+<h2 class="text-headline-md font-headline-md font-bold text-on-surface">أحمد بن علي</h2>
+<!-- Role Capsule Badge -->
+<div class="mt-1.5 mb-2 inline-flex items-center gap-1.5 bg-[#E6F4E6] text-[#005A00] px-3.5 py-1 rounded-full text-label-md font-label-md font-bold">
+<span class="material-symbols-outlined text-[16px] text-primary" style="font-variation-settings: 'FILL' 1;">verified_user</span>
+<span>ولي أمر</span>
+</div>
+<!-- Secondary Meta Information -->
+<p class="text-body-sm font-body-sm text-on-surface-variant font-mono text-center direction-ltr" dir="ltr">+966 50 123 4567</p>
+<!-- Quick Summary Mini-Stats inside Parent Card -->
+<div class="w-full grid grid-cols-2 gap-2 mt-4 pt-4 border-t border-[#F0F4F0]">
+<div class="bg-[#F5F8F5] rounded-xl p-2.5 flex flex-col items-center">
+<span class="text-label-sm font-label-sm text-on-surface-variant">الأبناء المسجلون</span>
+<span class="text-headline-sm font-headline-sm font-bold text-primary">2 طلاب</span>
+</div>
+<div class="bg-[#F5F8F5] rounded-xl p-2.5 flex flex-col items-center">
+<span class="text-label-sm font-label-sm text-on-surface-variant">حلقات التحفيظ</span>
+<span class="text-headline-sm font-headline-sm font-bold text-primary">حلقة النور</span>
+</div>
+</div>
+</div>
+<!-- 2. Personal Information Section (with interactive inline form) -->
+<div class="flex flex-col gap-2">
+<div class="flex items-center justify-between px-1">
+<div class="flex items-center gap-1.5">
+<span class="material-symbols-outlined text-primary text-[20px]">badge</span>
+<h3 class="text-headline-sm font-headline-sm font-bold text-on-surface">البيانات الشخصية</h3>
+</div>
+<!-- Edit Toggle Button -->
+<button class="flex items-center gap-1 text-primary text-label-md font-label-md font-bold px-2.5 py-1 rounded-lg hover:bg-surface-container transition-colors active:scale-95" id="toggleEditBtn" onclick="toggleEditMode()">
+<span class="material-symbols-outlined text-[16px]">edit</span>
+<span id="editText">تعديل</span>
+</button>
+</div>
+<!-- White Data Rows Card -->
+<div class="bg-surface-container-lowest border border-[#E3EAE3] rounded-[20px] p-5 custom-card-shadow flex flex-col gap-4">
+<!-- Static Rows View -->
+<div class="flex flex-col divide-y divide-[#F0F4F0]" id="staticDetails">
+<!-- Full Name Row -->
+<div class="py-2.5 flex items-center justify-between first:pt-0">
+<div class="flex flex-col text-right">
+<span class="text-label-md font-label-md text-on-surface-variant">الاسم الكامل</span>
+<span class="text-body-md font-body-md font-bold text-on-surface mt-0.5">أحمد بن علي السالم</span>
+</div>
+<div class="w-8 h-8 rounded-full bg-[#F5F8F5] flex items-center justify-center text-outline">
+<span class="material-symbols-outlined text-[18px]">person</span>
+</div>
+</div>
+<!-- Email Row -->
+<div class="py-2.5 flex items-center justify-between">
+<div class="flex flex-col text-right">
+<span class="text-label-md font-label-md text-on-surface-variant">البريد الإلكتروني</span>
+<span class="text-body-md font-body-md font-bold text-on-surface mt-0.5">ahmed.ali@example.com</span>
+</div>
+<div class="w-8 h-8 rounded-full bg-[#F5F8F5] flex items-center justify-center text-outline">
+<span class="material-symbols-outlined text-[18px]">mail</span>
+</div>
+</div>
+<!-- Phone Row -->
+<div class="py-2.5 flex items-center justify-between last:pb-0">
+<div class="flex flex-col text-right">
+<span class="text-label-md font-label-md text-on-surface-variant">رقم الجوال</span>
+<span class="text-body-md font-body-md font-bold text-on-surface mt-0.5 font-mono" dir="ltr">+966 50 123 4567</span>
+</div>
+<div class="w-8 h-8 rounded-full bg-[#F5F8F5] flex items-center justify-center text-outline">
+<span class="material-symbols-outlined text-[18px]">call</span>
+</div>
+</div>
+</div>
+<!-- Edit Interactive Form Container (Visible & active for parent profile update demonstration) -->
+<form class="pt-3 border-t border-[#F0F4F0] flex flex-col gap-3.5" id="editForm" onsubmit="event.preventDefault(); showSavedToast();">
+<div class="flex items-center gap-1.5 text-primary text-label-md font-label-md font-bold">
+<span class="material-symbols-outlined text-[16px]">edit_note</span>
+<span>تحديث الاسم والمعلومات</span>
+</div>
+<!-- Input Container for Full Name -->
+<div class="flex flex-col gap-1.5 text-right">
+<label class="text-label-md font-label-md text-on-surface font-bold" for="fullNameInput">الاسم الكامل</label>
+<div class="relative">
+<input class="w-full h-[52px] bg-surface-container-lowest border border-[#E3EAE3] focus:border-[#009000] focus:ring-2 focus:ring-[#009000]/15 rounded-[14px] px-4 text-on-surface text-body-md font-body-md placeholder-[#5A6A5A] transition-all outline-none" id="fullNameInput" placeholder="أدخل اسمك الكامل" type="text" value="أحمد بن علي السالم"/>
+<span class="material-symbols-outlined absolute left-3 top-1/2 -translate-y-1/2 text-outline text-[20px] pointer-events-none">edit</span>
+</div>
+</div>
+<!-- Action Buttons: Save & Cancel -->
+<div class="flex items-center gap-2.5 pt-1">
+<!-- Primary Filled Save Button -->
+<button class="flex-1 h-[48px] bg-[#009000] hover:bg-[#006B00] active:scale-[0.98] text-on-primary font-label-lg text-label-lg rounded-[14px] transition-all duration-150 flex items-center justify-center gap-1.5 shadow-sm" type="submit">
+<span class="material-symbols-outlined text-[18px]">check</span>
+<span>حفظ التغييرات</span>
+</button>
+<!-- Secondary Tonal Cancel Button -->
+<button class="px-4 h-[48px] bg-[#E6F4E6] text-[#005A00] font-label-lg text-label-lg rounded-[14px] hover:bg-[#d9ecd9] active:scale-[0.98] transition-all duration-150" onclick="toggleEditMode()" type="button">
+                إلغاء
+              </button>
+</div>
+</form>
+</div>
+</div>
+<!-- 3. Settings & Security Section (Settings list card) -->
+<div class="flex flex-col gap-2">
+<div class="flex items-center gap-1.5 px-1">
+<span class="material-symbols-outlined text-primary text-[20px]">security</span>
+<h3 class="text-headline-sm font-headline-sm font-bold text-on-surface">الأمان والتفضيلات</h3>
+</div>
+<div class="bg-surface-container-lowest border border-[#E3EAE3] rounded-[20px] custom-card-shadow overflow-hidden divide-y divide-[#F0F4F0]">
+<!-- Item 1: Change Password -->
+<button class="w-full p-4 flex items-center justify-between text-right hover:bg-[#F5F8F5] transition-colors active:bg-surface-container">
+<div class="flex items-center gap-3">
+<div class="w-10 h-10 rounded-xl bg-[#E6F4E6] text-[#005A00] flex items-center justify-center">
+<span class="material-symbols-outlined text-[20px]">lock</span>
+</div>
+<div class="flex flex-col">
+<span class="text-body-md font-body-md font-bold text-on-surface">تغيير كلمة المرور</span>
+<span class="text-body-sm font-body-sm text-on-surface-variant">تحديث رمز الدخول ورمز الأمان</span>
+</div>
+</div>
+<!-- Chevron left points forward in RTL -->
+<span class="material-symbols-outlined text-outline text-[20px]">chevron_left</span>
+</button>
+<!-- Item 2: Notification Settings -->
+<button class="w-full p-4 flex items-center justify-between text-right hover:bg-[#F5F8F5] transition-colors active:bg-surface-container">
+<div class="flex items-center gap-3">
+<div class="w-10 h-10 rounded-xl bg-[#E6F4E6] text-[#005A00] flex items-center justify-center">
+<span class="material-symbols-outlined text-[20px]">notifications_active</span>
+</div>
+<div class="flex flex-col">
+<span class="text-body-md font-body-md font-bold text-on-surface">إعدادات الإشعارات والتنبيهات</span>
+<span class="text-body-sm font-body-sm text-on-surface-variant">تنبيهات التسميع والغياب والواجبات</span>
+</div>
+</div>
+<span class="material-symbols-outlined text-outline text-[20px]">chevron_left</span>
+</button>
+<!-- Item 3: School Terms & Privacy -->
+<button class="w-full p-4 flex items-center justify-between text-right hover:bg-[#F5F8F5] transition-colors active:bg-surface-container">
+<div class="flex items-center gap-3">
+<div class="w-10 h-10 rounded-xl bg-surface-container text-on-surface-variant flex items-center justify-center">
+<span class="material-symbols-outlined text-[20px]">policy</span>
+</div>
+<div class="flex flex-col">
+<span class="text-body-md font-body-md font-bold text-on-surface">سياسة الخصوصية والشروط</span>
+<span class="text-body-sm font-body-sm text-on-surface-variant">اللوائح التنظيمية لمدرسة التقوى</span>
+</div>
+</div>
+<span class="material-symbols-outlined text-outline text-[20px]">chevron_left</span>
+</button>
+</div>
+</div>
+<!-- 4. Logout Dedicated Action Row -->
+<div class="mt-1">
+<button class="w-full bg-[#FFFFFF] hover:bg-[#FFF5F5] border border-[#ffdad6] rounded-[20px] p-4 flex items-center justify-between transition-all duration-150 active:scale-[0.98] shadow-sm group">
+<div class="flex items-center gap-3">
+<div class="w-10 h-10 rounded-xl bg-[#ffdad6]/60 text-[#C62828] flex items-center justify-center transition-colors group-hover:bg-[#C62828] group-hover:text-white">
+<span class="material-symbols-outlined text-[20px]">logout</span>
+</div>
+<div class="flex flex-col text-right">
+<span class="text-body-md font-body-md font-bold text-[#C62828]">تسجيل الخروج</span>
+<span class="text-body-sm font-body-sm text-[#ba1a1a]/80">إنهاء الجلسة والرجوع لشاشة الدخول</span>
+</div>
+</div>
+<span class="material-symbols-outlined text-[#C62828] text-[20px]">chevron_left</span>
+</button>
+</div>
+<!-- Institutional Footer Note -->
+<div class="text-center py-2 flex flex-col items-center justify-center gap-1">
+<span class="text-label-sm font-label-sm text-on-surface-variant/70">مدرسة التقوى لتحفيظ القرآن الكريم</span>
+<span class="text-label-sm font-label-sm text-on-surface-variant/50">الإصدار 2.4.0 • 1446 هـ</span>
+</div>
+</main>
+<!-- Bottom Navigation Bar (Shared Component: BottomNavBar) -->
+<!-- Active State: "حسابي" (Index 4) per JSON & User intent -->
+<nav class="fixed bottom-0 left-0 w-full z-50 flex flex-row-reverse justify-around items-center px-space-sm py-space-xs bg-surface-container-lowest dark:bg-inverse-surface shadow-lg dark:shadow-none border-0">
+<!-- Tab 1: الرئيسية (Home) -->
+<a class="flex flex-col items-center justify-center text-on-surface-variant dark:text-outline-variant px-3 py-1.5 transition-all duration-150 hover:text-primary active:scale-95" href="#home">
+<span class="material-symbols-outlined text-[22px]">home</span>
+<span class="text-label-sm font-label-sm mt-0.5">الرئيسية</span>
+</a>
+<!-- Tab 2: التسميع (Recitation / School book) -->
+<a class="flex flex-col items-center justify-center text-on-surface-variant dark:text-outline-variant px-3 py-1.5 transition-all duration-150 hover:text-primary active:scale-95" href="#recitation">
+<span class="material-symbols-outlined text-[22px]">menu_book</span>
+<span class="text-label-sm font-label-sm mt-0.5">التسميع</span>
+</a>
+<!-- Tab 3: الواجبات (Assignments / Tasks) -->
+<a class="flex flex-col items-center justify-center text-on-surface-variant dark:text-outline-variant px-3 py-1.5 transition-all duration-150 hover:text-primary active:scale-95" href="#tasks">
+<span class="material-symbols-outlined text-[22px]">assignment</span>
+<span class="text-label-sm font-label-sm mt-0.5">الواجبات</span>
+</a>
+<!-- Tab 4: الرسائل (Messages / Forum) -->
+<a class="flex flex-col items-center justify-center text-on-surface-variant dark:text-outline-variant px-3 py-1.5 transition-all duration-150 hover:text-primary active:scale-95 relative" href="#messages">
+<span class="material-symbols-outlined text-[22px]">forum</span>
+<!-- Optional notification dot for unread messages -->
+<span class="absolute top-1 right-3 w-2 h-2 rounded-full bg-[#ba1a1a]"></span>
+<span class="text-label-sm font-label-sm mt-0.5">الرسائل</span>
+</a>
+<!-- Tab 5: حسابي (Profile - ACTIVE) -->
+<a class="flex flex-col items-center justify-center bg-surface-container dark:bg-surface-container-high text-primary dark:text-inverse-primary rounded-xl px-3 py-1.5 font-bold transition-all duration-150 active:scale-95" href="#profile">
+<span class="material-symbols-outlined text-[22px]" style="font-variation-settings: 'FILL' 1;">person</span>
+<span class="text-label-sm font-label-sm mt-0.5">حسابي</span>
+</a>
+</nav>
+<!-- Interactive Micro-Feedback Toast Notification -->
+<div class="fixed top-16 left-1/2 -translate-x-1/2 z-50 bg-[#009000] text-on-primary px-4 py-2.5 rounded-full shadow-lg flex items-center gap-2 transform transition-all duration-300 translate-y-[-40px] opacity-0 pointer-events-none" id="saveToast">
+<span class="material-symbols-outlined text-[18px]">check_circle</span>
+<span class="text-label-md font-label-md font-bold">تم حفظ بيانات الحساب بنجاح</span>
+</div>
+</div>
+<!-- Inline Vanilla Script for Micro-Interactions -->
+<script>
+    function toggleEditMode() {
+      const form = document.getElementById('editForm');
+      const editText = document.getElementById('editText');
+      const input = document.getElementById('fullNameInput');
+      
+      if (form.classList.contains('hidden')) {
+        form.classList.remove('hidden');
+        editText.innerText = 'إغلاق';
+        input.focus();
+      } else {
+        form.classList.add('hidden');
+        editText.innerText = 'تعديل';
+      }
+    }
+
+    function showSavedToast() {
+      const toast = document.getElementById('saveToast');
+      toast.classList.remove('translate-y-[-40px]', 'opacity-0');
+      toast.classList.add('translate-y-0', 'opacity-100');
+      
+      setTimeout(() => {
+        toast.classList.add('translate-y-[-40px]', 'opacity-0');
+        toast.classList.remove('translate-y-0', 'opacity-100');
+      }, 2500);
+    }
+  </script>
+</body></html>

@@ -9,11 +9,14 @@ class _FakeService implements WirdReminderService {
   _FakeService({
     this.prompted = const {},
     this.result = WirdReminderResult.scheduled,
+    this.alreadyOn = false,
   });
 
   final Set<int> prompted;
   WirdReminderResult result;
+  final bool alreadyOn;
   final enabledAt = <TimeOfDay>[];
+  final disabledAt = <TimeOfDay>[];
   final marked = <int>[];
 
   @override
@@ -26,8 +29,8 @@ class _FakeService implements WirdReminderService {
   Future<void> markPrompted(int userId) async => marked.add(userId);
 
   @override
-  Future<WirdReminderSettings> load() async => const WirdReminderSettings(
-    enabled: false,
+  Future<WirdReminderSettings> load() async => WirdReminderSettings(
+    enabled: alreadyOn,
     time: WirdReminderService.defaultTime,
   );
 
@@ -38,7 +41,7 @@ class _FakeService implements WirdReminderService {
   }
 
   @override
-  Future<void> disable(TimeOfDay time) async {}
+  Future<void> disable(TimeOfDay time) async => disabledAt.add(time);
 }
 
 /// A phone-shaped window, matching the design size ScreenUtil scales to.
@@ -52,6 +55,7 @@ Future<void> _pump(
   WidgetTester tester,
   _FakeService service, {
   int userId = 1,
+  bool offer = true,
 }) async {
   _usePhoneWindow(tester);
   await tester.pumpWidget(
@@ -62,6 +66,7 @@ Future<void> _pump(
           userId: userId,
           service: service,
           enabled: true,
+          offer: offer,
           child: const Scaffold(body: Text('home')),
         ),
       ),
@@ -120,6 +125,28 @@ void main() {
 
     expect(service.marked, [1]);
     expect(find.textContaining('الإشعارات مغلقة'), findsOneWidget);
+  });
+
+  testWidgets('parent: no popup, and a leftover reminder is switched off', (
+    tester,
+  ) async {
+    final service = _FakeService(alreadyOn: true);
+    await _pump(tester, service, offer: false);
+
+    expect(find.text('حفظ الوقت'), findsNothing);
+    expect(service.enabledAt, isEmpty);
+    expect(service.marked, isEmpty);
+    expect(service.disabledAt, [WirdReminderService.defaultTime]);
+  });
+
+  testWidgets('parent with no reminder on: nothing is touched', (
+    tester,
+  ) async {
+    final service = _FakeService();
+    await _pump(tester, service, offer: false);
+
+    expect(find.text('حفظ الوقت'), findsNothing);
+    expect(service.disabledAt, isEmpty);
   });
 
   testWidgets('web build: never prompts', (tester) async {

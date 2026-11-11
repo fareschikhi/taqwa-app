@@ -18,3 +18,14 @@ Widget homeForRole(UserRole role) => switch (role) {
   // Parents, and children whose own row carries STUDENT.
   _ => const ParentShell(),
 };
+
+/// Whether [role]'s home offers the daily wird reminder (card and sign-in
+/// popup). The parent shell does not: it is about the child's progress, not
+/// the parent's own reading.
+bool offersWirdReminder(UserRole role) => switch (role) {
+  UserRole.admin ||
+  UserRole.teacher ||
+  UserRole.manager ||
+  UserRole.adultStudent => true,
+  _ => false,
+};

@@ -122,7 +122,7 @@ class _LoginPageState extends ConsumerState<LoginPage>
                         ),
                         boxShadow: const [
                           BoxShadow(
-                            color: Color.fromRGBO(18, 52, 59, 0.06),
+                            color: Color.fromRGBO(0, 40, 0, 0.06),
                             blurRadius: 24,
                             offset: Offset(0, 8),
                           ),

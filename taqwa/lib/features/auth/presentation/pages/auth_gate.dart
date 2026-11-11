@@ -34,6 +34,7 @@ class AuthGate extends ConsumerWidget {
       StartupDestination.home => WirdReminderPrompt(
         key: ValueKey(auth.user!.id),
         userId: auth.user!.id,
+        offer: offersWirdReminder(auth.user!.role),
         child: homeForRole(auth.user!.role),
       ),
       StartupDestination.changePassword => const ForcePasswordChangePage(),

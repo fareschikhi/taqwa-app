@@ -1,0 +1,469 @@
+<!DOCTYPE html>
+
+<html dir="rtl" lang="ar"><head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" name="viewport"/>
+<title>مدرسة التقوى - ملاحظات</title>
+<!-- Google Fonts for Cairo & Tajawal -->
+<link href="https://fonts.googleapis.com" rel="preconnect"/>
+<link crossorigin="" href="https://fonts.gstatic.com" rel="preconnect"/>
+<link href="https://fonts.googleapis.com/css2?family=Cairo:wght@400;600;700;800&amp;family=Tajawal:wght@400;500;700&amp;display=swap" rel="stylesheet"/>
+<!-- Material Symbols Outlined -->
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<!-- Tailwind CSS v3 -->
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<script id="tailwind-config">
+    tailwind.config = {
+      darkMode: "class",
+      theme: {
+        extend: {
+          "colors": {
+            "outline": "#6e7b68",
+            "on-background": "#131e13",
+            "tertiary-fixed-dim": "#becf6b",
+            "on-primary-container": "#f8ffef",
+            "inverse-primary": "#68e054",
+            "error-container": "#ffdad6",
+            "secondary-container": "#97f4d9",
+            "surface-container-low": "#eaf8e5",
+            "on-primary-fixed": "#002200",
+            "on-secondary-container": "#00725d",
+            "on-error": "#ffffff",
+            "outline-variant": "#bdcbb5",
+            "surface-container": "#e4f2e0",
+            "on-surface-variant": "#3e4a39",
+            "inverse-on-surface": "#e7f5e2",
+            "surface-tint": "#006e00",
+            "on-secondary-fixed": "#002019",
+            "tertiary": "#546204",
+            "on-tertiary-fixed-variant": "#404c00",
+            "error": "#ba1a1a",
+            "on-secondary-fixed-variant": "#005141",
+            "secondary": "#006b57",
+            "primary-fixed": "#84fd6e",
+            "on-primary-fixed-variant": "#005300",
+            "secondary-fixed": "#97f4d9",
+            "surface-bright": "#f0fdeb",
+            "surface-container-highest": "#d9e6d4",
+            "on-tertiary": "#ffffff",
+            "on-tertiary-fixed": "#181e00",
+            "inverse-surface": "#283327",
+            "on-primary": "#ffffff",
+            "surface": "#f0fdeb",
+            "tertiary-container": "#6c7b20",
+            "tertiary-fixed": "#d9ec84",
+            "primary-fixed-dim": "#68e054",
+            "surface-container-lowest": "#ffffff",
+            "on-tertiary-container": "#fcffe0",
+            "primary-container": "#008800",
+            "on-secondary": "#ffffff",
+            "surface-container-high": "#dfecda",
+            "surface-variant": "#d9e6d4",
+            "on-error-container": "#93000a",
+            "background": "#f0fdeb",
+            "primary": "#006c00",
+            "on-surface": "#131e13",
+            "surface-dim": "#d0decc",
+            "secondary-fixed-dim": "#7bd7bd"
+          },
+          "borderRadius": {
+            "DEFAULT": "0.25rem",
+            "lg": "0.5rem",
+            "xl": "0.75rem",
+            "full": "9999px"
+          },
+          "spacing": {
+            "space-sm": "0.5rem",
+            "space-lg": "1.25rem",
+            "margin": "1rem",
+            "space-xs": "0.25rem",
+            "space-xl": "1.5rem",
+            "gutter": "1rem",
+            "space-md": "1rem"
+          },
+          "fontFamily": {
+            "headline-sm": ["Cairo"],
+            "label-sm": ["Tajawal"],
+            "body-md": ["Tajawal"],
+            "headline-xl": ["Cairo"],
+            "headline-lg": ["Cairo"],
+            "headline-md": ["Cairo"],
+            "numeral-hero": ["Cairo"],
+            "body-lg": ["Tajawal"],
+            "label-lg": ["Tajawal"],
+            "body-sm": ["Tajawal"],
+            "label-md": ["Tajawal"]
+          },
+          "fontSize": {
+            "headline-sm": ["18px", { "lineHeight": "28px", "fontWeight": "600" }],
+            "label-sm": ["10px", { "lineHeight": "14px", "fontWeight": "500" }],
+            "body-md": ["14px", { "lineHeight": "22px", "fontWeight": "400" }],
+            "headline-xl": ["32px", { "lineHeight": "44px", "fontWeight": "700" }],
+            "headline-lg": ["26px", { "lineHeight": "38px", "fontWeight": "700" }],
+            "headline-md": ["20px", { "lineHeight": "30px", "fontWeight": "600" }],
+            "numeral-hero": ["36px", { "lineHeight": "44px", "fontWeight": "700" }],
+            "body-lg": ["16px", { "lineHeight": "26px", "fontWeight": "500" }],
+            "label-lg": ["14px", { "lineHeight": "20px", "fontWeight": "700" }],
+            "body-sm": ["12px", { "lineHeight": "18px", "fontWeight": "400" }],
+            "label-md": ["12px", { "lineHeight": "16px", "fontWeight": "500" }]
+          }
+        },
+      },
+    }
+  </script>
+<style>
+    .material-symbols-outlined {
+      font-variation-settings: 'FILL' 0, 'wght' 500, 'GRAD' 0, 'opsz' 24;
+      display: inline-block;
+      vertical-align: middle;
+      line-height: 1;
+    }
+    .material-symbols-outlined.fill-icon {
+      font-variation-settings: 'FILL' 1, 'wght' 500, 'GRAD' 0, 'opsz' 24;
+    }
+    body {
+      background-color: #F5F8F5;
+      -webkit-tap-highlight-color: transparent;
+      user-select: none;
+    }
+    .ambient-card-shadow {
+      box-shadow: 0 4px 16px rgba(0, 40, 0, 0.06);
+    }
+    .custom-scroll::-webkit-scrollbar {
+      display: none;
+    }
+    .custom-scroll {
+      -ms-overflow-style: none;
+      scrollbar-width: none;
+    }
+  </style>
+<style>
+    body {
+      min-height: max(884px, 100dvh);
+    }
+  </style>
+  </head>
+<body class="bg-background text-on-surface flex justify-center min-h-screen antialiased">
+<!-- Mobile Viewport Container (390px canonical width) -->
+<main class="w-full max-w-[390px] min-h-screen bg-[#F5F8F5] relative flex flex-col pb-28 select-none">
+<!-- Top Status Bar & School Header Shell -->
+<header class="w-full px-space-md pt-4 pb-2 bg-surface-container-lowest sticky top-0 z-30 shadow-sm">
+<div class="flex justify-between items-center w-full">
+<!-- Leading Child Switcher & App Anchor -->
+<div class="flex items-center gap-2">
+<div class="w-10 h-10 rounded-full border border-outline-variant/40 overflow-hidden flex items-center justify-center bg-surface-container">
+<img class="w-full h-full object-cover" data-alt="A dignified Muslim parent portrait in a warm studio environment with soft natural lighting and calm sage tones consistent with the Quran school app aesthetic" src="https://lh3.googleusercontent.com/aida-public/AB6AXuCjuuXkXHUSgtZ4xZhRaF9VVGl-gvkSLGbBdbg5nJjhywCRFqxALs_HpjYA95wAKftIhqx74_AptoqAggloYYYcbnOLJfGmbr5lwVg2218bJYrUGVMnXqiMP3silhRECsH3c8EUTvviCc9yjN7a1TF2hJazWXmNEHxoqc1WFr4TncEqaHJQlqXCZQzP_THFgnt3HBb3n2ZspPCsLyBoCxvdWtUrXa5xzGMYsjkgz87U"/>
+</div>
+<div class="flex flex-col">
+<span class="font-headline-sm text-headline-sm text-primary font-bold leading-tight">مدرسة التقوى</span>
+<span class="font-label-md text-label-md text-on-surface-variant">بوابة أولياء الأمور</span>
+</div>
+</div>
+<!-- Trailing Direct Chat / Administration Button -->
+<a aria-label="محادثة الإدارة" class="relative w-11 h-11 rounded-full bg-surface-container-lowest border border-[#E3EAE3] flex items-center justify-center ambient-card-shadow active:scale-95 transition-all duration-150" href="#admin-chat">
+<span class="material-symbols-outlined text-primary text-[22px]">chat_bubble</span>
+<!-- Unread Dot -->
+<span class="absolute top-2 left-2 w-2.5 h-2.5 rounded-full bg-error ring-2 ring-surface-container-lowest"></span>
+</a>
+</div>
+<!-- Child Switcher Horizontal Pills -->
+<section aria-label="اختيار الطالب" class="mt-3 flex items-center gap-2.5 overflow-x-auto custom-scroll pb-1">
+<!-- Selected Child: يوسف -->
+<button class="flex items-center gap-2 pl-3 pr-2 py-1.5 rounded-full bg-[#E6F4E6] border border-[#009000] text-primary transition-all shadow-sm" type="button">
+<div class="relative w-7 h-7 rounded-full overflow-hidden border border-[#009000]/40 bg-surface-container">
+<img class="w-full h-full object-cover" data-alt="Close up bright portrait of a smiling young boy named Yousef wearing a neat white traditional thobe for Quran class, soft green background lighting" src="https://lh3.googleusercontent.com/aida-public/AB6AXuAorfEzpX2wNgkHyxOC6WSL-sPqZViV-smkdjDPGliJQGGtKxBkWELcu8a62XeMn3E2n18uHWs0Q14D8elMlXSRk9nOcs9hqq43eeiLM-fYPOVRZO5wFLntXSypr2FRAeCP4DJIPUnIeiTYBhTqOAXuBzplobZGRc_B672-UD_MtgV4y3oA0HEFPatrKHGA0P6xH7nA-lUlFJksndNnTLUcNeR5fZ4J6QZnw2VPjEAp"/>
+</div>
+<span class="font-headline-sm text-headline-sm text-primary font-bold text-sm leading-none">يوسف</span>
+<span class="w-2 h-2 rounded-full bg-[#009000]"></span>
+</button>
+<!-- Unselected Child: مريم -->
+<button class="flex items-center gap-2 pl-3 pr-2 py-1.5 rounded-full bg-surface-container-lowest border border-[#E3EAE3] text-on-surface-variant hover:bg-surface-container transition-all" type="button">
+<div class="w-7 h-7 rounded-full overflow-hidden border border-outline-variant/40 bg-surface-container">
+<img class="w-full h-full object-cover" data-alt="Close up portrait of a young gentle Muslim girl named Maryam wearing an ivory headscarf smiling politely in a clean soft ambient setting" src="https://lh3.googleusercontent.com/aida-public/AB6AXuBEGYh_LJgYdtcXo_0TeYTfGuuxiVmlxQ4eidFmDlsdUPN9xWy_tbQVIvHDqBHuc8Tn_R66picRc9dxfgJPakNvumU4D_IVNQPAbxgQ2qZjyb_a48CSUeYBSqxXEI5OCTwZkVkLnoPeLQFjMybgIjtgNGJjf4UNaGEZmb2YJpI0d07yn3qpUblAF309j89VqnOwhCX6YdKLOMsVrWBWnyX_ryreA5GxbUjgBwxHXKRY"/>
+</div>
+<span class="font-label-lg text-label-lg text-on-surface-variant text-sm leading-none">مريم</span>
+</button>
+</section>
+</header>
+<!-- Main Title & Mark As Read Controls -->
+<div class="px-space-md pt-4 pb-2 flex items-center justify-between">
+<div>
+<h1 class="font-headline-lg text-headline-lg text-on-background tracking-tight">ملاحظات</h1>
+<p class="font-body-sm text-body-sm text-on-surface-variant">متابعة التسميع، الحضور، وتوجيهات المشايخ</p>
+</div>
+<!-- Quick Action: Mark all as read -->
+<button class="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-surface-container-lowest border border-[#E3EAE3] text-primary text-xs font-label-lg hover:bg-[#E6F4E6] active:scale-95 transition-all" type="button">
+<span class="material-symbols-outlined text-[16px] text-primary">done_all</span>
+<span>تحديد الكل كمقروء</span>
+</button>
+</div>
+<!-- Content Sections Flow -->
+<div class="px-space-md space-y-5 mt-2">
+<!-- SECTION 1: جديدة (Unread Notifications) -->
+<section aria-labelledby="section-new" class="space-y-3">
+<div class="flex items-center justify-between">
+<div class="flex items-center gap-2">
+<h2 class="font-headline-md text-headline-md text-on-background" id="section-new">جديدة</h2>
+<span class="px-2.5 py-0.5 rounded-full bg-[#009000] text-surface-container-lowest font-label-sm text-xs font-bold shadow-sm">
+              3 جديدة
+            </span>
+</div>
+<span class="font-label-sm text-label-sm text-primary font-bold">موجز اليوم</span>
+</div>
+<!-- Notification Card 1: Attendance / Late Alert -->
+<article class="relative p-space-lg rounded-[20px] bg-[#E6F4E6] border border-[#009000]/40 ambient-card-shadow transition-all active:scale-[0.99]">
+<!-- Active Green Indicator Dot on Top Right -->
+<div class="absolute top-4 right-4 flex items-center justify-center">
+<span class="w-2.5 h-2.5 rounded-full bg-[#009000] ring-4 ring-[#E6F4E6]"></span>
+</div>
+<div class="flex gap-3.5 pr-3">
+<!-- Icon in Tinted Circle -->
+<div class="w-11 h-11 shrink-0 rounded-2xl bg-[#B26A00]/15 text-[#B26A00] flex items-center justify-center">
+<span class="material-symbols-outlined text-[24px]">schedule</span>
+</div>
+<!-- Content Area -->
+<div class="flex-1 min-w-0">
+<div class="flex items-start justify-between gap-2">
+<h3 class="font-headline-sm text-headline-sm text-on-background font-bold text-base leading-snug">
+                  تسجيل تأخر في حلقة الفرقان
+                </h3>
+<span class="font-label-sm text-label-sm text-outline shrink-0 whitespace-nowrap mt-0.5">منذ ساعتين</span>
+</div>
+<p class="font-body-md text-body-md text-on-surface-variant mt-1.5 leading-relaxed">
+                وصل يوسف في تمام الساعة 04:45 م بعد بدء التسميع بـ 15 دقيقة، نرجو الحرص على الحضور المبكر.
+              </p>
+<!-- Bottom Meta Pill -->
+<div class="mt-3 flex items-center gap-2">
+<span class="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full bg-surface-container-lowest/80 text-[#B26A00] font-label-sm text-[11px] font-bold border border-[#B26A00]/20">
+<span class="material-symbols-outlined text-[13px]">notification_important</span>
+                  تنبيه التزام
+                </span>
+<span class="text-[11px] font-label-sm text-on-surface-variant">الشيخ عبد الرحمن</span>
+</div>
+</div>
+</div>
+</article>
+<!-- Notification Card 2: Memorization Achievement -->
+<article class="relative p-space-lg rounded-[20px] bg-[#E6F4E6] border border-[#009000]/40 ambient-card-shadow transition-all active:scale-[0.99]">
+<!-- Active Green Indicator Dot -->
+<div class="absolute top-4 right-4 flex items-center justify-center">
+<span class="w-2.5 h-2.5 rounded-full bg-[#009000] ring-4 ring-[#E6F4E6]"></span>
+</div>
+<div class="flex gap-3.5 pr-3">
+<!-- Icon in Tinted Green Circle -->
+<div class="w-11 h-11 shrink-0 rounded-2xl bg-[#009000]/15 text-[#009000] flex items-center justify-center">
+<span class="material-symbols-outlined text-[24px]">workspace_premium</span>
+</div>
+<!-- Content Area -->
+<div class="flex-1 min-w-0">
+<div class="flex items-start justify-between gap-2">
+<h3 class="font-headline-sm text-headline-sm text-on-background font-bold text-base leading-snug">
+                  إتقان سورة الملك بتقدير ممتاز
+                </h3>
+<span class="font-label-sm text-label-sm text-outline shrink-0 whitespace-nowrap mt-0.5">منذ 5 ساعات</span>
+</div>
+<p class="font-body-md text-body-md text-on-surface-variant mt-1.5 leading-relaxed">
+                أتم يوسف بنجاح تسميع سورة الملك كاملة بأحكام التجويد ومخارج الحروف الصحيحة.
+              </p>
+<!-- Bottom Meta Pill -->
+<div class="mt-3 flex items-center gap-2">
+<span class="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full bg-[#009000]/10 text-[#006c00] font-label-sm text-[11px] font-bold border border-[#009000]/25">
+<span class="material-symbols-outlined text-[13px]">military_tech</span>
+                  إنجاز قرآني
+                </span>
+<span class="text-[11px] font-label-sm text-tertiary font-bold">تقدير: 100/100</span>
+</div>
+</div>
+</div>
+</article>
+<!-- Notification Card 3: Teacher Note / Homework -->
+<article class="relative p-space-lg rounded-[20px] bg-[#E6F4E6] border border-[#009000]/40 ambient-card-shadow transition-all active:scale-[0.99]">
+<!-- Active Green Indicator Dot -->
+<div class="absolute top-4 right-4 flex items-center justify-center">
+<span class="w-2.5 h-2.5 rounded-full bg-[#009000] ring-4 ring-[#E6F4E6]"></span>
+</div>
+<div class="flex gap-3.5 pr-3">
+<!-- Icon in Tinted Circle -->
+<div class="w-11 h-11 shrink-0 rounded-2xl bg-[#0E7C66]/15 text-[#0E7C66] flex items-center justify-center">
+<span class="material-symbols-outlined text-[24px]">assignment</span>
+</div>
+<!-- Content Area -->
+<div class="flex-1 min-w-0">
+<div class="flex items-start justify-between gap-2">
+<h3 class="font-headline-sm text-headline-sm text-on-background font-bold text-base leading-snug">
+                  توجيه مراجعة للغد من الشيخ عبد الرحمن
+                </h3>
+<span class="font-label-sm text-label-sm text-outline shrink-0 whitespace-nowrap mt-0.5">منذ 8 ساعات</span>
+</div>
+<p class="font-body-md text-body-md text-on-surface-variant mt-1.5 leading-relaxed">
+                يرجى مراجعة الآيات من 1 إلى 15 من سورة الواقعة لتثبيت الحفظ قبل جلسة الغد.
+              </p>
+<!-- Bottom Meta Pill -->
+<div class="mt-3 flex items-center gap-2">
+<span class="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full bg-surface-container-lowest/80 text-[#0E7C66] font-label-sm text-[11px] font-bold border border-[#0E7C66]/20">
+<span class="material-symbols-outlined text-[13px]">menu_book</span>
+                  المقرر المنزلي
+                </span>
+<span class="text-[11px] font-label-sm text-on-surface-variant">الورد اليومي</span>
+</div>
+</div>
+</div>
+</article>
+</section>
+<!-- SECTION 2: سابقة (Read Notifications) -->
+<section aria-labelledby="section-previous" class="space-y-3 pt-2">
+<div class="flex items-center justify-between">
+<div class="flex items-center gap-2">
+<h2 class="font-headline-md text-headline-md text-on-background" id="section-previous">سابقة</h2>
+<span class="px-2 py-0.5 rounded-full bg-surface-container text-on-surface-variant font-label-sm text-xs">
+              12 ملاحظة سابقة
+            </span>
+</div>
+<span class="font-label-sm text-label-sm text-outline">الأسبوع الحالي</span>
+</div>
+<!-- Notification Card 4: Halaqa News -->
+<article class="p-space-lg rounded-[20px] bg-surface-container-lowest border border-[#E3EAE3] ambient-card-shadow transition-all active:scale-[0.99]">
+<div class="flex gap-3.5">
+<!-- Icon in Soft Gray/Teal Circle -->
+<div class="w-11 h-11 shrink-0 rounded-2xl bg-[#006b57]/10 text-secondary flex items-center justify-center">
+<span class="material-symbols-outlined text-[24px]">campaign</span>
+</div>
+<!-- Content Area -->
+<div class="flex-1 min-w-0">
+<div class="flex items-start justify-between gap-2">
+<h3 class="font-headline-sm text-headline-sm text-on-background font-bold text-base leading-snug">
+                  موعد الاختبار الشهري لحلقة الفرقان
+                </h3>
+<span class="font-label-sm text-label-sm text-outline shrink-0 whitespace-nowrap mt-0.5">أمس</span>
+</div>
+<p class="font-body-md text-body-md text-on-surface-variant mt-1 leading-relaxed">
+                سيعقد الاختبار الشهري لمقرر جزء تبارك يوم الأربعاء القادم بإذن الله خلال وقت الحلقة المعتاد.
+              </p>
+<div class="mt-3 flex items-center gap-2">
+<span class="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full bg-surface-container text-on-surface-variant font-label-sm text-[11px]">
+<span class="material-symbols-outlined text-[13px]">event</span>
+                  إشعار إداري
+                </span>
+<span class="text-[11px] font-label-sm text-outline">إدارة الحلقات</span>
+</div>
+</div>
+</div>
+</article>
+<!-- Notification Card 5: Attendance Present -->
+<article class="p-space-lg rounded-[20px] bg-surface-container-lowest border border-[#E3EAE3] ambient-card-shadow transition-all active:scale-[0.99]">
+<div class="flex gap-3.5">
+<!-- Icon in Soft Green Circle -->
+<div class="w-11 h-11 shrink-0 rounded-2xl bg-[#009000]/10 text-primary flex items-center justify-center">
+<span class="material-symbols-outlined text-[24px]">check_circle</span>
+</div>
+<!-- Content Area -->
+<div class="flex-1 min-w-0">
+<div class="flex items-start justify-between gap-2">
+<h3 class="font-headline-sm text-headline-sm text-on-background font-bold text-base leading-snug">
+                  حضور وتسميع متقن
+                </h3>
+<span class="font-label-sm text-label-sm text-outline shrink-0 whitespace-nowrap mt-0.5">منذ يومين</span>
+</div>
+<p class="font-body-md text-body-md text-on-surface-variant mt-1 leading-relaxed">
+                حضر يوسف في الموعد المحدد وقام بتسميع صفحتين من سورة القلم بامتياز.
+              </p>
+<div class="mt-3 flex items-center gap-2">
+<span class="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full bg-[#E6F4E6] text-primary font-label-sm text-[11px] font-bold">
+<span class="material-symbols-outlined text-[13px]">verified</span>
+                  حاضر في الموعد
+                </span>
+<span class="text-[11px] font-label-sm text-outline">سورة القلم (1-33)</span>
+</div>
+</div>
+</div>
+</article>
+<!-- Notification Card 6: General School Announcement -->
+<article class="p-space-lg rounded-[20px] bg-surface-container-lowest border border-[#E3EAE3] ambient-card-shadow transition-all active:scale-[0.99]">
+<div class="flex gap-3.5">
+<!-- Icon in Soft Blue/Honor Circle -->
+<div class="w-11 h-11 shrink-0 rounded-2xl bg-[#1F6FB2]/10 text-[#1F6FB2] flex items-center justify-center">
+<span class="material-symbols-outlined text-[24px]">celebration</span>
+</div>
+<!-- Content Area -->
+<div class="flex-1 min-w-0">
+<div class="flex items-start justify-between gap-2">
+<h3 class="font-headline-sm text-headline-sm text-on-background font-bold text-base leading-snug">
+                  تكريم الملتزمين بالحضور الأسبوعي
+                </h3>
+<span class="font-label-sm text-label-sm text-outline shrink-0 whitespace-nowrap mt-0.5">منذ 4 أيام</span>
+</div>
+<p class="font-body-md text-body-md text-on-surface-variant mt-1 leading-relaxed">
+                يسر إدارة المدرسة إدراج اسم يوسف ضمن لوحة الشرف الأسبوعية للطلاب الملتزمين.
+              </p>
+<div class="mt-3 flex items-center gap-2">
+<span class="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full bg-[#1F6FB2]/10 text-[#1F6FB2] font-label-sm text-[11px] font-bold">
+<span class="material-symbols-outlined text-[13px]">star</span>
+                  لوحة الشرف
+                </span>
+<span class="text-[11px] font-label-sm text-outline">الفرقان 1</span>
+</div>
+</div>
+</div>
+</article>
+</section>
+<!-- Bottom Helper Advice Card -->
+<section class="p-4 rounded-2xl bg-surface-container/60 border border-outline-variant/30 flex items-center gap-3">
+<div class="w-9 h-9 rounded-full bg-surface-container-lowest flex items-center justify-center text-primary shrink-0 shadow-xs">
+<span class="material-symbols-outlined text-[20px]">support_agent</span>
+</div>
+<div class="flex-1 min-w-0">
+<p class="font-headline-sm text-headline-sm text-xs font-bold text-on-background">هل ترغب بالتواصل مع مشرف الحلقة؟</p>
+<p class="font-body-sm text-body-sm text-on-surface-variant text-[11px] mt-0.5">المحادثة المباشرة مفتوحة يومياً من 4 إلى 8 مساءً.</p>
+</div>
+<button class="shrink-0 px-3 py-1.5 rounded-xl bg-primary text-on-primary font-label-sm text-xs font-bold shadow-sm active:scale-95 transition-all" type="button">
+          مراسلة
+        </button>
+</section>
+</div>
+<!-- Bottom Navigation Bar (Semantic 5 Tabs: RTL mapped) -->
+<!-- Matches Shared Components JSON layout & active destination token mapping -->
+<nav class="fixed bottom-0 left-0 w-full z-50 flex flex-row-reverse justify-around items-center px-space-sm py-space-xs bg-surface-container-lowest shadow-lg">
+<div class="w-full max-w-[390px] mx-auto flex flex-row-reverse justify-around items-center">
+<!-- 1. الرئيسية (Home) -->
+<a class="flex flex-col items-center justify-center text-on-surface-variant px-2.5 py-1.5 hover:bg-surface-container-low transition-all" href="#home">
+<span class="material-symbols-outlined text-[22px]">home</span>
+<span class="font-label-sm text-label-sm text-[11px] mt-0.5">الرئيسية</span>
+</a>
+<!-- 2. التسميع / المقرأة (menu_book) -->
+<a class="flex flex-col items-center justify-center text-on-surface-variant px-2.5 py-1.5 hover:bg-surface-container-low transition-all" href="#recitation">
+<span class="material-symbols-outlined text-[22px]">menu_book</span>
+<span class="font-label-sm text-label-sm text-[11px] mt-0.5">المقرأة</span>
+</a>
+<!-- 3. الحضور والواجبات (calendar_today / assignment) -->
+<a class="flex flex-col items-center justify-center text-on-surface-variant px-2.5 py-1.5 hover:bg-surface-container-low transition-all" href="#attendance">
+<span class="material-symbols-outlined text-[22px]">calendar_today</span>
+<span class="font-label-sm text-label-sm text-[11px] mt-0.5">الحضور</span>
+</a>
+<!-- 4. ملاحظات (ACTIVE TAB: Notifications / Notes) -->
+<!-- Exact JSON & System Anchor: bg-surface-container / primary-soft #E6F4E6 rounded-xl font-bold -->
+<a class="flex flex-col items-center justify-center bg-[#E6F4E6] text-primary rounded-xl px-3 py-1 font-bold shadow-xs" href="#notes">
+<div class="relative">
+<span class="material-symbols-outlined text-[22px] fill-icon text-[#006c00]">notifications</span>
+<span class="absolute -top-1 -right-1 w-2 h-2 rounded-full bg-error"></span>
+</div>
+<span class="font-label-sm text-label-sm text-[11px] text-[#005A00] font-bold mt-0.5">ملاحظات</span>
+</a>
+<!-- 5. حسابي (Person) -->
+<a class="flex flex-col items-center justify-center text-on-surface-variant px-2.5 py-1.5 hover:bg-surface-container-low transition-all" href="#profile">
+<span class="material-symbols-outlined text-[22px]">person</span>
+<span class="font-label-sm text-label-sm text-[11px] mt-0.5">الحساب</span>
+</a>
+</div>
+</nav>
+</main>
+<script>
+    // Lightweight interactive micro-feedback for tab/pill switching
+    document.querySelectorAll('button, article, nav a').forEach(el => {
+      el.addEventListener('click', function() {
+        this.classList.add('opacity-90');
+        setTimeout(() => this.classList.remove('opacity-90'), 150);
+      });
+    });
+  </script>
+</body></html>

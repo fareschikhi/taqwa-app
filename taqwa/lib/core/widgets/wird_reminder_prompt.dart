@@ -24,10 +24,16 @@ class WirdReminderPrompt extends StatefulWidget {
     required this.child,
     this.service,
     this.enabled,
+    this.offer = true,
   });
 
   final int userId;
   final Widget child;
+
+  /// False for a role whose home has no wird card (parents). Then there is no
+  /// popup, and a reminder this phone still has from before is switched off —
+  /// otherwise it would keep arriving with no card left to turn it off.
+  final bool offer;
 
   /// Overridable for tests; the app uses [WirdReminderService.instance].
   final WirdReminderService? service;
@@ -47,8 +53,21 @@ class _WirdReminderPromptState extends State<WirdReminderPrompt> {
   void initState() {
     super.initState();
     if (!(widget.enabled ?? WirdReminderService.isSupported)) return;
+    if (!widget.offer) {
+      _switchOffLeftover();
+      return;
+    }
     // After the first frame, so the home is drawn behind the popup.
     WidgetsBinding.instance.addPostFrameCallback((_) => _maybePrompt());
+  }
+
+  Future<void> _switchOffLeftover() async {
+    try {
+      final current = await _service.load();
+      if (current.enabled) await _service.disable(current.time);
+    } catch (_) {
+      // Unreadable storage or plugin error: nothing on screen depends on it.
+    }
   }
 
   Future<void> _maybePrompt() async {

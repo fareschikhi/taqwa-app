@@ -9,7 +9,7 @@ import 'package:taqwa/core/widgets/avatar_widget.dart';
 import 'package:taqwa/features/data/models/student_of_month_model.dart';
 
 /// The award's accent: the app's amber, read as gold beside the brand teal.
-const Color _gold = AppColors.warning;
+const Color _gold = AppColors.gold;
 
 /// طالب الشهر on a dashboard.
 ///
@@ -153,7 +153,9 @@ class StudentOfMonthCard extends StatelessWidget {
           _message,
           textAlign: TextAlign.end,
           style: AppTextStyles.bodyMd.copyWith(
-            color: isViewer ? AppColors.primary : AppColors.onSurfaceVariant,
+            color: isViewer
+                ? AppColors.primaryDark
+                : AppColors.onSurfaceVariant,
             fontWeight: isViewer ? FontWeight.w600 : null,
           ),
         ),

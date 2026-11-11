@@ -172,11 +172,14 @@ class _AppTextFieldState extends State<AppTextField> {
               suffixIcon: widget.obscureText
                   ? IconButton(
                       icon: Icon(
-                        _obscureText ? Icons.visibility_off_outlined : Icons.visibility_outlined,
+                        _obscureText
+                            ? Icons.visibility_off_outlined
+                            : Icons.visibility_outlined,
                         color: AppColors.onSurfaceVariant,
                         size: 20.w,
                       ),
-                      onPressed: () => setState(() => _obscureText = !_obscureText),
+                      onPressed: () =>
+                          setState(() => _obscureText = !_obscureText),
                     )
                   : widget.suffixIcon,
               border: OutlineInputBorder(
@@ -189,11 +192,16 @@ class _AppTextFieldState extends State<AppTextField> {
               ),
               focusedBorder: OutlineInputBorder(
                 borderRadius: BorderRadius.circular(AppConstants.radiusMd),
-                borderSide: const BorderSide(color: AppColors.inputFocusBorder, width: 1.5),
+                borderSide: const BorderSide(
+                  color: AppColors.inputFocusBorder,
+                  width: 1.5,
+                ),
               ),
               disabledBorder: OutlineInputBorder(
                 borderRadius: BorderRadius.circular(AppConstants.radiusMd),
-                borderSide: BorderSide(color: AppColors.inputBorder.withValues(alpha: 0.5)),
+                borderSide: BorderSide(
+                  color: AppColors.inputBorder.withValues(alpha: 0.5),
+                ),
               ),
               errorBorder: OutlineInputBorder(
                 borderRadius: BorderRadius.circular(AppConstants.radiusMd),
@@ -201,7 +209,10 @@ class _AppTextFieldState extends State<AppTextField> {
               ),
               focusedErrorBorder: OutlineInputBorder(
                 borderRadius: BorderRadius.circular(AppConstants.radiusMd),
-                borderSide: const BorderSide(color: AppColors.error, width: 1.5),
+                borderSide: const BorderSide(
+                  color: AppColors.error,
+                  width: 1.5,
+                ),
               ),
               contentPadding: EdgeInsets.symmetric(
                 horizontal: 16.w,
@@ -214,4 +225,3 @@ class _AppTextFieldState extends State<AppTextField> {
     );
   }
 }
-

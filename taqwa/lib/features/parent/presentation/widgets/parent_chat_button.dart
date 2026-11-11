@@ -18,10 +18,8 @@ class ParentChatButton extends StatelessWidget {
     open: (context) => Navigator.push(
       context,
       MaterialPageRoute(
-        builder: (_) => const ChatThreadPage(
-          target: ChatTarget.mine(),
-          title: 'الإدارة',
-        ),
+        builder: (_) =>
+            const ChatThreadPage(target: ChatTarget.mine(), title: 'الإدارة'),
       ),
     ),
   );

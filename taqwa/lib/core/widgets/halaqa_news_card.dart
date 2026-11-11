@@ -92,7 +92,7 @@ class HalaqaNewsCard extends StatelessWidget {
                     child: AppText(
                       'عرض الكل',
                       style: AppTextStyles.labelMdBold.copyWith(
-                        color: AppColors.primary,
+                        color: AppColors.primaryDark,
                       ),
                     ),
                   ),
@@ -115,7 +115,7 @@ class HalaqaNewsCard extends StatelessWidget {
             label: AppText(
               'إضافة خبر',
               style: AppTextStyles.labelMdBold.copyWith(
-                color: AppColors.primary,
+                color: AppColors.primaryDark,
               ),
             ),
           ),
@@ -220,7 +220,7 @@ class _NewsRow extends StatelessWidget {
           ),
           if (!isLast) ...[
             SizedBox(height: 12.h),
-            Divider(height: 1, color: AppColors.outlineVariant),
+            Divider(height: 1, color: AppColors.cardBorder),
           ],
         ],
       ),

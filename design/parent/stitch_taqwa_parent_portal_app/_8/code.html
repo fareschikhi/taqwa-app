@@ -1,0 +1,443 @@
+<!DOCTYPE html>
+
+<html class="light" dir="rtl" lang="ar"><head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<title>ملف الطالب - مدرسة التقوى</title>
+<!-- Google Fonts for Arabic Typography -->
+<link href="https://fonts.googleapis.com" rel="preconnect"/>
+<link crossorigin="" href="https://fonts.gstatic.com" rel="preconnect"/>
+<link href="https://fonts.googleapis.com/css2?family=Cairo:wght@400;500;600;700;800&amp;family=Tajawal:wght@400;500;700&amp;display=swap" rel="stylesheet"/>
+<!-- Material Symbols Outlined -->
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<!-- Tailwind CSS with Forms and Container Queries -->
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<script id="tailwind-config">
+    tailwind.config = {
+      darkMode: "class",
+      theme: {
+        extend: {
+          "colors": {
+            "primary": "#006c00",
+            "outline": "#6e7b68",
+            "surface-tint": "#006e00",
+            "primary-fixed": "#84fd6e",
+            "on-background": "#131e13",
+            "secondary-container": "#97f4d9",
+            "on-secondary": "#ffffff",
+            "surface-dim": "#d0decc",
+            "surface-container-highest": "#d9e6d4",
+            "on-tertiary": "#ffffff",
+            "secondary-fixed": "#97f4d9",
+            "on-secondary-container": "#00725d",
+            "secondary-fixed-dim": "#7bd7bd",
+            "surface-bright": "#f0fdeb",
+            "primary-fixed-dim": "#68e054",
+            "surface-container-lowest": "#ffffff",
+            "tertiary-fixed-dim": "#becf6b",
+            "on-error-container": "#93000a",
+            "on-primary-fixed": "#002200",
+            "on-secondary-fixed": "#002019",
+            "on-secondary-fixed-variant": "#005141",
+            "tertiary-container": "#6c7b20",
+            "on-primary-container": "#f8ffef",
+            "tertiary-fixed": "#d9ec84",
+            "secondary": "#006b57",
+            "on-surface-variant": "#3e4a39",
+            "error-container": "#ffdad6",
+            "on-tertiary-container": "#fcffe0",
+            "surface-variant": "#d9e6d4",
+            "on-tertiary-fixed-variant": "#404c00",
+            "error": "#ba1a1a",
+            "on-primary-fixed-variant": "#005300",
+            "inverse-on-surface": "#e7f5e2",
+            "inverse-primary": "#68e054",
+            "tertiary": "#546204",
+            "surface-container-low": "#eaf8e5",
+            "inverse-surface": "#283327",
+            "on-tertiary-fixed": "#181e00",
+            "surface-container-high": "#dfecda",
+            "on-primary": "#ffffff",
+            "outline-variant": "#bdcbb5",
+            "background": "#f0fdeb",
+            "surface-container": "#e4f2e0",
+            "surface": "#f0fdeb",
+            "on-surface": "#131e13",
+            "primary-container": "#008800",
+            "on-error": "#ffffff"
+          },
+          "borderRadius": {
+            "DEFAULT": "0.25rem",
+            "lg": "0.5rem",
+            "xl": "0.75rem",
+            "2xl": "1.25rem",
+            "full": "9999px"
+          },
+          "spacing": {
+            "gutter": "1rem",
+            "space-md": "1rem",
+            "space-xl": "1.5rem",
+            "margin": "1rem",
+            "space-xs": "0.25rem",
+            "space-sm": "0.5rem",
+            "space-lg": "1.25rem"
+          },
+          "fontFamily": {
+            "headline-xl": ["Cairo", "sans-serif"],
+            "headline-lg": ["Cairo", "sans-serif"],
+            "headline-md": ["Cairo", "sans-serif"],
+            "headline-sm": ["Cairo", "sans-serif"],
+            "numeral-hero": ["Cairo", "sans-serif"],
+            "body-lg": ["Tajawal", "sans-serif"],
+            "body-md": ["Tajawal", "sans-serif"],
+            "body-sm": ["Tajawal", "sans-serif"],
+            "label-lg": ["Tajawal", "sans-serif"],
+            "label-md": ["Tajawal", "sans-serif"],
+            "label-sm": ["Tajawal", "sans-serif"]
+          },
+          "fontSize": {
+            "headline-xl": ["32px", { "lineHeight": "44px", "fontWeight": "700" }],
+            "headline-lg": ["26px", { "lineHeight": "38px", "fontWeight": "700" }],
+            "headline-md": ["20px", { "lineHeight": "30px", "fontWeight": "600" }],
+            "headline-sm": ["18px", { "lineHeight": "28px", "fontWeight": "600" }],
+            "numeral-hero": ["36px", { "lineHeight": "44px", "fontWeight": "700" }],
+            "body-lg": ["16px", { "lineHeight": "26px", "fontWeight": "500" }],
+            "body-md": ["14px", { "lineHeight": "22px", "fontWeight": "400" }],
+            "body-sm": ["12px", { "lineHeight": "18px", "fontWeight": "400" }],
+            "label-lg": ["14px", { "lineHeight": "20px", "fontWeight": "700" }],
+            "label-md": ["12px", { "lineHeight": "16px", "fontWeight": "500" }],
+            "label-sm": ["10px", { "lineHeight": "14px", "fontWeight": "500" }]
+          }
+        },
+      },
+    }
+  </script>
+<style>
+    .material-symbols-outlined {
+      font-variation-settings: 'FILL' 0, 'wght' 400, 'GRAD' 0, 'opsz' 24;
+      display: inline-block;
+      vertical-align: middle;
+      line-height: 1;
+    }
+    .material-symbols-outlined.fill {
+      font-variation-settings: 'FILL' 1;
+    }
+    body {
+      background-color: #F5F8F5;
+      font-family: 'Tajawal', sans-serif;
+      -webkit-tap-highlight-color: transparent;
+    }
+    .custom-card-shadow {
+      box-shadow: 0 4px 16px rgba(0, 40, 0, 0.05);
+    }
+  </style>
+<style>
+    body {
+      min-height: max(884px, 100dvh);
+    }
+  </style>
+  </head>
+<body class="text-on-surface bg-[#F5F8F5] antialiased min-h-screen flex justify-center selection:bg-secondary-container selection:text-on-secondary-container">
+<!-- Mobile Screen Container (390px viewport simulation) -->
+<main class="w-full max-w-[390px] min-h-screen pb-10 flex flex-col relative bg-[#F5F8F5]">
+<!-- 1. Top Bar (Task-focused Detail Navigation / No Bottom Bar Mandate) -->
+<header class="sticky top-0 z-30 w-full bg-surface-container-lowest/90 backdrop-blur-md px-space-md py-space-sm flex items-center justify-between shadow-sm">
+<div class="flex items-center gap-space-sm">
+<!-- Back Button pointing RIGHT for RTL -->
+<button aria-label="الرجوع إلى الصفحة السابقة" class="w-10 h-10 flex items-center justify-center rounded-xl bg-surface-container-low text-on-surface active:scale-95 transition-all duration-150 hover:bg-surface-container" onclick="history.back()" type="button">
+<span class="material-symbols-outlined text-[24px]" data-icon="arrow_forward">arrow_forward</span>
+</button>
+<h1 class="text-headline-md font-headline-md text-on-surface font-bold tracking-tight">
+          ملف الطالب
+        </h1>
+</div>
+<!-- Action badge / quick contact -->
+<button aria-label="مراسلة المعلم" class="w-10 h-10 flex items-center justify-center rounded-xl bg-surface-container-low text-primary active:scale-95 transition-all duration-150 hover:bg-surface-container" type="button">
+<span class="material-symbols-outlined text-[20px]" data-icon="chat_bubble">chat_bubble</span>
+</button>
+</header>
+<!-- Main Content Canvas -->
+<div class="px-space-md pt-4 space-y-4">
+<!-- 2. Student Identity Header Card -->
+<section class="bg-surface-container-lowest rounded-2xl border border-[#E3EAE3] p-5 custom-card-shadow flex flex-col items-center text-center relative overflow-hidden">
+<!-- Subtle Decorative Background Glow -->
+<div class="absolute -top-12 -right-12 w-32 h-32 bg-primary-container/10 rounded-full blur-2xl pointer-events-none"></div>
+<div class="absolute -bottom-12 -left-12 w-32 h-32 bg-secondary-container/20 rounded-full blur-2xl pointer-events-none"></div>
+<!-- Student Avatar Container -->
+<div class="relative mb-3">
+<div class="w-20 h-20 rounded-full p-1 bg-gradient-to-tr from-primary to-primary-fixed border border-white shadow-sm flex items-center justify-center overflow-hidden">
+<img class="w-full h-full object-cover rounded-full" data-alt="A gentle, well-lit studio portrait of an eight-year-old Arab boy named Yousef with a sincere smile, wearing clean traditional modest attire. The shot has soft natural lighting with a subtle pale mint and sage backdrop, creating a peaceful, dignified, and educational atmosphere reflecting calmness and scholastic devotion in an Islamic academy." src="https://lh3.googleusercontent.com/aida-public/AB6AXuAVgyOsph3IRD3giHSNyRhvMQsJdGMXrT02AnGFgr8el6PEjUe1YX_vT2GCdpfSqV-qK_BjltPzrdFrP901DrSgFQLyG5z3mMMEOhDd6b5Z_It01jb5UBMFBN4kY5b4jpJ3ym5RnRK0xeSE1hneoctSlhPJgZ1a-xBa2oPn50kbUNvuo31qsU9GvAbSNMO8kQEMG1xrJuLSnACBhY-sk5o9eiTEaP7ecUz-Kxx97Ze2"/>
+</div>
+<!-- Verified checkmark / active indicator -->
+<div class="absolute bottom-0 left-0 bg-primary text-white w-6 h-6 rounded-full flex items-center justify-center ring-2 ring-white">
+<span class="material-symbols-outlined text-[14px] fill" data-icon="verified" data-weight="fill">verified</span>
+</div>
+</div>
+<!-- Student Name & Halaqa -->
+<h2 class="text-headline-md font-headline-md text-on-surface font-bold tracking-tight">
+          يوسف بن سالم
+        </h2>
+<!-- Halaqa & Status Badges -->
+<div class="flex items-center gap-2 mt-2">
+<!-- Halaqa Pill -->
+<span class="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-secondary-container/40 text-on-secondary-container text-label-md font-label-md">
+<span class="material-symbols-outlined text-[16px]" data-icon="menu_book">menu_book</span>
+<span>حلقة الفرقان</span>
+</span>
+<!-- Student Status Badge (حاضر / طالب نشط) -->
+<span class="inline-flex items-center gap-1 px-3 py-1 rounded-full bg-[#E6F4E6] text-primary text-label-md font-label-md font-bold">
+<span class="w-2 h-2 rounded-full bg-primary animate-pulse"></span>
+<span>طالب نشط</span>
+</span>
+</div>
+</section>
+<!-- 3. Student Info 2x2 Bento Grid -->
+<section aria-label="معلومات التسجيل والحلقة" class="grid grid-cols-2 gap-3">
+<!-- Card 1: Teacher -->
+<div class="bg-surface-container-lowest p-3.5 rounded-2xl border border-[#E3EAE3] custom-card-shadow flex items-center gap-3">
+<div class="w-10 h-10 rounded-xl bg-[#E6F4E6] flex items-center justify-center text-primary flex-shrink-0">
+<span class="material-symbols-outlined text-[20px]" data-icon="person">person</span>
+</div>
+<div class="flex flex-col min-w-0">
+<span class="text-label-sm font-label-sm text-outline">المعلم</span>
+<span class="text-body-md font-body-md text-on-surface font-bold truncate">الأستاذ محمد</span>
+</div>
+</div>
+<!-- Card 2: Halaqa -->
+<div class="bg-surface-container-lowest p-3.5 rounded-2xl border border-[#E3EAE3] custom-card-shadow flex items-center gap-3">
+<div class="w-10 h-10 rounded-xl bg-secondary-container/30 flex items-center justify-center text-secondary flex-shrink-0">
+<span class="material-symbols-outlined text-[20px]" data-icon="menu_book">menu_book</span>
+</div>
+<div class="flex flex-col min-w-0">
+<span class="text-label-sm font-label-sm text-outline">الحلقة</span>
+<span class="text-body-md font-body-md text-on-surface font-bold truncate">حلقة الفرقان</span>
+</div>
+</div>
+<!-- Card 3: Join Date -->
+<div class="bg-surface-container-lowest p-3.5 rounded-2xl border border-[#E3EAE3] custom-card-shadow flex items-center gap-3">
+<div class="w-10 h-10 rounded-xl bg-surface-container-high flex items-center justify-center text-on-surface-variant flex-shrink-0">
+<span class="material-symbols-outlined text-[20px]" data-icon="calendar_today">calendar_today</span>
+</div>
+<div class="flex flex-col min-w-0">
+<span class="text-label-sm font-label-sm text-outline">تاريخ الالتحاق</span>
+<span class="text-body-md font-body-md text-on-surface font-bold">15/09/2025</span>
+</div>
+</div>
+<!-- Card 4: Level -->
+<div class="bg-surface-container-lowest p-3.5 rounded-2xl border border-[#E3EAE3] custom-card-shadow flex items-center gap-3">
+<div class="w-10 h-10 rounded-xl bg-tertiary-fixed/30 flex items-center justify-center text-tertiary flex-shrink-0">
+<span class="material-symbols-outlined text-[20px]" data-icon="trending_up">trending_up</span>
+</div>
+<div class="flex flex-col min-w-0">
+<span class="text-label-sm font-label-sm text-outline">المستوى</span>
+<span class="text-body-md font-body-md text-on-surface font-bold truncate">المستوى الثاني</span>
+</div>
+</div>
+</section>
+<!-- 5. Points Card (Placed right under student stats for immediate parent delight) -->
+<section class="bg-surface-container-lowest rounded-2xl border border-[#E3EAE3] p-5 custom-card-shadow">
+<div class="flex items-center justify-between mb-3">
+<div class="flex items-center gap-2">
+<div class="w-8 h-8 rounded-lg bg-[#FFF9E6] border border-[#FFE8A3] flex items-center justify-center text-[#C9A227]">
+<span class="material-symbols-outlined text-[20px] fill" data-icon="star" data-weight="fill">star</span>
+</div>
+<h3 class="text-headline-sm font-headline-sm text-on-surface font-bold">
+              نقاط التميز والتحفيز
+            </h3>
+</div>
+<span class="text-label-sm font-label-sm px-2.5 py-0.5 rounded-full bg-[#FFF9E6] text-[#B26A00] font-bold">
+            مرتبة متميزة
+          </span>
+</div>
+<div class="flex items-baseline justify-between py-2 border-b border-[#F0F4F0]">
+<div class="flex items-baseline gap-2">
+<span class="text-numeral-hero font-numeral-hero text-primary font-bold">320</span>
+<span class="text-label-lg font-label-lg text-outline">نقطة تشجيعية</span>
+</div>
+<div class="flex items-center text-[#C9A227] gap-0.5">
+<span class="material-symbols-outlined text-[18px] fill" data-icon="star" data-weight="fill">star</span>
+<span class="material-symbols-outlined text-[18px] fill" data-icon="star" data-weight="fill">star</span>
+<span class="material-symbols-outlined text-[18px] fill" data-icon="star" data-weight="fill">star</span>
+<span class="material-symbols-outlined text-[18px] fill" data-icon="star" data-weight="fill">star</span>
+<span class="material-symbols-outlined text-[18px] text-[#E3EAE3]" data-icon="star">star</span>
+</div>
+</div>
+<!-- Tappable Row: Points History / Rewards -->
+<button class="w-full pt-3 flex items-center justify-between group active:scale-[0.99] transition-all duration-150" type="button">
+<div class="flex items-center gap-2 text-on-surface">
+<span class="material-symbols-outlined text-[18px] text-primary" data-icon="military_tech">military_tech</span>
+<span class="text-body-md font-body-md font-medium text-on-surface-variant group-hover:text-primary transition-colors">
+              سجل النقاط والمكافآت
+            </span>
+</div>
+<!-- Left arrow indicating navigational depth in RTL -->
+<span class="material-symbols-outlined text-[18px] text-outline group-hover:text-primary transition-colors" data-icon="chevron_left">chevron_left</span>
+</button>
+</section>
+<!-- 4. Memorization Progress Card (القرآن الكريم والحديث الشريف) -->
+<section class="bg-surface-container-lowest rounded-2xl border border-[#E3EAE3] p-5 custom-card-shadow space-y-4">
+<!-- Main Card Header -->
+<div class="flex items-center justify-between pb-1 border-b border-[#F0F4F0]">
+<div class="flex items-center gap-2">
+<div class="w-8 h-8 rounded-lg bg-surface-container flex items-center justify-center text-primary">
+<span class="material-symbols-outlined text-[20px]" data-icon="auto_stories">auto_stories</span>
+</div>
+<h3 class="text-headline-sm font-headline-sm text-on-surface font-bold">
+              تقدم الحفظ
+            </h3>
+</div>
+<span class="text-label-sm font-label-sm text-outline">تحديث اليوم</span>
+</div>
+<!-- Section: Quran Progress -->
+<div class="space-y-3">
+<div class="flex items-center justify-between">
+<h4 class="text-body-lg font-body-lg text-on-surface font-bold flex items-center gap-1.5">
+<span>القرآن الكريم</span>
+<span class="text-label-sm font-label-sm font-normal text-outline">(أجزاء وسور)</span>
+</h4>
+<span class="text-label-md font-label-md font-bold text-primary">إجمالي: 33 سورة</span>
+</div>
+<!-- Quran Row 1: حفظ جديد -->
+<div class="space-y-1">
+<div class="flex justify-between text-body-sm font-body-sm">
+<div class="flex items-center gap-1.5">
+<span class="w-2.5 h-2.5 rounded-full bg-[#009000]"></span>
+<span class="text-on-surface-variant font-medium">حفظ جديد</span>
+</div>
+<span class="font-bold text-on-surface font-headline-sm text-label-md">18 سورة</span>
+</div>
+<!-- Horizontal Progress Bar in Primary Green #009000 -->
+<div class="w-full bg-[#E6F4E6] h-2.5 rounded-full overflow-hidden">
+<div class="bg-[#009000] h-full rounded-full transition-all duration-500" style="width: 55%;"></div>
+</div>
+</div>
+<!-- Quran Row 2: جمع -->
+<div class="space-y-1">
+<div class="flex justify-between text-body-sm font-body-sm">
+<div class="flex items-center gap-1.5">
+<span class="w-2.5 h-2.5 rounded-full bg-[#0E7C66]"></span>
+<span class="text-on-surface-variant font-medium">جمع ومطابقة</span>
+</div>
+<span class="font-bold text-on-surface font-headline-sm text-label-md">9 سور</span>
+</div>
+<!-- Horizontal Progress Bar in Secondary Teal #0E7C66 -->
+<div class="w-full bg-secondary-container/30 h-2.5 rounded-full overflow-hidden">
+<div class="bg-[#0E7C66] h-full rounded-full transition-all duration-500" style="width: 27%;"></div>
+</div>
+</div>
+<!-- Quran Row 3: مراجعة وضبط -->
+<div class="space-y-1">
+<div class="flex justify-between text-body-sm font-body-sm">
+<div class="flex items-center gap-1.5">
+<span class="w-2.5 h-2.5 rounded-full bg-[#66751A]"></span>
+<span class="text-on-surface-variant font-medium">مراجعة وضبط</span>
+</div>
+<span class="font-bold text-on-surface font-headline-sm text-label-md">6 سور</span>
+</div>
+<!-- Horizontal Progress Bar in Tertiary Olive #66751A -->
+<div class="w-full bg-tertiary-fixed/30 h-2.5 rounded-full overflow-hidden">
+<div class="bg-[#66751A] h-full rounded-full transition-all duration-500" style="width: 18%;"></div>
+</div>
+</div>
+</div>
+<!-- Subtle Separator -->
+<hr class="border-[#E3EAE3] my-2"/>
+<!-- Section: Hadith Progress -->
+<div class="space-y-3">
+<div class="flex items-center justify-between">
+<h4 class="text-body-lg font-body-lg text-on-surface font-bold flex items-center gap-1.5">
+<span>الحديث الشريف</span>
+<span class="text-label-sm font-label-sm font-normal text-outline">(الأربعون النووية)</span>
+</h4>
+<span class="text-label-md font-label-md font-bold text-secondary">إجمالي: 10 أحاديث</span>
+</div>
+<!-- Hadith Row 1: حفظ -->
+<div class="space-y-1">
+<div class="flex justify-between text-body-sm font-body-sm">
+<div class="flex items-center gap-1.5">
+<span class="w-2 h-2 rounded-full bg-[#009000]"></span>
+<span class="text-on-surface-variant font-medium">حفظ متقن</span>
+</div>
+<span class="font-bold text-on-surface font-headline-sm text-label-md">5 أحاديث</span>
+</div>
+<div class="w-full bg-[#E6F4E6] h-2 rounded-full overflow-hidden">
+<div class="bg-[#009000] h-full rounded-full transition-all duration-500" style="width: 50%;"></div>
+</div>
+</div>
+<!-- Hadith Row 2: جمع -->
+<div class="space-y-1">
+<div class="flex justify-between text-body-sm font-body-sm">
+<div class="flex items-center gap-1.5">
+<span class="w-2 h-2 rounded-full bg-[#0E7C66]"></span>
+<span class="text-on-surface-variant font-medium">جمع وشرح</span>
+</div>
+<span class="font-bold text-on-surface font-headline-sm text-label-md">3 أحاديث</span>
+</div>
+<div class="w-full bg-secondary-container/30 h-2 rounded-full overflow-hidden">
+<div class="bg-[#0E7C66] h-full rounded-full transition-all duration-500" style="width: 30%;"></div>
+</div>
+</div>
+<!-- Hadith Row 3: مراجعة وضبط -->
+<div class="space-y-1">
+<div class="flex justify-between text-body-sm font-body-sm">
+<div class="flex items-center gap-1.5">
+<span class="w-2 h-2 rounded-full bg-[#66751A]"></span>
+<span class="text-on-surface-variant font-medium">مراجعة وتسميع</span>
+</div>
+<span class="font-bold text-on-surface font-headline-sm text-label-md">2 حديث</span>
+</div>
+<div class="w-full bg-tertiary-fixed/30 h-2 rounded-full overflow-hidden">
+<div class="bg-[#66751A] h-full rounded-full transition-all duration-500" style="width: 20%;"></div>
+</div>
+</div>
+</div>
+</section>
+<!-- 6. Hadith Program Card -->
+<section class="bg-surface-container-lowest rounded-2xl border border-[#E3EAE3] p-5 custom-card-shadow space-y-3.5">
+<div class="flex items-center justify-between">
+<div class="flex items-center gap-2">
+<div class="w-8 h-8 rounded-lg bg-secondary-container/40 flex items-center justify-center text-secondary">
+<span class="material-symbols-outlined text-[20px]" data-icon="format_quote">format_quote</span>
+</div>
+<h3 class="text-headline-sm font-headline-sm text-on-surface font-bold">
+              برنامج الحديث النبوي
+            </h3>
+</div>
+<span class="inline-flex items-center gap-1 text-label-sm font-label-sm text-[#0E7C66] bg-[#0E7C66]/10 px-2 py-0.5 rounded-full font-medium">
+            مستمر بانتظام
+          </span>
+</div>
+<!-- Metric Tiles: Side-by-Side -->
+<div class="grid grid-cols-2 gap-3 pt-1">
+<!-- Tile 1 -->
+<div class="bg-surface-container-low p-3.5 rounded-xl border border-[#E3EAE3]/60 flex flex-col items-center text-center">
+<span class="text-label-sm font-label-sm text-outline mb-1">الأحاديث المحفوظة</span>
+<span class="text-headline-md font-headline-md text-primary font-bold">14 حديثاً</span>
+<span class="text-label-sm font-label-sm text-on-surface-variant mt-0.5">من أصل 40</span>
+</div>
+<!-- Tile 2 -->
+<div class="bg-surface-container-low p-3.5 rounded-xl border border-[#E3EAE3]/60 flex flex-col items-center text-center">
+<span class="text-label-sm font-label-sm text-outline mb-1">الصفحات المنجزة</span>
+<span class="text-headline-md font-headline-md text-secondary font-bold">6 صفحات</span>
+<span class="text-label-sm font-label-sm text-on-surface-variant mt-0.5">من المقرر السنوي</span>
+</div>
+</div>
+<!-- Reassuring Note / Teacher's Spiritual Encouragement -->
+<div class="bg-[#F5F8F5] p-3 rounded-xl border border-[#E3EAE3] flex items-start gap-2.5">
+<span class="material-symbols-outlined text-[20px] text-primary flex-shrink-0 mt-0.5" data-icon="verified_user">verified_user</span>
+<p class="text-body-sm font-body-sm text-on-surface-variant leading-relaxed">
+            ملاحظة المعلم: ما شاء الله، يوسف متميز في نطق مخارج الحروف وحريص على ضبط معاني الأحاديث الشريفة.
+          </p>
+</div>
+</section>
+<!-- Action Button: Send Parent Note / Download Report -->
+<section class="pt-2 pb-6 space-y-2">
+<button class="w-full h-12 bg-primary text-white rounded-xl text-label-lg font-label-lg font-bold flex items-center justify-center gap-2 active:bg-[#005A00] transition-all shadow-sm" type="button">
+<span class="material-symbols-outlined text-[20px]" data-icon="download">download</span>
+<span>تحميل تقرير المتابعة الشهري (PDF)</span>
+</button>
+</section>
+</div>
+</main>
+</body></html>

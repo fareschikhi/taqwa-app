@@ -1,0 +1,471 @@
+<!DOCTYPE html>
+
+<html dir="rtl" lang="ar"><head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<title>سجل الحضور التفصيلي - مدرسة التقوى</title>
+<!-- Google Fonts: Cairo & Tajawal -->
+<link href="https://fonts.googleapis.com" rel="preconnect"/>
+<link crossorigin="" href="https://fonts.gstatic.com" rel="preconnect"/>
+<link href="https://fonts.googleapis.com/css2?family=Cairo:wght@500;600;700;800&amp;family=Tajawal:wght@400;500;700&amp;display=swap" rel="stylesheet"/>
+<!-- Material Symbols Outlined -->
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<!-- Tailwind CSS v3 -->
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<script id="tailwind-config">
+    tailwind.config = {
+      darkMode: "class",
+      theme: {
+        extend: {
+          "colors": {
+            "on-background": "#131e13",
+            "error": "#ba1a1a",
+            "surface-container-high": "#dfecda",
+            "secondary": "#006b57",
+            "tertiary": "#546204",
+            "on-primary-fixed-variant": "#005300",
+            "surface-container-low": "#eaf8e5",
+            "primary-fixed-dim": "#68e054",
+            "on-tertiary": "#ffffff",
+            "inverse-surface": "#283327",
+            "outline-variant": "#bdcbb5",
+            "on-secondary-fixed": "#002019",
+            "on-error": "#ffffff",
+            "secondary-container": "#97f4d9",
+            "on-surface": "#131e13",
+            "on-surface-variant": "#3e4a39",
+            "surface-container-highest": "#d9e6d4",
+            "outline": "#6e7b68",
+            "on-secondary": "#ffffff",
+            "secondary-fixed": "#97f4d9",
+            "surface-container-lowest": "#ffffff",
+            "primary-container": "#008800",
+            "on-secondary-fixed-variant": "#005141",
+            "on-primary-fixed": "#002200",
+            "surface-bright": "#f0fdeb",
+            "background": "#f0fdeb",
+            "secondary-fixed-dim": "#7bd7bd",
+            "on-secondary-container": "#00725d",
+            "inverse-on-surface": "#e7f5e2",
+            "surface-variant": "#d9e6d4",
+            "tertiary-fixed-dim": "#becf6b",
+            "on-tertiary-container": "#fcffe0",
+            "surface": "#f0fdeb",
+            "on-primary-container": "#f8ffef",
+            "surface-tint": "#006e00",
+            "tertiary-container": "#6c7b20",
+            "primary": "#006c00",
+            "on-primary": "#ffffff",
+            "primary-fixed": "#84fd6e",
+            "surface-dim": "#d0decc",
+            "inverse-primary": "#68e054",
+            "surface-container": "#e4f2e0",
+            "on-error-container": "#93000a",
+            "tertiary-fixed": "#d9ec84",
+            "on-tertiary-fixed": "#181e00",
+            "error-container": "#ffdad6",
+            "on-tertiary-fixed-variant": "#404c00"
+          },
+          "borderRadius": {
+            "DEFAULT": "0.25rem",
+            "lg": "0.5rem",
+            "xl": "0.75rem",
+            "full": "9999px"
+          },
+          "spacing": {
+            "space-lg": "1.25rem",
+            "gutter": "1rem",
+            "space-sm": "0.5rem",
+            "space-md": "1rem",
+            "space-xl": "1.5rem",
+            "margin": "1rem",
+            "space-xs": "0.25rem"
+          },
+          "fontFamily": {
+            "numeral-hero": ["Cairo", "sans-serif"],
+            "label-md": ["Tajawal", "sans-serif"],
+            "body-md": ["Tajawal", "sans-serif"],
+            "label-lg": ["Tajawal", "sans-serif"],
+            "headline-lg": ["Cairo", "sans-serif"],
+            "headline-lg-mobile": ["Cairo", "sans-serif"],
+            "body-lg": ["Tajawal", "sans-serif"],
+            "headline-md": ["Cairo", "sans-serif"],
+            "headline-xl": ["Cairo", "sans-serif"],
+            "label-sm": ["Tajawal", "sans-serif"],
+            "headline-sm": ["Cairo", "sans-serif"],
+            "body-sm": ["Tajawal", "sans-serif"]
+          },
+          "fontSize": {
+            "numeral-hero": ["36px", { "lineHeight": "44px", "fontWeight": "700" }],
+            "label-md": ["12px", { "lineHeight": "16px", "fontWeight": "500" }],
+            "body-md": ["14px", { "lineHeight": "22px", "fontWeight": "400" }],
+            "label-lg": ["14px", { "lineHeight": "20px", "fontWeight": "700" }],
+            "headline-lg": ["26px", { "lineHeight": "38px", "fontWeight": "700" }],
+            "headline-lg-mobile": ["22px", { "lineHeight": "32px", "fontWeight": "700" }],
+            "body-lg": ["16px", { "lineHeight": "26px", "fontWeight": "500" }],
+            "headline-md": ["20px", { "lineHeight": "30px", "fontWeight": "600" }],
+            "headline-xl": ["32px", { "lineHeight": "44px", "fontWeight": "700" }],
+            "label-sm": ["10px", { "lineHeight": "14px", "fontWeight": "500" }],
+            "headline-sm": ["18px", { "lineHeight": "28px", "fontWeight": "600" }],
+            "body-sm": ["12px", { "lineHeight": "18px", "fontWeight": "400" }]
+          }
+        }
+      }
+    };
+  </script>
+<style>
+    body {
+      background-color: #F5F8F5;
+      font-family: 'Tajawal', sans-serif;
+      -webkit-font-smoothing: antialiased;
+    }
+    .custom-card-shadow {
+      box-shadow: 0 4px 16px rgba(0, 40, 0, 0.05);
+    }
+    .material-symbols-outlined {
+      font-variation-settings: 'FILL' 0, 'wght' 400, 'GRAD' 0, 'opsz' 24;
+    }
+    .fill-icon {
+      font-variation-settings: 'FILL' 1, 'wght' 400, 'GRAD' 0, 'opsz' 24;
+    }
+  </style>
+<style>
+    body {
+      min-height: max(884px, 100dvh);
+    }
+  </style>
+  </head>
+<body class="text-on-surface bg-[#F5F8F5] min-h-screen flex justify-center selection:bg-surface-container selection:text-primary">
+<!-- Mobile Device Shell (390px viewport container) -->
+<div class="w-full max-w-[390px] min-h-screen bg-[#F5F8F5] flex flex-col pb-28 relative">
+<!-- Top Bar Navigation (Shared Component Anchor) -->
+<header class="w-full px-space-md pt-3 pb-2 bg-surface-container-lowest sticky top-0 z-30 shadow-sm flex items-center justify-between">
+<div class="flex items-center gap-2">
+<div class="w-9 h-9 rounded-full overflow-hidden border border-outline-variant bg-surface-container">
+<img class="w-full h-full object-cover" data-alt="A dignified portrait photo of an Arab parent smiling warmly, set against a bright minimalist studio background with soft natural lighting and calm muted green tones." src="https://lh3.googleusercontent.com/aida-public/AB6AXuB_Oc-9uL1mL2fnN7umr-qxcttK1NIhJ0C-As2qxgHBB9bw2ZXNH2b4Q8PTs9IS7rVZUKJ8rdTjw8euEcjejAm6DcsNI6UYQLYoFTLb4Bc-PoOJD1QLMnKcPxV2lmG6W8UrZTHOI_WfX5E64DavKr2gImTqIKQEsW6ghoyTo-qQoxllvf2Udh_dMMwmI-b0iV9kGWhkvgQaSDx4j9oJPvT9DZi5oj49AHML5QIxgeKx"/>
+</div>
+<div class="flex flex-col">
+<span class="text-headline-sm font-headline-sm font-bold text-primary leading-tight">مدرسة التقوى</span>
+<span class="text-label-sm font-label-sm text-on-surface-variant">الفرع الرئيسي - حلقة الإتقان</span>
+</div>
+</div>
+<!-- Top Action: chat icon with unread badge -->
+<button aria-label="محادثة الإدارة" class="relative w-10 h-10 rounded-full bg-surface-container-low flex items-center justify-center text-primary active:scale-95 transition-all">
+<span class="material-symbols-outlined text-[22px]">chat_bubble</span>
+<span class="absolute top-2 left-2 w-2.5 h-2.5 bg-error rounded-full ring-2 ring-surface-container-lowest"></span>
+</button>
+</header>
+<!-- Main Content Canvas -->
+<main class="flex-1 px-space-md flex flex-col gap-space-md pt-4">
+<!-- Child Switcher Pills -->
+<section aria-label="اختيار الطالب" class="flex items-center gap-2">
+<!-- Active Child: يوسف -->
+<button class="flex items-center gap-2 px-3 py-1.5 rounded-full bg-[#E6F4E6] border border-[#009000]/25 text-[#005A00] transition-all shadow-xs">
+<div class="w-6 h-6 rounded-full overflow-hidden ring-1 ring-[#009000]/40">
+<img class="w-full h-full object-cover" data-alt="A portrait of a young Arab boy student aged nine wearing traditional clean white thobe, smiling softly in a brightly lit modern Quranic school setting with gentle green educational decor." src="https://lh3.googleusercontent.com/aida-public/AB6AXuCHzUlbu2lZ2jyOupaJHyj4mK8hBt7Fo3bHHiRWcvvWxpv3CHXawaUnqrVS1Ol9hkYtLq3uW1qTTKiMfi29FjB5EUjF5RIyoFivp-gYzAkiDlNpQ8y60o6_QekGeUp_NN8ucEexYMy06immDIW8h1PZgtL_kZasEUOtdtoO6Kn5_tBek45ix-pz6CjSBcyJAZm-YfK5E-7Bsc0vsCmtn1UN6uPcetDttcpEN_5RqMfN"/>
+</div>
+<span class="text-label-lg font-label-lg font-bold">يوسف</span>
+<span class="w-2 h-2 rounded-full bg-[#009000]"></span>
+</button>
+<!-- Inactive Child: مريم -->
+<button class="flex items-center gap-2 px-3 py-1.5 rounded-full bg-surface-container-lowest border border-[#E3EAE3] text-[#5A6A5A] hover:bg-surface-container-low transition-all">
+<div class="w-6 h-6 rounded-full overflow-hidden opacity-70">
+<img class="w-full h-full object-cover" data-alt="A sweet portrait of a young Arab elementary school girl wearing a light modest scarf, soft daylight illumination, in an elegant educational Islamic center atmosphere." src="https://lh3.googleusercontent.com/aida-public/AB6AXuAlnOi38lVzU4bz5UVUUmcwe0PnGyH2JOB5fDonbIe1lmC_7oEX2xXalLoXzbnWRtjFW7Uova6LYcKWxr7HjhwmgIt6Co0b75IABU3KYhpY4pr2c-ryCKVK2gVcMUvBXKapCIHtS_nTr6ofTU29QrS-4se9bIwGH0SpUzDz315xcm3W08sdfiTBN4sUXMhBzc6w4rGUPiUl5pco9V7MMyMQjw264MnJE4p1MIxrdBiE"/>
+</div>
+<span class="text-label-md font-label-md font-medium">مريم</span>
+</button>
+</section>
+<!-- Page Headline Section -->
+<section class="flex flex-col gap-0.5">
+<h1 class="text-headline-lg-mobile font-headline-lg-mobile font-bold text-[#152015] tracking-tight">سجل الحضور التفصيلي</h1>
+<p class="text-body-md font-body-md text-[#5A6A5A]">سجلات حضور يوسف وغيابه للشهر الحالي.</p>
+</section>
+<!-- Section: إحصائيات هذا الشهر -->
+<section class="flex flex-col gap-3">
+<div class="flex items-center justify-between">
+<h2 class="text-headline-sm font-headline-sm font-bold text-[#152015]">إحصائيات هذا الشهر</h2>
+<span class="text-label-md font-label-md text-primary bg-[#E6F4E6] px-2.5 py-0.5 rounded-full font-bold">نوفمبر 2026</span>
+</div>
+<!-- 2 Stat Tiles Side-by-Side -->
+<div class="grid grid-cols-2 gap-3">
+<!-- Stat: أيام الحضور -->
+<div class="bg-surface-container-lowest rounded-[20px] p-4 border border-[#E3EAE3] custom-card-shadow flex flex-col justify-between">
+<div class="flex items-center justify-between mb-2">
+<span class="text-label-md font-label-md font-medium text-[#5A6A5A]">أيام الحضور</span>
+<div class="w-7 h-7 rounded-full bg-[#E6F4E6] flex items-center justify-center text-[#009000]">
+<span class="material-symbols-outlined text-[18px]">check_circle</span>
+</div>
+</div>
+<div class="flex items-baseline gap-1">
+<span class="text-numeral-hero font-numeral-hero text-[#009000] leading-none">12</span>
+<span class="text-body-sm font-body-sm text-[#5A6A5A]">حصة</span>
+</div>
+<div class="mt-2 w-full bg-surface-container h-1.5 rounded-full overflow-hidden">
+<div class="bg-[#009000] h-full rounded-full" style="width: 85%;"></div>
+</div>
+</div>
+<!-- Stat: أيام الغياب -->
+<div class="bg-surface-container-lowest rounded-[20px] p-4 border border-[#E3EAE3] custom-card-shadow flex flex-col justify-between">
+<div class="flex items-center justify-between mb-2">
+<span class="text-label-md font-label-md font-medium text-[#5A6A5A]">أيام الغياب</span>
+<div class="w-7 h-7 rounded-full bg-[#FFDAD6] flex items-center justify-center text-[#C62828]">
+<span class="material-symbols-outlined text-[18px]">cancel</span>
+</div>
+</div>
+<div class="flex items-baseline gap-1">
+<span class="text-numeral-hero font-numeral-hero text-[#C62828] leading-none">2</span>
+<span class="text-body-sm font-body-sm text-[#5A6A5A]">حصة</span>
+</div>
+<div class="mt-2 w-full bg-surface-container h-1.5 rounded-full overflow-hidden">
+<div class="bg-[#C62828] h-full rounded-full" style="width: 15%;"></div>
+</div>
+</div>
+</div>
+<!-- Full-width card: أيام حضور متتالية -->
+<div class="bg-surface-container-lowest rounded-[20px] p-4 border border-[#E3EAE3] custom-card-shadow flex items-center justify-between">
+<div class="flex items-center gap-3">
+<div class="w-12 h-12 rounded-2xl bg-gradient-to-br from-[#FEF7DE] to-[#FCEEC0] border border-[#C9A227]/30 flex items-center justify-center text-[#C9A227]">
+<span class="material-symbols-outlined text-[28px] fill-icon">local_fire_department</span>
+</div>
+<div class="flex flex-col">
+<span class="text-label-lg font-label-lg font-bold text-[#152015]">أيام حضور متتالية</span>
+<span class="text-body-sm font-body-sm text-[#5A6A5A]">أيام التأخر تُحتسب ضمن الحضور.</span>
+</div>
+</div>
+<div class="flex items-baseline gap-1 bg-[#F5F8F5] px-3 py-1.5 rounded-xl border border-[#E3EAE3]">
+<span class="text-numeral-hero font-numeral-hero text-[#009000] leading-none">5</span>
+<span class="text-label-sm font-label-sm font-bold text-[#006c00]">أيام</span>
+</div>
+</div>
+</section>
+<!-- Calendar Strip Section -->
+<section class="bg-surface-container-lowest rounded-[20px] p-space-lg border border-[#E3EAE3] custom-card-shadow flex flex-col gap-3">
+<div class="flex items-center justify-between">
+<div class="flex items-center gap-2">
+<span class="material-symbols-outlined text-primary text-[20px]">calendar_month</span>
+<span class="text-headline-sm font-headline-sm font-bold text-[#152015]">نوفمبر 2026</span>
+</div>
+<div class="flex items-center gap-1">
+<button aria-label="الشهر السابق" class="w-7 h-7 rounded-lg border border-[#E3EAE3] flex items-center justify-center text-[#5A6A5A] hover:bg-surface-container-low">
+<span class="material-symbols-outlined text-[16px]">chevron_right</span>
+</button>
+<button aria-label="الشهر التالي" class="w-7 h-7 rounded-lg border border-[#E3EAE3] flex items-center justify-center text-[#5A6A5A] hover:bg-surface-container-low">
+<span class="material-symbols-outlined text-[16px]">chevron_left</span>
+</button>
+</div>
+</div>
+<!-- Days of week bar -->
+<div class="grid grid-cols-7 text-center text-label-sm font-label-sm font-bold text-[#5A6A5A] border-b border-[#F0F4F0] pb-2">
+<span>سبت</span>
+<span>أحد</span>
+<span>اثنين</span>
+<span>ثلاثاء</span>
+<span>أربعاء</span>
+<span>خميس</span>
+<span>جمعة</span>
+</div>
+<!-- Visual Mini Calendar Days Grid (Sample focused 2-week active range) -->
+<div class="grid grid-cols-7 gap-y-2 text-center items-center">
+<!-- Row 1 -->
+<div class="flex flex-col items-center py-1">
+<span class="text-body-sm font-body-sm text-[#889988]">1</span>
+<span class="w-1.5 h-1.5 rounded-full mt-1 bg-transparent"></span>
+</div>
+<div class="flex flex-col items-center py-1">
+<span class="text-body-sm font-body-sm font-bold text-[#152015]">2</span>
+<span class="w-2 h-2 rounded-full mt-1 bg-[#009000]" title="حاضر"></span>
+</div>
+<div class="flex flex-col items-center py-1">
+<span class="text-body-sm font-body-sm font-bold text-[#152015]">3</span>
+<span class="w-2 h-2 rounded-full mt-1 bg-[#1F6FB2]" title="معذور"></span>
+</div>
+<div class="flex flex-col items-center py-1">
+<span class="text-body-sm font-body-sm font-bold text-[#152015]">4</span>
+<span class="w-2 h-2 rounded-full mt-1 bg-[#B26A00]" title="متأخر"></span>
+</div>
+<div class="flex flex-col items-center py-1 bg-[#E6F4E6] rounded-xl border border-[#009000]/30">
+<span class="text-body-sm font-body-sm font-bold text-[#006c00]">5</span>
+<span class="w-2 h-2 rounded-full mt-1 bg-[#009000]" title="حاضر - اليوم"></span>
+</div>
+<div class="flex flex-col items-center py-1">
+<span class="text-body-sm font-body-sm text-[#889988]">6</span>
+<span class="w-1.5 h-1.5 rounded-full mt-1 bg-transparent"></span>
+</div>
+<div class="flex flex-col items-center py-1">
+<span class="text-body-sm font-body-sm text-[#889988]">7</span>
+<span class="w-1.5 h-1.5 rounded-full mt-1 bg-transparent"></span>
+</div>
+<!-- Row 2 -->
+<div class="flex flex-col items-center py-1">
+<span class="text-body-sm font-body-sm text-[#889988]">8</span>
+<span class="w-1.5 h-1.5 rounded-full mt-1 bg-transparent"></span>
+</div>
+<div class="flex flex-col items-center py-1">
+<span class="text-body-sm font-body-sm font-medium text-[#152015]">9</span>
+<span class="w-2 h-2 rounded-full mt-1 bg-[#009000]"></span>
+</div>
+<div class="flex flex-col items-center py-1">
+<span class="text-body-sm font-body-sm font-medium text-[#152015]">10</span>
+<span class="w-2 h-2 rounded-full mt-1 bg-[#C62828]"></span>
+</div>
+<div class="flex flex-col items-center py-1">
+<span class="text-body-sm font-body-sm font-medium text-[#152015]">11</span>
+<span class="w-2 h-2 rounded-full mt-1 bg-[#009000]"></span>
+</div>
+<div class="flex flex-col items-center py-1">
+<span class="text-body-sm font-body-sm font-medium text-[#152015]">12</span>
+<span class="w-2 h-2 rounded-full mt-1 bg-[#009000]"></span>
+</div>
+<div class="flex flex-col items-center py-1">
+<span class="text-body-sm font-body-sm text-[#889988]">13</span>
+<span class="w-1.5 h-1.5 rounded-full mt-1 bg-transparent"></span>
+</div>
+<div class="flex flex-col items-center py-1">
+<span class="text-body-sm font-body-sm text-[#889988]">14</span>
+<span class="w-1.5 h-1.5 rounded-full mt-1 bg-transparent"></span>
+</div>
+</div>
+<!-- Legend (4 Colors) -->
+<div class="pt-2 border-t border-[#F0F4F0] flex items-center justify-between text-label-sm font-label-sm text-[#3E4A39]">
+<div class="flex items-center gap-1.5">
+<span class="w-2 h-2 rounded-full bg-[#009000]"></span>
+<span>حاضر</span>
+</div>
+<div class="flex items-center gap-1.5">
+<span class="w-2 h-2 rounded-full bg-[#B26A00]"></span>
+<span>متأخر</span>
+</div>
+<div class="flex items-center gap-1.5">
+<span class="w-2 h-2 rounded-full bg-[#1F6FB2]"></span>
+<span>معذور</span>
+</div>
+<div class="flex items-center gap-1.5">
+<span class="w-2 h-2 rounded-full bg-[#C62828]"></span>
+<span>غائب</span>
+</div>
+</div>
+</section>
+<!-- Section: السجل الزمني -->
+<section class="flex flex-col gap-3">
+<div class="flex items-center justify-between">
+<h2 class="text-headline-sm font-headline-sm font-bold text-[#152015]">السجل الزمني</h2>
+<span class="text-label-md font-label-md text-[#5A6A5A]">آخر الحصص المسجلة</span>
+</div>
+<!-- Attendance Records List -->
+<div class="flex flex-col gap-2.5">
+<!-- Record 1: حاضر -->
+<div class="bg-surface-container-lowest rounded-[20px] p-3.5 border border-[#E3EAE3] custom-card-shadow flex items-center justify-between">
+<div class="flex items-center gap-3">
+<div class="w-10 h-10 rounded-full bg-[#009000]/10 flex items-center justify-center text-[#009000]">
+<span class="material-symbols-outlined text-[22px] fill-icon">check_circle</span>
+</div>
+<div class="flex flex-col">
+<div class="flex items-center gap-2">
+<span class="text-label-lg font-label-lg font-bold text-[#152015]">حاضر</span>
+<span class="px-2 py-0.5 rounded-full text-[10px] font-bold bg-[#E6F4E6] text-[#009000]">في الموعد</span>
+</div>
+<span class="text-body-sm font-body-sm text-[#5A6A5A]">سورة مريم • تسميع مقرر ممتاز</span>
+</div>
+</div>
+<div class="text-left flex flex-col items-end">
+<span class="text-label-md font-label-md font-bold text-[#152015]">الأربعاء</span>
+<span class="text-label-sm font-label-sm text-[#5A6A5A]">05/11/2026</span>
+</div>
+</div>
+<!-- Record 2: متأخر -->
+<div class="bg-surface-container-lowest rounded-[20px] p-3.5 border border-[#E3EAE3] custom-card-shadow flex items-center justify-between">
+<div class="flex items-center gap-3">
+<div class="w-10 h-10 rounded-full bg-[#B26A00]/12 flex items-center justify-center text-[#B26A00]">
+<span class="material-symbols-outlined text-[22px]">schedule</span>
+</div>
+<div class="flex flex-col">
+<div class="flex items-center gap-2">
+<span class="text-label-lg font-label-lg font-bold text-[#152015]">متأخر</span>
+<span class="px-2 py-0.5 rounded-full text-[10px] font-bold bg-[rgba(178,106,0,0.12)] text-[#B26A00]">15 دقيقة</span>
+</div>
+<span class="text-body-sm font-body-sm text-[#5A6A5A]">وصل عند 04:45 مساءً بعد الإشعار</span>
+</div>
+</div>
+<div class="text-left flex flex-col items-end">
+<span class="text-label-md font-label-md font-bold text-[#152015]">الثلاثاء</span>
+<span class="text-label-sm font-label-sm text-[#5A6A5A]">04/11/2026</span>
+</div>
+</div>
+<!-- Record 3: عذر مقبول -->
+<div class="bg-surface-container-lowest rounded-[20px] p-3.5 border border-[#E3EAE3] custom-card-shadow flex items-center justify-between">
+<div class="flex items-center gap-3">
+<div class="w-10 h-10 rounded-full bg-[#1F6FB2]/12 flex items-center justify-center text-[#1F6FB2]">
+<span class="material-symbols-outlined text-[22px]">event_busy</span>
+</div>
+<div class="flex flex-col">
+<div class="flex items-center gap-2">
+<span class="text-label-lg font-label-lg font-bold text-[#152015]">غياب بعذر مقبول</span>
+<span class="px-2 py-0.5 rounded-full text-[10px] font-bold bg-[rgba(31,111,178,0.12)] text-[#1F6FB2]">معذور</span>
+</div>
+<span class="text-body-sm font-body-sm text-[#5A6A5A]">إشعار مسبق من ولي الأمر (ظرف عائلي)</span>
+</div>
+</div>
+<div class="text-left flex flex-col items-end">
+<span class="text-label-md font-label-md font-bold text-[#152015]">الاثنين</span>
+<span class="text-label-sm font-label-sm text-[#5A6A5A]">03/11/2026</span>
+</div>
+</div>
+<!-- Record 4: غائب -->
+<div class="bg-surface-container-lowest rounded-[20px] p-3.5 border border-[#E3EAE3] custom-card-shadow flex items-center justify-between">
+<div class="flex items-center gap-3">
+<div class="w-10 h-10 rounded-full bg-[#C62828]/12 flex items-center justify-center text-[#C62828]">
+<span class="material-symbols-outlined text-[22px]">close</span>
+</div>
+<div class="flex flex-col">
+<div class="flex items-center gap-2">
+<span class="text-label-lg font-label-lg font-bold text-[#C62828]">غائب</span>
+<span class="px-2 py-0.5 rounded-full text-[10px] font-bold bg-[#FFDAD6] text-[#C62828]">بدون عذر</span>
+</div>
+<span class="text-body-sm font-body-sm text-[#5A6A5A]">لم يحضر حلقة المساء ولم يُرسل عذر</span>
+</div>
+</div>
+<div class="text-left flex flex-col items-end">
+<span class="text-label-md font-label-md font-bold text-[#152015]">الأحد</span>
+<span class="text-label-sm font-label-sm text-[#5A6A5A]">02/11/2026</span>
+</div>
+</div>
+</div>
+<!-- Action Button: عرض السجل الأقدم -->
+<button class="w-full h-12 mt-1 rounded-xl border border-[#E3EAE3] bg-surface-container-lowest hover:bg-surface-container-low text-[#152015] flex items-center justify-center gap-2 text-label-lg font-label-lg font-bold transition-all active:scale-[0.98]">
+<span class="material-symbols-outlined text-[20px] text-[#5A6A5A]">history</span>
+<span>عرض السجل الأقدم (14)</span>
+</button>
+</section>
+</main>
+<!-- Bottom Navigation Bar (Semantic Shell matching exact 5-tab bar) -->
+<nav class="fixed bottom-0 left-0 right-0 max-w-[390px] mx-auto z-50 bg-surface-container-lowest shadow-lg py-1 px-2 flex flex-row items-center justify-between">
+<!-- Tab 1: الرئيسية (Inactive) -->
+<a class="flex flex-col items-center justify-center text-on-surface-variant px-2 py-1.5 min-w-[62px] active:scale-95 transition-all" href="#">
+<span class="material-symbols-outlined text-[22px]">home</span>
+<span class="text-label-sm font-label-sm mt-0.5">الرئيسية</span>
+</a>
+<!-- Tab 2: المقرأة / التسميع (Inactive) -->
+<a class="flex flex-col items-center justify-center text-on-surface-variant px-2 py-1.5 min-w-[62px] active:scale-95 transition-all" href="#">
+<span class="material-symbols-outlined text-[22px]">menu_book</span>
+<span class="text-label-sm font-label-sm mt-0.5">المقرأة</span>
+</a>
+<!-- Tab 3: الحضور (ACTIVE) -->
+<a class="flex flex-col items-center justify-center bg-[#E6F4E6] text-[#005A00] rounded-xl px-3 py-1 font-bold min-w-[68px] active:scale-95 transition-all" href="#">
+<span class="material-symbols-outlined text-[22px] fill-icon">event</span>
+<span class="text-label-sm font-label-sm mt-0.5">الحضور</span>
+</a>
+<!-- Tab 4: ملاحظات / الرسائل (Inactive with badge) -->
+<a class="flex flex-col items-center justify-center text-on-surface-variant px-2 py-1.5 min-w-[62px] relative active:scale-95 transition-all" href="#">
+<span class="material-symbols-outlined text-[22px]">forum</span>
+<span class="absolute top-1 right-3.5 bg-error text-white text-[9px] font-bold w-4 h-4 rounded-full flex items-center justify-center">3</span>
+<span class="text-label-sm font-label-sm mt-0.5">ملاحظات</span>
+</a>
+<!-- Tab 5: حسابي / الحساب (Inactive) -->
+<a class="flex flex-col items-center justify-center text-on-surface-variant px-2 py-1.5 min-w-[62px] active:scale-95 transition-all" href="#">
+<span class="material-symbols-outlined text-[22px]">person</span>
+<span class="text-label-sm font-label-sm mt-0.5">الحساب</span>
+</a>
+</nav>
+</div>
+</body></html>

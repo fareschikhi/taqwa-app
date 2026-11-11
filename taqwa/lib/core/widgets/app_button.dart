@@ -195,4 +195,3 @@ class _GradientButton extends StatelessWidget {
     );
   }
 }
-

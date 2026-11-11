@@ -368,7 +368,7 @@ class _StudentListTile extends StatelessWidget {
         borderRadius: BorderRadius.circular(AppConstants.radiusXl),
         boxShadow: const [
           BoxShadow(
-            color: Color.fromRGBO(18, 52, 59, 0.04),
+            color: Color.fromRGBO(0, 40, 0, 0.04),
             blurRadius: 20,
             offset: Offset(0, 4),
           ),

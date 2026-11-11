@@ -56,9 +56,7 @@ class PointsBalanceCard extends StatelessWidget {
             ],
           ),
           SizedBox(height: 12.h),
-          _TotalPill(
-            total: shownPoints(summary.total, whole: wholeNumbers),
-          ),
+          _TotalPill(total: shownPoints(summary.total, whole: wholeNumbers)),
           if (recent.isNotEmpty) ...[
             SizedBox(height: 16.h),
             Container(height: 1, color: AppColors.outlineVariant),

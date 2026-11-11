@@ -41,9 +41,7 @@ class AppText extends StatelessWidget {
   final String? semanticsLabel;
 
   /// Arabic, Arabic Supplement, Arabic Extended-A, and the presentation forms.
-  static final RegExp _rtlScript = RegExp(
-    r'[؀-ۿݐ-ݿࢠ-ࣿﭐ-﷿ﹰ-﻿]',
-  );
+  static final RegExp _rtlScript = RegExp(r'[؀-ۿݐ-ݿࢠ-ࣿﭐ-﷿ﹰ-﻿]');
 
   /// Exposed so callers and tests can ask the same question the widget asks.
   static TextDirection directionOf(String text) =>

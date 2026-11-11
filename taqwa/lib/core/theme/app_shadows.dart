@@ -8,16 +8,16 @@ class AppShadows {
   /// Level 1 - Cards/Containers: "whisper shadow"
   static const List<BoxShadow> card = [
     BoxShadow(
-      color: Color.fromRGBO(18, 52, 59, 0.04),
+      color: Color.fromRGBO(0, 40, 0, 0.06),
       offset: Offset(0, 4),
-      blurRadius: 20,
+      blurRadius: 16,
     ),
   ];
 
   /// Level 1 - Cards hover state
   static const List<BoxShadow> cardHover = [
     BoxShadow(
-      color: Color.fromRGBO(18, 52, 59, 0.08),
+      color: Color.fromRGBO(0, 40, 0, 0.08),
       offset: Offset(0, 12),
       blurRadius: 32,
     ),
@@ -26,7 +26,7 @@ class AppShadows {
   /// Level 2 - Popovers/Modals
   static const List<BoxShadow> modal = [
     BoxShadow(
-      color: Color.fromRGBO(18, 52, 59, 0.08),
+      color: Color.fromRGBO(0, 40, 0, 0.08),
       offset: Offset(0, 12),
       blurRadius: 32,
     ),
@@ -35,19 +35,18 @@ class AppShadows {
   /// Bottom navigation bar shadow
   static const List<BoxShadow> bottomNav = [
     BoxShadow(
-      color: Color.fromRGBO(18, 52, 59, 0.04),
+      color: Color.fromRGBO(0, 40, 0, 0.04),
       offset: Offset(0, -4),
-      blurRadius: 20,
+      blurRadius: 16,
     ),
   ];
 
   /// Subtle shadow for inputs/buttons
   static const List<BoxShadow> subtle = [
     BoxShadow(
-      color: Color.fromRGBO(18, 52, 59, 0.02),
+      color: Color.fromRGBO(0, 40, 0, 0.02),
       offset: Offset(0, 2),
       blurRadius: 8,
     ),
   ];
 }
-

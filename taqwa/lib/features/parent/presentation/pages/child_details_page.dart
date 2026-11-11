@@ -194,7 +194,8 @@ class _ChildDetailsPageState extends ConsumerState<ChildDetailsPage> {
                         HadithProgramCard(
                           books: hadithBooks,
                           hadithsDone: _progress?['totalHadithsDone'] as num?,
-                          hadithPagesDone: _progress?['totalHadithPagesDone'] as num?,
+                          hadithPagesDone:
+                              _progress?['totalHadithPagesDone'] as num?,
                           title: 'برنامج الحديث',
                         ),
                       ],
@@ -271,11 +272,7 @@ class _ChildDetailsPageState extends ConsumerState<ChildDetailsPage> {
     return [
       _CountRow(label: 'حفظ', count: newCount, color: AppColors.primary),
       SizedBox(height: 10.h),
-      _CountRow(
-        label: 'جمع',
-        count: minorCount,
-        color: AppColors.secondary,
-      ),
+      _CountRow(label: 'جمع', count: minorCount, color: AppColors.secondary),
       SizedBox(height: 10.h),
       _CountRow(
         label: 'مراجعة وضبط',
@@ -384,7 +381,7 @@ class _InfoBox extends StatelessWidget {
         borderRadius: BorderRadius.circular(AppConstants.radiusMd),
         boxShadow: const [
           BoxShadow(
-            color: Color.fromRGBO(18, 52, 59, 0.04),
+            color: Color.fromRGBO(0, 40, 0, 0.04),
             blurRadius: 12,
             offset: Offset(0, 2),
           ),

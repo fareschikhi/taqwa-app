@@ -14,10 +14,10 @@ String formatWirdTime(TimeOfDay time) {
   return '$hour:$minute ${time.period == DayPeriod.am ? 'ص' : 'م'}';
 }
 
-/// وردك اليومي on every dashboard: switch the daily reminder on or off and
+/// وردك اليومي on the dashboards: switch the daily reminder on or off and
 /// pick the hour it arrives.
 ///
-/// Every role gets it — a teacher or a parent keeps a wird too — and it owns
+/// Every role but parents gets it (see offersWirdReminder), and it owns
 /// its own state, because the setting belongs to the phone rather than to
 /// anything the dashboard loads. Dashboards check [isAvailable] first so the
 /// web build, which cannot schedule notifications, shows no dead switch.
@@ -257,7 +257,11 @@ class _WirdReminderCardState extends State<WirdReminderCard> {
               padding: EdgeInsets.symmetric(horizontal: 12.w, vertical: 10.h),
               child: Row(
                 children: [
-                  Icon(Icons.edit_outlined, size: 18.w, color: AppColors.primary),
+                  Icon(
+                    Icons.edit_outlined,
+                    size: 18.w,
+                    color: AppColors.primary,
+                  ),
                   SizedBox(width: 4.w),
                   AppText(
                     'تغيير',

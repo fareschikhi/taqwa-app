@@ -124,10 +124,7 @@ class _FilterChipGroupState extends State<FilterChipGroup> {
               },
               child: AnimatedContainer(
                 duration: AppConstants.animFast,
-                padding: EdgeInsets.symmetric(
-                  horizontal: 16.w,
-                  vertical: 8.h,
-                ),
+                padding: EdgeInsets.symmetric(horizontal: 16.w, vertical: 8.h),
                 decoration: BoxDecoration(
                   color: isSelected
                       ? AppColors.primary
@@ -145,9 +142,7 @@ class _FilterChipGroupState extends State<FilterChipGroup> {
                     color: isSelected
                         ? AppColors.onPrimary
                         : AppColors.onSurfaceVariant,
-                    fontWeight: isSelected
-                        ? FontWeight.w700
-                        : FontWeight.w500,
+                    fontWeight: isSelected ? FontWeight.w700 : FontWeight.w500,
                   ),
                 ),
               ),
@@ -158,4 +153,3 @@ class _FilterChipGroupState extends State<FilterChipGroup> {
     );
   }
 }
-

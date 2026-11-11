@@ -447,7 +447,7 @@ class _NotesPageState extends ConsumerState<NotesPage> {
                           border: Border.all(color: AppColors.primaryContainer),
                           boxShadow: const [
                             BoxShadow(
-                              color: Color.fromRGBO(18, 52, 59, 0.06),
+                              color: Color.fromRGBO(0, 40, 0, 0.06),
                               blurRadius: 16,
                               offset: Offset(0, 4),
                             ),
@@ -653,7 +653,7 @@ class _NoteCard extends StatelessWidget {
         borderRadius: BorderRadius.circular(AppConstants.radiusXl),
         boxShadow: const [
           BoxShadow(
-            color: Color.fromRGBO(18, 52, 59, 0.04),
+            color: Color.fromRGBO(0, 40, 0, 0.04),
             blurRadius: 20,
             offset: Offset(0, 4),
           ),

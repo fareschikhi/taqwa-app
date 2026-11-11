@@ -1,0 +1,363 @@
+<!DOCTYPE html>
+
+<html dir="rtl" lang="ar"><head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<title>مدرسة التقوى - الرئيسية</title>
+<!-- Fonts -->
+<link href="https://fonts.googleapis.com" rel="preconnect"/>
+<link crossorigin="" href="https://fonts.gstatic.com" rel="preconnect"/>
+<link href="https://fonts.googleapis.com/css2?family=Cairo:wght@500;600;700;800&amp;family=Tajawal:wght@400;500;700&amp;display=swap" rel="stylesheet"/>
+<!-- Material Symbols Outlined -->
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<!-- Tailwind CSS -->
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<script id="tailwind-config">
+    tailwind.config = {
+      darkMode: "class",
+      theme: {
+        extend: {
+          "colors": {
+            "on-primary-fixed-variant": "#005300",
+            "primary-fixed-dim": "#68e054",
+            "surface-tint": "#006e00",
+            "secondary-fixed": "#97f4d9",
+            "inverse-primary": "#68e054",
+            "on-background": "#131e13",
+            "primary-container": "#008800",
+            "on-surface": "#131e13",
+            "surface-bright": "#f0fdeb",
+            "secondary-container": "#97f4d9",
+            "surface-container-lowest": "#ffffff",
+            "primary": "#006c00",
+            "on-primary": "#ffffff",
+            "surface-container-low": "#eaf8e5",
+            "on-tertiary-fixed": "#181e00",
+            "background": "#f0fdeb",
+            "error": "#ba1a1a",
+            "on-tertiary-container": "#fcffe0",
+            "tertiary-fixed-dim": "#becf6b",
+            "surface-container-high": "#dfecda",
+            "surface-dim": "#d0decc",
+            "primary-fixed": "#84fd6e",
+            "tertiary-fixed": "#d9ec84",
+            "on-tertiary-fixed-variant": "#404c00",
+            "inverse-on-surface": "#e7f5e2",
+            "on-secondary-fixed-variant": "#005141",
+            "on-secondary": "#ffffff",
+            "on-surface-variant": "#3e4a39",
+            "outline-variant": "#bdcbb5",
+            "on-error": "#ffffff",
+            "surface-container": "#e4f2e0",
+            "outline": "#6e7b68",
+            "on-error-container": "#93000a",
+            "secondary": "#006b57",
+            "inverse-surface": "#283327",
+            "on-primary-fixed": "#002200",
+            "on-secondary-fixed": "#002019",
+            "surface": "#f0fdeb",
+            "surface-variant": "#d9e6d4",
+            "error-container": "#ffdad6",
+            "on-primary-container": "#f8ffef",
+            "on-secondary-container": "#00725d",
+            "secondary-fixed-dim": "#7bd7bd",
+            "tertiary": "#546204",
+            "on-tertiary": "#ffffff",
+            "tertiary-container": "#6c7b20",
+            "surface-container-highest": "#d9e6d4"
+          },
+          "borderRadius": {
+            "DEFAULT": "0.25rem",
+            "lg": "0.5rem",
+            "xl": "0.75rem",
+            "full": "9999px"
+          },
+          "spacing": {
+            "space-sm": "0.5rem",
+            "gutter": "1rem",
+            "margin": "1rem",
+            "space-xl": "1.5rem",
+            "space-xs": "0.25rem",
+            "space-md": "1rem",
+            "space-lg": "1.25rem"
+          },
+          "fontFamily": {
+            "body-sm": ["Tajawal"],
+            "body-lg": ["Tajawal"],
+            "body-md": ["Tajawal"],
+            "label-lg": ["Tajawal"],
+            "headline-sm": ["Cairo"],
+            "numeral-hero": ["Cairo"],
+            "headline-md": ["Cairo"],
+            "headline-xl": ["Cairo"],
+            "headline-lg": ["Cairo"],
+            "label-sm": ["Tajawal"],
+            "label-md": ["Tajawal"]
+          },
+          "fontSize": {
+            "body-sm": ["12px", { "lineHeight": "18px", "fontWeight": "400" }],
+            "body-lg": ["16px", { "lineHeight": "26px", "fontWeight": "500" }],
+            "body-md": ["14px", { "lineHeight": "22px", "fontWeight": "400" }],
+            "label-lg": ["14px", { "lineHeight": "20px", "fontWeight": "700" }],
+            "headline-sm": ["18px", { "lineHeight": "28px", "fontWeight": "600" }],
+            "numeral-hero": ["36px", { "lineHeight": "44px", "fontWeight": "700" }],
+            "headline-md": ["20px", { "lineHeight": "30px", "fontWeight": "600" }],
+            "headline-xl": ["32px", { "lineHeight": "44px", "fontWeight": "700" }],
+            "headline-lg": ["26px", { "lineHeight": "38px", "fontWeight": "700" }],
+            "label-sm": ["10px", { "lineHeight": "14px", "fontWeight": "500" }],
+            "label-md": ["12px", { "lineHeight": "16px", "fontWeight": "500" }]
+          }
+        },
+      },
+    }
+  </script>
+<style>
+    body {
+      background-color: #F5F8F5;
+      font-family: 'Tajawal', sans-serif;
+      -webkit-tap-highlight-color: transparent;
+    }
+    .cairo {
+      font-family: 'Cairo', sans-serif;
+    }
+    .material-symbols-outlined {
+      font-variation-settings: 'FILL' 0, 'wght' 400, 'GRAD' 0, 'opsz' 24;
+      display: inline-block;
+      line-height: 1;
+      text-transform: none;
+      letter-spacing: normal;
+      word-wrap: normal;
+      white-space: nowrap;
+      direction: ltr;
+    }
+    .islamic-pattern {
+      background-image: radial-gradient(#ffffff 0.75px, transparent 0.75px), radial-gradient(#ffffff 0.75px, #008800 0.75px);
+      background-size: 16px 16px;
+      background-position: 0 0, 8px 8px;
+    }
+  </style>
+<style>
+    body {
+      min-height: max(884px, 100dvh);
+    }
+  </style>
+  </head>
+<body class="bg-[#F5F8F5] text-on-surface antialiased flex justify-center min-h-screen">
+<!-- Mobile Viewport Wrapper (390px) -->
+<main class="w-full max-w-[390px] bg-[#F5F8F5] min-h-screen relative pb-28 pt-4 px-4 flex flex-col space-y-4">
+<!-- 1. Child Switcher -->
+<section aria-label="اختيار الابن" class="w-full flex items-center gap-2 overflow-x-auto no-scrollbar py-1">
+<!-- First chip (Selected): يوسف -->
+<button class="flex items-center gap-2 bg-[#E6F4E6] border-[1.5px] border-[#009000] rounded-full py-1.5 px-3.5 transition-transform active:scale-95 shadow-sm text-right shrink-0" type="button">
+<div class="w-7 h-7 rounded-full overflow-hidden border border-[#009000] shrink-0 bg-surface-container">
+<img class="w-full h-full object-cover" data-alt="A portrait photo of a cheerful young Arab boy wearing a clean modest white thobe and knitted kufi cap, captured with natural warm daylight in an uplifting Islamic school atmosphere, rich authentic colors and sharp depth." src="https://lh3.googleusercontent.com/aida-public/AB6AXuCum8v9qrFdshPQcMdGqoYuZN9Zgsvagcc83yK6rteKi2qL9M1ywsWLZm0AV2llKG4wf4MvyvmoODJbYw2CCB1SL_GVBbCWkxcjRSXma3-yNsFdNjX1o5nSxwO-u50ifMBKOwlhr1KDRyB2-HijK9O7r-mG4dKDKZmTVuhU81y9I6I1hEvkrHe34zdwo8HlPH5LPOxwpz4j88t1vKWg-5qqQxN-TETHEEbYRpht6VjZ"/>
+</div>
+<span class="font-headline-sm text-headline-sm text-[#005A00] font-bold text-sm">يوسف</span>
+</button>
+<!-- Second chip: مريم -->
+<button class="flex items-center gap-2 bg-surface-container-lowest border border-[#E3EAE3] rounded-full py-1.5 px-3.5 transition-transform active:scale-95 shrink-0 text-right" type="button">
+<div class="w-7 h-7 rounded-full overflow-hidden border border-[#E3EAE3] shrink-0 bg-surface-container">
+<img class="w-full h-full object-cover" data-alt="A warm and gentle portrait of a polite young Arab girl wearing a soft pastel hijab with clean bright soft studio lighting, showcasing a respectful educational ambiance with subtle natural green and white tints." src="https://lh3.googleusercontent.com/aida-public/AB6AXuDJCYzShT9spwVsHdVnvMmdIqLRvPjmN-tk8y_YKcHvCh1na2vxLYEgk74kb2sVqm_NjHue7ylvq11Qs135f_O1YSWn72Vq89iT190_bn3vVEkKW-Rhe2GSCpFSjKAOY2xHvIL6Jf-NlX45ci8nt56tnqFla3G8qmon2Ycy4Xc9QV5ykjMCLQG6P89R-rIdIs42vk0ifzGqq3o1EuXxy66fLL46lk5EgxXoXPAJ89sl"/>
+</div>
+<span class="font-body-md text-body-md text-[#5A6A5A] text-sm">مريم</span>
+</button>
+</section>
+<!-- 2. Header Section -->
+<header class="flex justify-between items-center w-full pt-1">
+<div class="flex flex-col">
+<h1 class="font-headline-lg text-headline-lg text-[#152015] leading-tight">أهلاً، أحمد</h1>
+<p class="font-body-md text-body-md text-[#5A6A5A] mt-0.5">تابع تقدم أبنائك في حفظ القرآن الكريم.</p>
+</div>
+<!-- End/Left button (RTL end) -->
+<button aria-label="محادثة الإدارة" class="relative w-11 h-11 rounded-full bg-surface-container-lowest border border-[#E3EAE3] flex items-center justify-center text-[#006B00] shadow-sm hover:bg-surface-container-low transition-colors shrink-0" type="button">
+<span class="material-symbols-outlined text-[22px]">chat_bubble</span>
+<!-- Unread red badge dot -->
+<span class="absolute top-2.5 left-2.5 w-2.5 h-2.5 bg-[#C62828] border-2 border-surface-container-lowest rounded-full"></span>
+</button>
+</header>
+<!-- 3. Hero Child Card -->
+<section class="relative w-full rounded-[20px] bg-gradient-to-l from-[#009000] to-[#006B00] text-white p-5 shadow-[0_4px_16px_rgba(0,40,0,0.12)] overflow-hidden">
+<!-- Watermark Islamic Geometric Star Texture -->
+<div class="absolute inset-0 opacity-[0.06] pointer-events-none islamic-pattern"></div>
+<!-- Top Row -->
+<div class="relative z-10 flex items-center justify-between">
+<div class="flex items-center gap-3">
+<div class="w-14 h-14 rounded-full border-2 border-white/90 overflow-hidden shadow-md shrink-0 bg-white/20">
+<img class="w-full h-full object-cover" data-alt="A close-up portrait of a polite Middle Eastern student boy smiling serenely, dressed in a traditional crisp white thobe, bathed in soft divine morning sunlight with tranquil green tones in the softly blurred background." src="https://lh3.googleusercontent.com/aida-public/AB6AXuCFh7rP0MmzLOd3FXXLop5Y1yOC1WsMTjIc5zI_g_FhRl1OmJvtcwkB5N_qL8NBstL4ja5YSQ9nt9MwgEF9v6xYwIIo38R9LFckV4fHYhCtsUxltr3Akv96z2oiSC-KgLZ2qPxMUf-MdSBJ2ERNrnKZ7d1QkDMpqz1kNGnmsrVUPptpdO-xmfpUDaKUhHHRMAbwQPFs8BsNvLcE-AjnHSuyRV5WIajcc2S7DIWJCZGs"/>
+</div>
+<div>
+<h2 class="font-headline-sm text-headline-sm font-bold text-white leading-tight">يوسف بن سالم</h2>
+<div class="inline-flex items-center mt-1 px-2.5 py-0.5 rounded-full bg-white/20 backdrop-blur-sm border border-white/20 text-xs font-label-md text-white">
+<span>حلقة الفرقان</span>
+</div>
+</div>
+</div>
+<!-- Left Link (End side in RTL) -->
+<button class="flex items-center gap-1 text-white hover:text-white/80 transition-colors py-1 pl-1 text-xs font-label-md shrink-0" type="button">
+<span>عرض التفاصيل</span>
+<span class="material-symbols-outlined text-base">arrow_back</span>
+</button>
+</div>
+<!-- Bottom Row Stats -->
+<div class="relative z-10 mt-5 pt-4 border-t border-white/20 grid grid-cols-3 text-center">
+<!-- Stat 1 -->
+<div class="flex flex-col items-center justify-center">
+<span class="font-headline-md text-headline-md font-bold text-white leading-none">12</span>
+<span class="font-label-sm text-label-sm text-white/80 mt-1">أيام الحضور هذا الشهر</span>
+</div>
+<!-- Stat 2 -->
+<div class="flex flex-col items-center justify-center border-r border-l border-white/20 px-1">
+<span class="font-headline-md text-headline-md font-bold text-white leading-none">48 صفحة</span>
+<span class="font-label-sm text-label-sm text-white/80 mt-1">حفظ</span>
+</div>
+<!-- Stat 3 -->
+<div class="flex flex-col items-center justify-center">
+<span class="font-headline-md text-headline-md font-bold text-white leading-none">ممتاز</span>
+<span class="font-label-sm text-label-sm text-white/80 mt-1">التقييم العام</span>
+</div>
+</div>
+</section>
+<!-- 4. Student of the Month Card -->
+<section class="bg-surface-container-lowest rounded-[20px] p-4 border border-[#E3EAE3] border-t-2 border-t-[#C9A227] shadow-[0_4px_16px_rgba(0,40,0,0.04)] flex items-center gap-3.5">
+<div class="w-12 h-12 rounded-full bg-[#FBF5DF] flex items-center justify-center text-[#C9A227] shrink-0 border border-[#F1E5B7]">
+<span class="material-symbols-outlined text-2xl" style="font-variation-settings: 'FILL' 1;">emoji_events</span>
+</div>
+<div class="flex flex-col">
+<h3 class="font-headline-sm text-headline-sm font-bold text-[#C9A227] leading-tight text-sm">طالب شهر نوفمبر</h3>
+<p class="font-body-md text-body-md text-[#152015] mt-1 text-xs">مبارك! اجتهاد ابنكم هذا الشهر جعله الأول في حلقته.</p>
+</div>
+</section>
+<!-- 5. Section "آخر حضور" -->
+<section class="flex flex-col space-y-2">
+<h2 class="font-headline-md text-headline-md text-[#152015] font-semibold">آخر حضور</h2>
+<div class="bg-surface-container-lowest rounded-[20px] p-4 border border-[#E3EAE3] shadow-[0_4px_16px_rgba(0,40,0,0.04)] flex flex-col space-y-3">
+<!-- Header inside card -->
+<div class="flex items-center justify-between">
+<span class="font-body-md text-body-md font-bold text-[#152015]">اليوم، 18 نوفمبر 2024</span>
+<!-- Status Pill: حاضر -->
+<span class="inline-flex items-center gap-1 bg-[#E6F4E6] text-[#009000] px-3 py-1 rounded-full text-xs font-label-sm font-bold">
+<span class="material-symbols-outlined text-sm font-bold">check</span>
+            حاضر
+          </span>
+</div>
+<!-- Recitation details line -->
+<div class="flex items-center gap-2 pt-2 border-t border-[#F0F4F0] text-[#0E7C66] text-xs font-body-sm">
+<span class="material-symbols-outlined text-base text-[#0E7C66]">menu_book</span>
+<span class="text-on-surface-variant font-medium">حفظ جديد · سورة الملك · 2 صفحة</span>
+</div>
+</div>
+</section>
+<!-- 6. Section "أخبار الحلقة" -->
+<section class="flex flex-col space-y-2">
+<div class="flex items-center justify-between">
+<h2 class="font-headline-md text-headline-md text-[#152015] font-semibold">أخبار الحلقة</h2>
+<button class="font-body-md text-body-md text-[#006B00] font-semibold hover:underline" type="button">عرض الكل</button>
+</div>
+<div class="bg-surface-container-lowest rounded-[20px] border border-[#E3EAE3] shadow-[0_4px_16px_rgba(0,40,0,0.04)] overflow-hidden divide-y divide-[#E3EAE3]">
+<!-- Item 1 -->
+<div class="p-4 flex flex-col space-y-1">
+<span class="font-label-lg text-label-lg text-primary font-bold text-xs">15 نوفمبر · موعد الاختبار الشهري</span>
+<p class="font-body-md text-body-md text-[#152015] text-xs">سيعقد الاختبار يوم الأربعاء القادم في مقرر جزء تبارك بإذن الله.</p>
+</div>
+<!-- Item 2 -->
+<div class="p-4 flex flex-col space-y-1">
+<span class="font-label-lg text-label-lg text-primary font-bold text-xs">10 نوفمبر · رحلة المتميزين</span>
+<p class="font-body-md text-body-md text-[#152015] text-xs">تكريم الطلاب الملتزمين بالحضور برحلة ترفيهية يوم السبت.</p>
+</div>
+</div>
+</section>
+<!-- 7. Section "ملاحظات المعلم" -->
+<section class="flex flex-col space-y-2">
+<div class="flex items-center justify-between">
+<h2 class="font-headline-md text-headline-md text-[#152015] font-semibold">ملاحظات المعلم</h2>
+<button class="font-body-md text-body-md text-[#006B00] font-semibold hover:underline" type="button">عرض الكل</button>
+</div>
+<div class="bg-surface-container-lowest rounded-[20px] p-4 border border-[#E3EAE3] shadow-[0_4px_16px_rgba(0,40,0,0.04)] flex flex-col space-y-4">
+<!-- Timeline Item 1 -->
+<div class="flex gap-3 items-start relative">
+<div class="flex flex-col items-center shrink-0">
+<div class="w-3 h-3 rounded-full bg-[#009000] mt-1 ring-4 ring-[#E6F4E6]"></div>
+<div class="w-0.5 bg-[#E3EAE3] h-full min-h-[38px] my-1"></div>
+</div>
+<div class="flex-1 pb-1">
+<span class="font-label-sm text-label-sm text-[#5A6A5A] block">17 نوفمبر</span>
+<p class="font-body-md text-body-md text-[#152015] text-xs mt-0.5 leading-relaxed">ما شاء الله، إتقان ممتاز لأحكام التجويد ومخارج الحروف في سورة الملك.</p>
+</div>
+</div>
+<!-- Timeline Item 2 -->
+<div class="flex gap-3 items-start relative">
+<div class="flex flex-col items-center shrink-0">
+<div class="w-3 h-3 rounded-full bg-[#009000] mt-1 ring-4 ring-[#E6F4E6]"></div>
+<div class="w-0.5 bg-[#E3EAE3] h-full min-h-[38px] my-1"></div>
+</div>
+<div class="flex-1 pb-1">
+<span class="font-label-sm text-label-sm text-[#5A6A5A] block">14 نوفمبر</span>
+<p class="font-body-md text-body-md text-[#152015] text-xs mt-0.5 leading-relaxed">يرجى مراجعة الآيات من 1 إلى 10 من سورة الواقعة لتثبيت الحفظ.</p>
+</div>
+</div>
+<!-- Timeline Item 3 -->
+<div class="flex gap-3 items-start">
+<div class="flex flex-col items-center shrink-0">
+<div class="w-3 h-3 rounded-full bg-[#009000] mt-1 ring-4 ring-[#E6F4E6]"></div>
+</div>
+<div class="flex-1">
+<span class="font-label-sm text-label-sm text-[#5A6A5A] block">11 نوفمبر</span>
+<p class="font-body-md text-body-md text-[#152015] text-xs mt-0.5 leading-relaxed">تفاعل متميز وتركيز عالٍ خلال حلقة التسميع الجماعية اليوم.</p>
+</div>
+</div>
+</div>
+</section>
+<!-- 8. Card "وردك اليومي" -->
+<section class="bg-surface-container-lowest rounded-[20px] p-4 border border-[#E3EAE3] shadow-[0_4px_16px_rgba(0,40,0,0.04)] flex flex-col space-y-3 mb-4">
+<div class="flex items-center justify-between">
+<div class="flex items-center gap-3">
+<div class="w-10 h-10 rounded-xl bg-[#E6F4E6] flex items-center justify-center text-[#009000] shrink-0">
+<span class="material-symbols-outlined text-xl">menu_book</span>
+</div>
+<p class="font-body-md text-body-md font-medium text-[#152015] text-xs">فعّله ليصلك إشعار يومي بوردك من القرآن</p>
+</div>
+<!-- iOS Modern Toggle Switch (Turned ON) -->
+<label class="relative inline-flex items-center cursor-pointer shrink-0">
+<input checked="" class="sr-only peer" type="checkbox"/>
+<div class="w-12 h-6 bg-surface-container-high peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full rtl:peer-checked:after:-translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:start-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-[#009000]"></div>
+</label>
+</div>
+<div class="pt-3 border-t border-[#F0F4F0] flex items-center justify-between text-xs">
+<span class="font-body-md text-body-md text-[#5A6A5A]">وقت التذكير 8:00 م</span>
+<button class="font-label-lg text-label-lg text-[#006B00] font-bold hover:underline" type="button">تغيير</button>
+</div>
+</section>
+<!-- 9. Bottom Navigation Bar -->
+<nav aria-label="شريط التنقل السفلي" class="fixed bottom-0 left-0 w-full z-50 flex flex-row-reverse justify-around items-center px-space-sm py-space-xs bg-surface-container-lowest border-t border-[#E3EAE3] rounded-t-2xl shadow-lg">
+<!-- Tab 1: الرئيسية (Rightmost in RTL, Active) -->
+<a aria-current="page" class="flex flex-col items-center justify-center bg-[#E6F4E6] text-[#005A00] rounded-xl px-3 py-1.5 font-bold transition-all duration-150 active:scale-95" href="#">
+<span class="material-symbols-outlined text-[22px]" style="font-variation-settings: 'FILL' 1;">home</span>
+<span class="font-label-sm text-label-sm mt-0.5">الرئيسية</span>
+</a>
+<!-- Tab 2: المقرأة -->
+<a class="flex flex-col items-center justify-center text-[#5A6A5A] px-3 py-1.5 transition-all duration-150 active:scale-95 hover:text-primary" href="#">
+<span class="material-symbols-outlined text-[22px]">menu_book</span>
+<span class="font-label-sm text-label-sm mt-0.5">المقرأة</span>
+</a>
+<!-- Tab 3: الحضور -->
+<a class="flex flex-col items-center justify-center text-[#5A6A5A] px-3 py-1.5 transition-all duration-150 active:scale-95 hover:text-primary" href="#">
+<span class="material-symbols-outlined text-[22px]">emoji_events</span>
+<span class="font-label-sm text-label-sm mt-0.5">الحضور</span>
+</a>
+<!-- Tab 4: ملاحظات (with Red badge "3") -->
+<a class="relative flex flex-col items-center justify-center text-[#5A6A5A] px-3 py-1.5 transition-all duration-150 active:scale-95 hover:text-primary" href="#">
+<div class="relative inline-block">
+<span class="material-symbols-outlined text-[22px]">notifications</span>
+<span class="absolute -top-1 -right-2 bg-[#C62828] text-white font-bold text-[9px] w-4 h-4 rounded-full flex items-center justify-center leading-none border border-surface-container-lowest">3</span>
+</div>
+<span class="font-label-sm text-label-sm mt-0.5">ملاحظات</span>
+</a>
+<!-- Tab 5: الحساب (Leftmost in RTL) -->
+<a class="flex flex-col items-center justify-center text-[#5A6A5A] px-3 py-1.5 transition-all duration-150 active:scale-95 hover:text-primary" href="#">
+<span class="material-symbols-outlined text-[22px]">person</span>
+<span class="font-label-sm text-label-sm mt-0.5">الحساب</span>
+</a>
+</nav>
+</main>
+</body></html>

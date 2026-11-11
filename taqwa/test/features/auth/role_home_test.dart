@@ -33,4 +33,13 @@ void main() {
     // has for it. Sending them to a blank screen instead would be worse.
     expect(homeForRole(UserRole.student), isA<ParentShell>());
   });
+
+  test('offers the wird reminder to every role but the parent shell', () {
+    expect(offersWirdReminder(UserRole.admin), isTrue);
+    expect(offersWirdReminder(UserRole.teacher), isTrue);
+    expect(offersWirdReminder(UserRole.manager), isTrue);
+    expect(offersWirdReminder(UserRole.adultStudent), isTrue);
+    expect(offersWirdReminder(UserRole.parent), isFalse);
+    expect(offersWirdReminder(UserRole.student), isFalse);
+  });
 }

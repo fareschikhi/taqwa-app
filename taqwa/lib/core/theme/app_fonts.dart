@@ -15,16 +15,15 @@ class AppFonts {
     double? height,
     double? letterSpacing,
     Color? color,
-  }) =>
-      _withFallback(
-        GoogleFonts.cairo(
-          fontSize: fontSize,
-          fontWeight: fontWeight,
-          height: height,
-          letterSpacing: letterSpacing,
-          color: color,
-        ),
-      );
+  }) => _withFallback(
+    GoogleFonts.cairo(
+      fontSize: fontSize,
+      fontWeight: fontWeight,
+      height: height,
+      letterSpacing: letterSpacing,
+      color: color,
+    ),
+  );
 
   static TextStyle tajawal({
     double? fontSize,
@@ -32,16 +31,15 @@ class AppFonts {
     double? height,
     double? letterSpacing,
     Color? color,
-  }) =>
-      _withFallback(
-        GoogleFonts.tajawal(
-          fontSize: fontSize,
-          fontWeight: fontWeight,
-          height: height,
-          letterSpacing: letterSpacing,
-          color: color,
-        ),
-      );
+  }) => _withFallback(
+    GoogleFonts.tajawal(
+      fontSize: fontSize,
+      fontWeight: fontWeight,
+      height: height,
+      letterSpacing: letterSpacing,
+      color: color,
+    ),
+  );
 
   /// Naskh for fully vocalised religious text. Cairo's Kufi forms crowd the
   /// tashkeel; Amiri was drawn for Quranic and hadith typesetting, so every
@@ -52,28 +50,27 @@ class AppFonts {
     double? height,
     double? letterSpacing,
     Color? color,
-  }) =>
-      _withFallback(
-        GoogleFonts.amiri(
-          fontSize: fontSize,
-          fontWeight: fontWeight,
-          height: height,
-          letterSpacing: letterSpacing,
-          color: color,
-        ),
-      );
+  }) => _withFallback(
+    GoogleFonts.amiri(
+      fontSize: fontSize,
+      fontWeight: fontWeight,
+      height: height,
+      letterSpacing: letterSpacing,
+      color: color,
+    ),
+  );
 
   /// Fallback family list for [ThemeData.fontFamilyFallback].
   static List<String> fallbackFor([FontWeight? weight]) => [
-        // Calling the GoogleFonts getter is what registers and loads the
-        // weight; its family name alone would point at nothing.
-        GoogleFonts.notoKufiArabic(fontWeight: weight).fontFamily!,
-      ];
+    // Calling the GoogleFonts getter is what registers and loads the
+    // weight; its family name alone would point at nothing.
+    GoogleFonts.notoKufiArabic(fontWeight: weight).fontFamily!,
+  ];
 
   static TextStyle _withFallback(TextStyle style) => style.copyWith(
-        fontFamilyFallback: [
-          ...fallbackFor(style.fontWeight),
-          ...?style.fontFamilyFallback,
-        ],
-      );
+    fontFamilyFallback: [
+      ...fallbackFor(style.fontWeight),
+      ...?style.fontFamilyFallback,
+    ],
+  );
 }

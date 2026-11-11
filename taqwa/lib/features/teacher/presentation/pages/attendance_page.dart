@@ -1051,7 +1051,7 @@ class _AttendancePageState extends ConsumerState<AttendancePage>
         color: AppColors.surfaceContainerLowest,
         boxShadow: [
           BoxShadow(
-            color: Color.fromRGBO(18, 52, 59, 0.04),
+            color: Color.fromRGBO(0, 40, 0, 0.04),
             blurRadius: 20,
             offset: Offset(0, -4),
           ),

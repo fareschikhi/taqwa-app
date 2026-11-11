@@ -27,8 +27,8 @@ void configureScreenUtilForMobileFrame(BuildContext context) {
 }
 
 MediaQueryData _capped(MediaQueryData data) => data.copyWith(
-      size: Size(min(data.size.width, kMobileFrameMaxWidth), data.size.height),
-    );
+  size: Size(min(data.size.width, kMobileFrameMaxWidth), data.size.height),
+);
 
 /// Lays the app out in a phone-width column when the window is wider.
 ///
@@ -52,12 +52,7 @@ class MobileFrame extends StatelessWidget {
           width: kMobileFrameMaxWidth,
           decoration: const BoxDecoration(
             color: AppColors.surface,
-            boxShadow: [
-              BoxShadow(
-                color: Color(0x1A000000),
-                blurRadius: 24,
-              ),
-            ],
+            boxShadow: [BoxShadow(color: Color(0x1A000000), blurRadius: 24)],
           ),
           child: MediaQuery(data: _capped(data), child: child),
         ),

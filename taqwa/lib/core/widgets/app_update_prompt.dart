@@ -85,10 +85,7 @@ class _AppUpdatePromptState extends State<AppUpdatePrompt> {
         // Stays until the parent acts on it; a restart is easy to miss.
         duration: const Duration(days: 1),
         showCloseIcon: true,
-        action: SnackBarAction(
-          label: 'إعادة التشغيل',
-          onPressed: _restart,
-        ),
+        action: SnackBarAction(label: 'إعادة التشغيل', onPressed: _restart),
       ),
     );
   }

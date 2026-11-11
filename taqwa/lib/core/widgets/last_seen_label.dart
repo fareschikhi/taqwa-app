@@ -8,7 +8,11 @@ import 'package:taqwa/core/widgets/app_text.dart';
 /// or, in the error color, that they never have. Laid out like the phone row
 /// on the account cards: text, then a small icon.
 class LastSeenLabel extends StatelessWidget {
-  const LastSeenLabel({super.key, required this.lastSeen, this.centered = false});
+  const LastSeenLabel({
+    super.key,
+    required this.lastSeen,
+    this.centered = false,
+  });
 
   final DateTime? lastSeen;
 

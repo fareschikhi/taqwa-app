@@ -226,7 +226,7 @@ class _ChildrenPickerState extends State<ChildrenPicker> {
         border: Border.all(color: AppColors.outlineVariant),
         boxShadow: const [
           BoxShadow(
-            color: Color.fromRGBO(18, 52, 59, 0.06),
+            color: Color.fromRGBO(0, 40, 0, 0.06),
             blurRadius: 10,
             offset: Offset(0, 4),
           ),

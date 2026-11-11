@@ -157,11 +157,7 @@ int cardGridColumns(double width) {
 /// the row fills from the right to match the app's Arabic reading order. A
 /// short last row keeps empty slots so its cards stay the same width.
 class CardGridRow extends StatelessWidget {
-  const CardGridRow({
-    super.key,
-    required this.columns,
-    required this.children,
-  });
+  const CardGridRow({super.key, required this.columns, required this.children});
 
   final int columns;
   final List<Widget> children;

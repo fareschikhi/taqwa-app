@@ -92,10 +92,8 @@ class _ParentShellState extends ConsumerState<ParentShell> {
   void _openChat() {
     Navigator.of(context).push(
       MaterialPageRoute(
-        builder: (_) => const ChatThreadPage(
-          target: ChatTarget.mine(),
-          title: 'الإدارة',
-        ),
+        builder: (_) =>
+            const ChatThreadPage(target: ChatTarget.mine(), title: 'الإدارة'),
       ),
     );
   }
@@ -191,13 +189,15 @@ class _ParentShellState extends ConsumerState<ParentShell> {
   }
 
   Widget _buildChildSwitcher(SelectedStudentState childState) {
+    // Sits on the page background, not a white strip, so it reads as part of
+    // the page under it rather than a second app bar.
     return Container(
-      color: AppColors.surfaceContainerLowest,
-      padding: EdgeInsets.symmetric(horizontal: 12.w, vertical: 8.h),
+      color: AppColors.background,
+      padding: EdgeInsets.fromLTRB(16.w, 8.h, 16.w, 0),
       child: SafeArea(
         bottom: false,
         child: SizedBox(
-          height: 56.h,
+          height: 48.h,
           child: ListView.separated(
             reverse: true,
             scrollDirection: Axis.horizontal,
@@ -206,54 +206,57 @@ class _ParentShellState extends ConsumerState<ParentShell> {
             itemBuilder: (_, i) {
               final child = childState.students[i];
               final isSelected = child.id == childState.selected?.id;
-              return GestureDetector(
-                onTap: () =>
-                    ref.read(selectedStudentProvider.notifier).select(child),
-                child: AnimatedContainer(
-                  duration: AppConstants.animFast,
-                  padding: EdgeInsets.symmetric(
-                    horizontal: 10.w,
-                    vertical: 6.h,
-                  ),
-                  decoration: BoxDecoration(
-                    color: isSelected
-                        ? AppColors.primaryContainer
-                        : Colors.transparent,
-                    borderRadius: BorderRadius.circular(
-                      AppConstants.radiusFull,
-                    ),
-                    border: Border.all(
+              return Semantics(
+                button: true,
+                selected: isSelected,
+                child: GestureDetector(
+                  onTap: () =>
+                      ref.read(selectedStudentProvider.notifier).select(child),
+                  child: AnimatedContainer(
+                    duration: AppConstants.animFast,
+                    padding: EdgeInsetsDirectional.only(start: 6.w, end: 14.w),
+                    decoration: BoxDecoration(
                       color: isSelected
-                          ? AppColors.primary
-                          : AppColors.outlineVariant,
+                          ? AppColors.primaryContainer
+                          : AppColors.surfaceContainerLowest,
+                      borderRadius: BorderRadius.circular(
+                        AppConstants.radiusFull,
+                      ),
+                      border: Border.all(
+                        color: isSelected
+                            ? AppColors.primary
+                            : AppColors.cardBorder,
+                        width: isSelected ? 1.5 : 1,
+                      ),
                     ),
-                  ),
-                  child: Row(
-                    mainAxisSize: MainAxisSize.min,
-                    children: [
-                      AvatarWidget(
-                        avatarUrl: child.avatar,
-                        size: 28.w,
-                        fallback: AppText(
-                          child.fullName.isNotEmpty ? child.fullName[0] : '؟',
-                          style: AppTextStyles.labelSm.copyWith(
-                            color: AppColors.onPrimaryContainer,
+                    child: Row(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        AvatarWidget(
+                          avatarUrl: child.avatar,
+                          size: 34.w,
+                          fallback: AppText(
+                            child.fullName.isNotEmpty ? child.fullName[0] : '؟',
+                            style: AppTextStyles.labelSm.copyWith(
+                              color: AppColors.onPrimaryContainer,
+                            ),
                           ),
                         ),
-                      ),
-                      SizedBox(width: 6.w),
-                      AppText(
-                        child.fullName,
-                        style: AppTextStyles.labelMd.copyWith(
-                          color: isSelected
-                              ? AppColors.onPrimaryContainer
-                              : AppColors.onSurfaceVariant,
-                          fontWeight: isSelected
-                              ? FontWeight.w700
-                              : FontWeight.w500,
+                        SizedBox(width: 8.w),
+                        AppText(
+                          child.fullName,
+                          style: AppTextStyles.bodyMd.copyWith(
+                            fontSize: 15.sp,
+                            color: isSelected
+                                ? AppColors.onPrimaryContainer
+                                : AppColors.onSurfaceVariant,
+                            fontWeight: isSelected
+                                ? FontWeight.w700
+                                : FontWeight.w500,
+                          ),
                         ),
-                      ),
-                    ],
+                      ],
+                    ),
                   ),
                 ),
               );
@@ -277,8 +280,8 @@ class _ParentShellState extends ConsumerState<ParentShell> {
         label: 'المقرأة',
       ),
       _NavItem(
-        icon: Icons.emoji_events_outlined,
-        activeIcon: Icons.emoji_events,
+        icon: Icons.calendar_month_outlined,
+        activeIcon: Icons.calendar_month,
         label: 'الحضور',
       ),
       _NavItem(
@@ -297,6 +300,7 @@ class _ParentShellState extends ConsumerState<ParentShell> {
       decoration: BoxDecoration(
         color: AppColors.surfaceContainerLowest,
         boxShadow: AppShadows.bottomNav,
+        border: const Border(top: BorderSide(color: AppColors.cardBorder)),
         borderRadius: BorderRadius.only(
           topLeft: Radius.circular(AppConstants.radiusXl),
           topRight: Radius.circular(AppConstants.radiusXl),
@@ -305,78 +309,90 @@ class _ParentShellState extends ConsumerState<ParentShell> {
       child: SafeArea(
         child: Padding(
           padding: EdgeInsets.symmetric(horizontal: 8.w, vertical: 8.h),
+          // The app tree is LTR (see AppText), so the bar is flipped on its
+          // own: an Arabic reader starts on the right, with الرئيسية.
           child: Row(
-            mainAxisAlignment: MainAxisAlignment.spaceAround,
+            textDirection: TextDirection.rtl,
             children: List.generate(items.length, (i) {
               final isActive = _currentIndex == i;
               final item = items[i];
-              return GestureDetector(
-                onTap: () => _selectTab(i),
-                child: AnimatedContainer(
-                  duration: AppConstants.animFast,
-                  padding: EdgeInsets.symmetric(
-                    horizontal: isActive ? 16.w : 12.w,
-                    vertical: 8.h,
-                  ),
-                  decoration: BoxDecoration(
-                    color: isActive
-                        ? AppColors.primaryContainer
-                        : Colors.transparent,
-                    borderRadius: BorderRadius.circular(AppConstants.radiusMd),
-                  ),
-                  child: Column(
-                    mainAxisSize: MainAxisSize.min,
-                    children: [
-                      Stack(
-                        clipBehavior: Clip.none,
-                        children: [
-                          Icon(
-                            isActive ? item.activeIcon : item.icon,
-                            color: isActive
-                                ? AppColors.onPrimaryContainer
-                                : AppColors.onSurfaceVariant,
-                            size: 22.w,
-                          ),
-                          // Index 3 is ملاحظات; the pages list and the nav
-                          // items are kept in the same order.
-                          if (i == 3 && _unread > 0)
-                            Positioned(
-                              top: -4,
-                              left: -4,
-                              child: Container(
-                                padding: EdgeInsets.symmetric(
-                                  horizontal: 5.w,
-                                  vertical: 1.h,
-                                ),
-                                decoration: BoxDecoration(
-                                  color: AppColors.error,
-                                  borderRadius: BorderRadius.circular(
-                                    AppConstants.radiusFull,
-                                  ),
-                                ),
-                                child: AppText(
-                                  '$_unread',
-                                  style: AppTextStyles.labelSm.copyWith(
-                                    color: AppColors.onPrimary,
-                                  ),
-                                ),
-                              ),
-                            ),
-                        ],
-                      ),
-                      SizedBox(height: 4.h),
-                      AppText(
-                        item.label,
-                        style: AppTextStyles.labelSm.copyWith(
-                          color: isActive
-                              ? AppColors.onPrimaryContainer
-                              : AppColors.onSurfaceVariant,
-                          fontWeight: isActive
-                              ? FontWeight.w700
-                              : FontWeight.w500,
+              // Equal-width cells: the whole fifth of the bar is the tap
+              // target, not just the icon and its label.
+              return Expanded(
+                child: Semantics(
+                  button: true,
+                  selected: isActive,
+                  child: GestureDetector(
+                    behavior: HitTestBehavior.opaque,
+                    onTap: () => _selectTab(i),
+                    child: AnimatedContainer(
+                      duration: AppConstants.animFast,
+                      margin: EdgeInsets.symmetric(horizontal: 3.w),
+                      padding: EdgeInsets.symmetric(vertical: 8.h),
+                      decoration: BoxDecoration(
+                        color: isActive
+                            ? AppColors.primaryContainer
+                            : Colors.transparent,
+                        borderRadius: BorderRadius.circular(
+                          AppConstants.radiusLg,
                         ),
                       ),
-                    ],
+                      child: Column(
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          Stack(
+                            clipBehavior: Clip.none,
+                            children: [
+                              Icon(
+                                isActive ? item.activeIcon : item.icon,
+                                color: isActive
+                                    ? AppColors.onPrimaryContainer
+                                    : AppColors.onSurfaceVariant,
+                                size: 22.w,
+                              ),
+                              // Index 3 is ملاحظات; the pages list and the nav
+                              // items are kept in the same order.
+                              if (i == 3 && _unread > 0)
+                                Positioned(
+                                  top: -4,
+                                  left: -4,
+                                  child: Container(
+                                    padding: EdgeInsets.symmetric(
+                                      horizontal: 5.w,
+                                      vertical: 1.h,
+                                    ),
+                                    decoration: BoxDecoration(
+                                      color: AppColors.error,
+                                      borderRadius: BorderRadius.circular(
+                                        AppConstants.radiusFull,
+                                      ),
+                                    ),
+                                    child: AppText(
+                                      '$_unread',
+                                      style: AppTextStyles.labelSm.copyWith(
+                                        color: AppColors.onPrimary,
+                                      ),
+                                    ),
+                                  ),
+                                ),
+                            ],
+                          ),
+                          SizedBox(height: 4.h),
+                          AppText(
+                            item.label,
+                            maxLines: 1,
+                            style: AppTextStyles.labelSm.copyWith(
+                              color: isActive
+                                  ? AppColors.onPrimaryContainer
+                                  : AppColors.onSurfaceVariant,
+                              fontWeight: isActive
+                                  ? FontWeight.w700
+                                  : FontWeight.w500,
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
                   ),
                 ),
               );

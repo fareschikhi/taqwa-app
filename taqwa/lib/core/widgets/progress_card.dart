@@ -81,4 +81,3 @@ class CircularProgressWidget extends StatelessWidget {
     );
   }
 }
-

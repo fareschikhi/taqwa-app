@@ -40,11 +40,7 @@ class ConfirmLogoutDialog extends StatelessWidget {
                     color: AppColors.error.withValues(alpha: 0.1),
                     shape: BoxShape.circle,
                   ),
-                  child: Icon(
-                    Icons.logout,
-                    color: AppColors.error,
-                    size: 22.w,
-                  ),
+                  child: Icon(Icons.logout, color: AppColors.error, size: 22.w),
                 ),
                 const Spacer(),
                 Flexible(

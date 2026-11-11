@@ -29,7 +29,7 @@ class ChatIconButton extends ConsumerWidget {
     final iconColor = onBrand ? AppColors.onPrimary : AppColors.primary;
     final background = onBrand
         ? AppColors.onPrimary.withValues(alpha: 0.2)
-        : AppColors.primaryContainer.withValues(alpha: 0.35);
+        : AppColors.surfaceContainerLowest;
 
     return Semantics(
       button: true,
@@ -38,7 +38,13 @@ class ChatIconButton extends ConsumerWidget {
         message: label,
         child: Material(
           color: background,
-          shape: const CircleBorder(),
+          shape: CircleBorder(
+            side: onBrand
+                ? BorderSide.none
+                : const BorderSide(color: AppColors.cardBorder),
+          ),
+          elevation: onBrand ? 0 : 1,
+          shadowColor: const Color.fromRGBO(0, 40, 0, 0.2),
           child: InkWell(
             customBorder: const CircleBorder(),
             onTap: () async {
@@ -46,8 +52,8 @@ class ChatIconButton extends ConsumerWidget {
               ref.read(chatUnreadProvider.notifier).refresh();
             },
             child: SizedBox(
-              width: 40.w,
-              height: 40.w,
+              width: 48.w,
+              height: 48.w,
               child: Stack(
                 alignment: Alignment.center,
                 children: [

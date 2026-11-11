@@ -157,7 +157,7 @@ class _ManagersManagementPageState extends State<ManagersManagementPage> {
                     borderRadius: BorderRadius.circular(AppConstants.radiusXl),
                     boxShadow: const [
                       BoxShadow(
-                        color: Color.fromRGBO(18, 52, 59, 0.04),
+                        color: Color.fromRGBO(0, 40, 0, 0.04),
                         blurRadius: 20,
                         offset: Offset(0, 4),
                       ),
@@ -360,7 +360,7 @@ class _ManagerCard extends StatelessWidget {
           border: Border.all(color: AppColors.surfaceVariant),
           boxShadow: const [
             BoxShadow(
-              color: Color.fromRGBO(18, 52, 59, 0.04),
+              color: Color.fromRGBO(0, 40, 0, 0.04),
               blurRadius: 20,
               offset: Offset(0, 4),
             ),

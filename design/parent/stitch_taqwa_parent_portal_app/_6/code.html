@@ -1,0 +1,416 @@
+<!DOCTYPE html>
+
+<html class="h-full" dir="rtl" lang="ar"><head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<title>مدرسة التقوى - تغيير الصورة الشخصية</title>
+<!-- Google Fonts: Cairo & Tajawal -->
+<link href="https://fonts.googleapis.com" rel="preconnect"/>
+<link crossorigin="" href="https://fonts.gstatic.com" rel="preconnect"/>
+<link href="https://fonts.googleapis.com/css2?family=Cairo:wght@400;600;700;800&amp;family=Tajawal:wght@400;500;700&amp;display=swap" rel="stylesheet"/>
+<!-- Material Symbols Outlined -->
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<!-- Tailwind CSS CDN -->
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<!-- Tailwind Config Verbatim -->
+<script id="tailwind-config">
+    tailwind.config = {
+      darkMode: "class",
+      theme: {
+        extend: {
+          "colors": {
+            "on-tertiary-container": "#fcffe0",
+            "secondary-container": "#97f4d9",
+            "inverse-surface": "#283327",
+            "on-surface": "#131e13",
+            "background": "#f0fdeb",
+            "surface-dim": "#d0decc",
+            "secondary-fixed": "#97f4d9",
+            "tertiary-container": "#6c7b20",
+            "on-tertiary": "#ffffff",
+            "surface-bright": "#f0fdeb",
+            "inverse-on-surface": "#e7f5e2",
+            "outline-variant": "#bdcbb5",
+            "on-tertiary-fixed": "#181e00",
+            "inverse-primary": "#68e054",
+            "primary": "#006c00",
+            "tertiary-fixed-dim": "#becf6b",
+            "on-secondary-fixed": "#002019",
+            "on-primary": "#ffffff",
+            "on-secondary-container": "#00725d",
+            "surface-container-highest": "#d9e6d4",
+            "primary-fixed-dim": "#68e054",
+            "primary-fixed": "#84fd6e",
+            "surface-container-high": "#dfecda",
+            "on-error": "#ffffff",
+            "tertiary-fixed": "#d9ec84",
+            "on-tertiary-fixed-variant": "#404c00",
+            "surface-container": "#e4f2e0",
+            "on-background": "#131e13",
+            "surface-container-low": "#eaf8e5",
+            "surface-tint": "#006e00",
+            "surface-container-lowest": "#ffffff",
+            "on-secondary-fixed-variant": "#005141",
+            "tertiary": "#546204",
+            "on-surface-variant": "#3e4a39",
+            "error": "#ba1a1a",
+            "surface": "#f0fdeb",
+            "on-primary-fixed-variant": "#005300",
+            "on-error-container": "#93000a",
+            "on-secondary": "#ffffff",
+            "on-primary-fixed": "#002200",
+            "secondary-fixed-dim": "#7bd7bd",
+            "primary-container": "#008800",
+            "on-primary-container": "#f8ffef",
+            "outline": "#6e7b68",
+            "secondary": "#006b57",
+            "surface-variant": "#d9e6d4",
+            "error-container": "#ffdad6"
+          },
+          "borderRadius": {
+            "DEFAULT": "0.25rem",
+            "lg": "0.5rem",
+            "xl": "0.75rem",
+            "full": "9999px"
+          },
+          "spacing": {
+            "space-md": "1rem",
+            "margin": "1rem",
+            "space-xs": "0.25rem",
+            "gutter": "1rem",
+            "space-sm": "0.5rem",
+            "space-xl": "1.5rem",
+            "space-lg": "1.25rem"
+          },
+          "fontFamily": {
+            "headline-md": [
+              "Cairo"
+            ],
+            "label-sm": [
+              "Tajawal"
+            ],
+            "body-lg": [
+              "Tajawal"
+            ],
+            "headline-lg": [
+              "Cairo"
+            ],
+            "headline-xl": [
+              "Cairo"
+            ],
+            "body-sm": [
+              "Tajawal"
+            ],
+            "numeral-hero": [
+              "Cairo"
+            ],
+            "label-md": [
+              "Tajawal"
+            ],
+            "body-md": [
+              "Tajawal"
+            ],
+            "headline-sm": [
+              "Cairo"
+            ],
+            "label-lg": [
+              "Tajawal"
+            ]
+          },
+          "fontSize": {
+            "headline-md": [
+              "20px",
+              {
+                "lineHeight": "30px",
+                "fontWeight": "600"
+              }
+            ],
+            "label-sm": [
+              "10px",
+              {
+                "lineHeight": "14px",
+                "fontWeight": "500"
+              }
+            ],
+            "body-lg": [
+              "16px",
+              {
+                "lineHeight": "26px",
+                "fontWeight": "500"
+              }
+            ],
+            "headline-lg": [
+              "26px",
+              {
+                "lineHeight": "38px",
+                "fontWeight": "700"
+              }
+            ],
+            "headline-xl": [
+              "32px",
+              {
+                "lineHeight": "44px",
+                "fontWeight": "700"
+              }
+            ],
+            "body-sm": [
+              "12px",
+              {
+                "lineHeight": "18px",
+                "fontWeight": "400"
+              }
+            ],
+            "numeral-hero": [
+              "36px",
+              {
+                "lineHeight": "44px",
+                "fontWeight": "700"
+              }
+            ],
+            "label-md": [
+              "12px",
+              {
+                "lineHeight": "16px",
+                "fontWeight": "500"
+              }
+            ],
+            "body-md": [
+              "14px",
+              {
+                "lineHeight": "22px",
+                "fontWeight": "400"
+              }
+            ],
+            "headline-sm": [
+              "18px",
+              {
+                "lineHeight": "28px",
+                "fontWeight": "600"
+              }
+            ],
+            "label-lg": [
+              "14px",
+              {
+                "lineHeight": "20px",
+                "fontWeight": "700"
+              }
+            ]
+          }
+        },
+      },
+    }
+  </script>
+<style>
+    .material-symbols-outlined {
+      font-variation-settings: 'FILL' 0, 'wght' 400, 'GRAD' 0, 'opsz' 24;
+      display: inline-block;
+      vertical-align: middle;
+      line-height: 1;
+    }
+    .custom-sheet-shadow {
+      box-shadow: 0 -8px 30px rgba(0, 40, 0, 0.12);
+    }
+    .custom-card-shadow {
+      box-shadow: 0 4px 16px rgba(0, 40, 0, 0.05);
+    }
+  </style>
+<style>
+    body {
+      min-height: max(884px, 100dvh);
+    }
+  </style>
+  </head>
+<body class="bg-background text-on-surface font-body-md text-body-md antialiased min-h-screen relative flex justify-center selection:bg-surface-container-highest">
+<!-- Mobile Frame Container -->
+<div class="w-full max-w-md bg-surface min-h-screen flex flex-col relative pb-24 overflow-x-hidden">
+<!-- Top App Bar (Shared Component Execution) -->
+<header class="bg-surface dark:bg-inverse-surface shadow-sm dark:shadow-none flex justify-between items-center w-full px-space-md py-space-sm sticky top-0 z-10">
+<div class="flex items-center gap-3">
+<div class="w-10 h-10 rounded-full border border-outline-variant overflow-hidden flex items-center justify-center bg-surface-container shadow-xs">
+<img alt="صورة ملف ولي الأمر الشخصي" class="w-full h-full object-cover" data-alt="A distinguished Middle Eastern father in traditional white attire, captured in soft golden morning light with warm gentle demeanor and calm expression against a bright clean educational background, representing trust and serenity." src="https://lh3.googleusercontent.com/aida-public/AB6AXuD0-ZQ49gazwUC82fXhjcp1_qsqoyuN7cCtfLAPj4Lqz_ICie6V7uShLMqOpdd06jECKDfE87yNZ2he6ez5_uERZP4V93N4zix9WyST9pDIBrFoLuh0COFVDTloksXX3Cyn-djYtMm92QFnM1eNVCY-ahcNgH1JcRMp-8SprXBx5qrDKImd9qUH4pkIdcDii1X8xCQnYYiXoN32qlXqr1mznKiwjHrO34AeJ7e69Vb7"/>
+</div>
+<div>
+<span class="text-headline-md font-headline-md font-bold text-primary dark:text-inverse-primary block">مدرسة التقوى</span>
+<span class="text-label-sm font-label-sm text-on-surface-variant block">بوابة أولياء الأمور</span>
+</div>
+</div>
+<button aria-label="الرسائل" class="w-10 h-10 rounded-xl flex items-center justify-center text-primary dark:text-inverse-primary hover:bg-surface-container-high dark:hover:bg-inverse-surface transition-all duration-150">
+<span class="material-symbols-outlined text-2xl">chat_bubble</span>
+</button>
+</header>
+<!-- Main Account Content (Under the overlay) -->
+<main class="px-space-md pt-space-md flex flex-col gap-4 flex-1">
+<!-- Profile Header Hero Card -->
+<section class="bg-surface-container-lowest rounded-2xl border border-outline-variant/40 p-space-lg custom-card-shadow flex flex-col items-center text-center relative overflow-hidden">
+<div class="relative mb-3">
+<div class="w-24 h-24 rounded-full border-2 border-primary/20 p-1 shadow-sm">
+<div class="w-full h-full rounded-full overflow-hidden bg-surface-container-high">
+<img alt="أحمد بن علي" class="w-full h-full object-cover" data-alt="Close up portrait photo of a warm, smiling Arab father named Ahmed with a neat trimmed beard in elegant traditional dress, set against a calm sage green interior wall with natural diffused daylight." src="https://lh3.googleusercontent.com/aida-public/AB6AXuDYgwsqwB5NxNbSTmU81cuuPO5oWtymhGBCWn3cWweectZHN40GuANOcu07Dfn109GpNXZwoFfAgCKXGTu8sNiwmNZtA16rMEr3YUkU65qE6cPHFlNs61teoYflhF3ffpsLlkVLQ8G5CNFMMlUbtb2vKfg2fRGCPb1rP7r60guurIFIeJBxQLAOYOsNxRBDezuGWrfq-ks4D-LMyUEl5LZL0FZOI-MKmVusQSEnXawM"/>
+</div>
+</div>
+<!-- Edit Badge on Avatar -->
+<div class="absolute bottom-0 left-0 bg-primary text-on-primary w-8 h-8 rounded-full flex items-center justify-center border-2 border-surface-container-lowest shadow-md">
+<span class="material-symbols-outlined text-[18px]">photo_camera</span>
+</div>
+</div>
+<h1 class="text-headline-sm font-headline-sm font-bold text-on-surface">أحمد بن علي السعيد</h1>
+<p class="text-body-sm font-body-sm text-on-surface-variant mt-0.5">ولي أمر الطالب: عمر أحمد (الحلقة الرابعة)</p>
+<div class="mt-3 inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-surface-container text-primary font-label-sm text-label-sm font-bold">
+<span class="material-symbols-outlined text-base">verified_user</span>
+<span>حساب موثّق معتمد</span>
+</div>
+</section>
+<!-- Student Card Overview -->
+<section class="bg-surface-container-lowest rounded-2xl border border-outline-variant/40 p-space-lg custom-card-shadow">
+<div class="flex items-center justify-between mb-3">
+<div class="flex items-center gap-2">
+<span class="material-symbols-outlined text-primary text-xl">school</span>
+<h2 class="text-headline-sm font-headline-sm text-on-surface">الأبناء المسجلون</h2>
+</div>
+<span class="text-label-sm font-label-sm bg-surface-container px-2 py-0.5 rounded text-primary">طالب واحد</span>
+</div>
+<div class="bg-surface-container-low rounded-xl p-3 border border-outline-variant/30 flex items-center justify-between">
+<div class="flex items-center gap-3">
+<div class="w-12 h-12 rounded-xl bg-surface-container-highest flex items-center justify-center text-primary font-bold font-headline-sm">
+              ع
+            </div>
+<div>
+<p class="font-bold text-on-surface text-body-md font-body-md">عمر بن أحمد</p>
+<p class="text-body-sm font-body-sm text-on-surface-variant">حفظ جزء عمّ • سورة النبأ</p>
+</div>
+</div>
+<span class="px-2.5 py-1 rounded-full text-label-sm font-label-sm font-bold bg-[#E6F4E6] text-primary">
+            حاضر اليوم
+          </span>
+</div>
+</section>
+<!-- Account Settings Options Bento -->
+<section class="grid grid-cols-2 gap-3">
+<div class="bg-surface-container-lowest p-4 rounded-xl border border-outline-variant/40 flex flex-col gap-2">
+<div class="w-9 h-9 rounded-lg bg-surface-container flex items-center justify-center text-primary">
+<span class="material-symbols-outlined text-xl">notifications_active</span>
+</div>
+<span class="text-body-md font-body-md font-bold text-on-surface">التنبيهات المباشرة</span>
+<span class="text-label-sm font-label-sm text-on-surface-variant">مفعلة للحضور والواجبات</span>
+</div>
+<div class="bg-surface-container-lowest p-4 rounded-xl border border-outline-variant/40 flex flex-col gap-2">
+<div class="w-9 h-9 rounded-lg bg-surface-container flex items-center justify-center text-primary">
+<span class="material-symbols-outlined text-xl">call</span>
+</div>
+<span class="text-body-md font-body-md font-bold text-on-surface">بيانات التواصل</span>
+<span class="text-label-sm font-label-sm text-on-surface-variant">+966 50 123 4567</span>
+</div>
+</section>
+</main>
+<!-- Bottom Navigation Bar (Shared Components Blueprint: Label "حسابي" is Active) -->
+<nav class="fixed bottom-0 left-0 w-full z-20 flex flex-row-reverse justify-around items-center px-space-sm py-space-xs bg-surface-container-lowest dark:bg-inverse-surface shadow-lg dark:shadow-none border-t-0">
+<!-- Item 1: الرئيسية -->
+<a class="flex flex-col items-center justify-center text-on-surface-variant dark:text-outline-variant px-3 py-1.5 hover:bg-surface-container-low dark:hover:bg-inverse-surface hover:text-primary dark:hover:text-inverse-primary transition-all duration-150" href="#">
+<span class="material-symbols-outlined text-2xl">home</span>
+<span class="text-label-sm font-label-sm">الرئيسية</span>
+</a>
+<!-- Item 2: التسميع -->
+<a class="flex flex-col items-center justify-center text-on-surface-variant dark:text-outline-variant px-3 py-1.5 hover:bg-surface-container-low dark:hover:bg-inverse-surface hover:text-primary dark:hover:text-inverse-primary transition-all duration-150" href="#">
+<span class="material-symbols-outlined text-2xl">menu_book</span>
+<span class="text-label-sm font-label-sm">التسميع</span>
+</a>
+<!-- Item 3: الواجبات -->
+<a class="flex flex-col items-center justify-center text-on-surface-variant dark:text-outline-variant px-3 py-1.5 hover:bg-surface-container-low dark:hover:bg-inverse-surface hover:text-primary dark:hover:text-inverse-primary transition-all duration-150" href="#">
+<span class="material-symbols-outlined text-2xl">assignment</span>
+<span class="text-label-sm font-label-sm">الواجبات</span>
+</a>
+<!-- Item 4: الرسائل -->
+<a class="flex flex-col items-center justify-center text-on-surface-variant dark:text-outline-variant px-3 py-1.5 hover:bg-surface-container-low dark:hover:bg-inverse-surface hover:text-primary dark:hover:text-inverse-primary transition-all duration-150" href="#">
+<span class="material-symbols-outlined text-2xl">forum</span>
+<span class="text-label-sm font-label-sm">الرسائل</span>
+</a>
+<!-- Item 5: حسابي (ACTIVE TAB) -->
+<a class="flex flex-col items-center justify-center bg-surface-container dark:bg-surface-container-high text-primary dark:text-inverse-primary rounded-xl px-3 py-1.5 font-bold" href="#">
+<span class="material-symbols-outlined text-2xl" style="font-variation-settings: 'FILL' 1;">person</span>
+<span class="text-label-sm font-label-sm">حسابي</span>
+</a>
+</nav>
+<!-- Modal Backdrop / Darkened Veil -->
+<div class="fixed inset-0 bg-[#152015]/40 backdrop-blur-xs z-40 transition-opacity duration-300" id="modal-backdrop"></div>
+<!-- Avatar Bottom Sheet (نافذة تغيير الصورة الشخصية السفلية) -->
+<div class="fixed bottom-0 left-0 right-0 max-w-md mx-auto z-50 bg-surface-container-lowest rounded-t-[24px] custom-sheet-shadow flex flex-col p-6 animate-in slide-in-from-bottom duration-300" id="bottom-sheet">
+<!-- Top Drag Handle Bar -->
+<div class="w-12 h-1.5 bg-outline-variant/60 rounded-full mx-auto mb-5"></div>
+<!-- Sheet Header -->
+<div class="text-right mb-6">
+<h3 class="text-headline-md font-headline-md font-bold text-on-surface">تغيير الصورة الشخصية</h3>
+<p class="text-body-sm font-body-sm text-on-surface-variant mt-1">اختر الطريقة المناسبة لتحديث صورتك الشخصية في سجلات المدرسة</p>
+</div>
+<!-- Options Container -->
+<div class="flex flex-col gap-3">
+<!-- Option 1: Capture Camera -->
+<button class="w-full flex items-center justify-between p-3.5 rounded-2xl bg-surface-container-low/70 hover:bg-surface-container transition-all duration-150 group border border-outline-variant/20 active:scale-[0.99]">
+<div class="flex items-center gap-3.5">
+<div class="w-12 h-12 rounded-xl bg-[#E6F4E6] flex items-center justify-center text-[#009000] shrink-0">
+<span class="material-symbols-outlined text-2xl">photo_camera</span>
+</div>
+<div class="text-right">
+<span class="font-headline-sm text-body-lg font-bold text-on-surface block">التقاط صورة بالكاميرا</span>
+<span class="font-body-sm text-body-sm text-on-surface-variant">استخدام كاميرا الهاتف مباشرة</span>
+</div>
+</div>
+<span class="material-symbols-outlined text-on-surface-variant/70 group-hover:text-primary transition-colors text-xl">chevron_left</span>
+</button>
+<!-- Option 2: Gallery -->
+<button class="w-full flex items-center justify-between p-3.5 rounded-2xl bg-surface-container-low/70 hover:bg-surface-container transition-all duration-150 group border border-outline-variant/20 active:scale-[0.99]">
+<div class="flex items-center gap-3.5">
+<div class="w-12 h-12 rounded-xl bg-surface-container flex items-center justify-center text-primary shrink-0">
+<span class="material-symbols-outlined text-2xl">photo_library</span>
+</div>
+<div class="text-right">
+<span class="font-headline-sm text-body-lg font-bold text-on-surface block">اختيار من المعرض</span>
+<span class="font-body-sm text-body-sm text-on-surface-variant">اختيار ملف محفوظ مسبقاً من الألبوم</span>
+</div>
+</div>
+<span class="material-symbols-outlined text-on-surface-variant/70 group-hover:text-primary transition-colors text-xl">chevron_left</span>
+</button>
+<!-- Option 3: Remove Current Picture -->
+<button class="w-full flex items-center justify-between p-3.5 rounded-2xl bg-surface-container-lowest hover:bg-error-container/20 transition-all duration-150 group border border-outline-variant/30 active:scale-[0.99]">
+<div class="flex items-center gap-3.5">
+<div class="w-12 h-12 rounded-xl bg-surface-container-high/60 flex items-center justify-center text-on-surface-variant group-hover:text-error shrink-0 transition-colors">
+<span class="material-symbols-outlined text-2xl">delete_outline</span>
+</div>
+<div class="text-right">
+<span class="font-headline-sm text-body-lg font-bold text-on-surface-variant group-hover:text-error block transition-colors">إزالة الصورة الحالية</span>
+<span class="font-body-sm text-body-sm text-outline">العودة إلى الحرف التعريفي الافتراضي</span>
+</div>
+</div>
+<span class="material-symbols-outlined text-on-surface-variant/40 group-hover:text-error transition-colors text-xl">chevron_left</span>
+</button>
+</div>
+<!-- Action Footer: Cancel Button -->
+<div class="mt-6 pt-2">
+<button class="w-full h-12 rounded-[14px] bg-surface-container-high text-on-surface hover:bg-surface-variant active:scale-95 font-label-lg text-label-lg font-bold transition-all duration-150 flex items-center justify-center" id="close-button">
+          إلغاء
+        </button>
+</div>
+</div>
+</div>
+<!-- Interactive script to handle backdrop & cancel dismiss demo -->
+<script>
+    const backdrop = document.getElementById('modal-backdrop');
+    const bottomSheet = document.getElementById('bottom-sheet');
+    const closeBtn = document.getElementById('close-button');
+
+    function toggleSheet() {
+      if (bottomSheet.style.display === 'none') {
+        bottomSheet.style.display = 'flex';
+        backdrop.style.display = 'block';
+      } else {
+        bottomSheet.style.display = 'none';
+        backdrop.style.display = 'none';
+      }
+    }
+
+    if (closeBtn && backdrop) {
+      closeBtn.addEventListener('click', toggleSheet);
+      backdrop.addEventListener('click', toggleSheet);
+    }
+  </script>
+</body></html>

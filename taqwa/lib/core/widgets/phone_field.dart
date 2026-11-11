@@ -284,8 +284,9 @@ class _CountryButton extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final color =
-        onTap == null ? AppColors.onSurfaceVariant : AppColors.onSurface;
+    final color = onTap == null
+        ? AppColors.onSurfaceVariant
+        : AppColors.onSurface;
     return Semantics(
       button: true,
       label: 'رمز الدولة ${country.name} ${country.dialCode}',
@@ -313,11 +314,7 @@ class _CountryButton extends StatelessWidget {
                   color: AppColors.onSurfaceVariant,
                 ),
               SizedBox(width: 8.w),
-              Container(
-                width: 1,
-                height: 24.h,
-                color: AppColors.inputBorder,
-              ),
+              Container(width: 1, height: 24.h, color: AppColors.inputBorder),
             ],
           ),
         ),
@@ -343,7 +340,10 @@ class _CountrySheet extends StatelessWidget {
           children: [
             Padding(
               padding: EdgeInsets.fromLTRB(16.w, 20.h, 16.w, 4.h),
-              child: AppText('اختر رمز الدولة', style: AppTextStyles.labelMdBold),
+              child: AppText(
+                'اختر رمز الدولة',
+                style: AppTextStyles.labelMdBold,
+              ),
             ),
             Padding(
               padding: EdgeInsets.symmetric(horizontal: 16.w),
@@ -381,7 +381,11 @@ class _CountrySheet extends StatelessWidget {
                         ),
                         if (isSelected) ...[
                           SizedBox(width: 8.w),
-                          Icon(Icons.check, size: 18.w, color: AppColors.primary),
+                          Icon(
+                            Icons.check,
+                            size: 18.w,
+                            color: AppColors.primary,
+                          ),
                         ],
                       ],
                     ),
