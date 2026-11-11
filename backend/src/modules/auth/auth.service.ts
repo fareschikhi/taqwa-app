@@ -1,5 +1,6 @@
 import {
   Injectable,
+  Logger,
   UnauthorizedException,
   BadRequestException,
   ForbiddenException,
@@ -17,8 +18,17 @@ import { LoginAttemptsService } from './login-attempts.service';
  */
 const DUMMY_PASSWORD_HASH = bcrypt.hashSync('taqwa-no-such-account', 10);
 
+/**
+ * How stale `lastSeenAt` may get before a request refreshes it. Staff read it
+ * in days ("seen 3 days ago"), so minutes of slack cost nothing, while writing
+ * on every request would mean an UPDATE per API call.
+ */
+export const LAST_SEEN_THROTTLE_MS = 10 * 60 * 1000;
+
 @Injectable()
 export class AuthService {
+  private readonly logger = new Logger(AuthService.name);
+
   constructor(
     private prisma: PrismaService,
     private jwtService: JwtService,
@@ -93,6 +103,7 @@ export class AuthService {
       throw new UnauthorizedException('بيانات الدخول غير صحيحة');
     }
     this.loginAttempts.recordSuccess(attemptKeys);
+    await this.stampLogin(user.id);
 
     const payload = { sub: user.id, role: user.role };
     const token = this.jwtService.sign(payload);
@@ -175,7 +186,7 @@ export class AuthService {
   }
 
   async validateUser(userId: number) {
-    return this.prisma.user.findUnique({
+    const found = await this.prisma.user.findUnique({
       where: { id: userId, isActive: true },
       select: {
         id: true,
@@ -185,6 +196,7 @@ export class AuthService {
         role: true,
         avatar: true,
         mustChangePassword: true,
+        lastSeenAt: true,
         student: { select: { id: true } },
         parent: { select: { id: true } },
         teacher: { select: { id: true, canPostNews: true } },
@@ -199,5 +211,46 @@ export class AuthService {
         },
       },
     });
+    if (!found) return null;
+
+    // Every authenticated request passes through here, so this is where
+    // "still uses the app" is noticed — a parent whose token keeps being
+    // refreshed never logs in again. Not awaited: the request must not wait
+    // on bookkeeping.
+    const { lastSeenAt, ...user } = found;
+    void this.touchLastSeen(user.id, lastSeenAt);
+    return user;
+  }
+
+  private async stampLogin(userId: number) {
+    const now = new Date();
+    try {
+      await this.prisma.user.update({
+        where: { id: userId },
+        data: { lastLoginAt: now, lastSeenAt: now },
+      });
+    } catch (e) {
+      // Bookkeeping only: a failed stamp must never lock a parent out.
+      this.logger.warn(`lastLoginAt stamp failed: ${(e as Error).name}`);
+    }
+  }
+
+  private async touchLastSeen(userId: number, lastSeenAt: Date | null) {
+    const now = Date.now();
+    const cutoff = new Date(now - LAST_SEEN_THROTTLE_MS);
+    if (lastSeenAt && lastSeenAt >= cutoff) return;
+    try {
+      // The condition is repeated in the WHERE so two requests landing
+      // together write once, not twice: the second matches no row.
+      await this.prisma.user.updateMany({
+        where: {
+          id: userId,
+          OR: [{ lastSeenAt: null }, { lastSeenAt: { lt: cutoff } }],
+        },
+        data: { lastSeenAt: new Date(now) },
+      });
+    } catch (e) {
+      this.logger.warn(`lastSeenAt stamp failed: ${(e as Error).name}`);
+    }
   }
 }

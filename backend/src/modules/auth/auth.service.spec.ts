@@ -6,7 +6,7 @@ import {
 } from '@nestjs/common';
 import { JwtService } from '@nestjs/jwt';
 import * as bcrypt from 'bcrypt';
-import { AuthService } from './auth.service';
+import { AuthService, LAST_SEEN_THROTTLE_MS } from './auth.service';
 import {
   LoginAttemptsService,
   MAX_FAILED_ATTEMPTS,
@@ -405,5 +405,136 @@ describe('AuthService.login lockout', () => {
     await expect(
       service.login({ phone: '3001', password: 'wrong-pass' } as any),
     ).rejects.toMatchObject({ status: HttpStatus.TOO_MANY_REQUESTS });
+  });
+});
+
+describe('AuthService activity tracking', () => {
+  const NOW = new Date('2026-11-11T10:00:00Z');
+
+  beforeEach(() => jest.useFakeTimers({ now: NOW }));
+  afterEach(() => jest.useRealTimers());
+
+  const makePrisma = (user: Record<string, unknown> | null) => ({
+    user: {
+      findMany: jest.fn().mockResolvedValue(user ? [user] : []),
+      findUnique: jest.fn().mockResolvedValue(user),
+      update: jest.fn().mockResolvedValue({}),
+      updateMany: jest.fn().mockResolvedValue({ count: 1 }),
+    },
+  });
+  const serviceFor = (prisma: ReturnType<typeof makePrisma>) =>
+    new AuthService(
+      prisma as any,
+      { sign: jest.fn().mockReturnValue('t') } as unknown as JwtService,
+      new LoginAttemptsService(),
+    );
+
+  it('stamps the login time on a successful sign-in', async () => {
+    const prisma = makePrisma({
+      id: 9,
+      role: 'PARENT',
+      passwordHash: PASSWORD_HASH,
+      parent: { id: 4 },
+    });
+
+    await serviceFor(prisma).login({ phone: '3001', password: PASSWORD } as any);
+
+    expect(prisma.user.update).toHaveBeenCalledWith({
+      where: { id: 9 },
+      data: { lastLoginAt: NOW, lastSeenAt: NOW },
+    });
+  });
+
+  it('stamps nothing when the password is wrong', async () => {
+    const prisma = makePrisma({
+      id: 9,
+      role: 'PARENT',
+      passwordHash: PASSWORD_HASH,
+      parent: { id: 4 },
+    });
+
+    await expect(
+      serviceFor(prisma).login({ phone: '3001', password: 'nope' } as any),
+    ).rejects.toBeInstanceOf(UnauthorizedException);
+    expect(prisma.user.update).not.toHaveBeenCalled();
+  });
+
+  // A failed stamp is bookkeeping; it must never lock a parent out.
+  it('still signs in when the stamp fails', async () => {
+    const prisma = makePrisma({
+      id: 9,
+      role: 'PARENT',
+      passwordHash: PASSWORD_HASH,
+      parent: { id: 4 },
+    });
+    prisma.user.update.mockRejectedValue(new Error('db down'));
+
+    const result = await serviceFor(prisma).login({
+      phone: '3001',
+      password: PASSWORD,
+    } as any);
+    expect(result.accessToken).toBe('t');
+  });
+
+  it('marks a user seen when they were never seen before', async () => {
+    const prisma = makePrisma({ id: 9, role: 'PARENT', lastSeenAt: null });
+
+    await serviceFor(prisma).validateUser(9);
+
+    expect(prisma.user.updateMany).toHaveBeenCalledWith({
+      where: {
+        id: 9,
+        OR: [
+          { lastSeenAt: null },
+          { lastSeenAt: { lt: new Date(NOW.getTime() - LAST_SEEN_THROTTLE_MS) } },
+        ],
+      },
+      data: { lastSeenAt: NOW },
+    });
+  });
+
+  it('marks a user seen once the throttle window has passed', async () => {
+    const stale = new Date(NOW.getTime() - LAST_SEEN_THROTTLE_MS - 1);
+    const prisma = makePrisma({ id: 9, role: 'PARENT', lastSeenAt: stale });
+
+    await serviceFor(prisma).validateUser(9);
+
+    expect(prisma.user.updateMany).toHaveBeenCalledTimes(1);
+  });
+
+  // Every API call goes through validateUser; writing on each would turn a
+  // parent scrolling one screen into dozens of UPDATEs.
+  it('skips the write inside the throttle window', async () => {
+    const recent = new Date(NOW.getTime() - LAST_SEEN_THROTTLE_MS + 60_000);
+    const prisma = makePrisma({ id: 9, role: 'PARENT', lastSeenAt: recent });
+
+    await serviceFor(prisma).validateUser(9);
+
+    expect(prisma.user.updateMany).not.toHaveBeenCalled();
+  });
+
+  it('keeps lastSeenAt off the request user', async () => {
+    const prisma = makePrisma({ id: 9, role: 'PARENT', lastSeenAt: null });
+
+    const user = await serviceFor(prisma).validateUser(9);
+
+    expect(user).toEqual({ id: 9, role: 'PARENT' });
+  });
+
+  it('does not fail the request when the stamp fails', async () => {
+    const prisma = makePrisma({ id: 9, role: 'PARENT', lastSeenAt: null });
+    prisma.user.updateMany.mockRejectedValue(new Error('db down'));
+
+    await expect(serviceFor(prisma).validateUser(9)).resolves.toEqual({
+      id: 9,
+      role: 'PARENT',
+    });
+  });
+
+  it('returns null for a missing user without stamping', async () => {
+    const prisma = makePrisma(null);
+
+    await expect(serviceFor(prisma).validateUser(9)).resolves.toBeNull();
+    expect(prisma.user.updateMany).not.toHaveBeenCalled();
   });
 });

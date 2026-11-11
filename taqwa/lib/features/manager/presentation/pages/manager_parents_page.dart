@@ -11,6 +11,7 @@ import '../../../../core/widgets/app_button.dart';
 import '../../../../core/widgets/avatar_widget.dart';
 import '../../../../core/widgets/confirm_delete_dialog.dart';
 import '../../../../core/widgets/list_layout.dart';
+import '../../../../core/widgets/last_seen_label.dart';
 import '../../../../features/data/models/parent/parent_model.dart';
 import '../../../../features/data/repositories/parent_repository.dart';
 import '../../../shared/presentation/pages/parent_details_page.dart';
@@ -92,6 +93,8 @@ class _ManagerParentsPageState extends ConsumerState<ManagerParentsPage> {
       list = list.where((p) => p.isActive == true).toList();
     } else if (_filterIndex == 2) {
       list = list.where((p) => p.isActive == false).toList();
+    } else if (_filterIndex == 3) {
+      list = list.where((p) => p.lastActiveAt == null).toList();
     }
     _filtered = list;
   }
@@ -145,6 +148,7 @@ class _ManagerParentsPageState extends ConsumerState<ManagerParentsPage> {
     final canDelete = ref.watch(authProvider).user?.canDeleteAccounts ?? false;
     final activeCount = _parents.where((p) => p.isActive == true).length;
     final inactiveCount = _parents.length - activeCount;
+    final neverCount = _parents.where((p) => p.lastActiveAt == null).length;
 
     return Scaffold(
       backgroundColor: AppColors.background,
@@ -203,6 +207,7 @@ class _ManagerParentsPageState extends ConsumerState<ManagerParentsPage> {
                           'الكل (${_parents.length})',
                           'نشط ($activeCount)',
                           'غير نشط ($inactiveCount)',
+                          'لم يدخل بعد ($neverCount)',
                         ],
                         onChanged: (i) => setState(() {
                           _filterIndex = i;
@@ -342,8 +347,10 @@ class _ParentCard extends StatelessWidget {
           ],
         ),
         padding: EdgeInsets.all(16.w),
-        // The Spacer has to be a direct child of this Row: a list item has no
-        // bounded height, so a flex child inside the Column would throw.
+        // The Expanded has to be a direct child of this Row: a list item has
+        // no bounded height, so a flex child inside the Column would throw.
+        // It (not a Spacer) also bounds the details' width, which the
+        // last-seen line needs to ellipsize.
         child: Row(
           children: [
             // Actions, pinned to the left edge like the students card.
@@ -372,61 +379,64 @@ class _ParentCard extends StatelessWidget {
                     ),
                 ],
               ),
-            const Spacer(),
-            Column(
-              crossAxisAlignment: CrossAxisAlignment.end,
-              children: [
-                Row(
-                  mainAxisSize: MainAxisSize.min,
-                  children: [
-                    Column(
-                      crossAxisAlignment: CrossAxisAlignment.end,
-                      children: [
-                        AppText(
-                          parent.fullName,
-                          style: AppTextStyles.headlineSm.copyWith(
-                            color: AppColors.onSurface,
-                          ),
-                        ),
-                        if ((parent.phone ?? '').isNotEmpty)
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.end,
+                children: [
+                  Row(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      Column(
+                        crossAxisAlignment: CrossAxisAlignment.end,
+                        children: [
                           AppText(
-                            parent.phone!,
-                            style: AppTextStyles.labelMd.copyWith(
-                              color: AppColors.onSurfaceVariant,
+                            parent.fullName,
+                            style: AppTextStyles.headlineSm.copyWith(
+                              color: AppColors.onSurface,
                             ),
                           ),
-                      ],
-                    ),
-                    SizedBox(width: 12.w),
-                    AvatarWidget(
-                      avatarUrl: parent.avatar,
-                      size: 44.w,
-                      backgroundColor: AppColors.tertiaryContainer,
-                      fallback: AppText(
-                        parent.fullName.isNotEmpty ? parent.fullName[0] : '؟',
-                        style: AppTextStyles.headlineSm.copyWith(
-                          color: AppColors.onTertiaryContainer,
+                          if ((parent.phone ?? '').isNotEmpty)
+                            AppText(
+                              parent.phone!,
+                              style: AppTextStyles.labelMd.copyWith(
+                                color: AppColors.onSurfaceVariant,
+                              ),
+                            ),
+                        ],
+                      ),
+                      SizedBox(width: 12.w),
+                      AvatarWidget(
+                        avatarUrl: parent.avatar,
+                        size: 44.w,
+                        backgroundColor: AppColors.tertiaryContainer,
+                        fallback: AppText(
+                          parent.fullName.isNotEmpty ? parent.fullName[0] : '؟',
+                          style: AppTextStyles.headlineSm.copyWith(
+                            color: AppColors.onTertiaryContainer,
+                          ),
                         ),
                       ),
-                    ),
-                  ],
-                ),
-                SizedBox(height: 8.h),
-                Container(
-                  padding: EdgeInsets.symmetric(horizontal: 8.w, vertical: 3.h),
-                  decoration: BoxDecoration(
-                    color: (isActive ? AppColors.primary : AppColors.outline)
-                        .withValues(alpha: 0.1),
-                    borderRadius: BorderRadius.circular(AppConstants.radiusMd),
+                    ],
                   ),
-                  child: AppText(
-                    isActive ? 'نشط' : 'غير نشط',
-                    style: AppTextStyles.labelSm.copyWith(
-                      color: isActive ? AppColors.primary : AppColors.outline,
+                  SizedBox(height: 6.h),
+                  LastSeenLabel(lastSeen: parent.lastActiveAt),
+                  SizedBox(height: 8.h),
+                  Container(
+                    padding: EdgeInsets.symmetric(horizontal: 8.w, vertical: 3.h),
+                    decoration: BoxDecoration(
+                      color: (isActive ? AppColors.primary : AppColors.outline)
+                          .withValues(alpha: 0.1),
+                      borderRadius: BorderRadius.circular(AppConstants.radiusMd),
+                    ),
+                    child: AppText(
+                      isActive ? 'نشط' : 'غير نشط',
+                      style: AppTextStyles.labelSm.copyWith(
+                        color: isActive ? AppColors.primary : AppColors.outline,
+                      ),
                     ),
                   ),
-                ),
-              ],
+                ],
+              ),
             ),
           ],
         ),
@@ -510,6 +520,8 @@ class _ParentGridCard extends StatelessWidget {
                 overflow: TextOverflow.ellipsis,
               ),
             ],
+            SizedBox(height: 4.h),
+            LastSeenLabel(lastSeen: parent.lastActiveAt, centered: true),
             SizedBox(height: 8.h),
             Container(
               padding: EdgeInsets.symmetric(horizontal: 8.w, vertical: 3.h),

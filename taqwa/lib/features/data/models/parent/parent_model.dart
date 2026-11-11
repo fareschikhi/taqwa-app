@@ -11,7 +11,21 @@ class ParentModel {
   final String? avatar;
   final String? address;
   final bool? isActive;
+
+  /// Last password sign-in, and last time the app talked to the server (a
+  /// returning parent's token is refreshed, so they rarely sign in again).
+  /// Null = never. Only staff-facing lists receive these.
+  final DateTime? lastLoginAt;
+  final DateTime? lastSeenAt;
   final List<ParentChildModel> children;
+
+  /// The latest sign of use, or null if the parent never opened the app.
+  DateTime? get lastActiveAt {
+    final login = lastLoginAt, seen = lastSeenAt;
+    if (login == null) return seen;
+    if (seen == null) return login;
+    return seen.isAfter(login) ? seen : login;
+  }
 
   const ParentModel({
     this.id,
@@ -23,6 +37,8 @@ class ParentModel {
     this.avatar,
     this.address,
     this.isActive,
+    this.lastLoginAt,
+    this.lastSeenAt,
     this.children = const [],
   });
 
@@ -60,6 +76,8 @@ class ParentModel {
       avatar: (json['avatar'] as String?) ?? (userMap?['avatar'] as String?),
       isActive:
           (json['isActive'] as bool?) ?? (userMap?['isActive'] as bool?),
+      lastLoginAt: _date(json['lastLoginAt'] ?? userMap?['lastLoginAt']),
+      lastSeenAt: _date(json['lastSeenAt'] ?? userMap?['lastSeenAt']),
 
       // Parent fields: root first (Format A), nested 'parent' second (Format B)
       address: (json['address'] as String?) ??
@@ -68,6 +86,9 @@ class ParentModel {
       children: childrenList,
     );
   }
+
+  static DateTime? _date(Object? raw) =>
+      raw is String ? DateTime.tryParse(raw)?.toLocal() : null;
 
   Map<String, dynamic> toJson() => {
         'fullName': fullName,

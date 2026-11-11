@@ -63,6 +63,30 @@ void main() {
     expect(find.text('حلقة النور'), findsOneWidget);
   });
 
+  testWidgets('says when the parent never opened the app', (tester) async {
+    _phoneScreen(tester);
+    await tester.pumpWidget(_host(ParentDetailsPage(parent: _parent)));
+    await tester.pumpAndSettle();
+
+    expect(find.text('استخدام التطبيق'), findsOneWidget);
+    expect(find.text('لم يدخل التطبيق بعد'), findsOneWidget);
+    expect(find.text('آخر تسجيل دخول'), findsNothing);
+  });
+
+  testWidgets('shows when the parent last used the app', (tester) async {
+    _phoneScreen(tester);
+    final today = DateTime.now().toUtc().toIso8601String();
+    final parent = ParentModel.fromJson({
+      'id': 3,
+      'user': {'fullName': 'أب', 'lastLoginAt': today, 'lastSeenAt': today},
+    });
+    await tester.pumpWidget(_host(ParentDetailsPage(parent: parent)));
+    await tester.pumpAndSettle();
+
+    expect(find.text('آخر تسجيل دخول'), findsOneWidget);
+    expect(find.text('اليوم'), findsNWidgets(2));
+  });
+
   testWidgets('the edit button only shows when allowed', (tester) async {
     _phoneScreen(tester);
     await tester.pumpWidget(_host(ParentDetailsPage(parent: _parent)));

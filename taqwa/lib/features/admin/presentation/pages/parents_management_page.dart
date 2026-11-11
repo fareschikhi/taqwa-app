@@ -11,6 +11,7 @@ import '../../../../core/widgets/confirm_delete_dialog.dart';
 import 'package:taqwa/core/widgets/card_action_row.dart';
 import 'package:taqwa/core/widgets/confirm_status_dialog.dart';
 import 'package:taqwa/core/widgets/list_layout.dart';
+import 'package:taqwa/core/widgets/last_seen_label.dart';
 import '../../../../features/data/models/parent/parent_model.dart';
 import '../../../../features/data/repositories/parent_repository.dart';
 import 'package:taqwa/features/data/repositories/user_repository.dart';
@@ -88,6 +89,8 @@ class _ParentsManagementPageState extends State<ParentsManagementPage> {
       list = list.where((p) => p.isActive == true).toList();
     } else if (_filterIndex == 2) {
       list = list.where((p) => p.isActive == false).toList();
+    } else if (_filterIndex == 3) {
+      list = list.where((p) => p.lastActiveAt == null).toList();
     }
     _filtered = list;
   }
@@ -162,6 +165,7 @@ class _ParentsManagementPageState extends State<ParentsManagementPage> {
   Widget build(BuildContext context) {
     final activeCount = _parents.where((p) => p.isActive == true).length;
     final inactiveCount = _parents.length - activeCount;
+    final neverCount = _parents.where((p) => p.lastActiveAt == null).length;
 
     return Scaffold(
       backgroundColor: AppColors.background,
@@ -241,6 +245,7 @@ class _ParentsManagementPageState extends State<ParentsManagementPage> {
                         'الكل (${_parents.length})',
                         'نشط ($activeCount)',
                         'غير نشط ($inactiveCount)',
+                        'لم يدخل بعد ($neverCount)',
                       ],
                       onChanged: (i) => setState(() {
                         _filterIndex = i;
@@ -427,6 +432,8 @@ class _ParentCard extends StatelessWidget {
                           ],
                         ),
                       ],
+                      SizedBox(height: 4.h),
+                      LastSeenLabel(lastSeen: parent.lastActiveAt),
                       SizedBox(height: 8.h),
                       Row(
                         mainAxisAlignment: MainAxisAlignment.end,
@@ -549,6 +556,8 @@ class _ParentGridCard extends StatelessWidget {
                 overflow: TextOverflow.ellipsis,
               ),
             ],
+            SizedBox(height: 4.h),
+            LastSeenLabel(lastSeen: parent.lastActiveAt, centered: true),
             SizedBox(height: 6.h),
             Container(
               padding: EdgeInsets.symmetric(horizontal: 8.w, vertical: 3.h),

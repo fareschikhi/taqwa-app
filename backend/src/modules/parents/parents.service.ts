@@ -22,6 +22,9 @@ export class ParentsService {
         extraPhones: true,
         avatar: true,
         isActive: true,
+        // Staff use these to find parents who never opened the app.
+        lastLoginAt: true,
+        lastSeenAt: true,
       },
     },
     students: {
