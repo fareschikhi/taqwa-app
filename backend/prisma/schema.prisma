@@ -97,6 +97,12 @@ model User {
   role               Role
   avatar             String?  @db.VarChar(500)
   isActive           Boolean  @default(true)
+  // Lets staff see who actually uses the app (a parent who never opened it
+  // needs a phone call, not another notification). lastLoginAt is stamped on
+  // each password sign-in; lastSeenAt on any authenticated request, at most
+  // once per AuthService LAST_SEEN_THROTTLE_MS. Null = never.
+  lastLoginAt        DateTime?
+  lastSeenAt         DateTime?
   createdAt          DateTime @default(now())
   updatedAt          DateTime @updatedAt
 

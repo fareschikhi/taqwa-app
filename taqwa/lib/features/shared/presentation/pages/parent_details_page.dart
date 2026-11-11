@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
 import '../../../../core/theme/app_colors.dart';
 import '../../../../core/theme/app_text_styles.dart';
+import '../../../../core/utils/last_seen.dart';
 import '../../../../core/utils/telegram.dart';
 import '../../../data/models/parent/parent_model.dart';
 import '../../../data/repositories/parent_repository.dart';
@@ -67,6 +68,8 @@ class _ParentDetailsPageState extends State<ParentDetailsPage> {
   @override
   Widget build(BuildContext context) {
     final students = _parent.children;
+    final lastActive = _parent.lastActiveAt;
+    final lastLogin = _parent.lastLoginAt;
 
     return PopScope<bool>(
       canPop: false,
@@ -136,6 +139,32 @@ class _ParentDetailsPageState extends State<ParentDetailsPage> {
                             label: 'العنوان',
                             value: _parent.address,
                           ),
+                        ],
+                      ),
+                      SizedBox(height: 16.h),
+                      // Who to phone: a parent who never opened the app, or
+                      // stopped, needs a hand rather than another notification.
+                      DetailSectionCard(
+                        title: 'استخدام التطبيق',
+                        children: [
+                          DetailInfoRow(
+                            icon: Icons.access_time,
+                            label: 'آخر استخدام للتطبيق',
+                            value: lastActive == null
+                                ? 'لم يدخل التطبيق بعد'
+                                : timeAgo(lastActive),
+                          ),
+                          // Hidden rather than "غير مسجل" when missing: a
+                          // parent who signed in before tracking began has a
+                          // last-use date but no recorded login.
+                          if (lastLogin != null) ...[
+                            SizedBox(height: 12.h),
+                            DetailInfoRow(
+                              icon: Icons.login,
+                              label: 'آخر تسجيل دخول',
+                              value: timeAgo(lastLogin),
+                            ),
+                          ],
                         ],
                       ),
                       SizedBox(height: 16.h),
