@@ -1,4 +1,8 @@
-import { Injectable, BadRequestException, NotFoundException } from '@nestjs/common';
+import {
+  Injectable,
+  BadRequestException,
+  NotFoundException,
+} from '@nestjs/common';
 import { PrismaService } from '../../prisma/prisma.service';
 import {
   CreateMemorizationDto,
@@ -9,7 +13,12 @@ import {
   Memorization,
   MemorizationSubject,
 } from '@prisma/client';
-import { MAX_AMOUNT, ProgressUnit, unitFor } from './progress-unit';
+import {
+  MAX_AMOUNT,
+  ProgressUnit,
+  ayahRangeAmount,
+  unitFor,
+} from './progress-unit';
 import { reconcileDayFines } from '../attendance/day-fines';
 import { isAway } from '../attendance/attendance-status';
 import { reconcileDayPoints } from '../points/day-points';
@@ -36,8 +45,8 @@ export class MemorizationService {
   constructor(private prisma: PrismaService) {}
 
   private assertAmountFitsUnit(unit: ProgressUnit, amountDone: number) {
-    // A half page is a real recitation; a half hadith is not recorded, and
-    // nothing finer than a half is ever meant (1.3 is a typo).
+    // A half page is a real recitation; a half hadith or ayah is not
+    // recorded, and nothing finer than a half is ever meant (1.3 is a typo).
     const step = unit === 'PAGE' ? 0.5 : 1;
     if (!Number.isInteger(amountDone / step) || amountDone < step) {
       throw new BadRequestException(
@@ -159,6 +168,7 @@ export class MemorizationService {
     this.assertSubjectFields(subject, dto.surahNumber, dto.hadithReference);
     const unit = unitFor(subject, dto.unit);
     this.assertAmountFitsUnit(unit, dto.amountDone);
+    ayahRangeAmount({ unit, ...dto });
     if (subject === MemorizationSubject.HADITH) {
       await this.assertHadithEnabled(dto.studentId, dto.hadithReference);
     }
@@ -219,10 +229,29 @@ export class MemorizationService {
     this.assertSubjectFields(subject, surahNumber, hadithReference);
     // An edit that moves the row to the other subject starts from that
     // subject's default unit; otherwise the row keeps the unit it has.
-    const keptUnit =
-      subject === existing.subject ? existing.unit : undefined;
+    const keptUnit = subject === existing.subject ? existing.unit : undefined;
     const unit = unitFor(subject, dto.unit ?? keptUnit);
-    this.assertAmountFitsUnit(unit, dto.amountDone ?? existing.amountDone);
+    // A row that stays in ayahs keeps whichever end of its range the edit
+    // leaves alone; a row leaving ayahs drops its range. An edit that only
+    // moves the range recounts the amount from it, so "ayahs 1–5 → 1–10"
+    // needs no amount alongside.
+    const staysAyah =
+      unit === ProgressUnit.AYAH && existing.unit === ProgressUnit.AYAH;
+    const ayahFrom = staysAyah
+      ? (dto.ayahFrom ?? existing.ayahFrom)
+      : dto.ayahFrom;
+    const ayahTo = staysAyah ? (dto.ayahTo ?? existing.ayahTo) : dto.ayahTo;
+    const rangeMoved = dto.ayahFrom !== undefined || dto.ayahTo !== undefined;
+    const amountDone =
+      dto.amountDone ??
+      (unit === ProgressUnit.AYAH &&
+      rangeMoved &&
+      ayahFrom != null &&
+      ayahTo != null
+        ? ayahTo - ayahFrom + 1
+        : existing.amountDone);
+    this.assertAmountFitsUnit(unit, amountDone);
+    ayahRangeAmount({ unit, surahNumber, ayahFrom, ayahTo, amountDone });
     if (subject === MemorizationSubject.HADITH) {
       await this.assertHadithEnabled(existing.studentId, dto.hadithReference);
     }
@@ -233,7 +262,13 @@ export class MemorizationService {
     return this.prisma.$transaction(async (tx) => {
       const record = await tx.memorizationProgress.update({
         where: { id },
-        data: { ...dto, unit },
+        data: {
+          ...dto,
+          unit,
+          amountDone,
+          ayahFrom: unit === ProgressUnit.AYAH ? ayahFrom : null,
+          ayahTo: unit === ProgressUnit.AYAH ? ayahTo : null,
+        },
       });
       await reconcileDayPoints(tx, existing.studentId, existing.date);
       return record;
@@ -254,8 +289,16 @@ export class MemorizationService {
     // them twice. Only new Quran memorization contributes to the page total,
     // and hadith rows are excluded entirely — there is no "% of Quran"
     // meaning for them.
-    const totalPagesDone = quranRecords
-      .filter((r) => r.memorizationType === Memorization.MEMORIZING)
+    // Pages and ayahs are different units, so an ayah entry adds to its own
+    // total and never to the page count.
+    const newQuran = quranRecords.filter(
+      (r) => r.memorizationType === Memorization.MEMORIZING,
+    );
+    const totalPagesDone = newQuran
+      .filter((r) => r.unit !== ProgressUnit.AYAH)
+      .reduce((sum, r) => sum + r.amountDone, 0);
+    const totalAyahsDone = newQuran
+      .filter((r) => r.unit === ProgressUnit.AYAH)
       .reduce((sum, r) => sum + r.amountDone, 0);
     const totalSurahs = new Set(quranRecords.map((r) => r.surahNumber)).size;
 
@@ -299,6 +342,7 @@ export class MemorizationService {
     return {
       records,
       totalPagesDone,
+      totalAyahsDone,
       totalHadithsDone,
       totalHadithPagesDone,
       totalSurahs,

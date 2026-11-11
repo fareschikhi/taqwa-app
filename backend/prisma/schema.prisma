@@ -35,11 +35,14 @@ enum MemorizationSubject {
   HADITH
 }
 
-// What a memorization row's amountDone counts. Quran is always PAGE; a hadith
-// row is counted in single hadiths or in pages, as the teacher picks.
+// What a memorization row's amountDone counts. A Quran row is PAGE, or AYAH
+// when the teacher recorded an ayah range; a hadith row is counted in single
+// hadiths or in pages, as the teacher picks. Each unit has its own total —
+// they are never added together.
 enum ProgressUnit {
   PAGE
   HADITH
+  AYAH
 }
 
 enum AttendanceStatus {
@@ -301,6 +304,10 @@ model MemorizationProgress {
   // the halaqa uses, a short description) — there is no fixed hadith list to
   // pick a number from the way surahNumber picks one off the mushaf.
   hadithReference  String?             @db.VarChar(500)
+  // AYAH-only: the first and last ayah recited, both inside surahNumber.
+  // amountDone is always ayahTo - ayahFrom + 1 on these rows.
+  ayahFrom         Int?
+  ayahTo           Int?
   recordedAt       DateTime            @default(now())
   date             DateTime            @db.Date
   updatedAt        DateTime            @updatedAt

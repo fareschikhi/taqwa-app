@@ -49,6 +49,25 @@ void main() {
     });
   });
 
+  group('Surah ayahs', () {
+    test('matches the Hafs count of 6,236 ayahs', () {
+      final total = kSurahs.fold<int>(0, (sum, s) => sum + s.ayahCount);
+      expect(total, 6236);
+    });
+
+    test('knows the ayahs of well-known surahs', () {
+      expect(surahOf(1)!.ayahCount, 7);
+      expect(surahOf(2)!.ayahCount, 286);
+      expect(surahOf(108)!.ayahCount, 3);
+      expect(surahOf(114)!.ayahCount, 6);
+    });
+
+    test('surahOf returns null outside the mushaf', () {
+      expect(surahOf(0), isNull);
+      expect(surahOf(null), isNull);
+    });
+  });
+
   group('surahLabelOf', () {
     test('labels a known surah by name', () {
       expect(surahLabelOf(2), 'سورة البقرة');

@@ -20,7 +20,10 @@ void main() {
     });
 
     test('preserves whitespace when non-empty after trim', () {
-      expect(hadithLabelOrFallback('  حديث الثلاثة  '), equals('  حديث الثلاثة  '));
+      expect(
+        hadithLabelOrFallback('  حديث الثلاثة  '),
+        equals('  حديث الثلاثة  '),
+      );
     });
   });
 
@@ -37,6 +40,43 @@ void main() {
     test('a hadith entry with no unit counts hadiths', () {
       expect(amountUnitLabel({'subject': 'HADITH'}), 'حديث');
       expect(amountUnitLabel({'subject': 'HADITH', 'unit': 'HADITH'}), 'حديث');
+    });
+
+    test('a Quran entry counted in ayahs says ayahs', () {
+      expect(amountUnitLabel({'subject': 'QURAN', 'unit': 'AYAH'}), 'آية');
+    });
+  });
+
+  group('recordAmountText', () {
+    test('prints pages and hadiths with their unit', () {
+      expect(
+        recordAmountText({'subject': 'QURAN', 'amountDone': 2.5}),
+        '2.5 صفحة',
+      );
+      expect(
+        recordAmountText({'subject': 'HADITH', 'amountDone': 4}),
+        '4 حديث',
+      );
+    });
+
+    test('prints an ayah entry as its range', () {
+      expect(
+        recordAmountText({
+          'subject': 'QURAN',
+          'unit': 'AYAH',
+          'amountDone': 20,
+          'ayahFrom': 1,
+          'ayahTo': 20,
+        }),
+        'الآيات 1–20',
+      );
+    });
+
+    test('falls back to the count when the range is missing', () {
+      expect(
+        recordAmountText({'subject': 'QURAN', 'unit': 'AYAH', 'amountDone': 3}),
+        '3 آية',
+      );
     });
   });
 }

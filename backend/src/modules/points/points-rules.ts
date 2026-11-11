@@ -41,6 +41,13 @@ const RECITATION_RATE: Record<ProgressUnit, Record<Memorization, number>> = {
     SMALLREVISION: 100, // جمع: 1 point per 10 hadiths
     BIGREVISION: 100, // مراجعة وضبط: 1 point per 10 hadiths
   },
+  // A mushaf page holds about 10 ayahs (6,236 over 604 pages), so 10 ayahs
+  // earn what a page earns, at every type.
+  AYAH: {
+    MEMORIZING: 100, // حفظ: 1 point per 10 ayahs
+    SMALLREVISION: 20, // جمع: 2 points per 100 ayahs
+    BIGREVISION: 20, // مراجعة وضبط: 2 points per 100 ayahs
+  },
 };
 const PRESENT = 500;
 const ABSENCE = -1000;

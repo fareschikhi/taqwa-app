@@ -7,7 +7,7 @@ import 'package:taqwa/core/theme/app_colors.dart';
 import 'package:taqwa/core/theme/app_text_styles.dart';
 import 'package:taqwa/core/utils/last_session.dart';
 import 'package:taqwa/core/utils/hadith_label.dart'
-    show hadithLabelOrFallback, kHadithUnitLabel;
+    show hadithLabelOrFallback, entryAmountText;
 import 'package:taqwa/core/widgets/app_card.dart';
 import 'package:taqwa/core/widgets/app_text.dart';
 import 'package:taqwa/core/utils/memorization_amount.dart';
@@ -61,15 +61,20 @@ class LastSessionCard extends StatelessWidget {
         children: [
           Row(
             children: [
+              _StatusPill(label: label, color: color, icon: icon),
+              const Spacer(),
               AppText(
                 dateText,
-                style: AppTextStyles.labelMd.copyWith(color: AppColors.outline),
+                style: AppTextStyles.labelMdBold.copyWith(
+                  color: AppColors.onSurface,
+                ),
               ),
-              const Spacer(),
-              _StatusPill(label: label, color: color, icon: icon),
             ],
           ),
-          SizedBox(height: 12.h),
+          Padding(
+            padding: EdgeInsets.symmetric(vertical: 12.h),
+            child: const Divider(color: AppColors.cardBorder),
+          ),
           if (session.entries.isEmpty)
             AppText(
               'لم يُسجل حفظ في هذا اليوم',
@@ -88,38 +93,56 @@ class LastSessionCard extends StatelessWidget {
   Widget _buildEntry(LastSessionEntry entry) {
     final type = entry.type;
     final isHadith = entry.subject == MemorizationSubject.hadith;
-    final unitWord = isHadith && !entry.countsPages
-        ? kHadithUnitLabel
-        : kPageUnitLabel;
+    final amount = entryAmountText(
+      amount: entry.amount,
+      isHadith: isHadith,
+      // Older rows carry no unit; countsPages still says which a hadith was.
+      unit: entry.unit ?? (isHadith && entry.countsPages ? 'PAGE' : null),
+      ayahFrom: entry.ayahFrom,
+      ayahTo: entry.ayahTo,
+    );
 
     // A type this build does not know about still happened, so the amount is
     // reported without claiming a unit for it.
     final amountText = type == null
         ? 'تسميع · ${formatAmount(entry.amount)}'
-        : '${type.label} · ${formatAmount(entry.amount)} $unitWord';
+        : '${type.label} · $amount';
 
     final referenceText = isHadith
         ? hadithLabelOrFallback(entry.hadithReference)
         : 'سورة ${entry.surahName ?? 'رقم ${entry.surahNumber}'}';
 
     return Padding(
-      padding: EdgeInsets.only(bottom: 4.h),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.end,
+      padding: EdgeInsets.only(bottom: 8.h),
+      child: Row(
+        crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          AppText(
-            amountText,
-            style: AppTextStyles.labelMdBold.copyWith(
-              color: AppColors.onSurface,
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.end,
+              children: [
+                AppText(
+                  amountText,
+                  style: AppTextStyles.bodyMdBold.copyWith(
+                    color: AppColors.onSurface,
+                  ),
+                  textAlign: TextAlign.end,
+                ),
+                AppText(
+                  referenceText,
+                  style: AppTextStyles.labelMd.copyWith(
+                    color: AppColors.onSurfaceVariant,
+                  ),
+                  textAlign: TextAlign.end,
+                ),
+              ],
             ),
-            textAlign: TextAlign.end,
           ),
-          AppText(
-            referenceText,
-            style: AppTextStyles.labelSm.copyWith(
-              color: AppColors.onSurfaceVariant,
-            ),
-            textAlign: TextAlign.end,
+          SizedBox(width: 10.w),
+          Icon(
+            isHadith ? Icons.auto_stories_outlined : Icons.menu_book_outlined,
+            size: 22.w,
+            color: AppColors.primary,
           ),
         ],
       ),
@@ -141,23 +164,20 @@ class _StatusPill extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Container(
-      padding: EdgeInsets.symmetric(horizontal: 10.w, vertical: 4.h),
+      padding: EdgeInsets.symmetric(horizontal: 14.w, vertical: 6.h),
       decoration: BoxDecoration(
         color: color.withValues(alpha: 0.12),
-        borderRadius: BorderRadius.circular(AppConstants.radiusSm),
+        borderRadius: BorderRadius.circular(AppConstants.radiusFull),
       ),
       child: Row(
         mainAxisSize: MainAxisSize.min,
         children: [
-          Icon(icon, size: 14.w, color: color),
-          SizedBox(width: 4.w),
           AppText(
             label,
-            style: AppTextStyles.labelSm.copyWith(
-              color: color,
-              fontWeight: FontWeight.w700,
-            ),
+            style: AppTextStyles.labelMdBold.copyWith(color: color),
           ),
+          SizedBox(width: 6.w),
+          Icon(icon, size: 16.w, color: color),
         ],
       ),
     );

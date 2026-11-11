@@ -162,6 +162,8 @@ class TeacherRepository {
     String subject = 'QURAN',
     String? hadithReference,
     String? unit,
+    int? ayahFrom,
+    int? ayahTo,
   }) async {
     return _ds.submitMemorization(
       studentId: studentId,
@@ -171,6 +173,8 @@ class TeacherRepository {
       subject: subject,
       hadithReference: hadithReference,
       unit: unit,
+      ayahFrom: ayahFrom,
+      ayahTo: ayahTo,
     );
   }
 }

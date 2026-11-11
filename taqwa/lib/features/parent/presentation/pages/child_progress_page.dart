@@ -3,6 +3,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
 import '../../../../core/theme/app_colors.dart';
 import '../../../../core/theme/app_text_styles.dart';
+import '../../../../core/theme/app_shadows.dart';
 import '../../../../core/constants/app_constants.dart';
 import '../../../../core/constants/surahs.dart';
 import '../../../../core/enums/memorization_type.dart';
@@ -11,8 +12,12 @@ import '../../../../core/utils/memorization_history.dart';
 import '../../../../core/utils/hadith_label.dart';
 import '../../../data/repositories/student_repository.dart';
 import 'package:taqwa/core/widgets/app_text.dart';
+import 'package:taqwa/core/widgets/app_card.dart';
 import '../widgets/parent_chat_button.dart';
 import 'package:taqwa/core/utils/memorization_amount.dart';
+import 'package:taqwa/core/utils/ayah_range.dart' show kAyahUnitLabel;
+import 'package:taqwa/core/utils/progress_totals.dart';
+import 'package:taqwa/core/widgets/memorization_totals_card.dart';
 
 class ChildProgressPage extends ConsumerStatefulWidget {
   const ChildProgressPage({super.key});
@@ -141,68 +146,25 @@ class _ChildProgressPageState extends ConsumerState<ChildProgressPage> {
                         ),
                       )
                     else ...[
-                      // Summary card
-                      Container(
-                        padding: EdgeInsets.all(20.w),
-                        decoration: BoxDecoration(
-                          gradient: AppColors.brandGradient,
-                          borderRadius: BorderRadius.circular(
-                            AppConstants.radiusXl,
+                      _SummaryCard(
+                        pagesLabel: totalPagesDone,
+                        pages: (_progress?['totalPagesDone'] as num?) ?? 0,
+                        ayahs: (_progress?['totalAyahsDone'] as num?) ?? 0,
+                        totalSurahs: totalSurahs,
+                      ),
+                      // Hadith is its own subject with its own units, so it
+                      // gets its own card rather than a line on the Quran one.
+                      if (showHadith) ...[
+                        SizedBox(height: 12.h),
+                        MemorizationTotalsCard(
+                          title: 'الحديث الشريف',
+                          icon: Icons.auto_stories_outlined,
+                          totals: hadithTotals(
+                            hadiths: _progress?['totalHadithsDone'] as num?,
+                            pages: _progress?['totalHadithPagesDone'] as num?,
                           ),
                         ),
-                        child: Row(
-                          crossAxisAlignment: CrossAxisAlignment.center,
-                          children: [
-                            Expanded(
-                              child: Column(
-                                crossAxisAlignment: CrossAxisAlignment.start,
-                                children: [
-                                  AppText(
-                                    totalPagesDone,
-                                    style: AppTextStyles.headlineLg.copyWith(
-                                      color: AppColors.onPrimary,
-                                      fontWeight: FontWeight.w700,
-                                    ),
-                                  ),
-                                  AppText(
-                                    'صفحة منجزة',
-                                    style: AppTextStyles.labelMd.copyWith(
-                                      color: AppColors.onPrimary.withValues(
-                                        alpha: 0.8,
-                                      ),
-                                    ),
-                                  ),
-                                  SizedBox(height: 4.h),
-                                  AppText(
-                                    '$totalSurahs سورة تم تناولها',
-                                    style: AppTextStyles.labelSm.copyWith(
-                                      color: AppColors.onPrimary.withValues(
-                                        alpha: 0.8,
-                                      ),
-                                    ),
-                                  ),
-                                ],
-                              ),
-                            ),
-                            SizedBox(width: 20.w),
-                            Container(
-                              width: 70.w,
-                              height: 70.w,
-                              decoration: BoxDecoration(
-                                color: AppColors.onPrimary.withValues(
-                                  alpha: 0.15,
-                                ),
-                                shape: BoxShape.circle,
-                              ),
-                              child: Icon(
-                                Icons.menu_book,
-                                color: AppColors.onPrimary,
-                                size: 36.w,
-                              ),
-                            ),
-                          ],
-                        ),
-                      ),
+                      ],
                       SizedBox(height: 20.h),
                       // The headings only matter once there are two rows.
                       if (showHadith) const _StatsHeading('القرآن الكريم'),
@@ -223,13 +185,6 @@ class _ChildProgressPageState extends ConsumerState<ChildProgressPage> {
                       SizedBox(height: 20.h),
                       Row(
                         children: [
-                          AppText(
-                            'سجل الحفظ والمراجعة',
-                            style: AppTextStyles.headlineSm.copyWith(
-                              color: AppColors.onSurface,
-                            ),
-                          ),
-                          const Spacer(),
                           // Say the list is trimmed, so an older entry that is
                           // missing does not read as lost data.
                           if (_history.length > kRecentMemorizationLimit)
@@ -239,6 +194,13 @@ class _ChildProgressPageState extends ConsumerState<ChildProgressPage> {
                                 color: AppColors.onSurfaceVariant,
                               ),
                             ),
+                          const Spacer(),
+                          AppText(
+                            'سجل الحفظ والمراجعة',
+                            style: AppTextStyles.headlineSm.copyWith(
+                              color: AppColors.onSurface,
+                            ),
+                          ),
                         ],
                       ),
                       SizedBox(height: 12.h),
@@ -253,7 +215,23 @@ class _ChildProgressPageState extends ConsumerState<ChildProgressPage> {
                           ),
                         )
                       else
-                        ...recentMemorization(_history).map(_buildRecordItem),
+                        // One card with dividers rather than a card per
+                        // row: ten entries read as one list, not ten things.
+                        AppCard(
+                          padding: EdgeInsets.symmetric(horizontal: 16.w),
+                          borderRadius: AppConstants.radiusLg,
+                          child: Column(
+                            children: [
+                              for (final (i, entry) in recentMemorization(
+                                _history,
+                              ).indexed) ...[
+                                if (i > 0)
+                                  const Divider(color: AppColors.cardBorder),
+                                _buildRecordItem(entry),
+                              ],
+                            ],
+                          ),
+                        ),
                     ],
                     SizedBox(height: 32.h),
                   ]),
@@ -288,69 +266,93 @@ class _ChildProgressPageState extends ConsumerState<ChildProgressPage> {
       dateStr = '';
     }
 
+    final (typeColor, typeTint) = _typeColors(type);
+
     return Padding(
-      padding: EdgeInsets.only(bottom: 12.h),
+      padding: EdgeInsets.symmetric(vertical: 14.h),
       child: Row(
-        crossAxisAlignment: CrossAxisAlignment.start,
         children: [
+          // One line always: a wrapped "حفظ جديد" was the Stitch export's
+          // one visible flaw.
           Container(
-            padding: EdgeInsets.symmetric(horizontal: 10.w, vertical: 4.h),
+            padding: EdgeInsets.symmetric(horizontal: 12.w, vertical: 5.h),
             decoration: BoxDecoration(
-              color: AppColors.primary.withValues(alpha: 0.1),
+              color: typeTint,
               borderRadius: BorderRadius.circular(AppConstants.radiusFull),
             ),
             child: AppText(
               typeLabel,
-              style: AppTextStyles.labelMd.copyWith(color: AppColors.primary),
+              maxLines: 1,
+              softWrap: false,
+              style: AppTextStyles.labelMdBold.copyWith(color: typeColor),
             ),
           ),
-          const Spacer(),
-          Column(
-            crossAxisAlignment: CrossAxisAlignment.end,
-            children: [
-              AppText(
-                referenceLabel,
-                style: AppTextStyles.bodyMdBold.copyWith(
-                  color: AppColors.onSurface,
+          SizedBox(width: 12.w),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.end,
+              children: [
+                Row(
+                  children: [
+                    Container(
+                      padding: EdgeInsets.symmetric(
+                        horizontal: 8.w,
+                        vertical: 2.h,
+                      ),
+                      decoration: BoxDecoration(
+                        color: AppColors.surfaceContainerLow,
+                        borderRadius: BorderRadius.circular(
+                          AppConstants.radiusSm,
+                        ),
+                      ),
+                      child: AppText(
+                        recordAmountText(entry),
+                        maxLines: 1,
+                        style: AppTextStyles.labelMd.copyWith(
+                          color: AppColors.onSurfaceVariant,
+                        ),
+                      ),
+                    ),
+                    SizedBox(width: 8.w),
+                    Expanded(
+                      child: AppText(
+                        referenceLabel,
+                        textAlign: TextAlign.end,
+                        maxLines: 2,
+                        overflow: TextOverflow.ellipsis,
+                        style: AppTextStyles.bodyMdBold.copyWith(
+                          color: AppColors.onSurface,
+                        ),
+                      ),
+                    ),
+                  ],
                 ),
-              ),
-              SizedBox(height: 4.h),
-              Row(
-                children: [
-                  AppText(
-                    dateStr,
-                    style: AppTextStyles.labelSm.copyWith(
-                      color: AppColors.onSurfaceVariant,
-                    ),
+                SizedBox(height: 2.h),
+                AppText(
+                  dateStr,
+                  style: AppTextStyles.labelSm.copyWith(
+                    color: AppColors.onSurfaceVariant,
                   ),
-                  SizedBox(width: 6.w),
-                  Container(
-                    padding: EdgeInsets.symmetric(
-                      horizontal: 10.w,
-                      vertical: 3.h,
-                    ),
-                    decoration: BoxDecoration(
-                      color: AppColors.surfaceContainerHigh,
-                      borderRadius: BorderRadius.circular(
-                        AppConstants.radiusFull,
-                      ),
-                    ),
-                    child: AppText(
-                      '${formatAmount(entry['amountDone'] as num?)} ${amountUnitLabel(entry)}',
-                      style: AppTextStyles.labelMd.copyWith(
-                        color: AppColors.onSurface,
-                      ),
-                    ),
-                  ),
-                ],
-              ),
-            ],
+                ),
+              ],
+            ),
           ),
         ],
       ),
     );
   }
 }
+
+/// Text colour and tint for a memorization type, shared by the tiles and the
+/// history pills so one type always wears one colour.
+(Color, Color) _typeColors(MemorizationType type) => switch (type) {
+  MemorizationType.hifz => (AppColors.primaryDark, AppColors.primaryContainer),
+  MemorizationType.minorReview => (
+    AppColors.secondary,
+    AppColors.secondaryContainer,
+  ),
+  _ => (AppColors.tertiary, AppColors.tertiaryContainer),
+};
 
 class _StatsHeading extends StatelessWidget {
   const _StatsHeading(this.text);
@@ -359,10 +361,26 @@ class _StatsHeading extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Padding(
-      padding: EdgeInsets.only(bottom: 8.h),
-      child: AppText(
-        text,
-        style: AppTextStyles.bodyMdBold.copyWith(color: AppColors.onSurface),
+      padding: EdgeInsets.only(bottom: 10.h),
+      child: Row(
+        mainAxisAlignment: MainAxisAlignment.end,
+        children: [
+          AppText(
+            text,
+            style: AppTextStyles.headlineSm.copyWith(
+              color: AppColors.onSurface,
+            ),
+          ),
+          SizedBox(width: 8.w),
+          Container(
+            width: 8.w,
+            height: 8.w,
+            decoration: const BoxDecoration(
+              color: AppColors.primary,
+              shape: BoxShape.circle,
+            ),
+          ),
+        ],
       ),
     );
   }
@@ -378,16 +396,17 @@ class _TypeCountsRow extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    // Right to left: new memorization is read first.
     return Row(
       children: [
         Expanded(
           child: _MiniStat(
-            label: 'حفظ جديد',
-            value: '$newCount',
-            color: AppColors.primary,
+            label: 'مراجعة وضبط',
+            value: '$majorCount',
+            color: AppColors.tertiary,
           ),
         ),
-        SizedBox(width: 12.w),
+        SizedBox(width: 10.w),
         Expanded(
           child: _MiniStat(
             label: 'جمع',
@@ -395,12 +414,12 @@ class _TypeCountsRow extends StatelessWidget {
             color: AppColors.secondary,
           ),
         ),
-        SizedBox(width: 12.w),
+        SizedBox(width: 10.w),
         Expanded(
           child: _MiniStat(
-            label: 'مراجعة وضبط',
-            value: '$majorCount',
-            color: AppColors.tertiary,
+            label: 'حفظ جديد',
+            value: '$newCount',
+            color: AppColors.primaryDark,
           ),
         ),
       ],
@@ -420,28 +439,200 @@ class _MiniStat extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Container(
-      padding: EdgeInsets.all(12.w),
+      padding: EdgeInsets.all(14.w),
       decoration: BoxDecoration(
-        color: color.withValues(alpha: 0.08),
-        borderRadius: BorderRadius.circular(AppConstants.radiusMd),
-        border: Border.all(color: color.withValues(alpha: 0.2)),
+        color: AppColors.surfaceContainerLowest,
+        borderRadius: BorderRadius.circular(AppConstants.radiusLg),
+        border: Border.all(color: AppColors.cardBorder),
+        boxShadow: AppShadows.card,
       ),
       child: Column(
+        crossAxisAlignment: CrossAxisAlignment.end,
         children: [
+          Row(
+            mainAxisAlignment: MainAxisAlignment.end,
+            children: [
+              Flexible(
+                child: AppText(
+                  label,
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
+                  style: AppTextStyles.labelMd.copyWith(
+                    color: AppColors.onSurfaceVariant,
+                  ),
+                ),
+              ),
+              SizedBox(width: 6.w),
+              Container(
+                width: 8.w,
+                height: 8.w,
+                decoration: BoxDecoration(color: color, shape: BoxShape.circle),
+              ),
+            ],
+          ),
+          SizedBox(height: 10.h),
           AppText(
             value,
-            style: AppTextStyles.headlineSm.copyWith(
+            style: AppTextStyles.headlineMd.copyWith(
               color: color,
               fontWeight: FontWeight.w700,
             ),
           ),
-          SizedBox(height: 4.h),
-          AppText(
-            label,
-            style: AppTextStyles.labelSm.copyWith(
-              color: AppColors.onSurfaceVariant,
+        ],
+      ),
+    );
+  }
+}
+
+/// Pages in the Madinah mushaf, the whole Quran.
+const int kQuranPages = 604;
+
+/// The hero of the tab: pages memorised, surahs touched, and how far that is
+/// through the whole Quran.
+class _SummaryCard extends StatelessWidget {
+  const _SummaryCard({
+    required this.pagesLabel,
+    required this.pages,
+    required this.ayahs,
+    required this.totalSurahs,
+  });
+
+  final String pagesLabel;
+  final num pages;
+
+  /// Ayahs memorized by range. Their own unit: they are named under the page
+  /// count and never added to it or to the bar.
+  final num ayahs;
+  final int totalSurahs;
+
+  @override
+  Widget build(BuildContext context) {
+    // A page entered twice as new memorisation can push the sum past the
+    // mushaf; the bar stops full rather than overflowing.
+    final ratio = (pages / kQuranPages).clamp(0.0, 1.0).toDouble();
+    final percent = (ratio * 100).round();
+
+    return Container(
+      decoration: BoxDecoration(
+        gradient: AppColors.brandGradient,
+        borderRadius: BorderRadius.circular(AppConstants.radiusXl),
+        boxShadow: [
+          BoxShadow(
+            color: AppColors.primary.withValues(alpha: 0.25),
+            blurRadius: 20,
+            offset: const Offset(0, 8),
+          ),
+        ],
+      ),
+      padding: EdgeInsets.all(20.w),
+      child: Column(
+        children: [
+          Row(
+            children: [
+              Container(
+                width: 64.w,
+                height: 64.w,
+                decoration: BoxDecoration(
+                  color: AppColors.onPrimary.withValues(alpha: 0.15),
+                  shape: BoxShape.circle,
+                ),
+                child: Icon(
+                  Icons.menu_book,
+                  color: AppColors.onPrimary,
+                  size: 32.w,
+                ),
+              ),
+              const Spacer(),
+              Column(
+                crossAxisAlignment: CrossAxisAlignment.end,
+                children: [
+                  Row(
+                    mainAxisSize: MainAxisSize.min,
+                    crossAxisAlignment: CrossAxisAlignment.baseline,
+                    textBaseline: TextBaseline.alphabetic,
+                    children: [
+                      AppText(
+                        'صفحة منجزة',
+                        style: AppTextStyles.bodyMdBold.copyWith(
+                          color: AppColors.onPrimary,
+                        ),
+                      ),
+                      SizedBox(width: 8.w),
+                      AppText(
+                        pagesLabel,
+                        style: AppTextStyles.headlineLg.copyWith(
+                          color: AppColors.onPrimary,
+                          fontWeight: FontWeight.w700,
+                        ),
+                      ),
+                    ],
+                  ),
+                  if (ayahs > 0)
+                    AppText(
+                      '+ ${formatAmount(ayahs)} $kAyahUnitLabel',
+                      style: AppTextStyles.bodyMdBold.copyWith(
+                        color: AppColors.onPrimary,
+                      ),
+                    ),
+                  AppText(
+                    '$totalSurahs سورة تم تناولها',
+                    style: AppTextStyles.labelMd.copyWith(
+                      color: AppColors.onPrimary,
+                    ),
+                  ),
+                ],
+              ),
+            ],
+          ),
+          Padding(
+            padding: EdgeInsets.symmetric(vertical: 14.h),
+            child: Container(
+              height: 1,
+              color: AppColors.onPrimary.withValues(alpha: 0.2),
             ),
-            textAlign: TextAlign.center,
+          ),
+          Row(
+            children: [
+              Container(
+                padding: EdgeInsets.symmetric(horizontal: 10.w, vertical: 2.h),
+                decoration: BoxDecoration(
+                  color: AppColors.onPrimary.withValues(alpha: 0.18),
+                  borderRadius: BorderRadius.circular(AppConstants.radiusFull),
+                ),
+                child: AppText(
+                  '$percent%',
+                  textDirection: TextDirection.ltr,
+                  style: AppTextStyles.labelMdBold.copyWith(
+                    color: AppColors.onPrimary,
+                  ),
+                ),
+              ),
+              const Spacer(),
+              AppText(
+                '$pagesLabel / $kQuranPages صفحة',
+                style: AppTextStyles.labelMdBold.copyWith(
+                  color: AppColors.onPrimary,
+                ),
+              ),
+            ],
+          ),
+          SizedBox(height: 10.h),
+          Semantics(
+            label: 'تم حفظ $percent بالمئة من القرآن الكريم',
+            child: ClipRRect(
+              borderRadius: BorderRadius.circular(AppConstants.radiusFull),
+              // The app tree is LTR; an Arabic reader expects the bar to
+              // fill from the right.
+              child: Directionality(
+                textDirection: TextDirection.rtl,
+                child: LinearProgressIndicator(
+                  value: ratio,
+                  minHeight: 8.h,
+                  backgroundColor: AppColors.gradientEnd.withValues(alpha: 0.6),
+                  valueColor: const AlwaysStoppedAnimation(AppColors.onPrimary),
+                ),
+              ),
+            ),
           ),
         ],
       ),

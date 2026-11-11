@@ -8,7 +8,11 @@ import {
   Min,
   Max,
 } from 'class-validator';
-import { Memorization, MemorizationSubject, ProgressUnit } from '@prisma/client';
+import {
+  Memorization,
+  MemorizationSubject,
+  ProgressUnit,
+} from '@prisma/client';
 import { MAX_AMOUNT } from '../progress-unit';
 
 export class CreateMemorizationDto {
@@ -46,11 +50,25 @@ export class CreateMemorizationDto {
   @MaxLength(500)
   hadithReference?: string;
 
-  // HADITH-only choice of what amountDone counts; omitted means single
-  // hadiths. A Quran entry is always pages and refuses HADITH.
+  // What amountDone counts. Quran: PAGE (default) or AYAH. Hadith: HADITH
+  // (default) or PAGE. A unit from the other subject is refused.
   @IsOptional()
   @IsEnum(ProgressUnit)
   unit?: ProgressUnit;
+
+  // AYAH-only range inside surahNumber; amountDone must be the ayah count
+  // (ayahTo - ayahFrom + 1). The service checks it against the surah.
+  @IsOptional()
+  @IsInt()
+  @Min(1)
+  @Max(MAX_AMOUNT.AYAH)
+  ayahFrom?: number;
+
+  @IsOptional()
+  @IsInt()
+  @Min(1)
+  @Max(MAX_AMOUNT.AYAH)
+  ayahTo?: number;
 }
 
 export class UpdateMemorizationDto {
@@ -79,9 +97,23 @@ export class UpdateMemorizationDto {
   @MaxLength(500)
   hadithReference?: string;
 
-  // HADITH-only choice of what amountDone counts; omitted means single
-  // hadiths. A Quran entry is always pages and refuses HADITH.
+  // What amountDone counts. Quran: PAGE (default) or AYAH. Hadith: HADITH
+  // (default) or PAGE. A unit from the other subject is refused.
   @IsOptional()
   @IsEnum(ProgressUnit)
   unit?: ProgressUnit;
+
+  // AYAH-only range inside surahNumber; amountDone must be the ayah count
+  // (ayahTo - ayahFrom + 1). The service checks it against the surah.
+  @IsOptional()
+  @IsInt()
+  @Min(1)
+  @Max(MAX_AMOUNT.AYAH)
+  ayahFrom?: number;
+
+  @IsOptional()
+  @IsInt()
+  @Min(1)
+  @Max(MAX_AMOUNT.AYAH)
+  ayahTo?: number;
 }

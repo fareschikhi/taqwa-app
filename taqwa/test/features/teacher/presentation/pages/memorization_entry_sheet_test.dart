@@ -545,6 +545,122 @@ void main() {
     expect(find.text('عدد الصفحات'), findsOneWidget);
   });
 
+  group('counting by ayahs', () {
+    List<Map<String, dynamic>> captureSent() {
+      final sent = <Map<String, dynamic>>[];
+      DioClient.instance.httpClientAdapter = _StubAdapter(
+        jsonEncode({'id': 5}),
+        onRequest: (options) {
+          if (options.method == 'POST') {
+            sent.add(Map<String, dynamic>.from(options.data as Map));
+          }
+        },
+      );
+      return sent;
+    }
+
+    Future<void> openAyahsFor(WidgetTester tester, String surah) async {
+      await tester.pumpWidget(
+        _host(MemorizationEntrySheet(student: _student())),
+      );
+      await tester.pumpAndSettle();
+      await tester.tap(find.text('آيات'));
+      await tester.pumpAndSettle();
+      await tester.tap(find.text('اختر السورة...'));
+      await tester.pumpAndSettle();
+      await tester.tap(find.text(surah).last);
+      await tester.pumpAndSettle();
+    }
+
+    // Row order is left to right: «إلى آية» first, «من آية» on the right.
+    Finder toField() => find.byType(TextField).at(0);
+    Finder fromField() => find.byType(TextField).at(1);
+
+    testWidgets('sends the range with its ayah count', (tester) async {
+      _setPhoneViewport(tester);
+      final sent = captureSent();
+      await openAyahsFor(tester, 'الفاتحة');
+
+      await tester.enterText(fromField(), '2');
+      await tester.enterText(toField(), '7');
+      await tester.pumpAndSettle();
+      expect(find.textContaining('المجموع: 6 آية'), findsOneWidget);
+
+      await tester.tap(find.text('حفظ'));
+      await tester.tap(find.text('تسجيل'));
+      await tester.pumpAndSettle();
+
+      expect(sent.single['unit'], 'AYAH');
+      expect(sent.single['surahNumber'], 1);
+      expect(sent.single['ayahFrom'], 2);
+      expect(sent.single['ayahTo'], 7);
+      expect(sent.single['amountDone'], 6);
+    });
+
+    testWidgets('flags an ayah past the end of the surah and sends nothing', (
+      tester,
+    ) async {
+      _setPhoneViewport(tester);
+      final sent = captureSent();
+      await openAyahsFor(tester, 'الفاتحة');
+
+      await tester.enterText(toField(), '8');
+      await tester.tap(find.text('حفظ'));
+      await tester.tap(find.text('تسجيل'));
+      await tester.pumpAndSettle();
+
+      expect(find.textContaining('بين 1 و 7'), findsOneWidget);
+      expect(sent, isEmpty);
+
+      // Typing again clears the message.
+      await tester.enterText(toField(), '7');
+      await tester.pumpAndSettle();
+      expect(find.textContaining('بين 1 و 7'), findsNothing);
+    });
+
+    testWidgets('pulls the range inside a shorter surah', (tester) async {
+      _setPhoneViewport(tester);
+      await openAyahsFor(tester, 'البقرة');
+      await tester.enterText(fromField(), '5');
+      await tester.enterText(toField(), '200');
+      await tester.pumpAndSettle();
+
+      await tester.tap(find.byType(DropdownButton<int>));
+      await tester.pumpAndSettle();
+      await tester.tap(find.text('الفاتحة').last);
+      await tester.pumpAndSettle();
+
+      expect(find.text('5'), findsOneWidget);
+      expect(find.text('7'), findsOneWidget);
+    });
+
+    testWidgets('continues from the ayah after last session', (tester) async {
+      _setPhoneViewport(tester);
+      DioClient.instance.httpClientAdapter = _StubAdapter(
+        jsonEncode([
+          {
+            'subject': 'QURAN',
+            'unit': 'AYAH',
+            'surahNumber': 2,
+            'ayahFrom': 1,
+            'ayahTo': 10,
+            'memorizationType': 'MEMORIZING',
+            'amountDone': 10,
+            'date': '2026-10-20',
+          },
+        ]),
+      );
+      await tester.pumpWidget(
+        _host(MemorizationEntrySheet(student: _student())),
+      );
+      await tester.pumpAndSettle();
+
+      expect(find.text('البقرة'), findsOneWidget);
+      expect(find.text('11'), findsOneWidget);
+      expect(find.text('20'), findsOneWidget);
+    });
+  });
+
   group('prefill from the last Quran entry', () {
     void stubHistory() {
       DioClient.instance.httpClientAdapter = _StubAdapter(

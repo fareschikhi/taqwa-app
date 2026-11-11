@@ -95,6 +95,25 @@ describe('desiredPoints', () => {
     ).toEqual([{ source: 'MEMORIZATION', milli: 3500 }]);
   });
 
+  // About 10 ayahs fill a mushaf page, so 10 ayahs earn what a page earns.
+  it('prices 10 ayahs like a page', () => {
+    expect(
+      day(null, [
+        r(Memorization.MEMORIZING, 10, ProgressUnit.AYAH),
+        r(Memorization.SMALLREVISION, 100, ProgressUnit.AYAH),
+      ]),
+    ).toEqual([{ source: 'MEMORIZATION', milli: 3000 }]);
+  });
+
+  it("counts an ayah entry as the day's recitation", () => {
+    expect(
+      day(AttendanceStatus.PRESENT, [r(Memorization.MEMORIZING, 3, ProgressUnit.AYAH)]),
+    ).toEqual([
+      { source: 'MEMORIZATION', milli: 300 },
+      { source: 'PRESENT', milli: 500 },
+    ]);
+  });
+
   it('counts a partial ten proportionally', () => {
     expect(day(null, [r(Memorization.SMALLREVISION, 5)])).toEqual([
       { source: 'MEMORIZATION', milli: 1000 },

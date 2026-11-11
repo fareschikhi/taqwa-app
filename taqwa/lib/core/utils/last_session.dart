@@ -11,7 +11,17 @@ class LastSessionEntry {
     this.subject = MemorizationSubject.quran,
     this.hadithReference,
     this.countsPages = false,
+    this.unit,
+    this.ayahFrom,
+    this.ayahTo,
   });
+
+  /// The raw API unit (PAGE, HADITH or AYAH), or null on older rows.
+  final String? unit;
+
+  /// AYAH-only range inside [surahNumber].
+  final int? ayahFrom;
+  final int? ayahTo;
 
   /// QURAN-only; null for a HADITH entry.
   final int? surahNumber;
@@ -103,6 +113,9 @@ LastSession? lastSessionOf({
             surahNumber: (record['surahNumber'] as num?)?.toInt() ?? 0,
             hadithReference: record['hadithReference'] as String?,
             countsPages: record['unit'] == 'PAGE',
+            unit: record['unit'] as String?,
+            ayahFrom: (record['ayahFrom'] as num?)?.toInt(),
+            ayahTo: (record['ayahTo'] as num?)?.toInt(),
             amount: (record['amountDone'] as num?) ?? 0,
             type: MemorizationTypeX.fromApi(
               record['memorizationType'] as String?,

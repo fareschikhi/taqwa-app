@@ -2,9 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:taqwa/core/theme/app_colors.dart';
 import 'package:taqwa/core/theme/app_text_styles.dart';
-import 'package:taqwa/core/enums/memorization_type.dart' show kPageUnitLabel;
-import 'package:taqwa/core/utils/hadith_label.dart' show kHadithUnitLabel;
-import 'package:taqwa/core/utils/memorization_amount.dart';
+import 'package:taqwa/core/utils/progress_totals.dart';
 import 'package:taqwa/core/widgets/app_card.dart';
 import 'package:taqwa/core/widgets/app_text.dart';
 
@@ -32,16 +30,8 @@ class HadithProgramCard extends StatelessWidget {
 
   /// "4 حديث · 2.5 صفحة محفوظ". A unit with nothing in it is left out, but
   /// with nothing at all the card still says "0 حديث".
-  String get _doneText {
-    final hadiths = hadithsDone ?? 0;
-    final pages = hadithPagesDone ?? 0;
-    final parts = [
-      if (hadiths > 0 || pages <= 0)
-        '${formatAmount(hadiths)} $kHadithUnitLabel',
-      if (pages > 0) '${formatAmount(pages)} $kPageUnitLabel',
-    ];
-    return '${parts.join(' · ')} محفوظ';
-  }
+  String get _doneText =>
+      '${totalsText(hadithTotals(hadiths: hadithsDone, pages: hadithPagesDone))} محفوظ';
 
   @override
   Widget build(BuildContext context) {

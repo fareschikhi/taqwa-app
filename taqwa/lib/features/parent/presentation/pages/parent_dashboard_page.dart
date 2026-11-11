@@ -1,7 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
-import 'package:taqwa/core/widgets/wird_reminder_card.dart';
 import '../../../../core/theme/app_colors.dart';
 import '../../../../core/theme/app_text_styles.dart';
 import '../../../../core/constants/app_constants.dart';
@@ -28,7 +27,7 @@ import 'package:taqwa/features/data/repositories/student_of_month_repository.dar
 import 'package:taqwa/features/data/models/halaqa/halaqa_announcement_model.dart';
 import 'package:taqwa/features/data/repositories/halaqa_announcement_repository.dart';
 import 'package:taqwa/features/shared/presentation/pages/halaqa_news_page.dart';
-import 'package:taqwa/core/utils/memorization_amount.dart';
+import 'package:taqwa/core/utils/progress_totals.dart';
 
 /// How many of the child's latest notes the dashboard shows before "عرض الكل".
 const int kNotesPreviewCount = 3;
@@ -191,10 +190,6 @@ class _ParentDashboardPageState extends ConsumerState<ParentDashboardPage> {
                       ],
                       _buildTeacherNotes(child),
                     ],
-                    if (WirdReminderCard.isAvailable) ...[
-                      SizedBox(height: 20.h),
-                      const WirdReminderCard(),
-                    ],
                     SizedBox(height: 32.h),
                   ]),
                 ),
@@ -248,7 +243,20 @@ class _ParentDashboardPageState extends ConsumerState<ParentDashboardPage> {
     // The card reports the current month; the attendance history tab keeps
     // showing the whole enrolment, which is why both figures are available.
     final monthAttendedDays = _attendance?.monthAttended ?? 0;
-    final pagesDone = formatAmount(_progress?['totalPagesDone'] as num?);
+    // Pages and ayahs are separate units, so each takes its own line.
+    final quranDone = totalsText(
+      quranTotals(
+        pages: _progress?['totalPagesDone'] as num?,
+        ayahs: _progress?['totalAyahsDone'] as num?,
+      ),
+      separator: '\n',
+    );
+
+    Widget divider() => Container(
+      width: 1,
+      height: 40.h,
+      color: AppColors.onPrimary.withValues(alpha: 0.25),
+    );
 
     return GestureDetector(
       onTap: () => Navigator.push(
@@ -257,117 +265,146 @@ class _ParentDashboardPageState extends ConsumerState<ParentDashboardPage> {
       ),
       child: Container(
         decoration: BoxDecoration(
-          gradient: const LinearGradient(
-            begin: Alignment.topRight,
-            end: Alignment.bottomLeft,
-            colors: [AppColors.primary, AppColors.secondary],
-          ),
+          gradient: AppColors.brandGradient,
           borderRadius: BorderRadius.circular(AppConstants.radiusXl),
           boxShadow: [
             BoxShadow(
-              color: AppColors.primary.withValues(alpha: 0.3),
+              color: AppColors.primary.withValues(alpha: 0.25),
               blurRadius: 20,
               offset: const Offset(0, 8),
             ),
           ],
         ),
-        padding: EdgeInsets.all(20.w),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.end,
+        clipBehavior: Clip.antiAlias,
+        child: Stack(
           children: [
-            Row(
-              children: [
-                Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    AppText(
-                      'عرض التفاصيل',
-                      style: AppTextStyles.labelMd.copyWith(
-                        color: AppColors.onPrimary.withValues(alpha: 0.8),
-                      ),
-                    ),
-                    const Icon(
-                      Icons.arrow_back_ios,
-                      color: AppColors.onPrimary,
-                      size: 16,
-                    ),
-                  ],
-                ),
-                const Spacer(),
-                Column(
-                  crossAxisAlignment: CrossAxisAlignment.end,
-                  children: [
-                    AppText(
-                      child.fullName,
-                      style: AppTextStyles.headlineSm.copyWith(
-                        color: AppColors.onPrimary,
-                      ),
-                    ),
-                    SizedBox(height: 4.h),
-                    AppText(
-                      child.halaqaName ?? 'غير مسجل في حلقة',
-                      style: AppTextStyles.labelSm.copyWith(
-                        color: AppColors.onPrimary.withValues(alpha: 0.8),
-                      ),
-                    ),
-                  ],
-                ),
-                SizedBox(width: 12.w),
-                AvatarWidget(
-                  avatarUrl: child.avatar,
-                  size: 56.w,
-                  backgroundColor: AppColors.onPrimary.withValues(alpha: 0.2),
-                  fallback: AppText(
-                    child.fullName.isNotEmpty ? child.fullName[0] : '؟',
-                    style: AppTextStyles.headlineMd.copyWith(
-                      color: AppColors.onPrimary,
-                    ),
-                  ),
-                ),
-              ],
-            ),
-            SizedBox(height: 20.h),
-            Container(
-              padding: EdgeInsets.all(16.w),
-              decoration: BoxDecoration(
-                color: AppColors.onPrimary.withValues(alpha: 0.1),
-                borderRadius: BorderRadius.circular(AppConstants.radiusMd),
-              ),
-              // How much of the Qur'an the child has memorised, whether they
-              // have been turning up lately, and the teacher's overall rating.
-              // Revision counts belong to the teacher's view of the work, not
-              // to a parent's summary of it.
-              child: Row(
+            // Two faint rings for depth; decoration only.
+            const _HeroRing(top: -50, left: -40, size: 160),
+            const _HeroRing(bottom: -70, right: -30, size: 180),
+            Padding(
+              padding: EdgeInsets.all(20.w),
+              child: Column(
                 children: [
-                  Expanded(
-                    child: _StatChip(
-                      label: 'أيام الحضور هذا الشهر',
-                      value: _isLoading ? '--' : '$monthAttendedDays',
-                      onTap: () => _openTab(2),
+                  Row(
+                    children: [
+                      Row(
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          Icon(
+                            Icons.arrow_back,
+                            color: AppColors.onPrimary,
+                            size: 18.w,
+                          ),
+                          SizedBox(width: 6.w),
+                          AppText(
+                            'عرض التفاصيل',
+                            style: AppTextStyles.labelMdBold.copyWith(
+                              color: AppColors.onPrimary,
+                            ),
+                          ),
+                        ],
+                      ),
+                      SizedBox(width: 12.w),
+                      Expanded(
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.end,
+                          children: [
+                            AppText(
+                              child.fullName,
+                              textAlign: TextAlign.end,
+                              maxLines: 2,
+                              overflow: TextOverflow.ellipsis,
+                              style: AppTextStyles.headlineSm.copyWith(
+                                color: AppColors.onPrimary,
+                                fontWeight: FontWeight.w700,
+                              ),
+                            ),
+                            SizedBox(height: 6.h),
+                            Container(
+                              padding: EdgeInsets.symmetric(
+                                horizontal: 12.w,
+                                vertical: 3.h,
+                              ),
+                              decoration: BoxDecoration(
+                                color: AppColors.onPrimary.withValues(
+                                  alpha: 0.18,
+                                ),
+                                borderRadius: BorderRadius.circular(
+                                  AppConstants.radiusFull,
+                                ),
+                              ),
+                              child: AppText(
+                                child.halaqaName ?? 'غير مسجل في حلقة',
+                                maxLines: 1,
+                                overflow: TextOverflow.ellipsis,
+                                style: AppTextStyles.labelMdBold.copyWith(
+                                  color: AppColors.onPrimary,
+                                ),
+                              ),
+                            ),
+                          ],
+                        ),
+                      ),
+                      SizedBox(width: 12.w),
+                      Container(
+                        padding: EdgeInsets.all(3.w),
+                        decoration: const BoxDecoration(
+                          color: AppColors.onPrimary,
+                          shape: BoxShape.circle,
+                        ),
+                        child: AvatarWidget(
+                          avatarUrl: child.avatar,
+                          size: 60.w,
+                          backgroundColor: AppColors.primaryContainer,
+                          fallback: AppText(
+                            child.fullName.isNotEmpty ? child.fullName[0] : '؟',
+                            style: AppTextStyles.headlineMd.copyWith(
+                              color: AppColors.onPrimaryContainer,
+                            ),
+                          ),
+                        ),
+                      ),
+                    ],
+                  ),
+                  Padding(
+                    padding: EdgeInsets.symmetric(vertical: 16.h),
+                    child: Container(
+                      height: 1,
+                      color: AppColors.onPrimary.withValues(alpha: 0.2),
                     ),
                   ),
-                  Container(
-                    width: 1,
-                    height: 40.h,
-                    color: AppColors.onPrimary.withValues(alpha: 0.3),
-                  ),
-                  Expanded(
-                    child: _StatChip(
-                      label: 'حفظ',
-                      value: _isLoading ? '--' : '$pagesDone صفحة',
-                      onTap: () => _openTab(1),
-                    ),
-                  ),
-                  Container(
-                    width: 1,
-                    height: 40.h,
-                    color: AppColors.onPrimary.withValues(alpha: 0.3),
-                  ),
-                  Expanded(
-                    child: _StatChip(
-                      label: 'التقييم العام',
-                      value: _isLoading ? '--' : (_rating ?? 'لم يقيّم بعد'),
-                    ),
+                  // How much of the Qur'an the child has memorised, whether
+                  // they have been turning up lately, and the teacher's
+                  // overall rating. Revision counts belong to the teacher's
+                  // view of the work, not to a parent's summary of it.
+                  // Laid out right to left: attendance is read first.
+                  Row(
+                    children: [
+                      Expanded(
+                        child: _StatChip(
+                          label: 'التقييم العام',
+                          value: _isLoading
+                              ? '--'
+                              : (_rating ?? 'لم يقيّم بعد'),
+                        ),
+                      ),
+                      divider(),
+                      Expanded(
+                        child: _StatChip(
+                          label: 'حفظ',
+                          value: _isLoading ? '--' : quranDone,
+                          onTap: () => _openTab(1),
+                        ),
+                      ),
+                      divider(),
+                      Expanded(
+                        child: _StatChip(
+                          label: 'أيام الحضور هذا الشهر',
+                          value: _isLoading ? '--' : '$monthAttendedDays',
+                          onTap: () => _openTab(2),
+                        ),
+                      ),
+                    ],
                   ),
                 ],
               ),
@@ -429,7 +466,7 @@ class _ParentDashboardPageState extends ConsumerState<ParentDashboardPage> {
                 child: AppText(
                   'عرض الكل',
                   style: AppTextStyles.labelMdBold.copyWith(
-                    color: AppColors.primary,
+                    color: AppColors.primaryDark,
                   ),
                 ),
               ),
@@ -483,13 +520,47 @@ class _StatChip extends StatelessWidget {
             fontWeight: FontWeight.w700,
           ),
         ),
+        SizedBox(height: 2.h),
+        // Full white: these 12sp labels sit on green, where any
+        // transparency drops them under readable contrast.
         AppText(
           label,
-          style: AppTextStyles.labelSm.copyWith(
-            color: AppColors.onPrimary.withValues(alpha: 0.8),
-          ),
+          textAlign: TextAlign.center,
+          style: AppTextStyles.labelSm.copyWith(color: AppColors.onPrimary),
         ),
       ],
+    ),
+  );
+}
+
+/// A faint white ring on a hero card, for depth.
+class _HeroRing extends StatelessWidget {
+  const _HeroRing({
+    required this.size,
+    this.top,
+    this.bottom,
+    this.left,
+    this.right,
+  });
+
+  final double size;
+  final double? top, bottom, left, right;
+
+  @override
+  Widget build(BuildContext context) => Positioned(
+    top: top,
+    bottom: bottom,
+    left: left,
+    right: right,
+    child: IgnorePointer(
+      child: Container(
+        width: size,
+        height: size,
+        decoration: BoxDecoration(
+          shape: BoxShape.circle,
+          color: AppColors.onPrimary.withValues(alpha: 0.06),
+        ),
+      ),
     ),
   );
 }

@@ -222,6 +222,8 @@ class TeacherRemoteDatasource {
     String subject = 'QURAN',
     String? hadithReference,
     String? unit,
+    int? ayahFrom,
+    int? ayahTo,
   }) async {
     final response = await _dio.post(
       ApiEndpoints.memorization,
@@ -232,8 +234,11 @@ class TeacherRemoteDatasource {
         'memorizationType': memorizationType,
         'subject': subject,
         if (hadithReference != null) 'hadithReference': hadithReference,
-        // HADITH-only: PAGE or HADITH. Omitted means single hadiths.
+        // Quran: PAGE (omitted) or AYAH. Hadith: HADITH (omitted) or PAGE.
         if (unit != null) 'unit': unit,
+        // AYAH-only range inside surahNumber.
+        if (ayahFrom != null) 'ayahFrom': ayahFrom,
+        if (ayahTo != null) 'ayahTo': ayahTo,
       },
     );
     return response.data as Map<String, dynamic>;

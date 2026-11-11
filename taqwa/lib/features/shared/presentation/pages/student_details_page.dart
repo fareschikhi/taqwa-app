@@ -8,7 +8,7 @@ import '../../../../core/enums/memorization_type.dart';
 import '../../../../core/utils/extra_phones.dart';
 import '../../../../core/utils/fine_balance.dart';
 import '../../../../core/utils/hadith_label.dart'
-    show amountUnitLabel, hadithLabelOrFallback;
+    show recordAmountText, hadithLabelOrFallback;
 import '../../../../core/widgets/app_button.dart';
 import '../../../../core/widgets/app_card.dart';
 import '../../../../core/widgets/app_text_field.dart';
@@ -24,7 +24,8 @@ import '../../../adult_student/presentation/pages/fines_history_page.dart';
 import '../widgets/profile_detail_widgets.dart';
 import 'parent_form_page.dart';
 import 'package:taqwa/core/widgets/app_text.dart';
-import 'package:taqwa/core/utils/memorization_amount.dart';
+import 'package:taqwa/core/utils/progress_totals.dart';
+import 'package:taqwa/core/widgets/memorization_totals_card.dart';
 import 'package:taqwa/core/widgets/points_section.dart';
 import 'package:taqwa/features/data/repositories/points_repository.dart';
 
@@ -421,6 +422,8 @@ class _StudentDetailsPageState extends State<StudentDetailsPage> {
                       SizedBox(height: 16.h),
                       _buildRegistrationCard(),
                       SizedBox(height: 20.h),
+                      _buildProgressSection(),
+                      SizedBox(height: 20.h),
                       _buildLastSessionCard(),
                       SizedBox(height: 16.h),
                       _buildHistoryCard(),
@@ -439,7 +442,14 @@ class _StudentDetailsPageState extends State<StudentDetailsPage> {
     // Revision re-reads pages already memorized, so the server counts pages
     // from new memorization only — this is a page count, not a share of the
     // Quran.
-    final pagesDone = formatAmount(_progress?['totalPagesDone'] as num?);
+    // Pages and ayahs are separate units, so each takes its own line.
+    final quranDone = totalsText(
+      quranTotals(
+        pages: _progress?['totalPagesDone'] as num?,
+        ayahs: _progress?['totalAyahsDone'] as num?,
+      ),
+      separator: '\n',
+    );
     final attendedDays = _attendance?.monthAttended ?? 0;
 
     // IntrinsicHeight bounds the row's height so the boxes can stretch to match
@@ -451,8 +461,8 @@ class _StudentDetailsPageState extends State<StudentDetailsPage> {
         children: [
           Expanded(
             child: _StatBox(
-              label: 'الصفحات المحفوظة',
-              value: pagesDone,
+              label: 'المحفوظ من القرآن',
+              value: quranDone,
               color: AppColors.primary,
             ),
           ),
@@ -476,6 +486,54 @@ class _StudentDetailsPageState extends State<StudentDetailsPage> {
           ),
         ],
       ),
+    );
+  }
+
+  /// Everything the student has memorized, one card per subject and a tile
+  /// per unit, so any staff member opening the profile sees the whole
+  /// picture: «12 صفحة» beside «40 آية», and the hadith totals when the
+  /// student has a hadith track (or hadith entries from before it was
+  /// turned off).
+  Widget _buildProgressSection() {
+    final progress = _progress;
+    if (progress == null) return const SizedBox.shrink();
+
+    final surahs = (progress['totalSurahs'] as num?)?.toInt() ?? 0;
+    final hadithCounts =
+        (progress['hadithTypeCounts'] as Map<String, dynamic>?) ?? const {};
+    final hasHadithEntries = hadithCounts.values.any((v) => v is num && v > 0);
+    final showHadith = progress['tracksHadith'] == true || hasHadithEntries;
+
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.stretch,
+      children: [
+        AppText(
+          'تقدم الحفظ',
+          textAlign: TextAlign.right,
+          style: AppTextStyles.headlineSm.copyWith(color: AppColors.onSurface),
+        ),
+        SizedBox(height: 12.h),
+        MemorizationTotalsCard(
+          title: 'القرآن الكريم',
+          icon: Icons.menu_book_outlined,
+          totals: quranTotals(
+            pages: progress['totalPagesDone'] as num?,
+            ayahs: progress['totalAyahsDone'] as num?,
+          ),
+          subtitle: '$surahs سورة تم تناولها',
+        ),
+        if (showHadith) ...[
+          SizedBox(height: 12.h),
+          MemorizationTotalsCard(
+            title: 'الحديث الشريف',
+            icon: Icons.auto_stories_outlined,
+            totals: hadithTotals(
+              hadiths: progress['totalHadithsDone'] as num?,
+              pages: progress['totalHadithPagesDone'] as num?,
+            ),
+          ),
+        ],
+      ],
     );
   }
 
@@ -701,7 +759,7 @@ class _StudentDetailsPageState extends State<StudentDetailsPage> {
     final type =
         MemorizationTypeX.fromApi(entry['memorizationType'] as String?) ??
         MemorizationType.hifz;
-    final amount = formatAmount(entry['amountDone'] as num?);
+    final amount = recordAmountText(entry);
     final typeLabel = type == MemorizationType.hifz ? 'حفظ جديد' : type.label;
     final isHadith = entry['subject'] == 'HADITH';
     final referenceLabel = isHadith
@@ -728,7 +786,7 @@ class _StudentDetailsPageState extends State<StudentDetailsPage> {
           ),
           SizedBox(height: 4.h),
           AppText(
-            '$typeLabel · $amount ${amountUnitLabel(entry)}',
+            '$typeLabel · $amount',
             style: AppTextStyles.labelSm.copyWith(
               color: AppColors.onSurfaceVariant,
             ),
@@ -979,7 +1037,6 @@ class _RecordItem extends StatelessWidget {
     final type =
         MemorizationTypeX.fromApi(entry['memorizationType'] as String?) ??
         MemorizationType.hifz;
-    final count = formatAmount(entry['amountDone'] as num?);
     final isHadith = entry['subject'] == 'HADITH';
     return _RecordItem(
       date: _formatDate(entry['date'] ?? entry['recordedAt']),
@@ -987,7 +1044,7 @@ class _RecordItem extends StatelessWidget {
           ? hadithLabelOrFallback(entry['hadithReference'] as String?)
           : surahLabelOf((entry['surahNumber'] as num?)?.toInt()),
       type: type == MemorizationType.hifz ? 'حفظ جديد' : type.label,
-      amount: '$count ${amountUnitLabel(entry)}',
+      amount: recordAmountText(entry),
     );
   }
 

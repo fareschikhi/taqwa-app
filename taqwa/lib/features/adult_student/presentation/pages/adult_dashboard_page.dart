@@ -34,7 +34,7 @@ import 'package:taqwa/features/data/repositories/halaqa_announcement_repository.
 import 'package:taqwa/features/data/repositories/student_repository.dart';
 import 'package:taqwa/features/shared/presentation/pages/halaqa_news_page.dart';
 import 'fines_history_page.dart';
-import 'package:taqwa/core/utils/memorization_amount.dart';
+import 'package:taqwa/core/utils/progress_totals.dart';
 
 /// The adult student's own front page. There is no child to pick a card for
 /// here — the record loaded is always his — so this reads like
@@ -303,7 +303,14 @@ class _AdultDashboardPageState extends ConsumerState<AdultDashboardPage> {
 
   Widget _buildSummary() {
     final monthAttendedDays = _attendance?.monthAttended ?? 0;
-    final pagesDone = formatAmount(_progress?['totalPagesDone'] as num?);
+    // Pages and ayahs are separate units, so each takes its own line.
+    final quranDone = totalsText(
+      quranTotals(
+        pages: _progress?['totalPagesDone'] as num?,
+        ayahs: _progress?['totalAyahsDone'] as num?,
+      ),
+      separator: '\n',
+    );
 
     return Container(
       padding: EdgeInsets.all(16.w),
@@ -324,7 +331,7 @@ class _AdultDashboardPageState extends ConsumerState<AdultDashboardPage> {
           Expanded(
             child: _StatChip(
               label: 'حفظ',
-              value: '$pagesDone صفحة',
+              value: quranDone,
               onTap: () => _openTab(1),
             ),
           ),

@@ -7,6 +7,7 @@ import '../../../../core/constants/app_constants.dart';
 import '../../../../core/constants/surahs.dart';
 import '../../../../core/enums/memorization_subject.dart';
 import '../../../../core/enums/memorization_type.dart';
+import '../../../../core/utils/ayah_range.dart';
 import '../../../../core/utils/memorization_error_message.dart';
 import '../../../../core/utils/memorization_amount.dart';
 import '../../../../core/utils/memorization_duplicates.dart';
@@ -18,9 +19,11 @@ import '../../../data/repositories/student_repository.dart';
 import '../../../data/repositories/teacher_repository.dart';
 import 'package:taqwa/core/widgets/app_text.dart';
 
-/// How the teacher counts a Quran entry. The stored amount is always pages;
-/// the unit only sets where the counter starts and how far + and − move it.
-enum _AmountUnit { pages, hizb, surah }
+/// How the teacher counts a Quran entry. Pages, hizb and surah are all stored
+/// as pages — those units only set where the counter starts and how far + and
+/// − move it. Ayahs are stored as an ayah range with its own total, never
+/// turned into pages.
+enum _AmountUnit { pages, hizb, surah, ayahs }
 
 /// How the teacher counts a hadith entry. Unlike [_AmountUnit] this is stored
 /// with the entry: 2 pages and 2 hadiths are different amounts.
@@ -75,6 +78,15 @@ class _MemorizationEntrySheetState extends State<MemorizationEntrySheet> {
   final _amountController = TextEditingController(text: '1');
   final _amountFocus = FocusNode();
 
+  /// The two ends of an ayah range, typed by the teacher. Kept as text so a
+  /// half-typed number is never rewritten under their finger.
+  final _ayahFromController = TextEditingController(text: '1');
+  final _ayahToController = TextEditingController(text: '1');
+
+  /// Shown under the range once the teacher tries to save it, and cleared as
+  /// soon as they type again.
+  String? _ayahError;
+
   final _repo = TeacherRepository();
   final _studentRepo = StudentRepository();
 
@@ -83,6 +95,34 @@ class _MemorizationEntrySheetState extends State<MemorizationEntrySheet> {
   /// Every Quran entry counts in pages; a hadith entry counts in single
   /// hadiths unless the teacher switched it to pages.
   bool get _countsPages => !_isHadith || _hadithUnit == _HadithUnit.pages;
+
+  /// A Quran entry recorded as «من آية / إلى آية» instead of a counter.
+  bool get _countsAyahs => !_isHadith && _unit == _AmountUnit.ayahs;
+
+  int? get _ayahFrom =>
+      parseAmount(_ayahFromController.text, allowHalf: false)?.toInt();
+  int? get _ayahTo =>
+      parseAmount(_ayahToController.text, allowHalf: false)?.toInt();
+
+  /// The typed range when it is usable in the selected surah, else null.
+  ({int from, int to})? get _validAyahRange {
+    final surah = surahOf(_selectedSurah);
+    final from = _ayahFrom;
+    final to = _ayahTo;
+    if (surah == null || from == null || to == null) return null;
+    final error = ayahRangeError(
+      from: from,
+      to: to,
+      ayahCount: surah.ayahCount,
+    );
+    return error == null ? (from: from, to: to) : null;
+  }
+
+  void _setAyahRange(int from, int to) {
+    _ayahFromController.text = '$from';
+    _ayahToController.text = '$to';
+    _ayahError = null;
+  }
 
   String get _amountLabel => _countsPages ? kPageAmountLabel : 'عدد الأحاديث';
   int get _maxAmount => _countsPages ? kMushafPages : 50;
@@ -109,6 +149,8 @@ class _MemorizationEntrySheetState extends State<MemorizationEntrySheet> {
     _AmountUnit.pages => 1,
     _AmountUnit.hizb => kPagesPerHizb.toDouble(),
     _AmountUnit.surah => (_selectedSurahPages ?? 1).toDouble(),
+    // The range, not the counter, holds an ayah entry's amount.
+    _AmountUnit.ayahs => 1,
   };
 
   @override
@@ -152,6 +194,29 @@ class _MemorizationEntrySheetState extends State<MemorizationEntrySheet> {
       _selectedType ??= type;
       _prefilledFrom = record;
     });
+
+    // A student recorded by ayahs carries on from the ayah after last time,
+    // in the same surah, so the teacher only confirms.
+    final lastFrom = (record['ayahFrom'] as num?)?.toInt();
+    final lastTo = (record['ayahTo'] as num?)?.toInt();
+    final lastSurah = surahOf(surah);
+    if (record['unit'] == 'AYAH' &&
+        untouchedAmount &&
+        _selectedSurah == surah &&
+        lastSurah != null &&
+        lastFrom != null &&
+        lastTo != null) {
+      final next = nextAyahRange(
+        lastFrom: lastFrom,
+        lastTo: lastTo,
+        ayahCount: lastSurah.ayahCount,
+      );
+      setState(() {
+        _unit = _AmountUnit.ayahs;
+        _setAyahRange(next.from, next.to);
+      });
+      return;
+    }
     if (untouchedAmount && amount != null && amount >= _minAmount) {
       _setAmount(amount);
     }
@@ -161,6 +226,8 @@ class _MemorizationEntrySheetState extends State<MemorizationEntrySheet> {
   void dispose() {
     _amountController.dispose();
     _amountFocus.dispose();
+    _ayahFromController.dispose();
+    _ayahToController.dispose();
     super.dispose();
   }
 
@@ -241,7 +308,10 @@ class _MemorizationEntrySheetState extends State<MemorizationEntrySheet> {
   }
 
   void _onUnitChanged(_AmountUnit unit) {
-    setState(() => _unit = unit);
+    setState(() {
+      _unit = unit;
+      _ayahError = null;
+    });
     _setAmount(_startAmountFor(unit));
   }
 
@@ -257,8 +327,23 @@ class _MemorizationEntrySheetState extends State<MemorizationEntrySheet> {
 
   /// While counting by surah, picking another surah means reciting that one,
   /// so the counter follows it to its page count.
+  ///
+  /// An ayah range that no longer fits the new surah is pulled inside it, so
+  /// «1–200» typed for آل عمران never stays on screen for الفاتحة.
   void _onSurahChanged(int? number) {
-    setState(() => _selectedSurah = number);
+    setState(() {
+      _selectedSurah = number;
+      _ayahError = null;
+      final ayahs = surahOf(number)?.ayahCount;
+      if (ayahs == null) return;
+      final from = _ayahFrom;
+      final to = _ayahTo;
+      if (from == null || from > ayahs) {
+        _setAyahRange(1, 1);
+      } else if (to == null || to > ayahs) {
+        _setAyahRange(from, ayahs);
+      }
+    });
     if (_unit == _AmountUnit.surah) _setAmount(_startAmountFor(_unit));
   }
 
@@ -288,18 +373,33 @@ class _MemorizationEntrySheetState extends State<MemorizationEntrySheet> {
       return;
     }
 
+    // The range is checked here, not as it is typed: «2» on the way to «25»
+    // is not a mistake worth flagging.
+    final range = _countsAyahs ? _validAyahRange : null;
+    if (_countsAyahs && range == null) {
+      final error = ayahRangeError(
+        from: _ayahFrom,
+        to: _ayahTo,
+        ayahCount: surahOf(_selectedSurah)!.ayahCount,
+      );
+      setState(() => _ayahError = error);
+      return;
+    }
+
     setState(() => _isSaving = true);
     try {
       final created = await _repo.submitMemorization(
         studentId: widget.student.id,
         surahNumber: _isHadith ? null : _selectedSurah,
         hadithReference: _isHadith ? _selectedHadithBook : null,
-        amountDone: _amount,
+        amountDone: range != null ? ayahCountIn(range.from, range.to) : _amount,
         memorizationType: _selectedType!.apiValue,
         subject: _selectedSubject.apiValue,
         unit: _isHadith
             ? (_hadithUnit == _HadithUnit.pages ? 'PAGE' : 'HADITH')
-            : null,
+            : (range != null ? 'AYAH' : null),
+        ayahFrom: range?.from,
+        ayahTo: range?.to,
       );
       if (mounted) {
         Navigator.pop<MemorizationEntryResult>(context, (
@@ -326,6 +426,69 @@ class _MemorizationEntrySheetState extends State<MemorizationEntrySheet> {
   }
 
   String _errorMessage(Object error) => memorizationErrorMessage(error);
+
+  /// «من آية» and «إلى آية» side by side, right to left as they are read,
+  /// with the count underneath so the teacher sees what will be saved.
+  Widget _buildAyahRange() {
+    final surah = surahOf(_selectedSurah);
+    final range = _validAyahRange;
+    final String helper;
+    if (_ayahError != null) {
+      helper = _ayahError!;
+    } else if (surah == null) {
+      helper = 'اختر السورة أولاً';
+    } else if (range != null) {
+      final count = ayahCountIn(range.from, range.to);
+      helper =
+          'المجموع: $count $kAyahUnitLabel · سورة ${surah.name} '
+          '${surah.ayahCount} $kAyahUnitLabel';
+    } else {
+      helper = 'سورة ${surah.name} ${surah.ayahCount} $kAyahUnitLabel';
+    }
+
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.end,
+      children: [
+        Row(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Expanded(
+              child: _AyahField(
+                label: 'إلى آية',
+                controller: _ayahToController,
+                enabled: surah != null,
+                hasError: _ayahError != null,
+                onChanged: (_) => setState(() => _ayahError = null),
+              ),
+            ),
+            SizedBox(width: 12.w),
+            Expanded(
+              child: _AyahField(
+                label: 'من آية',
+                controller: _ayahFromController,
+                enabled: surah != null,
+                hasError: _ayahError != null,
+                onChanged: (_) => setState(() => _ayahError = null),
+              ),
+            ),
+          ],
+        ),
+        SizedBox(height: 6.h),
+        Semantics(
+          liveRegion: _ayahError != null,
+          child: AppText(
+            helper,
+            textAlign: TextAlign.right,
+            style: AppTextStyles.labelMd.copyWith(
+              color: _ayahError != null
+                  ? AppColors.error
+                  : AppColors.onSurfaceVariant,
+            ),
+          ),
+        ),
+      ],
+    );
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -571,6 +734,10 @@ class _MemorizationEntrySheetState extends State<MemorizationEntrySheet> {
                             value: _AmountUnit.pages,
                             label: 'صفحات',
                           ),
+                          SegmentOption(
+                            value: _AmountUnit.ayahs,
+                            label: 'آيات',
+                          ),
                         ],
                         selected: _unit,
                         onChanged: _onUnitChanged,
@@ -578,109 +745,113 @@ class _MemorizationEntrySheetState extends State<MemorizationEntrySheet> {
                       SizedBox(height: 12.h),
                     ],
 
-                    AppText(
-                      _amountLabel,
-                      style: AppTextStyles.labelMd.copyWith(
-                        color: AppColors.onSurfaceVariant,
-                      ),
-                    ),
-                    SizedBox(height: 6.h),
-                    ListenableBuilder(
-                      listenable: _amountFocus,
-                      builder: (context, child) => AnimatedContainer(
-                        duration: AppConstants.animFast,
-                        decoration: BoxDecoration(
-                          color: AppColors.surfaceContainerLow,
-                          borderRadius: BorderRadius.circular(
-                            AppConstants.radiusMd,
-                          ),
-                          border: Border.all(
-                            color: _amountFocus.hasFocus
-                                ? AppColors.inputFocusBorder
-                                : AppColors.inputBorder,
-                          ),
-                        ),
-                        child: child,
-                      ),
-                      child: Row(
-                        children: [
-                          IconButton(
-                            icon: const Icon(Icons.add, size: 18),
-                            tooltip: 'زيادة',
-                            onPressed: _amount >= _maxAmount
-                                ? null
-                                : () => _setAmount(_amount + _step),
-                            color: AppColors.primary,
-                          ),
-                          Expanded(
-                            child: Semantics(
-                              label: _amountLabel,
-                              child: TextField(
-                                // Re-keyed per unit so the formatter
-                                // never holds on to the previous
-                                // unit's half-page rule.
-                                key: ValueKey(_allowsHalf),
-                                controller: _amountController,
-                                focusNode: _amountFocus,
-                                textAlign: TextAlign.center,
-                                textDirection: TextDirection.ltr,
-                                // `signed: true` is the workaround for
-                                // Samsung's keyboard, which hides the
-                                // decimal key for decimal-only number
-                                // fields. The formatter still refuses '-'.
-                                keyboardType: TextInputType.numberWithOptions(
-                                  decimal: _allowsHalf,
-                                  signed: _allowsHalf,
-                                ),
-                                textInputAction: TextInputAction.done,
-                                inputFormatters: [
-                                  MemorizationAmountInputFormatter(
-                                    allowHalf: _allowsHalf,
-                                  ),
-                                ],
-                                // Select-all on tap: typing "10"
-                                // replaces the 1 rather than making 110.
-                                onTap: () =>
-                                    _amountController.selection = TextSelection(
-                                      baseOffset: 0,
-                                      extentOffset:
-                                          _amountController.text.length,
-                                    ),
-                                onChanged: _onAmountTyped,
-                                onSubmitted: (_) => _commitTypedAmount(),
-                                style: AppTextStyles.bodyMdBold.copyWith(
-                                  color: AppColors.onSurface,
-                                ),
-                                decoration: const InputDecoration(
-                                  border: InputBorder.none,
-                                  enabledBorder: InputBorder.none,
-                                  focusedBorder: InputBorder.none,
-                                  filled: false,
-                                  isDense: true,
-                                  contentPadding: EdgeInsets.zero,
-                                ),
-                              ),
-                            ),
-                          ),
-                          IconButton(
-                            icon: const Icon(Icons.remove, size: 18),
-                            tooltip: 'إنقاص',
-                            onPressed: _amount <= _minAmount
-                                ? null
-                                : () => _setAmount(_amount - _step),
-                            color: AppColors.onSurfaceVariant,
-                          ),
-                        ],
-                      ),
-                    ),
-                    if (_allowsHalf) ...[
-                      SizedBox(height: 6.h),
+                    if (_countsAyahs)
+                      _buildAyahRange()
+                    else ...[
                       AppText(
-                        'اضغط على الرقم لكتابته، ويمكن إدخال نصف صفحة (مثل 1.5)',
-                        style: AppTextStyles.labelSm.copyWith(
+                        _amountLabel,
+                        style: AppTextStyles.labelMd.copyWith(
                           color: AppColors.onSurfaceVariant,
                         ),
                       ),
+                      SizedBox(height: 6.h),
+                      ListenableBuilder(
+                        listenable: _amountFocus,
+                        builder: (context, child) => AnimatedContainer(
+                          duration: AppConstants.animFast,
+                          decoration: BoxDecoration(
+                            color: AppColors.surfaceContainerLow,
+                            borderRadius: BorderRadius.circular(
+                              AppConstants.radiusMd,
+                            ),
+                            border: Border.all(
+                              color: _amountFocus.hasFocus
+                                  ? AppColors.inputFocusBorder
+                                  : AppColors.inputBorder,
+                            ),
+                          ),
+                          child: child,
+                        ),
+                        child: Row(
+                          children: [
+                            IconButton(
+                              icon: const Icon(Icons.add, size: 18),
+                              tooltip: 'زيادة',
+                              onPressed: _amount >= _maxAmount
+                                  ? null
+                                  : () => _setAmount(_amount + _step),
+                              color: AppColors.primary,
+                            ),
+                            Expanded(
+                              child: Semantics(
+                                label: _amountLabel,
+                                child: TextField(
+                                  // Re-keyed per unit so the formatter
+                                  // never holds on to the previous
+                                  // unit's half-page rule.
+                                  key: ValueKey(_allowsHalf),
+                                  controller: _amountController,
+                                  focusNode: _amountFocus,
+                                  textAlign: TextAlign.center,
+                                  textDirection: TextDirection.ltr,
+                                  // `signed: true` is the workaround for
+                                  // Samsung's keyboard, which hides the
+                                  // decimal key for decimal-only number
+                                  // fields. The formatter still refuses '-'.
+                                  keyboardType: TextInputType.numberWithOptions(
+                                    decimal: _allowsHalf,
+                                    signed: _allowsHalf,
+                                  ),
+                                  textInputAction: TextInputAction.done,
+                                  inputFormatters: [
+                                    MemorizationAmountInputFormatter(
+                                      allowHalf: _allowsHalf,
+                                    ),
+                                  ],
+                                  // Select-all on tap: typing "10"
+                                  // replaces the 1 rather than making 110.
+                                  onTap: () => _amountController.selection =
+                                      TextSelection(
+                                        baseOffset: 0,
+                                        extentOffset:
+                                            _amountController.text.length,
+                                      ),
+                                  onChanged: _onAmountTyped,
+                                  onSubmitted: (_) => _commitTypedAmount(),
+                                  style: AppTextStyles.bodyMdBold.copyWith(
+                                    color: AppColors.onSurface,
+                                  ),
+                                  decoration: const InputDecoration(
+                                    border: InputBorder.none,
+                                    enabledBorder: InputBorder.none,
+                                    focusedBorder: InputBorder.none,
+                                    filled: false,
+                                    isDense: true,
+                                    contentPadding: EdgeInsets.zero,
+                                  ),
+                                ),
+                              ),
+                            ),
+                            IconButton(
+                              icon: const Icon(Icons.remove, size: 18),
+                              tooltip: 'إنقاص',
+                              onPressed: _amount <= _minAmount
+                                  ? null
+                                  : () => _setAmount(_amount - _step),
+                              color: AppColors.onSurfaceVariant,
+                            ),
+                          ],
+                        ),
+                      ),
+                      if (_allowsHalf) ...[
+                        SizedBox(height: 6.h),
+                        AppText(
+                          'اضغط على الرقم لكتابته، ويمكن إدخال نصف صفحة (مثل 1.5)',
+                          style: AppTextStyles.labelSm.copyWith(
+                            color: AppColors.onSurfaceVariant,
+                          ),
+                        ),
+                      ],
                     ],
                   ],
                 ),
@@ -727,6 +898,113 @@ class _MemorizationEntrySheetState extends State<MemorizationEntrySheet> {
           ),
         ),
       ),
+    );
+  }
+}
+
+/// One end of an ayah range: a label over a centred number box styled like
+/// the page counter, so the two ways of counting look like one sheet.
+class _AyahField extends StatefulWidget {
+  const _AyahField({
+    required this.label,
+    required this.controller,
+    required this.enabled,
+    required this.hasError,
+    required this.onChanged,
+  });
+
+  final String label;
+  final TextEditingController controller;
+  final bool enabled;
+  final bool hasError;
+  final ValueChanged<String> onChanged;
+
+  @override
+  State<_AyahField> createState() => _AyahFieldState();
+}
+
+class _AyahFieldState extends State<_AyahField> {
+  final _focus = FocusNode();
+
+  @override
+  void initState() {
+    super.initState();
+    _focus.addListener(() => setState(() {}));
+  }
+
+  @override
+  void dispose() {
+    _focus.dispose();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final borderColor = widget.hasError
+        ? AppColors.error
+        : _focus.hasFocus
+        ? AppColors.inputFocusBorder
+        : AppColors.inputBorder;
+
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.end,
+      children: [
+        AppText(
+          widget.label,
+          style: AppTextStyles.labelMd.copyWith(
+            color: AppColors.onSurfaceVariant,
+          ),
+        ),
+        SizedBox(height: 6.h),
+        AnimatedContainer(
+          duration: AppConstants.animFast,
+          height: 48.h,
+          alignment: Alignment.center,
+          decoration: BoxDecoration(
+            color: widget.enabled
+                ? AppColors.surfaceContainerLow
+                : AppColors.surfaceContainer,
+            borderRadius: BorderRadius.circular(AppConstants.radiusMd),
+            border: Border.all(color: borderColor),
+          ),
+          child: Semantics(
+            label: widget.label,
+            child: TextField(
+              controller: widget.controller,
+              focusNode: _focus,
+              enabled: widget.enabled,
+              textAlign: TextAlign.center,
+              textDirection: TextDirection.ltr,
+              keyboardType: TextInputType.number,
+              textInputAction: TextInputAction.next,
+              inputFormatters: [
+                MemorizationAmountInputFormatter(allowHalf: false),
+              ],
+              // Select-all on tap: typing "20" replaces the 1 rather than
+              // making 120.
+              onTap: () => widget.controller.selection = TextSelection(
+                baseOffset: 0,
+                extentOffset: widget.controller.text.length,
+              ),
+              onChanged: widget.onChanged,
+              style: AppTextStyles.bodyMdBold.copyWith(
+                color: widget.enabled
+                    ? AppColors.onSurface
+                    : AppColors.onSurfaceVariant,
+              ),
+              decoration: const InputDecoration(
+                border: InputBorder.none,
+                enabledBorder: InputBorder.none,
+                focusedBorder: InputBorder.none,
+                disabledBorder: InputBorder.none,
+                filled: false,
+                isDense: true,
+                contentPadding: EdgeInsets.zero,
+              ),
+            ),
+          ),
+        ),
+      ],
     );
   }
 }
