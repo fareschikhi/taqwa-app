@@ -1,6 +1,7 @@
 import {
   Injectable,
   BadRequestException,
+  ForbiddenException,
   NotFoundException,
 } from '@nestjs/common';
 import { PrismaService } from '../../prisma/prisma.service';
@@ -22,6 +23,14 @@ import {
 import { reconcileDayFines } from '../attendance/day-fines';
 import { isAway } from '../attendance/attendance-status';
 import { reconcileDayPoints } from '../points/day-points';
+
+/// Who is deleting a recitation. Same shape as AttendanceActor: the teacher id
+/// is what decides whether the student is hers.
+export type MemorizationActor = {
+  id: number;
+  role: string;
+  teacher?: { id: number } | null;
+};
 
 // Attendance rows are written as new Date('YYYY-MM-DD'), which parses to UTC
 // midnight, and both date columns are @db.Date, which Prisma truncates in UTC.
@@ -279,6 +288,59 @@ export class MemorizationService {
       await reconcileDayPoints(tx, existing.studentId, existing.date);
       return record;
     });
+  }
+
+  /// Removes a recitation recorded by mistake.
+  ///
+  /// The day is reckoned again in the same write: the points it earned go,
+  /// and if roll was taken that day the "did not memorize" charge comes back
+  /// when no other in-session recitation is left — it was this row that had
+  /// cleared it. A teacher may only delete for students in her own halaqa;
+  /// ADMIN is unrestricted.
+  async remove(id: number, actor: MemorizationActor | null = null) {
+    const existing = await this.prisma.memorizationProgress.findUnique({
+      where: { id },
+      select: {
+        id: true,
+        studentId: true,
+        date: true,
+        student: { select: { halaqa: { select: { teacherId: true } } } },
+      },
+    });
+    if (!existing) throw new NotFoundException('سجل الحفظ غير موجود');
+
+    if (actor?.role === 'TEACHER') {
+      // Checked side by side rather than compared directly, so a missing
+      // teacher profile and a student with no halaqa cannot both read as
+      // undefined and pass.
+      const teacherId = actor.teacher?.id;
+      const owner = existing.student?.halaqa?.teacherId;
+      if (teacherId == null || owner == null || owner !== teacherId) {
+        throw new ForbiddenException('لا يمكنك حذف حفظ طالب من حلقة أخرى');
+      }
+    }
+
+    const { studentId, date } = existing;
+    await this.prisma.$transaction(async (tx) => {
+      await tx.memorizationProgress.delete({ where: { id } });
+      const attendance = await tx.attendance.findUnique({
+        where: { studentId_date: { studentId, date } },
+        select: { status: true },
+      });
+      // No roll call that day means no charge to bring back, the same rule
+      // create follows.
+      if (attendance) {
+        await reconcileDayFines(
+          tx,
+          studentId,
+          date,
+          attendance.status,
+          actor?.id ?? null,
+        );
+      }
+      await reconcileDayPoints(tx, studentId, date);
+    });
+    return { deleted: true };
   }
 
   async getStudentProgress(studentId: number) {

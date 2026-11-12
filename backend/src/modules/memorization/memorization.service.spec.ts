@@ -2,7 +2,11 @@ jest.mock('../points/day-points', () => ({
   reconcileDayPoints: jest.fn().mockResolvedValue(undefined),
 }));
 import { reconcileDayPoints } from '../points/day-points';
-import { BadRequestException } from '@nestjs/common';
+import {
+  BadRequestException,
+  ForbiddenException,
+  NotFoundException,
+} from '@nestjs/common';
 import {
   AttendanceStatus,
   Memorization,
@@ -923,5 +927,108 @@ describe('MemorizationService Quran ayah ranges', () => {
     expect(progress.totalPagesDone).toBe(2);
     expect(progress.totalAyahsDone).toBe(17);
     expect(progress.totalSurahs).toBe(2);
+  });
+});
+
+describe('MemorizationService.remove', () => {
+  const day = new Date('2026-11-10');
+  const makePrisma = ({
+    teacherId = 1,
+    attendance = AttendanceStatus.PRESENT as AttendanceStatus | null,
+  } = {}) => {
+    const prisma: any = {
+      memorizationProgress: {
+        findUnique: jest.fn().mockResolvedValue({
+          id: 10,
+          studentId: 7,
+          date: day,
+          student: { halaqa: { teacherId } },
+        }),
+        delete: jest.fn().mockResolvedValue({ id: 10 }),
+        // The deleted row was the day's only recitation.
+        count: jest.fn().mockResolvedValue(0),
+      },
+      attendance: {
+        findUnique: jest
+          .fn()
+          .mockResolvedValue(attendance === null ? null : { status: attendance }),
+        updateMany: jest.fn().mockResolvedValue({ count: 1 }),
+      },
+      student: {
+        findUnique: jest.fn().mockResolvedValue({
+          userId: 30,
+          user: { role: 'ADULT_STUDENT' },
+          halaqa: {
+            isAdult: true,
+            absenceFee: 50,
+            lateFee: 20,
+            missedMemorizationFee: 30,
+          },
+        }),
+      },
+      fineEntry: {
+        findMany: jest.fn().mockResolvedValue([]),
+        deleteMany: jest.fn(),
+        create: jest.fn().mockResolvedValue({}),
+      },
+    };
+    prisma.$transaction = jest.fn((cb: any) => cb(prisma));
+    return prisma;
+  };
+  const teacher = { id: 40, role: 'TEACHER', teacher: { id: 1 } };
+
+  beforeEach(() => (reconcileDayPoints as jest.Mock).mockClear());
+
+  it("deletes the row and re-reckons the day's points", async () => {
+    const prisma = makePrisma();
+    await new MemorizationService(prisma).remove(10, teacher);
+
+    expect(prisma.memorizationProgress.delete).toHaveBeenCalledWith({
+      where: { id: 10 },
+    });
+    expect(reconcileDayPoints).toHaveBeenCalledWith(prisma, 7, day);
+  });
+
+  // The recitation was what cleared the "did not memorize" charge; once it is
+  // gone, the day is back to a day he attended without reciting.
+  it('brings back the missed-memorization charge when roll was taken', async () => {
+    const prisma = makePrisma();
+    await new MemorizationService(prisma).remove(10, teacher);
+
+    expect(prisma.fineEntry.create).toHaveBeenCalledWith(
+      expect.objectContaining({
+        data: expect.objectContaining({ source: 'MISSED_MEMORIZATION' }),
+      }),
+    );
+  });
+
+  it('reconciles no fines before roll call has been taken', async () => {
+    const prisma = makePrisma({ attendance: null });
+    await new MemorizationService(prisma).remove(10, teacher);
+
+    expect(prisma.memorizationProgress.delete).toHaveBeenCalled();
+    expect(prisma.fineEntry.findMany).not.toHaveBeenCalled();
+  });
+
+  it('refuses a teacher whose halaqa the student is not in', async () => {
+    const prisma = makePrisma({ teacherId: 2 });
+    await expect(
+      new MemorizationService(prisma).remove(10, teacher),
+    ).rejects.toBeInstanceOf(ForbiddenException);
+    expect(prisma.memorizationProgress.delete).not.toHaveBeenCalled();
+  });
+
+  it("lets an admin delete any student's row", async () => {
+    const prisma = makePrisma({ teacherId: 2 });
+    await new MemorizationService(prisma).remove(10, { id: 1, role: 'ADMIN' });
+    expect(prisma.memorizationProgress.delete).toHaveBeenCalled();
+  });
+
+  it('answers 404 for a row that does not exist', async () => {
+    const prisma = makePrisma();
+    prisma.memorizationProgress.findUnique.mockResolvedValue(null);
+    await expect(
+      new MemorizationService(prisma).remove(10, teacher),
+    ).rejects.toBeInstanceOf(NotFoundException);
   });
 });

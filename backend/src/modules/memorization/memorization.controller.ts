@@ -1,6 +1,7 @@
 import {
   Body,
   Controller,
+  Delete,
   Get,
   Param,
   ParseIntPipe,
@@ -14,6 +15,7 @@ import { JwtAuthGuard } from '../../common/guards/jwt-auth.guard';
 import { RolesGuard } from '../../common/guards/roles.guard';
 import { StudentOwnershipGuard } from '../../common/guards/student-ownership.guard';
 import { Roles } from '../../common/decorators/roles.decorator';
+import { CurrentUser } from '../../common/decorators/current-user.decorator';
 import { MemorizationService } from './memorization.service';
 import {
   CreateMemorizationDto,
@@ -70,5 +72,13 @@ export class MemorizationController {
     @Body() dto: UpdateMemorizationDto,
   ) {
     return this.memorizationService.update(id, dto);
+  }
+
+  /// A recitation recorded by mistake. Teachers only reach their own
+  /// halaqa's students; the service enforces it.
+  @Delete(':id')
+  @Roles(Role.ADMIN, Role.TEACHER)
+  remove(@Param('id', ParseIntPipe) id: number, @CurrentUser() user: any) {
+    return this.memorizationService.remove(id, user ?? null);
   }
 }

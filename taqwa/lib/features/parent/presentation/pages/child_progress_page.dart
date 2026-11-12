@@ -13,7 +13,9 @@ import '../../../../core/utils/hadith_label.dart';
 import '../../../data/repositories/student_repository.dart';
 import 'package:taqwa/core/widgets/app_text.dart';
 import 'package:taqwa/core/widgets/app_card.dart';
+import 'package:taqwa/core/widgets/confirm_delete_dialog.dart';
 import 'package:taqwa/core/widgets/pushed_page_back_button.dart';
+import 'package:taqwa/core/widgets/record_delete_button.dart';
 import '../widgets/parent_chat_button.dart';
 import 'package:taqwa/core/utils/memorization_amount.dart';
 import 'package:taqwa/core/utils/ayah_range.dart' show kAyahUnitLabel;
@@ -27,14 +29,27 @@ class ChildProgressPage extends ConsumerStatefulWidget {
   /// the student's profile by passing [studentId] and [studentName]; it is
   /// then a pushed page with a back button, and lists every entry — the
   /// profile already shows the latest ones, so this is where the rest live.
-  const ChildProgressPage({super.key, this.studentId, this.studentName})
-    : assert(
-        (studentId == null) == (studentName == null),
-        'Pass studentId and studentName together, or neither.',
-      );
+  const ChildProgressPage({
+    super.key,
+    this.studentId,
+    this.studentName,
+    this.canDelete = false,
+  }) : assert(
+         (studentId == null) == (studentName == null),
+         'Pass studentId and studentName together, or neither.',
+       ),
+       assert(
+         !canDelete || studentId != null,
+         'Deleting is for staff, who open the page for one student.',
+       );
 
   final int? studentId;
   final String? studentName;
+
+  /// Whether each recitation carries a delete button, for an entry recorded
+  /// by mistake. The admin's and a teacher's student lists turn it on; the
+  /// server still refuses a teacher outside the student's halaqa.
+  final bool canDelete;
 
   @override
   ConsumerState<ChildProgressPage> createState() => _ChildProgressPageState();
@@ -65,9 +80,15 @@ class _ChildProgressPageState extends ConsumerState<ChildProgressPage> {
     });
   }
 
-  Future<void> _load(int childId) async {
+  /// The recitation whose delete is in flight, so its button shows progress
+  /// and a second tap cannot send it twice.
+  int? _deletingId;
+
+  /// [quiet] keeps the list on screen while it refreshes — after a delete the
+  /// teacher stays where she was instead of facing a spinner.
+  Future<void> _load(int childId, {bool quiet = false}) async {
     setState(() {
-      _isLoading = true;
+      if (!quiet) _isLoading = true;
       _loadedChildId = childId;
     });
     try {
@@ -280,6 +301,40 @@ class _ChildProgressPageState extends ConsumerState<ChildProgressPage> {
     );
   }
 
+  /// Asks first — the server also re-reckons the day's points and fines, and
+  /// nothing brings the row back — then reloads in place.
+  Future<void> _delete(
+    Map<String, dynamic> entry, {
+    required String description,
+  }) async {
+    final id = (entry['id'] as num?)?.toInt();
+    final studentId = _loadedChildId;
+    if (id == null || studentId == null || _deletingId != null) return;
+
+    final confirmed = await ConfirmDeleteDialog.show(
+      context,
+      title: 'حذف التسميع',
+      message:
+          'سيُحذف تسميع $description، وتُعاد حسابات النقاط والرسوم لذلك '
+          'اليوم. لا يمكن التراجع عن هذا الإجراء.',
+    );
+    if (!confirmed || !mounted) return;
+
+    setState(() => _deletingId = id);
+    final messenger = ScaffoldMessenger.of(context);
+    try {
+      await _repo.deleteMemorization(id);
+      await _load(studentId, quiet: true);
+      messenger.showSnackBar(const SnackBar(content: Text('تم حذف التسميع')));
+    } catch (e) {
+      messenger.showSnackBar(
+        SnackBar(content: Text(StudentRepository.errorMessage(e))),
+      );
+    } finally {
+      if (mounted) setState(() => _deletingId = null);
+    }
+  }
+
   Widget _buildRecordItem(Map<String, dynamic> entry) {
     // An unrecognised type falls back to new memorization, matching the
     // column default on the server.
@@ -301,6 +356,8 @@ class _ChildProgressPageState extends ConsumerState<ChildProgressPage> {
     } catch (_) {
       dateStr = '';
     }
+    final id = (entry['id'] as num?)?.toInt();
+    final description = '$referenceLabel ($typeLabel) بتاريخ $dateStr';
 
     final (typeColor, typeTint) = _typeColors(type);
 
@@ -373,6 +430,16 @@ class _ChildProgressPageState extends ConsumerState<ChildProgressPage> {
               ],
             ),
           ),
+          if (widget.canDelete && id != null) ...[
+            SizedBox(width: 4.w),
+            RecordDeleteButton(
+              tooltip: 'حذف تسميع $description',
+              isDeleting: _deletingId == id,
+              onPressed: _deletingId == null
+                  ? () => _delete(entry, description: description)
+                  : null,
+            ),
+          ],
         ],
       ),
     );

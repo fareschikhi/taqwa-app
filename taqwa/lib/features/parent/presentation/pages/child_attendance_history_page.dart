@@ -9,7 +9,9 @@ import '../../../../core/providers/selected_student_provider.dart';
 import '../../../data/repositories/student_repository.dart';
 import '../../../data/models/attendance_summary_model.dart';
 import 'package:taqwa/core/widgets/app_text.dart';
+import 'package:taqwa/core/widgets/confirm_delete_dialog.dart';
 import 'package:taqwa/core/widgets/pushed_page_back_button.dart';
+import 'package:taqwa/core/widgets/record_delete_button.dart';
 import '../widgets/parent_chat_button.dart';
 
 class ChildAttendanceHistoryPage extends ConsumerStatefulWidget {
@@ -22,13 +24,23 @@ class ChildAttendanceHistoryPage extends ConsumerStatefulWidget {
     super.key,
     this.studentId,
     this.studentName,
+    this.canDelete = false,
   }) : assert(
          (studentId == null) == (studentName == null),
          'Pass studentId and studentName together, or neither.',
+       ),
+       assert(
+         !canDelete || studentId != null,
+         'Deleting is for staff, who open the page for one student.',
        );
 
   final int? studentId;
   final String? studentName;
+
+  /// Whether each day carries a delete button, for a day recorded by
+  /// mistake. The admin's and a teacher's student lists turn it on; the
+  /// server still refuses a teacher outside the student's halaqa.
+  final bool canDelete;
 
   @override
   ConsumerState<ChildAttendanceHistoryPage> createState() =>
@@ -60,9 +72,15 @@ class _ChildAttendanceHistoryPageState
     });
   }
 
-  Future<void> _load(int childId) async {
+  /// The day whose delete is in flight, so its button shows progress and a
+  /// second tap cannot send it twice.
+  int? _deletingId;
+
+  /// [quiet] keeps the list on screen while it refreshes — after a delete the
+  /// teacher stays where she was in the timeline instead of facing a spinner.
+  Future<void> _load(int childId, {bool quiet = false}) async {
     setState(() {
-      _isLoading = true;
+      if (!quiet) _isLoading = true;
       // A pull-to-refresh keeps the older days open; another child starts
       // folded again.
       if (childId != _loadedChildId) _showOlder = false;
@@ -304,13 +322,52 @@ class _ChildAttendanceHistoryPageState
     ];
   }
 
-  Widget _buildRecordRow(Map<String, dynamic> record) {
-    final status = AttendanceStatusStyle.of(record['status'] as String?);
+  static String _dateLabel(Map<String, dynamic> record) {
     final dt = DateTime.tryParse(record['date'].toString());
-    final dateStr = dt == null
+    return dt == null
         ? (record['date'] ?? '').toString()
         : '${dt.day.toString().padLeft(2, '0')}/'
               '${dt.month.toString().padLeft(2, '0')}/${dt.year}';
+  }
+
+  /// Asks first — the server also withdraws the day's automatic fines and
+  /// points, and nothing brings the row back — then reloads in place.
+  Future<void> _delete(Map<String, dynamic> record) async {
+    final id = (record['id'] as num?)?.toInt();
+    final studentId = _loadedChildId;
+    if (id == null || studentId == null || _deletingId != null) return;
+
+    final confirmed = await ConfirmDeleteDialog.show(
+      context,
+      title: 'حذف سجل الحضور',
+      message:
+          'سيُحذف حضور يوم ${_dateLabel(record)}، وتُلغى الرسوم والنقاط '
+          'المرتبطة به. لا يمكن التراجع عن هذا الإجراء.',
+    );
+    if (!confirmed || !mounted) return;
+
+    setState(() => _deletingId = id);
+    final messenger = ScaffoldMessenger.of(context);
+    try {
+      await _repo.deleteAttendance(id);
+      await _load(studentId, quiet: true);
+      messenger.showSnackBar(
+        const SnackBar(content: Text('تم حذف سجل الحضور')),
+      );
+    } catch (e) {
+      messenger.showSnackBar(
+        SnackBar(content: Text(StudentRepository.errorMessage(e))),
+      );
+    } finally {
+      if (mounted) setState(() => _deletingId = null);
+    }
+  }
+
+  Widget _buildRecordRow(Map<String, dynamic> record) {
+    final status = AttendanceStatusStyle.of(record['status'] as String?);
+    final dt = DateTime.tryParse(record['date'].toString());
+    final dateStr = _dateLabel(record);
+    final id = (record['id'] as num?)?.toInt();
 
     return Container(
       margin: EdgeInsets.only(bottom: 10.h),
@@ -356,6 +413,14 @@ class _ChildAttendanceHistoryPageState
             ),
             child: Icon(status.icon, color: status.color, size: 20.w),
           ),
+          if (widget.canDelete && id != null) ...[
+            SizedBox(width: 4.w),
+            RecordDeleteButton(
+              tooltip: 'حذف حضور يوم $dateStr',
+              isDeleting: _deletingId == id,
+              onPressed: _deletingId == null ? () => _delete(record) : null,
+            ),
+          ],
         ],
       ),
     );

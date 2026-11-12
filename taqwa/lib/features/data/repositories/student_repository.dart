@@ -59,6 +59,12 @@ class StudentRepository {
   Future<List<Map<String, dynamic>>> getMemorizationHistory(int studentId) =>
       _ds.getMemorizationHistory(studentId);
 
+  Future<void> deleteAttendance(int attendanceId) =>
+      _ds.deleteAttendance(attendanceId);
+
+  Future<void> deleteMemorization(int memorizationId) =>
+      _ds.deleteMemorization(memorizationId);
+
   /// Wraps DioException into a readable message
   static String errorMessage(Object e) {
     if (e is DioException) {

@@ -1,4 +1,8 @@
-import { ForbiddenException, Injectable } from '@nestjs/common';
+import {
+  ForbiddenException,
+  Injectable,
+  NotFoundException,
+} from '@nestjs/common';
 import { PrismaService } from '../../prisma/prisma.service';
 import {
   CreateAttendanceDto,
@@ -131,6 +135,7 @@ export class AttendanceService {
   private async assertCanRecord(
     studentIds: number[],
     actor: AttendanceActor | null,
+    refusal = 'لا يمكنك تسجيل حضور طالب من حلقة أخرى',
   ) {
     if (actor?.role !== 'TEACHER') return;
 
@@ -139,7 +144,7 @@ export class AttendanceService {
     // undefined and cancel out into an accidental pass.
     const teacherId = actor.teacher?.id;
     if (teacherId == null) {
-      throw new ForbiddenException('لا يمكنك تسجيل حضور طالب من حلقة أخرى');
+      throw new ForbiddenException(refusal);
     }
 
     const students = await this.prisma.student.findMany({
@@ -156,7 +161,7 @@ export class AttendanceService {
     // An id that matched no row fails here too, so a probe cannot tell a
     // student who does not exist from one in someone else's halaqa.
     if (studentIds.some((id) => !allowed.has(id))) {
-      throw new ForbiddenException('لا يمكنك تسجيل حضور طالب من حلقة أخرى');
+      throw new ForbiddenException(refusal);
     }
   }
 
@@ -358,6 +363,38 @@ export class AttendanceService {
       await reconcileDayPoints(tx, record.studentId, record.date);
       return record;
     });
+  }
+
+  /// Removes a day recorded by mistake, as if roll had never been taken for
+  /// that student that day.
+  ///
+  /// The roll call is what produced the day's automatic charges (absence,
+  /// lateness, missed memorization), so they go with the row; a MANUAL charge
+  /// was the teacher's own decision and stays. Points are reckoned again
+  /// because attendance is one of the things they are worth. Memorization an
+  /// ABSENT mark already discarded is not brought back — it is gone.
+  async remove(id: number, actor: AttendanceActor | null = null) {
+    const existing = await this.prisma.attendance.findUnique({
+      where: { id },
+      select: { id: true, studentId: true, date: true },
+    });
+    if (!existing) throw new NotFoundException('سجل الحضور غير موجود');
+    await this.assertCanRecord(
+      [existing.studentId],
+      actor,
+      'لا يمكنك حذف حضور طالب من حلقة أخرى',
+    );
+
+    const { studentId, date } = existing;
+    await this.prisma.$transaction(async (tx) => {
+      // The justification row cascades with it.
+      await tx.attendance.delete({ where: { id } });
+      await tx.fineEntry.deleteMany({
+        where: { studentId, date, source: { not: 'MANUAL' } },
+      });
+      await reconcileDayPoints(tx, studentId, date);
+    });
+    return { deleted: true };
   }
 
   async getStudentAttendanceSummary(studentId: number) {

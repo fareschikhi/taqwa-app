@@ -2,6 +2,7 @@ jest.mock('../points/day-points', () => ({
   reconcileDayPoints: jest.fn().mockResolvedValue(undefined),
 }));
 import { reconcileDayPoints } from '../points/day-points';
+import { ForbiddenException, NotFoundException } from '@nestjs/common';
 import { AttendanceStatus } from '@prisma/client';
 import { AttendanceService } from './attendance.service';
 import { desiredCharges } from './fine-reconciliation';
@@ -1301,6 +1302,72 @@ describe('AttendanceService keeps daily points in step', () => {
     expect(points).toHaveBeenCalledWith(prisma.tx, 7, day);
     expect(points.mock.invocationCallOrder[0]).toBeGreaterThan(
       prisma.tx.memorizationProgress.deleteMany.mock.invocationCallOrder[0],
+    );
+  });
+});
+
+describe('AttendanceService.remove', () => {
+  const day = new Date('2026-11-10');
+  const makePrisma = (teacherId: number | null = 1) => {
+    const tx = {
+      attendance: { delete: jest.fn().mockResolvedValue({ id: 5 }) },
+      fineEntry: { deleteMany: jest.fn().mockResolvedValue({ count: 1 }) },
+    };
+    const prisma = {
+      $transaction: jest.fn((cb: any) => cb(tx)),
+      attendance: {
+        findUnique: jest
+          .fn()
+          .mockResolvedValue({ id: 5, studentId: 7, date: day }),
+      },
+      student: {
+        findMany: jest
+          .fn()
+          .mockResolvedValue([{ id: 7, halaqa: { teacherId } }]),
+      },
+      tx,
+    };
+    return prisma;
+  };
+  const teacher = { id: 40, role: 'TEACHER', teacher: { id: 1 } };
+
+  beforeEach(() => (reconcileDayPoints as jest.Mock).mockClear());
+
+  it("deletes the row, its automatic fines and re-reckons the day's points in one write", async () => {
+    const prisma = makePrisma();
+    await svc(prisma).remove(5, teacher);
+
+    expect(prisma.$transaction).toHaveBeenCalledTimes(1);
+    expect(prisma.tx.attendance.delete).toHaveBeenCalledWith({
+      where: { id: 5 },
+    });
+    // A manual charge is the teacher's own decision, not the roll call's, so
+    // it survives; only the charges the roll call produced go with the row.
+    expect(prisma.tx.fineEntry.deleteMany).toHaveBeenCalledWith({
+      where: { studentId: 7, date: day, source: { not: 'MANUAL' } },
+    });
+    expect(reconcileDayPoints).toHaveBeenCalledWith(prisma.tx, 7, day);
+  });
+
+  it('refuses a teacher whose halaqa the student is not in', async () => {
+    const prisma = makePrisma(2);
+    await expect(svc(prisma).remove(5, teacher)).rejects.toBeInstanceOf(
+      ForbiddenException,
+    );
+    expect(prisma.$transaction).not.toHaveBeenCalled();
+  });
+
+  it("lets an admin delete any student's row", async () => {
+    const prisma = makePrisma(2);
+    await svc(prisma).remove(5, { id: 1, role: 'ADMIN' });
+    expect(prisma.tx.attendance.delete).toHaveBeenCalled();
+  });
+
+  it('answers 404 for a row that does not exist', async () => {
+    const prisma = makePrisma();
+    prisma.attendance.findUnique.mockResolvedValue(null);
+    await expect(svc(prisma).remove(5, teacher)).rejects.toBeInstanceOf(
+      NotFoundException,
     );
   });
 });

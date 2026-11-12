@@ -33,4 +33,13 @@ describe('MemorizationController role wiring', () => {
       Role.TEACHER,
     ]);
   });
+
+  // Deleting a mistaken recitation corrects the register, so it stays with
+  // the two roles that write it; a manager only reads.
+  it('keeps deleting a recitation to admins and teachers', () => {
+    expect(rolesFor(MemorizationController.prototype.remove)).toEqual([
+      Role.ADMIN,
+      Role.TEACHER,
+    ]);
+  });
 });

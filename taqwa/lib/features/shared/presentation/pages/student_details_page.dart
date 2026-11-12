@@ -41,6 +41,7 @@ class StudentDetailsPage extends StatefulWidget {
     this.canEditParent = false,
     this.canEditRating = false,
     this.canAdjustPoints = false,
+    this.canDeleteRecords = false,
   });
 
   /// What the caller already knows before this page's own load lands: the id
@@ -68,6 +69,12 @@ class StudentDetailsPage extends StatefulWidget {
   /// student lists (admin, teacher, manager) turn it on; the server still
   /// refuses a student outside the caller's halaqa.
   final bool canAdjustPoints;
+
+  /// Whether the full memorization and attendance histories this page opens
+  /// let each entry be deleted, for one recorded by mistake. The admin's and
+  /// a teacher's student lists turn it on — the two roles that record them;
+  /// the server still refuses a teacher outside the student's halaqa.
+  final bool canDeleteRecords;
 
   @override
   State<StudentDetailsPage> createState() => _StudentDetailsPageState();
@@ -816,27 +823,31 @@ class _StudentDetailsPageState extends State<StudentDetailsPage> {
 
   /// The profile only carries the latest recitations; the parent's progress
   /// page, opened for this one student, lists every one of them.
-  void _openMemorizationHistory() => Navigator.push(
-    context,
-    MaterialPageRoute(
-      builder: (_) => ChildProgressPage(
-        studentId: widget.studentId,
-        studentName: _studentName,
-      ),
+  void _openMemorizationHistory() => _openHistory(
+    ChildProgressPage(
+      studentId: widget.studentId,
+      studentName: _studentName,
+      canDelete: widget.canDeleteRecords,
     ),
   );
 
   /// The stat box only counts this month; the timeline and calendar behind
   /// it reach back to the student's first marked day.
-  void _openAttendanceHistory() => Navigator.push(
-    context,
-    MaterialPageRoute(
-      builder: (_) => ChildAttendanceHistoryPage(
-        studentId: widget.studentId,
-        studentName: _studentName,
-      ),
+  void _openAttendanceHistory() => _openHistory(
+    ChildAttendanceHistoryPage(
+      studentId: widget.studentId,
+      studentName: _studentName,
+      canDelete: widget.canDeleteRecords,
     ),
   );
+
+  /// Whoever can delete there may have changed the totals, the last
+  /// recitation, the month's count, points and fines shown here, so the
+  /// profile is read again on the way back. Read-only visitors skip it.
+  Future<void> _openHistory(Widget page) async {
+    await Navigator.push(context, MaterialPageRoute(builder: (_) => page));
+    if (mounted && widget.canDeleteRecords) await _load();
+  }
 
   Widget _buildHistoryCard() {
     final records = _records;

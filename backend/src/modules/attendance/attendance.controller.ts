@@ -1,4 +1,4 @@
-import { Body, Controller, Get, Param, ParseIntPipe, Patch, Post, Query, UseGuards } from '@nestjs/common';
+import { Body, Controller, Delete, Get, Param, ParseIntPipe, Patch, Post, Query, UseGuards } from '@nestjs/common';
 import { Role } from '@prisma/client';
 import { JwtAuthGuard } from '../../common/guards/jwt-auth.guard';
 import { RolesGuard } from '../../common/guards/roles.guard';
@@ -51,5 +51,13 @@ export class AttendanceController {
     @CurrentUser() user: any,
   ) {
     return this.attendanceService.update(id, dto, user ?? null);
+  }
+
+  /// A day recorded by mistake. Teachers only reach their own halaqa's
+  /// students; the service enforces it, as it does for writes.
+  @Delete(':id')
+  @Roles(Role.ADMIN, Role.TEACHER)
+  remove(@Param('id', ParseIntPipe) id: number, @CurrentUser() user: any) {
+    return this.attendanceService.remove(id, user ?? null);
   }
 }

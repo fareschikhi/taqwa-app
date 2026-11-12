@@ -140,4 +140,16 @@ class StudentRemoteDatasource {
     );
     return (res.data as List).cast<Map<String, dynamic>>();
   }
+
+  /// Admin or the student's own teacher. The server also withdraws the
+  /// day's automatic fines and re-reckons its points.
+  Future<void> deleteAttendance(int attendanceId) async {
+    await _dio.delete('${ApiEndpoints.attendance}/$attendanceId');
+  }
+
+  /// Admin or the student's own teacher. The server re-reckons the day's
+  /// fines and points.
+  Future<void> deleteMemorization(int memorizationId) async {
+    await _dio.delete('${ApiEndpoints.memorization}/$memorizationId');
+  }
 }

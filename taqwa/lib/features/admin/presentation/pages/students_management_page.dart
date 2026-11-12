@@ -109,6 +109,7 @@ class _StudentsManagementPageState extends State<StudentsManagementPage> {
           canEditParent: true,
           canEditRating: true,
           canAdjustPoints: true,
+          canDeleteRecords: true,
         ),
       ),
     );
@@ -118,16 +119,17 @@ class _StudentsManagementPageState extends State<StudentsManagementPage> {
     final confirmed = await ConfirmDeleteDialog.show(
       context,
       title: 'حذف الطالب',
-      message: 'سيتم حذف حساب الطالب وجميع سجلاته نهائياً. '
+      message:
+          'سيتم حذف حساب الطالب وجميع سجلاته نهائياً. '
           'لا يمكن التراجع عن هذا الإجراء.',
     );
     if (!confirmed) return;
     try {
       await _studentRepo.deleteStudent(id);
       if (!mounted) return;
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: AppText('تم حذف الطالب بنجاح')),
-      );
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(const SnackBar(content: AppText('تم حذف الطالب بنجاح')));
       _load();
     } catch (e) {
       if (!mounted) return;
@@ -303,8 +305,9 @@ class _StudentsManagementPageState extends State<StudentsManagementPage> {
                             height: 40.w,
                             decoration: BoxDecoration(
                               color: AppColors.surfaceContainer,
-                              borderRadius:
-                                  BorderRadius.circular(AppConstants.radiusMd),
+                              borderRadius: BorderRadius.circular(
+                                AppConstants.radiusMd,
+                              ),
                             ),
                             child: const Icon(
                               Icons.menu,
@@ -333,10 +336,7 @@ class _StudentsManagementPageState extends State<StudentsManagementPage> {
                     SizedBox(height: 16.h),
                     Row(
                       children: [
-                        ListLayoutToggle(
-                          value: _layout,
-                          onChanged: _setLayout,
-                        ),
+                        ListLayoutToggle(value: _layout, onChanged: _setLayout),
                         SizedBox(width: 8.w),
                         Expanded(
                           child: SearchBarWidget(
@@ -362,78 +362,66 @@ class _StudentsManagementPageState extends State<StudentsManagementPage> {
               Expanded(
                 child: _isLoading
                     ? const Center(
-                        child: CircularProgressIndicator(color: AppColors.primary))
+                        child: CircularProgressIndicator(
+                          color: AppColors.primary,
+                        ),
+                      )
                     : _groups.isEmpty
-                        ? SingleChildScrollView(
-                            physics: const AlwaysScrollableScrollPhysics(),
-                            child: Container(
-                              height: 300.h,
-                              alignment: Alignment.center,
-                              child: AppText(
-                                'لا يوجد طلاب',
-                                style: AppTextStyles.bodyMd
-                                    .copyWith(color: AppColors.onSurfaceVariant),
-                              ),
+                    ? SingleChildScrollView(
+                        physics: const AlwaysScrollableScrollPhysics(),
+                        child: Container(
+                          height: 300.h,
+                          alignment: Alignment.center,
+                          child: AppText(
+                            'لا يوجد طلاب',
+                            style: AppTextStyles.bodyMd.copyWith(
+                              color: AppColors.onSurfaceVariant,
                             ),
-                          )
-                        : ListView.separated(
-                            controller: _scrollController,
-                            physics: const AlwaysScrollableScrollPhysics(),
-                            padding: EdgeInsets.symmetric(horizontal: 16.w),
-                            // One extra row at the end for the spinner while
-                            // the next page is on its way.
-                            itemCount: _groups.length + (_hasMore ? 1 : 0),
-                            separatorBuilder: (_, _) => SizedBox(height: 20.h),
-                            itemBuilder: (_, i) {
-                              if (i == _groups.length) {
-                                return Padding(
-                                  padding: EdgeInsets.only(bottom: 24.h),
-                                  child: const Center(
-                                    child: CircularProgressIndicator(
-                                      color: AppColors.primary,
-                                    ),
-                                  ),
-                                );
-                              }
-                              final group = _groups[i];
-                              return HalaqaGroupSection(
-                                title: group.name,
-                                count: _sectionTotals[group.halaqaId] ??
-                                    group.students.length,
-                                loaded: group.students.length,
-                                isUnassigned: group.isUnassigned,
-                                isExpanded: _isExpanded(group),
-                                onToggle: () {
-                                  setState(() {
-                                    if (!_collapsed.remove(group.halaqaId)) {
-                                      _collapsed.add(group.halaqaId);
-                                    }
-                                  });
-                                  _fillViewport();
-                                },
-                                children: [
-                                  if (_layout == ListLayout.grid)
-                                    CardGrid(
-                                      children: [
-                                        for (final student in group.students)
-                                          _StudentGridCard(
-                                            student: student,
-                                            onOpenDetails: () =>
-                                                _openDetails(student),
-                                            onEdit: () => _openForm(student),
-                                            onDelete: () => _deleteStudent(
-                                              student['id'] as int,
-                                            ),
-                                            onToggleActive: () =>
-                                                _toggleStatus(student),
-                                          ),
-                                      ],
-                                    )
-                                  else
-                                  for (final student in group.students)
-                                    Padding(
-                                      padding: EdgeInsets.only(bottom: 16.h),
-                                      child: _StudentCard(
+                          ),
+                        ),
+                      )
+                    : ListView.separated(
+                        controller: _scrollController,
+                        physics: const AlwaysScrollableScrollPhysics(),
+                        padding: EdgeInsets.symmetric(horizontal: 16.w),
+                        // One extra row at the end for the spinner while
+                        // the next page is on its way.
+                        itemCount: _groups.length + (_hasMore ? 1 : 0),
+                        separatorBuilder: (_, _) => SizedBox(height: 20.h),
+                        itemBuilder: (_, i) {
+                          if (i == _groups.length) {
+                            return Padding(
+                              padding: EdgeInsets.only(bottom: 24.h),
+                              child: const Center(
+                                child: CircularProgressIndicator(
+                                  color: AppColors.primary,
+                                ),
+                              ),
+                            );
+                          }
+                          final group = _groups[i];
+                          return HalaqaGroupSection(
+                            title: group.name,
+                            count:
+                                _sectionTotals[group.halaqaId] ??
+                                group.students.length,
+                            loaded: group.students.length,
+                            isUnassigned: group.isUnassigned,
+                            isExpanded: _isExpanded(group),
+                            onToggle: () {
+                              setState(() {
+                                if (!_collapsed.remove(group.halaqaId)) {
+                                  _collapsed.add(group.halaqaId);
+                                }
+                              });
+                              _fillViewport();
+                            },
+                            children: [
+                              if (_layout == ListLayout.grid)
+                                CardGrid(
+                                  children: [
+                                    for (final student in group.students)
+                                      _StudentGridCard(
                                         student: student,
                                         onOpenDetails: () =>
                                             _openDetails(student),
@@ -444,11 +432,27 @@ class _StudentsManagementPageState extends State<StudentsManagementPage> {
                                         onToggleActive: () =>
                                             _toggleStatus(student),
                                       ),
+                                  ],
+                                )
+                              else
+                                for (final student in group.students)
+                                  Padding(
+                                    padding: EdgeInsets.only(bottom: 16.h),
+                                    child: _StudentCard(
+                                      student: student,
+                                      onOpenDetails: () =>
+                                          _openDetails(student),
+                                      onEdit: () => _openForm(student),
+                                      onDelete: () =>
+                                          _deleteStudent(student['id'] as int),
+                                      onToggleActive: () =>
+                                          _toggleStatus(student),
                                     ),
-                                ],
-                              );
-                            },
-                          ),
+                                  ),
+                            ],
+                          );
+                        },
+                      ),
               ),
             ],
           ),
@@ -473,6 +477,7 @@ class _StudentCard extends StatelessWidget {
     required this.onToggleActive,
   });
   final Map<String, dynamic> student;
+
   /// Tapping the card body opens the profile. Edit, delete and the status
   /// toggle stay on their own buttons inside it, and their own gesture
   /// detectors win over this one, so the row keeps all four actions.
@@ -549,9 +554,12 @@ class _StudentCard extends StatelessWidget {
                         vertical: 2.h,
                       ),
                       decoration: BoxDecoration(
-                        color: AppColors.secondaryContainer.withValues(alpha: 0.4),
-                        borderRadius:
-                            BorderRadius.circular(AppConstants.radiusFull),
+                        color: AppColors.secondaryContainer.withValues(
+                          alpha: 0.4,
+                        ),
+                        borderRadius: BorderRadius.circular(
+                          AppConstants.radiusFull,
+                        ),
                       ),
                       child: AppText(
                         halaqaName,
@@ -680,7 +688,9 @@ class _StudentGridCard extends StatelessWidget {
                   padding: EdgeInsets.symmetric(horizontal: 8.w, vertical: 2.h),
                   decoration: BoxDecoration(
                     color: AppColors.secondaryContainer.withValues(alpha: 0.4),
-                    borderRadius: BorderRadius.circular(AppConstants.radiusFull),
+                    borderRadius: BorderRadius.circular(
+                      AppConstants.radiusFull,
+                    ),
                   ),
                   child: AppText(
                     '$halaqaName',
@@ -758,16 +768,21 @@ class _InfoCell extends StatelessWidget {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.end,
         children: [
-          AppText(label,
-              style: AppTextStyles.labelSm
-                  .copyWith(color: AppColors.onSurfaceVariant)),
+          AppText(
+            label,
+            style: AppTextStyles.labelSm.copyWith(
+              color: AppColors.onSurfaceVariant,
+            ),
+          ),
           SizedBox(height: 2.h),
-          AppText(value,
-              style: AppTextStyles.labelMdBold
-                  .copyWith(color: AppColors.onSurface)),
+          AppText(
+            value,
+            style: AppTextStyles.labelMdBold.copyWith(
+              color: AppColors.onSurface,
+            ),
+          ),
         ],
       ),
     );
   }
 }
-

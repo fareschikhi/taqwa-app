@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:taqwa/core/widgets/record_delete_button.dart';
 import 'package:taqwa/features/parent/presentation/pages/child_attendance_history_page.dart';
 import 'package:taqwa/features/parent/presentation/pages/child_progress_page.dart';
 import 'package:taqwa/features/parent/presentation/widgets/parent_chat_button.dart';
@@ -52,6 +53,7 @@ final _records = [
 
 StubApi _installApi() => StubApi.install((request) {
   final path = request.path;
+  if (request.method == 'DELETE') return (200, {'deleted': true});
   if (path.endsWith('/students/7/profile')) {
     return (
       200,
@@ -83,8 +85,8 @@ StubApi _installApi() => StubApi.install((request) {
     return (
       200,
       [
-        {'date': '2026-11-10', 'status': 'PRESENT'},
-        {'date': '2026-11-09', 'status': 'ABSENT'},
+        {'id': 21, 'date': '2026-11-10', 'status': 'PRESENT'},
+        {'id': 22, 'date': '2026-11-09', 'status': 'ABSENT'},
       ],
     );
   }
@@ -150,5 +152,109 @@ void main() {
     await tester.pumpAndSettle();
     expect(find.byType(ChildAttendanceHistoryPage), findsNothing);
     expect(find.text('ملف الطالب'), findsOneWidget);
+  });
+
+  testWidgets('a read-only visitor gets no delete buttons', (tester) async {
+    _phoneScreen(tester);
+    _installApi();
+    await tester.pumpWidget(
+      _host(const StudentDetailsPage(studentId: 7, fullName: 'أحمد')),
+    );
+    await tester.pumpAndSettle();
+
+    await tester.tap(find.text('أيام الحضور هذا الشهر'));
+    await tester.pumpAndSettle();
+    expect(find.byType(RecordDeleteButton), findsNothing);
+  });
+
+  testWidgets('staff delete a recitation after confirming, then the profile '
+      'reloads', (tester) async {
+    _phoneScreen(tester);
+    final api = _installApi();
+    await tester.pumpWidget(
+      _host(
+        const StudentDetailsPage(
+          studentId: 7,
+          fullName: 'أحمد',
+          canDeleteRecords: true,
+        ),
+      ),
+    );
+    await tester.pumpAndSettle();
+
+    await tester.ensureVisible(find.text('عرض الكل'));
+    await tester.pumpAndSettle();
+    await tester.tap(find.text('عرض الكل'));
+    await tester.pumpAndSettle();
+
+    // The oldest entry, 1 October, is the record with id 1.
+    final button = find.byWidgetPredicate(
+      (w) => w is RecordDeleteButton && w.tooltip.contains('01/10'),
+    );
+    await tester.scrollUntilVisible(
+      button,
+      300,
+      scrollable: find
+          .descendant(
+            of: find.byType(ChildProgressPage),
+            matching: find.byType(Scrollable),
+          )
+          .first,
+    );
+    await tester.ensureVisible(button);
+    await tester.pumpAndSettle();
+    await tester.tap(button);
+    await tester.pumpAndSettle();
+
+    // Nothing is sent until the dialog is confirmed.
+    expect(find.text('حذف التسميع'), findsOneWidget);
+    expect(api.sent('DELETE', '/memorization/'), isEmpty);
+    await tester.tap(find.text('حذف'));
+    await tester.pumpAndSettle();
+
+    expect(api.sent('DELETE', '/memorization/1'), hasLength(1));
+    expect(find.text('تم حذف التسميع'), findsOneWidget);
+
+    // The header button has scrolled away; leave with the system back, as
+    // most phones do.
+    final profileReads = api.sent('GET', '/students/7/profile').length;
+    tester.state<NavigatorState>(find.byType(Navigator)).pop();
+    await tester.pumpAndSettle();
+    expect(api.sent('GET', '/students/7/profile').length, profileReads + 1);
+  });
+
+  testWidgets('cancelling the dialog keeps the attendance day', (tester) async {
+    _phoneScreen(tester);
+    final api = _installApi();
+    await tester.pumpWidget(
+      _host(
+        const StudentDetailsPage(
+          studentId: 7,
+          fullName: 'أحمد',
+          canDeleteRecords: true,
+        ),
+      ),
+    );
+    await tester.pumpAndSettle();
+    await tester.tap(find.text('أيام الحضور هذا الشهر'));
+    await tester.pumpAndSettle();
+
+    final button = find.byWidgetPredicate(
+      (w) => w is RecordDeleteButton && w.tooltip.contains('09/11/2026'),
+    );
+    await tester.ensureVisible(button);
+    await tester.pumpAndSettle();
+    await tester.tap(button);
+    await tester.pumpAndSettle();
+    await tester.tap(find.text('إغلاق'));
+    await tester.pumpAndSettle();
+    expect(api.sent('DELETE', '/attendance/'), isEmpty);
+
+    await tester.tap(button);
+    await tester.pumpAndSettle();
+    await tester.tap(find.text('حذف'));
+    await tester.pumpAndSettle();
+    expect(api.sent('DELETE', '/attendance/22'), hasLength(1));
+    expect(find.text('تم حذف سجل الحضور'), findsOneWidget);
   });
 }

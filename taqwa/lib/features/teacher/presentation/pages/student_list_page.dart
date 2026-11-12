@@ -324,6 +324,7 @@ class _StudentListPageState extends ConsumerState<StudentListPage> {
                                         halaqaId: student.halaqaId,
                                         canEditRating: true,
                                         canAdjustPoints: true,
+                                        canDeleteRecords: true,
                                       ),
                                     ),
                                   ),
