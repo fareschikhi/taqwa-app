@@ -90,7 +90,9 @@ class StudentModel {
           (userMap?['fullName'] as String?) ??
           '',
       phone: (json['phone'] as String?) ?? (userMap?['phone'] as String?),
-      extraPhones: parseExtraPhones(json['extraPhones'] ?? userMap?['extraPhones']),
+      extraPhones: parseExtraPhones(
+        json['extraPhones'] ?? userMap?['extraPhones'],
+      ),
       birthDate: birthDateRaw,
       address: addressRaw,
       halaqaId:

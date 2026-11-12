@@ -42,13 +42,13 @@ class AbsenceJustificationModel {
   }
 
   Map<String, dynamic> toJson() => {
-        'studentId': studentId,
-        'attendanceId': attendanceId,
-        'managerId': managerId,
-        'reasonType': reasonType,
-        if (customReason != null) 'customReason': customReason,
-        if (notes != null) 'notes': notes,
-      };
+    'studentId': studentId,
+    'attendanceId': attendanceId,
+    'managerId': managerId,
+    'reasonType': reasonType,
+    if (customReason != null) 'customReason': customReason,
+    if (notes != null) 'notes': notes,
+  };
 
   String get studentName {
     final user = student?['user'] as Map<String, dynamic>?;

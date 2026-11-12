@@ -30,8 +30,14 @@ class HalaqaStudentModel {
     }
 
     return HalaqaStudentModel(
-      id: (json['id'] as num?)?.toInt() ?? (json['student']?['id'] as num?)?.toInt() ?? 0,
-      userId: (json['userId'] as num?)?.toInt() ?? (json['user']?['id'] as num?)?.toInt() ?? 0,
+      id:
+          (json['id'] as num?)?.toInt() ??
+          (json['student']?['id'] as num?)?.toInt() ??
+          0,
+      userId:
+          (json['userId'] as num?)?.toInt() ??
+          (json['user']?['id'] as num?)?.toInt() ??
+          0,
       birthDate: json['birthDate'] != null
           ? DateTime.parse(json['birthDate'])
           : null,

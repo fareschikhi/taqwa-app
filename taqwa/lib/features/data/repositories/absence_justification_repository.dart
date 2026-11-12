@@ -9,22 +9,21 @@ class AbsenceJustificationRepository {
   Future<List<AbsenceJustificationModel>> getAllJustifications({
     int? managerId,
     int? studentId,
-  }) =>
-      _ds.getAll(managerId: managerId, studentId: studentId);
+  }) => _ds.getAll(managerId: managerId, studentId: studentId);
 
   Future<List<UnjustifiedAttendanceModel>> getUnjustified(int managerId) =>
       _ds.getUnjustified(managerId);
 
-  Future<AbsenceJustificationModel> getJustification(int id) =>
-      _ds.getOne(id);
+  Future<AbsenceJustificationModel> getJustification(int id) => _ds.getOne(id);
 
   Future<AbsenceJustificationModel> createJustification(
-          Map<String, dynamic> data) =>
-      _ds.create(data);
+    Map<String, dynamic> data,
+  ) => _ds.create(data);
 
   Future<AbsenceJustificationModel> updateJustification(
-          int id, Map<String, dynamic> data) =>
-      _ds.update(id, data);
+    int id,
+    Map<String, dynamic> data,
+  ) => _ds.update(id, data);
 
   static String errorMessage(Object e) {
     if (e is DioException) {

@@ -35,7 +35,10 @@ class JwtInterceptor extends Interceptor {
       _storage.write(key: 'jwt_token', value: token);
 
   @override
-  void onRequest(RequestOptions options, RequestInterceptorHandler handler) async {
+  void onRequest(
+    RequestOptions options,
+    RequestInterceptorHandler handler,
+  ) async {
     String? token;
     try {
       token = await _readToken();

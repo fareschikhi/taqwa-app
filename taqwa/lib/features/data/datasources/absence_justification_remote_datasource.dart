@@ -35,23 +35,23 @@ class AbsenceJustificationRemoteDatasource {
   }
 
   Future<AbsenceJustificationModel> getOne(int id) async {
-    final res =
-        await _dio.get('${ApiEndpoints.absenceJustifications}/$id');
+    final res = await _dio.get('${ApiEndpoints.absenceJustifications}/$id');
     return AbsenceJustificationModel.fromJson(res.data);
   }
 
-  Future<AbsenceJustificationModel> create(
-      Map<String, dynamic> data) async {
-    final res =
-        await _dio.post(ApiEndpoints.absenceJustifications, data: data);
+  Future<AbsenceJustificationModel> create(Map<String, dynamic> data) async {
+    final res = await _dio.post(ApiEndpoints.absenceJustifications, data: data);
     return AbsenceJustificationModel.fromJson(res.data);
   }
 
   Future<AbsenceJustificationModel> update(
-      int id, Map<String, dynamic> data) async {
+    int id,
+    Map<String, dynamic> data,
+  ) async {
     final res = await _dio.patch(
-        '${ApiEndpoints.absenceJustifications}/$id',
-        data: data);
+      '${ApiEndpoints.absenceJustifications}/$id',
+      data: data,
+    );
     return AbsenceJustificationModel.fromJson(res.data);
   }
 }

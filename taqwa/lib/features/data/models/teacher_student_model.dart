@@ -34,11 +34,15 @@ class TeacherStudentModel {
     final halaqa = json['halaqa'] as Map<String, dynamic>?;
     return TeacherStudentModel(
       id: (json['id'] as num?)?.toInt() ?? 0,
-      fullName: (user?['fullName'] as String?) ?? (json['fullName'] as String?) ?? '',
+      fullName:
+          (user?['fullName'] as String?) ?? (json['fullName'] as String?) ?? '',
       avatar: (user?['avatar'] as String?) ?? (json['avatar'] as String?),
-      isActive: (user?['isActive'] as bool?) ?? (json['isActive'] as bool?) ?? true,
+      isActive:
+          (user?['isActive'] as bool?) ?? (json['isActive'] as bool?) ?? true,
       teacherId: (json['teacherId'] as num?)?.toInt(),
-      halaqaId: (halaqa?['id'] as num?)?.toInt() ?? (json['halaqaId'] as num?)?.toInt(),
+      halaqaId:
+          (halaqa?['id'] as num?)?.toInt() ??
+          (json['halaqaId'] as num?)?.toInt(),
       hadithBooks: parseHadithBooks(
         json['hadithBooks'],
         tracksHadith: (json['tracksHadith'] as bool?) ?? false,
@@ -76,7 +80,9 @@ class StudentListResponse {
   factory StudentListResponse.fromJson(Map<String, dynamic> json) {
     final rawData = json['data'] as List<dynamic>? ?? [];
     return StudentListResponse(
-      data: rawData.map((e) => TeacherStudentModel.fromJson(e as Map<String, dynamic>)).toList(),
+      data: rawData
+          .map((e) => TeacherStudentModel.fromJson(e as Map<String, dynamic>))
+          .toList(),
       total: (json['total'] as num?)?.toInt() ?? 0,
       page: (json['page'] as num?)?.toInt() ?? 1,
       limit: (json['limit'] as num?)?.toInt() ?? 50,

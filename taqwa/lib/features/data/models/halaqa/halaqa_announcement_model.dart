@@ -52,7 +52,8 @@ class HalaqaAnnouncementModel {
       body: (json['body'] as String?) ?? '',
       authorName: (author?['fullName'] as String?) ?? '',
       authorId:
-          (author?['id'] as num?)?.toInt() ?? (json['authorId'] as num?)?.toInt(),
+          (author?['id'] as num?)?.toInt() ??
+          (json['authorId'] as num?)?.toInt(),
       createdAt:
           DateTime.tryParse((json['createdAt'] ?? '').toString()) ??
           DateTime.now(),

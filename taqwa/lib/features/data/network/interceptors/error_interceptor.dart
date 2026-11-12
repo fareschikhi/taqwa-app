@@ -31,7 +31,7 @@ class ErrorInterceptor extends Interceptor {
         message = 'جلسة العمل انتهت أو غير مصرح لك بالدخول';
       }
     }
-    
+
     super.onError(err.copyWith(error: message), handler);
   }
 }

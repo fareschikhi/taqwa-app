@@ -132,11 +132,6 @@ class HalaqaModel {
   };
 
   Map<String, dynamic> toJson() {
-    return {
-      'id': id,
-      'name': name,
-      'level': level,
-      'teacherId': teacherId,
-    };
+    return {'id': id, 'name': name, 'level': level, 'teacherId': teacherId};
   }
 }

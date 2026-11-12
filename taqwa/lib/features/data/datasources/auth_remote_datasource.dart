@@ -24,10 +24,7 @@ class AuthRemoteDatasource {
   }) async {
     await _dio.patch(
       ApiEndpoints.changePassword,
-      data: {
-        'currentPassword': currentPassword,
-        'newPassword': newPassword,
-      },
+      data: {'currentPassword': currentPassword, 'newPassword': newPassword},
     );
   }
 }

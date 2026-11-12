@@ -1,4 +1,5 @@
 import 'package:taqwa/core/utils/extra_phones.dart';
+
 enum UserRole { admin, teacher, parent, student, adultStudent, manager }
 
 class UserModel {

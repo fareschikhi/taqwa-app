@@ -22,9 +22,6 @@ class DeviceRemoteDatasource {
   }
 
   Future<void> unregister(String token) async {
-    await _dio.delete(
-      '${ApiEndpoints.devices}/token',
-      data: {'token': token},
-    );
+    await _dio.delete('${ApiEndpoints.devices}/token', data: {'token': token});
   }
 }

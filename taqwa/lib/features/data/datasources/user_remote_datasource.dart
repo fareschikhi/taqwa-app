@@ -59,6 +59,9 @@ class UserRemoteDatasource {
   }
 
   Future<void> setActive(int userId, bool isActive) async {
-    await _dio.patch('${ApiEndpoints.users}/$userId', data: {'isActive': isActive});
+    await _dio.patch(
+      '${ApiEndpoints.users}/$userId',
+      data: {'isActive': isActive},
+    );
   }
 }

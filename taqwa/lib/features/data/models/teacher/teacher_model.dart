@@ -46,13 +46,15 @@ class TeacherModel {
         ? json['teacher'] as Map<String, dynamic>
         : null;
 
-    final int idVal = (teacherMap?['id'] as num?)?.toInt() ??
+    final int idVal =
+        (teacherMap?['id'] as num?)?.toInt() ??
         (json['id'] as num?)?.toInt() ??
         0;
     // The row's own id is the account id only on a user-shaped row (teacher
     // nested under "teacher"); on a teacher row it is the teacher id, and
     // using it would point points adjustments at another account.
-    final int userIdVal = (json['userId'] as num?)?.toInt() ??
+    final int userIdVal =
+        (json['userId'] as num?)?.toInt() ??
         (userMap?['id'] as num?)?.toInt() ??
         (teacherMap != null ? (json['id'] as num?)?.toInt() : null) ??
         0;
@@ -60,8 +62,8 @@ class TeacherModel {
     final DateTime? hDate = json['hireDate'] != null
         ? DateTime.tryParse(json['hireDate'].toString())
         : (teacherMap?['hireDate'] != null
-            ? DateTime.tryParse(teacherMap!['hireDate'].toString())
-            : null);
+              ? DateTime.tryParse(teacherMap!['hireDate'].toString())
+              : null);
 
     final UserModel userObj = userMap != null
         ? UserModel.fromJson(userMap)
@@ -76,7 +78,8 @@ class TeacherModel {
       halaqaCount: (json['_count']?['halaqas'] as num?)?.toInt() ?? 0,
       canPostNews: (json['canPostNews'] as bool?) ?? false,
       isSupervisor: (json['isSupervisor'] as bool?) ?? false,
-      halaqaLevels: (json['halaqaLevels'] as List<dynamic>?)
+      halaqaLevels:
+          (json['halaqaLevels'] as List<dynamic>?)
               ?.whereType<String>()
               .toList() ??
           const [],
@@ -84,10 +87,10 @@ class TeacherModel {
   }
 
   Map<String, dynamic> toJson() => {
-        'fullName': user.fullName,
-        if (user.phone != null) 'phone': user.phone,
-        if (user.email != null) 'email': user.email,
-        if (user.avatar != null) 'avatar': user.avatar,
-        'role': 'TEACHER',
-      };
+    'fullName': user.fullName,
+    if (user.phone != null) 'phone': user.phone,
+    if (user.email != null) 'email': user.email,
+    if (user.avatar != null) 'avatar': user.avatar,
+    'role': 'TEACHER',
+  };
 }
