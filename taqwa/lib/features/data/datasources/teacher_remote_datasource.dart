@@ -224,6 +224,7 @@ class TeacherRemoteDatasource {
     String? unit,
     int? ayahFrom,
     int? ayahTo,
+    bool outsideSession = false,
   }) async {
     final response = await _dio.post(
       ApiEndpoints.memorization,
@@ -239,6 +240,9 @@ class TeacherRemoteDatasource {
         // AYAH-only range inside surahNumber.
         if (ayahFrom != null) 'ayahFrom': ayahFrom,
         if (ayahTo != null) 'ayahTo': ayahTo,
+        // Sent only when set, so an older server that does not know the
+        // field never refuses a normal halaqa entry over it.
+        if (outsideSession) 'outsideSession': true,
       },
     );
     return response.data as Map<String, dynamic>;

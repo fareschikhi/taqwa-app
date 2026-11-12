@@ -16,6 +16,9 @@ export interface DayRecitation {
   memorizationType: Memorization;
   amountDone: number;
   unit: ProgressUnit;
+  /// Recorded outside the halaqa session: paid like any recitation, but it
+  /// does not count as the session's recitation.
+  outsideSession?: boolean;
 }
 
 /// `milli` is thousandths of a point, so every rate and every half page stays
@@ -88,10 +91,11 @@ export function desiredPoints(input: {
     wanted.push({ source: 'ABSENCE', milli: ABSENCE });
   }
   // An absent student is already losing the absence point; the missed
-  // recitation follows from it rather than being a second fault.
+  // recitation follows from it rather than being a second fault. Only a
+  // recitation made in the session answers for the session.
   if (
     (status === AttendanceStatus.PRESENT || status === AttendanceStatus.LATE) &&
-    recitations.length === 0
+    !recitations.some((r) => !r.outsideSession)
   ) {
     wanted.push({ source: 'MISSED_MEMORIZATION', milli: MISSED_MEMORIZATION });
   }

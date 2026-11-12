@@ -176,11 +176,17 @@ export class MemorizationService {
     // Attendance.date is a bare DATE, so the timestamp has to be floored to
     // midnight to line up with the row the teacher just wrote.
     const date = startOfUtcDay(new Date());
-    const attendance = await this.assertNotAbsent(dto.studentId, date);
+    // A recitation outside the session has nothing to do with today's roll
+    // call: it is not refused for an absent student and never reconciles the
+    // day's fines, so attendance is not even read.
+    const outsideSession = dto.outsideSession ?? false;
+    const attendance = outsideSession
+      ? null
+      : await this.assertNotAbsent(dto.studentId, date);
 
     return this.prisma.$transaction(async (tx) => {
       const record = await tx.memorizationProgress.create({
-        data: { ...dto, subject, unit, date },
+        data: { ...dto, subject, unit, date, outsideSession },
       });
       // A recitation is what clears the day's "did not memorize" charge, so
       // the day is reconciled in the same write. With no attendance yet there

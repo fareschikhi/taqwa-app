@@ -163,6 +163,24 @@ describe('desiredPoints', () => {
     ]);
   });
 
+  // A recitation recorded outside the session has nothing to do with the
+  // halaqa day: it earns its points but never stands in for the recitation
+  // the student missed in the session.
+  it('pays an outside-session recitation without clearing the missed one', () => {
+    const outside: DayRecitation = {
+      ...r(Memorization.MEMORIZING, 2),
+      outsideSession: true,
+    };
+    expect(day(AttendanceStatus.PRESENT, [outside])).toEqual([
+      { source: 'MEMORIZATION', milli: 2000 },
+      { source: 'MISSED_MEMORIZATION', milli: -1000 },
+      { source: 'PRESENT', milli: 500 },
+    ]);
+    expect(day(null, [outside])).toEqual([
+      { source: 'MEMORIZATION', milli: 2000 },
+    ]);
+  });
+
   it('counts recitations recorded before roll call', () => {
     expect(day(null, [r(Memorization.MEMORIZING, 1)])).toEqual([
       { source: 'MEMORIZATION', milli: 1000 },

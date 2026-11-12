@@ -171,6 +171,67 @@ class _TeacherDashboardPageState extends ConsumerState<TeacherDashboardPage> {
     if (created != null && mounted) _loadData();
   }
 
+  /// True while the roster loads for [_openOutsideSessionSheet], so a second
+  /// tap does not open the sheet twice.
+  bool _openingOutsideSession = false;
+
+  /// For a student who recited outside the halaqa session. The teacher picks
+  /// him in the sheet from the selected halaqa's active students; the entry
+  /// earns points and leaves attendance alone.
+  Future<void> _openOutsideSessionSheet() async {
+    final teacherId = ref.read(authProvider).user?.teacherId;
+    if (teacherId == null || _openingOutsideSession) return;
+    setState(() => _openingOutsideSession = true);
+    List<TeacherStudentModel>? students;
+    try {
+      final roster = await _repo.getStudents(
+        teacherId: teacherId,
+        halaqaId: ref.read(selectedHalaqaProvider).selected?.id,
+        isActive: true,
+        limit: 100,
+      );
+      students = roster.data;
+    } catch (_) {}
+    if (!mounted) return;
+    setState(() => _openingOutsideSession = false);
+
+    final messenger = ScaffoldMessenger.of(context);
+    if (students == null || students.isEmpty) {
+      messenger.showSnackBar(
+        SnackBar(
+          content: AppText(
+            students == null
+                ? 'تعذّر تحميل قائمة الطلاب، حاول مرة أخرى'
+                : 'لا يوجد طلاب نشطون في هذه الحلقة',
+          ),
+        ),
+      );
+      return;
+    }
+
+    final created = await showModalBottomSheet<MemorizationEntryResult>(
+      context: context,
+      isScrollControlled: true,
+      backgroundColor: Colors.transparent,
+      builder: (_) =>
+          MemorizationEntrySheet.outsideSession(students: students!),
+    );
+    if (created == null || !mounted) return;
+    final name = students
+        .where((s) => s.id == created.record['studentId'])
+        .firstOrNull
+        ?.fullName;
+    messenger.showSnackBar(
+      SnackBar(
+        content: AppText(
+          name == null ? 'تم تسجيل الحفظ' : 'تم تسجيل حفظ $name',
+        ),
+      ),
+    );
+    // The student may leave the «بحاجة للعرض» list.
+    _loadData();
+  }
+
   /// Granted per teacher by the admin; the server checks it again on every
   /// write, so this only decides what the screen offers.
   bool get _canPostNews => ref.read(authProvider).user?.canPostNews ?? false;
@@ -461,6 +522,11 @@ class _TeacherDashboardPageState extends ConsumerState<TeacherDashboardPage> {
           ),
         ),
         SizedBox(height: 12.h),
+        _OutsideSessionAction(
+          isLoading: _openingOutsideSession,
+          onTap: _openOutsideSessionSheet,
+        ),
+        SizedBox(height: 12.h),
         // Students needing review — full width
         AppCard(
           padding: EdgeInsets.all(16.w),
@@ -573,7 +639,9 @@ class _SupervisorsCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final title = supervisors.length > 1 ? 'المعلمون المشرفون' : 'المعلم المشرف';
+    final title = supervisors.length > 1
+        ? 'المعلمون المشرفون'
+        : 'المعلم المشرف';
     return AppCard(
       padding: EdgeInsets.all(16.w),
       child: Column(
@@ -642,6 +710,82 @@ class _SupervisorsCard extends StatelessWidget {
             ),
           ],
         ],
+      ),
+    );
+  }
+}
+
+/// The dashboard's entry to recording a recitation made outside the halaqa
+/// session. Laid out like the other rows here: icon on the right, text beside
+/// it, and the arrow pointing on in reading direction.
+class _OutsideSessionAction extends StatelessWidget {
+  const _OutsideSessionAction({required this.isLoading, required this.onTap});
+  final bool isLoading;
+  final VoidCallback onTap;
+
+  @override
+  Widget build(BuildContext context) {
+    return Semantics(
+      button: true,
+      label: 'تسجيل حفظ خارج الحصة',
+      excludeSemantics: true,
+      child: AppCard(
+        onTap: isLoading ? null : onTap,
+        padding: EdgeInsets.all(16.w),
+        child: Row(
+          children: [
+            SizedBox(
+              width: 20.w,
+              height: 20.w,
+              child: isLoading
+                  ? const CircularProgressIndicator(
+                      strokeWidth: 2,
+                      color: AppColors.primary,
+                    )
+                  : Icon(
+                      Icons.chevron_left_rounded,
+                      color: AppColors.onSurfaceVariant,
+                      size: 20.w,
+                    ),
+            ),
+            SizedBox(width: 12.w),
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.end,
+                children: [
+                  AppText(
+                    'تسجيل حفظ خارج الحصة',
+                    style: AppTextStyles.labelMdBold.copyWith(
+                      color: AppColors.onBackground,
+                    ),
+                  ),
+                  SizedBox(height: 2.h),
+                  AppText(
+                    'لطالب لم يعرض يوم الحلقة، تُضاف له النقاط فقط',
+                    textAlign: TextAlign.end,
+                    style: AppTextStyles.labelSm.copyWith(
+                      color: AppColors.onSurfaceVariant,
+                    ),
+                  ),
+                ],
+              ),
+            ),
+            SizedBox(width: 12.w),
+            Container(
+              width: 40.w,
+              height: 40.w,
+              decoration: BoxDecoration(
+                color: AppColors.primaryContainer.withValues(alpha: 0.3),
+                shape: BoxShape.circle,
+              ),
+              child: Icon(
+                Icons.menu_book_rounded,
+                color: AppColors.primary,
+                size: 22.w,
+              ),
+            ),
+          ],
+        ),
       ),
     );
   }

@@ -1,4 +1,5 @@
 import {
+  IsBoolean,
   IsInt,
   IsNumber,
   IsEnum,
@@ -69,6 +70,12 @@ export class CreateMemorizationDto {
   @Min(1)
   @Max(MAX_AMOUNT.AYAH)
   ayahTo?: number;
+
+  // A recitation outside the halaqa session: skips the absence check and
+  // never touches the day's attendance fines. Set on creation only.
+  @IsOptional()
+  @IsBoolean()
+  outsideSession?: boolean;
 }
 
 export class UpdateMemorizationDto {

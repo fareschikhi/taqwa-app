@@ -308,6 +308,11 @@ model MemorizationProgress {
   // amountDone is always ayahTo - ayahFrom + 1 on these rows.
   ayahFrom         Int?
   ayahTo           Int?
+  // Recorded from the dashboard for a recitation outside the halaqa session.
+  // It earns points but has nothing to do with attendance: it is allowed on a
+  // day the student was absent, and never clears that day's missed-recitation
+  // fine or point.
+  outsideSession   Boolean             @default(false)
   recordedAt       DateTime            @default(now())
   date             DateTime            @db.Date
   updatedAt        DateTime            @updatedAt

@@ -63,11 +63,13 @@ export async function reconcileDayFines(
       : null;
 
   // A student who was away (absent, or excused) cannot have recited, so the
-  // lookup is skipped rather than answered.
+  // lookup is skipped rather than answered. A recitation recorded outside the
+  // session is not the one the halaqa asked for, so it never clears the fine.
   const missedMemorization =
     !isAway(status) &&
-    (await tx.memorizationProgress.count({ where: { studentId, date } })) ===
-      0;
+    (await tx.memorizationProgress.count({
+      where: { studentId, date, outsideSession: false },
+    })) === 0;
 
   // Kept on the row as the day's record: if the fine is later forgiven, the
   // day was still a day he did not memorize.

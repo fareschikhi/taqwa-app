@@ -164,9 +164,11 @@ class TeacherRepository {
     String? unit,
     int? ayahFrom,
     int? ayahTo,
+    bool outsideSession = false,
   }) async {
     return _ds.submitMemorization(
       studentId: studentId,
+      outsideSession: outsideSession,
       surahNumber: surahNumber,
       amountDone: amountDone,
       memorizationType: memorizationType,

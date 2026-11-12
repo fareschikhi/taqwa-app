@@ -32,7 +32,12 @@ export async function reconcileDayPoints(
   });
   const recitations = await tx.memorizationProgress.findMany({
     where: { studentId, date },
-    select: { memorizationType: true, amountDone: true, unit: true },
+    select: {
+      memorizationType: true,
+      amountDone: true,
+      unit: true,
+      outsideSession: true,
+    },
   });
 
   const wanted = desiredPoints({

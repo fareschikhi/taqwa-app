@@ -177,6 +177,72 @@ describe('MemorizationService.create clears the missed-memorization fee', () => 
   });
 });
 
+describe('MemorizationService.create outside the session', () => {
+  const makePrisma = (status: AttendanceStatus | null) => {
+    const prisma: any = {
+      attendance: {
+        findUnique: jest
+          .fn()
+          .mockResolvedValue(status === null ? null : { id: 1, status }),
+        updateMany: jest.fn(),
+      },
+      memorizationProgress: {
+        create: jest.fn().mockResolvedValue({ id: 10 }),
+        count: jest.fn(),
+      },
+      student: { findUnique: jest.fn() },
+      fineEntry: {
+        findMany: jest.fn(),
+        deleteMany: jest.fn(),
+        create: jest.fn(),
+      },
+    };
+    prisma.$transaction = jest.fn((cb: any) => cb(prisma));
+    return prisma;
+  };
+
+  const dto = {
+    studentId: 7,
+    surahNumber: 2,
+    amountDone: 1,
+    memorizationType: Memorization.MEMORIZING,
+    outsideSession: true,
+  };
+
+  beforeEach(() => (reconcileDayPoints as jest.Mock).mockClear());
+
+  // The teacher records a recitation the student did on another occasion, so
+  // being marked absent for today's halaqa says nothing about it.
+  it('records it for a student marked absent today', async () => {
+    const prisma = makePrisma(AttendanceStatus.ABSENT);
+    await new MemorizationService(prisma).create(dto);
+
+    expect(prisma.memorizationProgress.create).toHaveBeenCalledWith({
+      data: expect.objectContaining({ outsideSession: true }),
+    });
+  });
+
+  it("never touches the day's attendance or fines", async () => {
+    const prisma = makePrisma(AttendanceStatus.PRESENT);
+    await new MemorizationService(prisma).create(dto);
+
+    expect(prisma.attendance.findUnique).not.toHaveBeenCalled();
+    expect(prisma.attendance.updateMany).not.toHaveBeenCalled();
+    expect(prisma.fineEntry.findMany).not.toHaveBeenCalled();
+  });
+
+  it("still adds the recitation's points", async () => {
+    const prisma = makePrisma(null);
+    await new MemorizationService(prisma).create(dto);
+
+    expect(reconcileDayPoints).toHaveBeenCalledWith(
+      prisma,
+      7,
+      expect.any(Date),
+    );
+  });
+});
+
 describe('MemorizationService hadith subject', () => {
   const makePrisma = (
     opts: {

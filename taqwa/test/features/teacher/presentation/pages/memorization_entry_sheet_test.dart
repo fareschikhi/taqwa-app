@@ -744,4 +744,109 @@ void main() {
 
     expect(tester.takeException(), isNull);
   });
+
+  group('outside the session', () {
+    final students = [
+      const TeacherStudentModel(
+        id: 1,
+        fullName: 'محمد بن صالح',
+        isActive: true,
+      ),
+      const TeacherStudentModel(id: 2, fullName: 'عمر الفاروق', isActive: true),
+    ];
+
+    List<Map<String, dynamic>> captureSent() {
+      final sent = <Map<String, dynamic>>[];
+      DioClient.instance.httpClientAdapter = _StubAdapter(
+        jsonEncode({'id': 5}),
+        onRequest: (options) {
+          if (options.method == 'POST') {
+            sent.add(Map<String, dynamic>.from(options.data as Map));
+          }
+        },
+      );
+      return sent;
+    }
+
+    Future<void> open(WidgetTester tester) async {
+      await tester.pumpWidget(
+        _host(MemorizationEntrySheet.outsideSession(students: students)),
+      );
+      await tester.pumpAndSettle();
+    }
+
+    testWidgets('asks for the student before showing the form', (tester) async {
+      _setPhoneViewport(tester);
+      await open(tester);
+
+      expect(find.text('تسجيل حفظ خارج الحصة'), findsOneWidget);
+      expect(find.text('اختر الطالب'), findsOneWidget);
+      expect(find.text('اختر السورة...'), findsNothing);
+      expect(find.text('تسجيل'), findsNothing);
+    });
+
+    testWidgets('finds a student by searching their name', (tester) async {
+      _setPhoneViewport(tester);
+      await open(tester);
+
+      await tester.tap(find.text('اختر الطالب'));
+      await tester.pumpAndSettle();
+      await tester.enterText(find.byType(TextField), 'عمر');
+      await tester.pumpAndSettle();
+
+      expect(find.text('عمر الفاروق'), findsOneWidget);
+      expect(find.text('محمد بن صالح'), findsNothing);
+
+      await tester.tap(find.text('عمر الفاروق'));
+      await tester.pumpAndSettle();
+      expect(find.text('اختر السورة...'), findsOneWidget);
+    });
+
+    testWidgets('saves the entry as outside the session', (tester) async {
+      _setPhoneViewport(tester);
+      final sent = captureSent();
+      await open(tester);
+
+      await tester.tap(find.text('اختر الطالب'));
+      await tester.pumpAndSettle();
+      await tester.tap(find.text('عمر الفاروق'));
+      await tester.pumpAndSettle();
+      await tester.tap(find.text('اختر السورة...'));
+      await tester.pumpAndSettle();
+      await tester.tap(find.text('الفاتحة').last);
+      await tester.pumpAndSettle();
+      await tester.tap(find.text('حفظ'));
+      await tester.tap(find.text('تسجيل'));
+      await tester.pumpAndSettle();
+
+      expect(sent.single['studentId'], 2);
+      expect(sent.single['outsideSession'], true);
+    });
+  });
+
+  testWidgets('a halaqa entry does not claim to be outside the session', (
+    tester,
+  ) async {
+    _setPhoneViewport(tester);
+    final sent = <Map<String, dynamic>>[];
+    DioClient.instance.httpClientAdapter = _StubAdapter(
+      jsonEncode({'id': 5}),
+      onRequest: (options) {
+        if (options.method == 'POST') {
+          sent.add(Map<String, dynamic>.from(options.data as Map));
+        }
+      },
+    );
+    await tester.pumpWidget(_host(MemorizationEntrySheet(student: _student())));
+    await tester.pumpAndSettle();
+    await tester.tap(find.byType(DropdownButton<int>));
+    await tester.pumpAndSettle();
+    await tester.tap(find.text('الفاتحة').last);
+    await tester.pumpAndSettle();
+    await tester.tap(find.text('حفظ'));
+    await tester.tap(find.text('تسجيل'));
+    await tester.pumpAndSettle();
+
+    expect(sent.single.containsKey('outsideSession'), isFalse);
+  });
 }

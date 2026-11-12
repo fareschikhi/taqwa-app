@@ -937,8 +937,13 @@ describe('AttendanceService fine reconciliation', () => {
     const prisma = makePrisma({ recited: false });
     await svcWith(prisma).create(dto(AttendanceStatus.PRESENT));
 
+    // Only a recitation made in the session clears the fee.
     expect(prisma.tx.memorizationProgress.count).toHaveBeenCalledWith({
-      where: { studentId: 7, date: new Date('2026-08-26') },
+      where: {
+        studentId: 7,
+        date: new Date('2026-08-26'),
+        outsideSession: false,
+      },
     });
     expect(prisma.tx.fineEntry.create).toHaveBeenCalledWith(
       expect.objectContaining({
