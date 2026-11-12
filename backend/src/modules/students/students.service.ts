@@ -446,6 +446,79 @@ export class StudentsService {
     return { ...student, notes, attendanceRate };
   }
 
+  /// What the admin's reset buttons would erase, so each button can show its
+  /// count and stay disabled when there is nothing to clear. Points come as
+  /// both the row count and the balance: the balance is what the admin
+  /// recognises, the row count is what "nothing to clear" means (a balance
+  /// of 0 can still be several +/- rows).
+  async getRecordsSummary(id: number) {
+    const student = await this.prisma.student.findUnique({
+      where: { id },
+      select: { userId: true },
+    });
+    if (!student) throw new NotFoundException('الطالب غير موجود');
+
+    const [attendance, memorization, points] = await Promise.all([
+      this.prisma.attendance.count({ where: { studentId: id } }),
+      this.prisma.memorizationProgress.count({ where: { studentId: id } }),
+      this.prisma.pointEntry.aggregate({
+        where: { userId: student.userId },
+        _count: { _all: true },
+        _sum: { amount: true },
+      }),
+    ]);
+
+    return {
+      attendance,
+      memorization,
+      points: points._count._all,
+      pointsTotal: Number(points._sum.amount ?? 0),
+    };
+  }
+
+  /// The three resets are deliberately independent: clearing attendance
+  /// leaves the points those days earned, and clearing memorization leaves
+  /// the points its recitations earned — the admin clears points with its
+  /// own button. Fines are never touched here. Justifications go with their
+  /// attendance rows through the schema's cascade.
+  async clearAttendance(id: number) {
+    await this.assertExists(id);
+    const { count } = await this.prisma.attendance.deleteMany({
+      where: { studentId: id },
+    });
+    return { deleted: count };
+  }
+
+  async clearMemorization(id: number) {
+    await this.assertExists(id);
+    const { count } = await this.prisma.memorizationProgress.deleteMany({
+      where: { studentId: id },
+    });
+    return { deleted: count };
+  }
+
+  /// Points are keyed by user, not student (staff earn them too), so the
+  /// student's userId picks the rows.
+  async clearPoints(id: number) {
+    const student = await this.prisma.student.findUnique({
+      where: { id },
+      select: { userId: true },
+    });
+    if (!student) throw new NotFoundException('الطالب غير موجود');
+    const { count } = await this.prisma.pointEntry.deleteMany({
+      where: { userId: student.userId },
+    });
+    return { deleted: count };
+  }
+
+  private async assertExists(id: number) {
+    const student = await this.prisma.student.findUnique({
+      where: { id },
+      select: { id: true },
+    });
+    if (!student) throw new NotFoundException('الطالب غير موجود');
+  }
+
   async remove(id: number) {
     const student = await this.prisma.student.findUnique({ where: { id } });
     if (!student) throw new NotFoundException('الطالب غير موجود');

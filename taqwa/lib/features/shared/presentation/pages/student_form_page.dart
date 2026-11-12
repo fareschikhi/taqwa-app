@@ -21,6 +21,7 @@ import '../../../data/repositories/student_repository.dart';
 import '../widgets/avatar_picker_field.dart';
 import '../widgets/change_password_sheet.dart';
 import '../widgets/form_section.dart';
+import '../widgets/student_records_reset_card.dart';
 import 'package:taqwa/core/widgets/app_text.dart';
 
 /// Create or edit a student. Shared by the admin and the manager sections —
@@ -40,6 +41,7 @@ class StudentFormPage extends StatefulWidget {
     this.student,
     this.managerId,
     this.canSetHadithBooks = false,
+    this.canResetRecords = false,
   });
 
   /// Student being edited; null means "create a new one".
@@ -51,6 +53,11 @@ class StudentFormPage extends StatefulWidget {
   /// Opt-in rather than derived from [managerId], so no caller other than
   /// the admin section ever offers a checklist the backend would reject.
   final bool canSetHadithBooks;
+
+  /// Shows the admin's attendance / memorization / points resets below the
+  /// form while editing. Opt-in like [canSetHadithBooks]: the routes behind
+  /// it are ADMIN-only.
+  final bool canResetRecords;
 
   @override
   State<StudentFormPage> createState() => _StudentFormPageState();
@@ -321,6 +328,13 @@ class _StudentFormPageState extends State<StudentFormPage> {
                         variant: AppButtonVariant.tertiary,
                         onPressed: () => Navigator.pop(context),
                       ),
+                      // Below Save/Cancel on purpose: the resets act on their
+                      // own, not through the form, and stay out of the way of
+                      // the everyday edit.
+                      if (_isEditing && widget.canResetRecords) ...[
+                        SizedBox(height: 32.h),
+                        StudentRecordsResetCard(studentId: widget.student!.id!),
+                      ],
                       SizedBox(height: 32.h),
                     ],
                   ),

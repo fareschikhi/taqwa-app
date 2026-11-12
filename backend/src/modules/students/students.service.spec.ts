@@ -516,3 +516,84 @@ describe('StudentsService halaqa pairing', () => {
     expect(prisma.user.create).toHaveBeenCalled();
   });
 });
+
+describe('StudentsService record resets', () => {
+  const makePrisma = (student: { id: number; userId: number } | null) => ({
+    student: { findUnique: jest.fn().mockResolvedValue(student) },
+    attendance: {
+      count: jest.fn().mockResolvedValue(12),
+      deleteMany: jest.fn().mockResolvedValue({ count: 12 }),
+    },
+    memorizationProgress: {
+      count: jest.fn().mockResolvedValue(5),
+      deleteMany: jest.fn().mockResolvedValue({ count: 5 }),
+    },
+    pointEntry: {
+      aggregate: jest.fn().mockResolvedValue({
+        _count: { _all: 3 },
+        _sum: { amount: '7.250' },
+      }),
+      deleteMany: jest.fn().mockResolvedValue({ count: 3 }),
+    },
+  });
+
+  it('summarises counts and the points balance', async () => {
+    const prisma = makePrisma({ id: 7, userId: 42 });
+    const service = new StudentsService(prisma as any);
+
+    await expect(service.getRecordsSummary(7)).resolves.toEqual({
+      attendance: 12,
+      memorization: 5,
+      points: 3,
+      pointsTotal: 7.25,
+    });
+    expect(prisma.pointEntry.aggregate).toHaveBeenCalledWith(
+      expect.objectContaining({ where: { userId: 42 } }),
+    );
+  });
+
+  it('clears only this student’s attendance', async () => {
+    const prisma = makePrisma({ id: 7, userId: 42 });
+    const service = new StudentsService(prisma as any);
+
+    await expect(service.clearAttendance(7)).resolves.toEqual({ deleted: 12 });
+    expect(prisma.attendance.deleteMany).toHaveBeenCalledWith({
+      where: { studentId: 7 },
+    });
+    expect(prisma.pointEntry.deleteMany).not.toHaveBeenCalled();
+  });
+
+  it('clears only this student’s memorization', async () => {
+    const prisma = makePrisma({ id: 7, userId: 42 });
+    const service = new StudentsService(prisma as any);
+
+    await expect(service.clearMemorization(7)).resolves.toEqual({ deleted: 5 });
+    expect(prisma.memorizationProgress.deleteMany).toHaveBeenCalledWith({
+      where: { studentId: 7 },
+    });
+    expect(prisma.pointEntry.deleteMany).not.toHaveBeenCalled();
+  });
+
+  it('clears points by the student’s user id, not the student id', async () => {
+    const prisma = makePrisma({ id: 7, userId: 42 });
+    const service = new StudentsService(prisma as any);
+
+    await expect(service.clearPoints(7)).resolves.toEqual({ deleted: 3 });
+    expect(prisma.pointEntry.deleteMany).toHaveBeenCalledWith({
+      where: { userId: 42 },
+    });
+  });
+
+  it('throws NotFoundException and deletes nothing for an unknown student', async () => {
+    const prisma = makePrisma(null);
+    const service = new StudentsService(prisma as any);
+
+    await expect(service.clearAttendance(7)).rejects.toBeInstanceOf(NotFoundException);
+    await expect(service.clearMemorization(7)).rejects.toBeInstanceOf(NotFoundException);
+    await expect(service.clearPoints(7)).rejects.toBeInstanceOf(NotFoundException);
+    await expect(service.getRecordsSummary(7)).rejects.toBeInstanceOf(NotFoundException);
+    expect(prisma.attendance.deleteMany).not.toHaveBeenCalled();
+    expect(prisma.memorizationProgress.deleteMany).not.toHaveBeenCalled();
+    expect(prisma.pointEntry.deleteMany).not.toHaveBeenCalled();
+  });
+});

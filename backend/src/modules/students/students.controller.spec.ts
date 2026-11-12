@@ -1,4 +1,6 @@
 import { Reflector } from '@nestjs/core';
+import { Role } from '@prisma/client';
+import { ROLES_KEY } from '../../common/decorators/roles.decorator';
 import { ForbiddenException } from '@nestjs/common';
 import { GUARDS_METADATA } from '@nestjs/common/constants';
 import { StudentsController } from './students.controller';
@@ -145,5 +147,31 @@ describe('StudentsController hadithBooks gate', () => {
       controller.update(7, { currentRating: 'ممتاز' }, { role: 'MANAGER' }),
     ).toThrow(ForbiddenException);
     expect(service.update).not.toHaveBeenCalled();
+  });
+});
+
+/**
+ * The record resets erase history other staff wrote, so they are ADMIN-only
+ * and no manager permission may unlock them.
+ */
+describe('StudentsController record resets are admin-only', () => {
+  const reflector = new Reflector();
+  const routes = [
+    'getRecordsSummary',
+    'clearAttendance',
+    'clearMemorization',
+    'clearPoints',
+  ] as const;
+
+  it.each(routes)('%s allows ADMIN and nobody else', (route) => {
+    expect(
+      reflector.get(ROLES_KEY, StudentsController.prototype[route]),
+    ).toEqual([Role.ADMIN]);
+  });
+
+  it.each(routes)('%s has no manager permission that could open it', (route) => {
+    expect(
+      reflector.get(PERMISSION_KEY, StudentsController.prototype[route]),
+    ).toBeUndefined();
   });
 });

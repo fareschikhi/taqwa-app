@@ -2,6 +2,7 @@ import 'package:dio/dio.dart';
 import 'package:taqwa/features/data/models/student/student_payload_dto.dart';
 import '../datasources/student_remote_datasource.dart';
 import '../models/student/student_model.dart';
+import '../models/student/student_records_summary_model.dart';
 import '../models/parent/parent_child_model.dart';
 import '../models/attendance_summary_model.dart';
 import '../models/student_note_model.dart';
@@ -16,7 +17,9 @@ class StudentRepository {
   Future<List<ParentChildModel>> getChildStudents() async {
     final rows = await _ds.getAllRaw();
     return rows
-        .where((r) => (r['user'] as Map<String, dynamic>?)?['role'] == 'STUDENT')
+        .where(
+          (r) => (r['user'] as Map<String, dynamic>?)?['role'] == 'STUDENT',
+        )
         .map(ParentChildModel.fromJson)
         .toList();
   }
@@ -32,6 +35,12 @@ class StudentRepository {
       _ds.update(id, data);
 
   Future<void> deleteStudent(int id) => _ds.delete(id);
+
+  Future<StudentRecordsSummary> getRecordsSummary(int id) =>
+      _ds.getRecordsSummary(id);
+
+  Future<void> clearRecords(int id, StudentRecordKind kind) =>
+      _ds.clearRecords(id, kind);
 
   Future<Map<String, dynamic>> getProfile(int id) => _ds.getProfile(id);
 

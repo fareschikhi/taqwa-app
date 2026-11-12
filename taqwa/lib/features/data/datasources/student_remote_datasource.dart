@@ -3,6 +3,7 @@ import 'package:taqwa/features/data/models/student/student_payload_dto.dart';
 import 'package:taqwa/features/data/network/dio_client.dart';
 import 'package:taqwa/features/data/network/api_endpoints.dart';
 import '../models/student/student_model.dart';
+import '../models/student/student_records_summary_model.dart';
 import '../models/attendance_summary_model.dart';
 import '../models/student_note_model.dart';
 
@@ -82,6 +83,17 @@ class StudentRemoteDatasource {
     await _dio.delete('/students/$id');
   }
 
+  /// Admin only.
+  Future<StudentRecordsSummary> getRecordsSummary(int id) async {
+    final res = await _dio.get('/students/$id/records');
+    return StudentRecordsSummary.fromJson(res.data as Map<String, dynamic>);
+  }
+
+  /// Admin only. Final — the undo window lives in the app, before this call.
+  Future<void> clearRecords(int id, StudentRecordKind kind) async {
+    await _dio.delete('/students/$id/${kind.path}');
+  }
+
   Future<Map<String, dynamic>> getProfile(int id) async {
     final res = await _dio.get('/students/$id/profile');
     return res.data as Map<String, dynamic>;
@@ -105,12 +117,8 @@ class StudentRemoteDatasource {
     return AttendanceSummaryModel.fromJson(res.data as Map<String, dynamic>);
   }
 
-  Future<List<Map<String, dynamic>>> getAttendanceHistory(
-    int studentId,
-  ) async {
-    final res = await _dio.get(
-      '${ApiEndpoints.attendance}/student/$studentId',
-    );
+  Future<List<Map<String, dynamic>>> getAttendanceHistory(int studentId) async {
+    final res = await _dio.get('${ApiEndpoints.attendance}/student/$studentId');
     return (res.data as List).cast<Map<String, dynamic>>();
   }
 

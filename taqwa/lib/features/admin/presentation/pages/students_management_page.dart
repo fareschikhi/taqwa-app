@@ -85,6 +85,7 @@ class _StudentsManagementPageState extends State<StudentsManagementPage> {
         builder: (_) => StudentFormPage(
           student: student == null ? null : StudentModel.fromJson(student),
           canSetHadithBooks: true,
+          canResetRecords: true,
         ),
       ),
     );

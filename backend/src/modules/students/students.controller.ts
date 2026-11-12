@@ -126,6 +126,34 @@ export class StudentsController {
     return this.studentsService.update(id, dto);
   }
 
+  /// The admin's record resets. ADMIN only — no manager permission unlocks
+  /// them — because they erase history other staff wrote. The app holds each
+  /// clear behind an undo window and only calls DELETE once it has passed,
+  /// so these routes are final.
+  @Get(':id/records')
+  @Roles(Role.ADMIN)
+  getRecordsSummary(@Param('id', ParseIntPipe) id: number) {
+    return this.studentsService.getRecordsSummary(id);
+  }
+
+  @Delete(':id/attendance')
+  @Roles(Role.ADMIN)
+  clearAttendance(@Param('id', ParseIntPipe) id: number) {
+    return this.studentsService.clearAttendance(id);
+  }
+
+  @Delete(':id/memorization')
+  @Roles(Role.ADMIN)
+  clearMemorization(@Param('id', ParseIntPipe) id: number) {
+    return this.studentsService.clearMemorization(id);
+  }
+
+  @Delete(':id/points')
+  @Roles(Role.ADMIN)
+  clearPoints(@Param('id', ParseIntPipe) id: number) {
+    return this.studentsService.clearPoints(id);
+  }
+
   @Delete(':id')
   @Roles(Role.ADMIN, Role.MANAGER)
   @RequirePermission(ManagerPermission.DELETE_ACCOUNTS)
