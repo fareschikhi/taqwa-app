@@ -21,6 +21,8 @@ import '../../../data/repositories/halaqa_repository.dart';
 import '../../../data/repositories/parent_repository.dart';
 import '../../../data/repositories/student_repository.dart';
 import '../../../adult_student/presentation/pages/fines_history_page.dart';
+import '../../../parent/presentation/pages/child_attendance_history_page.dart';
+import '../../../parent/presentation/pages/child_progress_page.dart';
 import '../widgets/profile_detail_widgets.dart';
 import 'parent_form_page.dart';
 import 'package:taqwa/core/widgets/app_text.dart';
@@ -472,6 +474,9 @@ class _StudentDetailsPageState extends State<StudentDetailsPage> {
               label: 'أيام الحضور هذا الشهر',
               value: '$attendedDays',
               color: AppColors.secondary,
+              onTap: _openAttendanceHistory,
+              actionIcon: Icons.chevron_left,
+              semanticsHint: 'عرض سجل الحضور',
             ),
           ),
           SizedBox(width: 12.w),
@@ -482,6 +487,8 @@ class _StudentDetailsPageState extends State<StudentDetailsPage> {
               color: AppColors.tertiary,
               isMuted: _currentRating == null,
               onTap: widget.canEditRating ? _editRating : null,
+              actionIcon: widget.canEditRating ? Icons.edit_outlined : null,
+              semanticsHint: widget.canEditRating ? 'تعديل التقييم' : null,
             ),
           ),
         ],
@@ -801,6 +808,36 @@ class _StudentDetailsPageState extends State<StudentDetailsPage> {
     );
   }
 
+  /// The name the header shows: the profile's once it has loaded, the
+  /// caller's until then.
+  String get _studentName =>
+      ((_profile?['user'] as Map<String, dynamic>?)?['fullName'] as String?) ??
+      widget.fullName;
+
+  /// The profile only carries the latest recitations; the parent's progress
+  /// page, opened for this one student, lists every one of them.
+  void _openMemorizationHistory() => Navigator.push(
+    context,
+    MaterialPageRoute(
+      builder: (_) => ChildProgressPage(
+        studentId: widget.studentId,
+        studentName: _studentName,
+      ),
+    ),
+  );
+
+  /// The stat box only counts this month; the timeline and calendar behind
+  /// it reach back to the student's first marked day.
+  void _openAttendanceHistory() => Navigator.push(
+    context,
+    MaterialPageRoute(
+      builder: (_) => ChildAttendanceHistoryPage(
+        studentId: widget.studentId,
+        studentName: _studentName,
+      ),
+    ),
+  );
+
   Widget _buildHistoryCard() {
     final records = _records;
     return AppCard(
@@ -808,11 +845,27 @@ class _StudentDetailsPageState extends State<StudentDetailsPage> {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.end,
         children: [
-          AppText(
-            'سجل الحفظ والمراجعة',
-            style: AppTextStyles.headlineSm.copyWith(
-              color: AppColors.onSurface,
-            ),
+          Row(
+            children: [
+              // Only worth offering once there is something to list.
+              if (records.isNotEmpty)
+                TextButton(
+                  onPressed: _openMemorizationHistory,
+                  child: AppText(
+                    'عرض الكل',
+                    style: AppTextStyles.labelMd.copyWith(
+                      color: AppColors.primary,
+                    ),
+                  ),
+                ),
+              const Spacer(),
+              AppText(
+                'سجل الحفظ والمراجعة',
+                style: AppTextStyles.headlineSm.copyWith(
+                  color: AppColors.onSurface,
+                ),
+              ),
+            ],
           ),
           SizedBox(height: 12.h),
           if (records.isEmpty)
@@ -959,63 +1012,76 @@ class _StatBox extends StatelessWidget {
     required this.value,
     required this.color,
     this.onTap,
+    this.actionIcon,
+    this.semanticsHint,
     this.isMuted = false,
   });
   final String label, value;
   final Color color;
   final VoidCallback? onTap;
+
+  /// Small icon beside the label saying what a tap does: a pencil for an
+  /// edit, a chevron for a page behind the box.
+  final IconData? actionIcon;
+
+  /// What a tap does, for screen readers.
+  final String? semanticsHint;
   final bool isMuted;
 
   @override
   Widget build(BuildContext context) {
     final valueColor = isMuted ? AppColors.onSurfaceVariant : color;
-    return GestureDetector(
-      onTap: onTap,
-      child: Container(
-        padding: EdgeInsets.all(12.w),
-        decoration: BoxDecoration(
-          color: color.withValues(alpha: 0.08),
-          borderRadius: BorderRadius.circular(AppConstants.radiusMd),
-          border: Border.all(color: color.withValues(alpha: 0.2)),
-        ),
-        child: Column(
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: [
-            AppText(
-              value,
-              style: AppTextStyles.headlineSm.copyWith(
-                color: valueColor,
-                fontWeight: FontWeight.w700,
+    return Semantics(
+      button: onTap != null,
+      hint: semanticsHint,
+      child: GestureDetector(
+        onTap: onTap,
+        child: Container(
+          padding: EdgeInsets.all(12.w),
+          decoration: BoxDecoration(
+            color: color.withValues(alpha: 0.08),
+            borderRadius: BorderRadius.circular(AppConstants.radiusMd),
+            border: Border.all(color: color.withValues(alpha: 0.2)),
+          ),
+          child: Column(
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: [
+              AppText(
+                value,
+                style: AppTextStyles.headlineSm.copyWith(
+                  color: valueColor,
+                  fontWeight: FontWeight.w700,
+                ),
+                textAlign: TextAlign.center,
+                maxLines: 2,
+                overflow: TextOverflow.ellipsis,
               ),
-              textAlign: TextAlign.center,
-              maxLines: 2,
-              overflow: TextOverflow.ellipsis,
-            ),
-            SizedBox(height: 4.h),
-            Row(
-              mainAxisAlignment: MainAxisAlignment.center,
-              children: [
-                if (onTap != null) ...[
-                  Icon(
-                    Icons.edit_outlined,
-                    size: 12.sp,
-                    color: AppColors.onSurfaceVariant,
-                  ),
-                  SizedBox(width: 3.w),
-                ],
-                Flexible(
-                  child: AppText(
-                    label,
-                    style: AppTextStyles.labelSm.copyWith(
+              SizedBox(height: 4.h),
+              Row(
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: [
+                  if (actionIcon != null) ...[
+                    Icon(
+                      actionIcon,
+                      size: 12.sp,
                       color: AppColors.onSurfaceVariant,
                     ),
-                    textAlign: TextAlign.center,
-                    maxLines: 2,
+                    SizedBox(width: 3.w),
+                  ],
+                  Flexible(
+                    child: AppText(
+                      label,
+                      style: AppTextStyles.labelSm.copyWith(
+                        color: AppColors.onSurfaceVariant,
+                      ),
+                      textAlign: TextAlign.center,
+                      maxLines: 2,
+                    ),
                   ),
-                ),
-              ],
-            ),
-          ],
+                ],
+              ),
+            ],
+          ),
         ),
       ),
     );

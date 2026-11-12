@@ -13,6 +13,7 @@ import '../../../../core/utils/hadith_label.dart';
 import '../../../data/repositories/student_repository.dart';
 import 'package:taqwa/core/widgets/app_text.dart';
 import 'package:taqwa/core/widgets/app_card.dart';
+import 'package:taqwa/core/widgets/pushed_page_back_button.dart';
 import '../widgets/parent_chat_button.dart';
 import 'package:taqwa/core/utils/memorization_amount.dart';
 import 'package:taqwa/core/utils/ayah_range.dart' show kAyahUnitLabel;
@@ -20,7 +21,20 @@ import 'package:taqwa/core/utils/progress_totals.dart';
 import 'package:taqwa/core/widgets/memorization_totals_card.dart';
 
 class ChildProgressPage extends ConsumerStatefulWidget {
-  const ChildProgressPage({super.key});
+  /// With no arguments the page follows the parent's (or adult student's)
+  /// selected child, as a tab of their shell, and lists the latest
+  /// [kRecentMemorizationLimit] entries. Staff open it for one student from
+  /// the student's profile by passing [studentId] and [studentName]; it is
+  /// then a pushed page with a back button, and lists every entry — the
+  /// profile already shows the latest ones, so this is where the rest live.
+  const ChildProgressPage({super.key, this.studentId, this.studentName})
+    : assert(
+        (studentId == null) == (studentName == null),
+        'Pass studentId and studentName together, or neither.',
+      );
+
+  final int? studentId;
+  final String? studentName;
 
   @override
   ConsumerState<ChildProgressPage> createState() => _ChildProgressPageState();
@@ -33,11 +47,20 @@ class _ChildProgressPageState extends ConsumerState<ChildProgressPage> {
   Map<String, dynamic>? _progress;
   List<Map<String, dynamic>> _history = [];
 
+  /// Opened for one student by staff, rather than as the parent's tab.
+  bool get _isForOneStudent => widget.studentId != null;
+
+  /// How many entries the list shows: all of them for staff, the latest few
+  /// for a parent.
+  int get _historyLimit =>
+      _isForOneStudent ? _history.length : kRecentMemorizationLimit;
+
   @override
   void initState() {
     super.initState();
     WidgetsBinding.instance.addPostFrameCallback((_) {
-      final id = ref.read(selectedStudentProvider).selected?.id;
+      final id =
+          widget.studentId ?? ref.read(selectedStudentProvider).selected?.id;
       if (id != null) _load(id);
     });
   }
@@ -66,18 +89,27 @@ class _ChildProgressPageState extends ConsumerState<ChildProgressPage> {
 
   @override
   Widget build(BuildContext context) {
-    final child = ref.watch(selectedStudentProvider).selected;
+    final int studentId;
+    final String studentName;
+    if (_isForOneStudent) {
+      studentId = widget.studentId!;
+      studentName = widget.studentName!;
+    } else {
+      final child = ref.watch(selectedStudentProvider).selected;
 
-    ref.listen(selectedStudentProvider, (previous, next) {
-      final id = next.selected?.id;
-      if (id != null && id != _loadedChildId) _load(id);
-    });
+      ref.listen(selectedStudentProvider, (previous, next) {
+        final id = next.selected?.id;
+        if (id != null && id != _loadedChildId) _load(id);
+      });
 
-    if (child == null) {
-      return const Scaffold(
-        backgroundColor: AppColors.background,
-        body: SizedBox.shrink(),
-      );
+      if (child == null) {
+        return const Scaffold(
+          backgroundColor: AppColors.background,
+          body: SizedBox.shrink(),
+        );
+      }
+      studentId = child.id;
+      studentName = child.fullName;
     }
 
     final totalPagesDone = formatAmount(_progress?['totalPagesDone'] as num?);
@@ -105,7 +137,7 @@ class _ChildProgressPageState extends ConsumerState<ChildProgressPage> {
       body: SafeArea(
         child: RefreshIndicator(
           color: AppColors.primary,
-          onRefresh: () => _load(child.id),
+          onRefresh: () => _load(studentId),
           child: CustomScrollView(
             physics: const AlwaysScrollableScrollPhysics(),
             slivers: [
@@ -116,7 +148,10 @@ class _ChildProgressPageState extends ConsumerState<ChildProgressPage> {
                     SizedBox(height: 16.h),
                     Row(
                       children: [
-                        const ParentChatButton(),
+                        if (_isForOneStudent)
+                          const PushedPageBackButton()
+                        else
+                          const ParentChatButton(),
                         SizedBox(width: 12.w),
                         Expanded(
                           child: AppText(
@@ -130,7 +165,7 @@ class _ChildProgressPageState extends ConsumerState<ChildProgressPage> {
                       ],
                     ),
                     AppText(
-                      'تتبع رحلة ${child.fullName} في حفظ القرآن الكريم.',
+                      'تتبع رحلة $studentName في حفظ القرآن الكريم.',
                       style: AppTextStyles.bodyMd.copyWith(
                         color: AppColors.onSurfaceVariant,
                       ),
@@ -187,9 +222,9 @@ class _ChildProgressPageState extends ConsumerState<ChildProgressPage> {
                         children: [
                           // Say the list is trimmed, so an older entry that is
                           // missing does not read as lost data.
-                          if (_history.length > kRecentMemorizationLimit)
+                          if (_history.length > _historyLimit)
                             AppText(
-                              'آخر $kRecentMemorizationLimit إدخالات',
+                              'آخر $_historyLimit إدخالات',
                               style: AppTextStyles.labelSm.copyWith(
                                 color: AppColors.onSurfaceVariant,
                               ),
@@ -224,6 +259,7 @@ class _ChildProgressPageState extends ConsumerState<ChildProgressPage> {
                             children: [
                               for (final (i, entry) in recentMemorization(
                                 _history,
+                                limit: _historyLimit,
                               ).indexed) ...[
                                 if (i > 0)
                                   const Divider(color: AppColors.cardBorder),

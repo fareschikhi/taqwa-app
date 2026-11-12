@@ -9,10 +9,26 @@ import '../../../../core/providers/selected_student_provider.dart';
 import '../../../data/repositories/student_repository.dart';
 import '../../../data/models/attendance_summary_model.dart';
 import 'package:taqwa/core/widgets/app_text.dart';
+import 'package:taqwa/core/widgets/pushed_page_back_button.dart';
 import '../widgets/parent_chat_button.dart';
 
 class ChildAttendanceHistoryPage extends ConsumerStatefulWidget {
-  const ChildAttendanceHistoryPage({super.key});
+  /// With no arguments the page follows the parent's (or adult student's)
+  /// selected child, as a tab of their shell. Staff open it for one student
+  /// from the student's profile by passing [studentId] and [studentName]; it
+  /// is then a pushed page with a back button instead of the parent's chat
+  /// shortcut, and the selected-child provider is never read.
+  const ChildAttendanceHistoryPage({
+    super.key,
+    this.studentId,
+    this.studentName,
+  }) : assert(
+         (studentId == null) == (studentName == null),
+         'Pass studentId and studentName together, or neither.',
+       );
+
+  final int? studentId;
+  final String? studentName;
 
   @override
   ConsumerState<ChildAttendanceHistoryPage> createState() =>
@@ -31,11 +47,15 @@ class _ChildAttendanceHistoryPageState
   /// button so a long record does not bury the days a parent came to see.
   bool _showOlder = false;
 
+  /// Opened for one student by staff, rather than as the parent's tab.
+  bool get _isForOneStudent => widget.studentId != null;
+
   @override
   void initState() {
     super.initState();
     WidgetsBinding.instance.addPostFrameCallback((_) {
-      final id = ref.read(selectedStudentProvider).selected?.id;
+      final id =
+          widget.studentId ?? ref.read(selectedStudentProvider).selected?.id;
       if (id != null) _load(id);
     });
   }
@@ -67,18 +87,27 @@ class _ChildAttendanceHistoryPageState
 
   @override
   Widget build(BuildContext context) {
-    final child = ref.watch(selectedStudentProvider).selected;
+    final int studentId;
+    final String studentName;
+    if (_isForOneStudent) {
+      studentId = widget.studentId!;
+      studentName = widget.studentName!;
+    } else {
+      final child = ref.watch(selectedStudentProvider).selected;
 
-    ref.listen(selectedStudentProvider, (previous, next) {
-      final id = next.selected?.id;
-      if (id != null && id != _loadedChildId) _load(id);
-    });
+      ref.listen(selectedStudentProvider, (previous, next) {
+        final id = next.selected?.id;
+        if (id != null && id != _loadedChildId) _load(id);
+      });
 
-    if (child == null) {
-      return const Scaffold(
-        backgroundColor: AppColors.background,
-        body: SizedBox.shrink(),
-      );
+      if (child == null) {
+        return const Scaffold(
+          backgroundColor: AppColors.background,
+          body: SizedBox.shrink(),
+        );
+      }
+      studentId = child.id;
+      studentName = child.fullName;
     }
 
     return Scaffold(
@@ -86,7 +115,7 @@ class _ChildAttendanceHistoryPageState
       body: SafeArea(
         child: RefreshIndicator(
           color: AppColors.primary,
-          onRefresh: () => _load(child.id),
+          onRefresh: () => _load(studentId),
           child: SingleChildScrollView(
             physics: const AlwaysScrollableScrollPhysics(),
             padding: EdgeInsets.symmetric(horizontal: 16.w),
@@ -96,7 +125,10 @@ class _ChildAttendanceHistoryPageState
                 SizedBox(height: 16.h),
                 Row(
                   children: [
-                    const ParentChatButton(),
+                    if (_isForOneStudent)
+                      const PushedPageBackButton()
+                    else
+                      const ParentChatButton(),
                     SizedBox(width: 12.w),
                     Expanded(
                       child: AppText(
@@ -111,7 +143,7 @@ class _ChildAttendanceHistoryPageState
                 ),
                 SizedBox(height: 4.h),
                 AppText(
-                  'سجلات حضور ${child.fullName} وغيابه.',
+                  'سجلات حضور $studentName وغيابه.',
                   style: AppTextStyles.bodyMd.copyWith(
                     color: AppColors.onSurfaceVariant,
                   ),
