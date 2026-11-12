@@ -393,9 +393,11 @@ export class StudentsService {
         },
         // Who to contact about this student. Optional by design: an adult
         // student is his own guardian and has no parent row at all, so the
-        // profile simply carries null and the UI omits the card.
+        // profile simply carries null and the UI omits the card. A child's
+        // own phone and address stay blank, so the profile shows these.
         parent: {
           select: {
+            address: true,
             user: { select: { fullName: true, phone: true, extraPhones: true, avatar: true } },
           },
         },

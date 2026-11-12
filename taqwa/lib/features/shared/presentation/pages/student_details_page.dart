@@ -252,8 +252,12 @@ class _StudentDetailsPageState extends State<StudentDetailsPage> {
   /// card is left out entirely rather than filled with a placeholder, which
   /// would read as a parent the school failed to record.
   Map<String, dynamic>? get _parent =>
-      (_profile?['parent'] as Map<String, dynamic>?)?['user']
-          as Map<String, dynamic>?;
+      _parentRow?['user'] as Map<String, dynamic>?;
+
+  /// The profile's whole parent row: [_parent] plus the parent's `address`,
+  /// which lives on the parent rather than on the user.
+  Map<String, dynamic>? get _parentRow =>
+      _profile?['parent'] as Map<String, dynamic>?;
 
   /// The profile only nests the parent's contact fields, while the edit form
   /// needs the whole row (email, address, linked children), so the parent is
@@ -642,6 +646,21 @@ class _StudentDetailsPageState extends State<StudentDetailsPage> {
     final birthDate = DateTime.tryParse(value('birthDate') ?? '');
     final married = _profile?['isMarried'] as bool?;
 
+    // A child linked to a parent is reached through that parent, so his
+    // address and phones are the parent's. The child's own stored value
+    // (from before the form hid it) still shows when the parent has none,
+    // under the plain label so the row never claims to be the parent's.
+    final parentRow = isAdult ? null : _parentRow;
+    final parentUser = isAdult ? null : _parent;
+    String? filled(String? v) => (v == null || v.trim().isEmpty) ? null : v;
+
+    final parentAddress = filled(parentRow?['address'] as String?);
+    final parentPhone = filled(parentUser?['phone'] as String?);
+    final phoneOwner = parentPhone != null ? parentUser : user;
+    final phoneLabel = parentPhone != null
+        ? 'رقم هاتف ولي الأمر'
+        : 'رقم الهاتف';
+
     final rows = <Widget>[
       DetailInfoRow(
         icon: Icons.calendar_today_outlined,
@@ -655,16 +674,16 @@ class _StudentDetailsPageState extends State<StudentDetailsPage> {
       ),
       DetailInfoRow(
         icon: Icons.location_on_outlined,
-        label: 'العنوان',
-        value: value('address'),
+        label: parentAddress != null ? 'عنوان ولي الأمر' : 'العنوان',
+        value: parentAddress ?? value('address'),
       ),
       DetailInfoRow(
         icon: Icons.phone_outlined,
-        label: 'رقم الهاتف',
-        value: user?['phone'] as String?,
+        label: phoneLabel,
+        value: phoneOwner?['phone'] as String?,
         isLtr: true,
       ),
-      for (final extra in parseExtraPhones(user?['extraPhones']))
+      for (final extra in parseExtraPhones(phoneOwner?['extraPhones']))
         DetailInfoRow(
           icon: Icons.phone_outlined,
           label: 'رقم هاتف إضافي',

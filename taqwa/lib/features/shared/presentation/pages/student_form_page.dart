@@ -113,8 +113,7 @@ class _StudentFormPageState extends State<StudentFormPage> {
 
   /// Which registration form applies: the switch while creating, the
   /// student's own role while editing (the switch is hidden then).
-  bool get _isAdultForm =>
-      _isEditing ? widget.student!.isAdult : _isAdult;
+  bool get _isAdultForm => _isEditing ? widget.student!.isAdult : _isAdult;
 
   @override
   void initState() {
@@ -246,9 +245,13 @@ class _StudentFormPageState extends State<StudentFormPage> {
         await _repo.updateStudent(widget.student!.id!, {
           if (_isAdultForm && newPassword.isNotEmpty) 'password': newPassword,
           'fullName': _nameController.text.trim(),
-          'phone': _phoneController.text.trim(),
-          'extraPhones': _extraPhones.values,
-          'address': _addressController.text.trim(),
+          // A child's contact fields are hidden, so they are not sent either:
+          // sending the blank boxes would wipe numbers imported before.
+          if (_isAdultForm) ...{
+            'phone': _phoneController.text.trim(),
+            'extraPhones': _extraPhones.values,
+            'address': _addressController.text.trim(),
+          },
           if (birthDate != null) 'birthDate': _isoDate(birthDate),
           'halaqaId': ?_selectedHalaqaId,
           if (!_isAdultForm) 'parentId': ?_selectedParentId,
@@ -401,37 +404,40 @@ class _StudentFormPageState extends State<StudentFormPage> {
               color: AppColors.onSurfaceVariant,
             ),
           ),
-          SizedBox(height: 16.h),
-          AppTextField(
-            label: 'العنوان',
-            hint: 'أدخل العنوان',
-            controller: _addressController,
-            prefixIcon: const Icon(
-              Icons.location_on_outlined,
-              color: AppColors.onSurfaceVariant,
+          // Address and phones are an adult's own. A child is reached through
+          // his parent, whose contact details his profile shows instead.
+          if (_isAdultForm) ...[
+            SizedBox(height: 16.h),
+            AppTextField(
+              label: 'العنوان',
+              hint: 'أدخل العنوان',
+              controller: _addressController,
+              prefixIcon: const Icon(
+                Icons.location_on_outlined,
+                color: AppColors.onSurfaceVariant,
+              ),
             ),
-          ),
-          SizedBox(height: 24.h),
-          const FormSectionHeader(
-            icon: Icons.contact_phone_outlined,
-            title: 'بيانات الاتصال',
-          ),
-          SizedBox(height: 16.h),
-          PhoneField(
-            label: _isAdult ? 'رقم الهاتف *' : 'رقم الهاتف',
-            controller: _phoneController,
-            // Only a new adult signs in with it; a child is a record with no
-            // login, and many were imported with a name alone, so requiring
-            // it would block every later edit (such as picking a halaqa).
-            validator: (v) => AccountValidators.phone(v, required: _isAdult),
-            extraPhones: _extraPhones,
-          ),
-          ContactOwnersHint(
-            controller: _phoneController,
-            field: ContactField.phone,
-            excludeUserId: widget.student?.userId,
-          ),
-          ExtraPhoneFields(controller: _extraPhones),
+            SizedBox(height: 24.h),
+            const FormSectionHeader(
+              icon: Icons.contact_phone_outlined,
+              title: 'بيانات الاتصال',
+            ),
+            SizedBox(height: 16.h),
+            PhoneField(
+              label: _isAdult ? 'رقم الهاتف *' : 'رقم الهاتف',
+              controller: _phoneController,
+              // Only a new adult signs in with it, so only creating one makes
+              // it required; an existing adult's edit stays possible without.
+              validator: (v) => AccountValidators.phone(v, required: _isAdult),
+              extraPhones: _extraPhones,
+            ),
+            ContactOwnersHint(
+              controller: _phoneController,
+              field: ContactField.phone,
+              excludeUserId: widget.student?.userId,
+            ),
+            ExtraPhoneFields(controller: _extraPhones),
+          ],
           SizedBox(height: 24.h),
           const FormSectionHeader(
             icon: Icons.school_outlined,
@@ -483,6 +489,16 @@ class _StudentFormPageState extends State<StudentFormPage> {
               options: _parents,
               selectedId: _selectedParentId,
               onSelected: (o) => setState(() => _selectedParentId = o.id),
+            ),
+            SizedBox(height: 4.h),
+            Align(
+              alignment: AlignmentDirectional.centerEnd,
+              child: AppText(
+                'يظهر رقم هاتف ولي الأمر وعنوانه في ملف الطالب.',
+                style: AppTextStyles.labelSm.copyWith(
+                  color: AppColors.onSurfaceVariant,
+                ),
+              ),
             ),
             SizedBox(height: 16.h),
           ],
@@ -566,11 +582,7 @@ class _StudentFormPageState extends State<StudentFormPage> {
           _schoolLevelController,
           Icons.menu_book_outlined,
         ),
-        field(
-          'المهنة إن وجدت',
-          _occupationController,
-          Icons.work_outline,
-        ),
+        field('المهنة إن وجدت', _occupationController, Icons.work_outline),
         health,
         familyStatus,
         Padding(

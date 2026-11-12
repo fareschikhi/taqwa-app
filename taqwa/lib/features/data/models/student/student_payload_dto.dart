@@ -1,5 +1,8 @@
 class StudentPayloadDto {
   final String fullName;
+
+  /// [phone], [extraPhones] and [address] are an adult's own contact
+  /// details; [toJson] leaves them out for a child.
   final String phone;
 
   /// More contact numbers beside [phone]; sent even when empty so an edit
@@ -48,10 +51,14 @@ class StudentPayloadDto {
 
   Map<String, dynamic> toJson() => {
     'fullName': fullName,
-    'phone': phone,
-    'extraPhones': extraPhones,
+    // A child is reached through his parent — the profile shows the
+    // parent's phone and address — so only an adult carries his own.
+    if (isAdult) ...{
+      'phone': phone,
+      'extraPhones': extraPhones,
+      'address': address,
+    },
     'birthDate': ?birthDate,
-    'address': address,
     if (halaqaId != null) 'halaqaId': halaqaId,
     if (avatar != null && avatar!.isNotEmpty) 'avatar': avatar,
     'isAdult': isAdult,

@@ -27,15 +27,37 @@ void main() {
       // this same DTO can describe an adult student too.
       expect(payload.toJson(), {
         'fullName': 'Bilal Cherguini',
-        'phone': '4008',
-        'extraPhones': <String>[],
         'birthDate': '2012-05-01',
-        'address': 'الجزائر العاصمة',
         'halaqaId': 2,
         'avatar': 'https://example.test/a.png',
         'isAdult': false,
         'parentId': 5,
       });
+    });
+
+    // A child is reached through his parent, whose phone and address the
+    // profile shows, so the child's own contact fields are never sent.
+    test('omits phone, extra phones and address for a child', () {
+      final json = payload.toJson();
+
+      expect(json.containsKey('phone'), isFalse);
+      expect(json.containsKey('extraPhones'), isFalse);
+      expect(json.containsKey('address'), isFalse);
+    });
+
+    test('carries phone, extra phones and address for an adult student', () {
+      final json = const StudentPayloadDto(
+        fullName: 'بلال شرقيني',
+        phone: '0550000000',
+        extraPhones: ['0660000000'],
+        address: 'الجزائر العاصمة',
+        isAdult: true,
+        password: 'secret123',
+      ).toJson();
+
+      expect(json['phone'], '0550000000');
+      expect(json['extraPhones'], ['0660000000']);
+      expect(json['address'], 'الجزائر العاصمة');
     });
 
     test('carries a password for an adult student', () {
