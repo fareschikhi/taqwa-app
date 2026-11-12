@@ -24,10 +24,13 @@ class AbsenceJustificationRemoteDatasource {
         .toList();
   }
 
-  Future<List<UnjustifiedAttendanceModel>> getUnjustified(int managerId) async {
+  /// Without [managerId] the backend lists every halaqa; only admins may ask.
+  Future<List<UnjustifiedAttendanceModel>> getUnjustified({
+    int? managerId,
+  }) async {
     final res = await _dio.get(
       '${ApiEndpoints.absenceJustifications}/unjustified',
-      queryParameters: {'managerId': managerId},
+      queryParameters: managerId == null ? null : {'managerId': managerId},
     );
     return (res.data as List)
         .map((e) => UnjustifiedAttendanceModel.fromJson(e))

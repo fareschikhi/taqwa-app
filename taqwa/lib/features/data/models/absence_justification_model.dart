@@ -60,6 +60,20 @@ class AbsenceJustificationModel {
     return user?['avatar'] as String?;
   }
 
+  /// Who recorded the excuse; null when the backend left the manager out.
+  String? get managerName {
+    final user = manager?['user'] as Map<String, dynamic>?;
+    return user?['fullName'] as String?;
+  }
+
+  /// Null when the student is in no halaqa yet.
+  int? get halaqaId => (_halaqa?['id'] as num?)?.toInt();
+
+  String? get halaqaName => _halaqa?['name'] as String?;
+
+  Map<String, dynamic>? get _halaqa =>
+      student?['halaqa'] as Map<String, dynamic>?;
+
   String get reasonLabel {
     switch (reasonType) {
       case 'ILLNESS':

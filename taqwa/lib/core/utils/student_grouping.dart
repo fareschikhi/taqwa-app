@@ -32,16 +32,52 @@ List<HalaqaGroup> groupStudentsByHalaqa(
   List<Map<String, dynamic>> students, {
   bool sortGroups = true,
 }) {
-  final byHalaqa = <int?, List<Map<String, dynamic>>>{};
+  final buckets = groupByHalaqa<Map<String, dynamic>>(
+    students,
+    halaqaIdOf: (s) => ((s['halaqa'] as Map?)?['id'] as num?)?.toInt(),
+    halaqaNameOf: (s) => (s['halaqa'] as Map?)?['name']?.toString(),
+    sortGroups: sortGroups,
+  );
+  return [
+    for (final b in buckets)
+      HalaqaGroup(halaqaId: b.halaqaId, name: b.name, students: b.items),
+  ];
+}
+
+/// One halaqa's slice of any list whose rows each sit in at most one halaqa,
+/// such as a manager's absences. [halaqaId] is null for the unassigned bucket.
+class HalaqaBucket<T> {
+  const HalaqaBucket({
+    required this.halaqaId,
+    required this.name,
+    required this.items,
+  });
+
+  final int? halaqaId;
+  final String name;
+  final List<T> items;
+
+  bool get isUnassigned => halaqaId == null;
+}
+
+/// The rules behind [groupStudentsByHalaqa] for rows of any shape: groups by
+/// halaqa name with the unassigned bucket last (or first-arrival order when
+/// [sortGroups] is false), and the caller's order kept inside each group.
+List<HalaqaBucket<T>> groupByHalaqa<T>(
+  List<T> items, {
+  required int? Function(T item) halaqaIdOf,
+  required String? Function(T item) halaqaNameOf,
+  bool sortGroups = true,
+}) {
+  final byHalaqa = <int?, List<T>>{};
   final names = <int?, String>{};
 
-  for (final student in students) {
-    final halaqa = student['halaqa'] as Map<String, dynamic>?;
-    final name = halaqa?['name']?.toString().trim() ?? '';
+  for (final item in items) {
+    final name = halaqaNameOf(item)?.trim() ?? '';
     // A halaqa row with no usable name is no more reachable than none at all.
-    final id = name.isEmpty ? null : (halaqa?['id'] as num?)?.toInt();
+    final id = name.isEmpty ? null : halaqaIdOf(item);
 
-    byHalaqa.putIfAbsent(id, () => []).add(student);
+    byHalaqa.putIfAbsent(id, () => []).add(item);
     names[id] = id == null ? unassignedHalaqaLabel : name;
   }
 
@@ -56,6 +92,6 @@ List<HalaqaGroup> groupStudentsByHalaqa(
 
   return [
     for (final id in ids)
-      HalaqaGroup(halaqaId: id, name: names[id]!, students: byHalaqa[id]!),
+      HalaqaBucket(halaqaId: id, name: names[id]!, items: byHalaqa[id]!),
   ];
 }

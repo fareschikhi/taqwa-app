@@ -82,4 +82,36 @@ void main() {
       expect(groupStudentsByHalaqa(const []), isEmpty);
     });
   });
+
+  group('groupByHalaqa', () {
+    // Plain records stand in for any row type, such as an absence.
+    List<HalaqaBucket<(String, int?, String?)>> group(
+      List<(String, int?, String?)> rows,
+    ) =>
+        groupByHalaqa(rows, halaqaIdOf: (r) => r.$2, halaqaNameOf: (r) => r.$3);
+
+    test('groups typed rows by halaqa, unassigned last, order kept', () {
+      final buckets = group([
+        ('غياب ٣', null, null),
+        ('غياب ٢', 2, 'حلقة العصر'),
+        ('غياب ١', 1, 'حلقة الفجر'),
+        ('غياب ٠', 2, 'حلقة العصر'),
+      ]);
+
+      expect(buckets.map((b) => b.name), [
+        'حلقة العصر',
+        'حلقة الفجر',
+        unassignedHalaqaLabel,
+      ]);
+      expect(buckets.first.items.map((r) => r.$1), ['غياب ٢', 'غياب ٠']);
+      expect(buckets.last.isUnassigned, isTrue);
+    });
+
+    test('sends a halaqa with a blank name to the unassigned bucket', () {
+      final buckets = group([('غياب', 5, '  ')]);
+
+      expect(buckets.single.halaqaId, isNull);
+      expect(buckets.single.name, unassignedHalaqaLabel);
+    });
+  });
 }

@@ -73,7 +73,9 @@ class _ManagerDashboardPageState extends ConsumerState<ManagerDashboardPage> {
 
       // Absences and latenesses still waiting for a justification — the same
       // list the "بانتظار التبرير" tab of the justifications page shows.
-      final unjustified = await _justificationRepo.getUnjustified(mgrId);
+      final unjustified = await _justificationRepo.getUnjustified(
+        managerId: mgrId,
+      );
 
       // A failed feed must not cost the dashboard the data it already has, so
       // it degrades to an empty list rather than throwing — the same call

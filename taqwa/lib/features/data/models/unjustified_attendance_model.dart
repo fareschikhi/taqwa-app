@@ -9,6 +9,8 @@ class UnjustifiedAttendanceModel {
     required this.status,
     required this.studentName,
     this.studentAvatar,
+    this.halaqaId,
+    this.halaqaName,
   });
 
   final int id;
@@ -18,9 +20,14 @@ class UnjustifiedAttendanceModel {
   final String studentName;
   final String? studentAvatar;
 
+  /// Null when the student is in no halaqa yet.
+  final int? halaqaId;
+  final String? halaqaName;
+
   factory UnjustifiedAttendanceModel.fromJson(Map<String, dynamic> json) {
     final student = json['student'] as Map<String, dynamic>?;
     final user = student?['user'] as Map<String, dynamic>?;
+    final halaqa = student?['halaqa'] as Map<String, dynamic>?;
     return UnjustifiedAttendanceModel(
       id: json['id'] as int,
       studentId: json['studentId'] as int,
@@ -28,6 +35,8 @@ class UnjustifiedAttendanceModel {
       status: json['status'] as String? ?? 'ABSENT',
       studentName: user?['fullName'] as String? ?? 'غير معروف',
       studentAvatar: user?['avatar'] as String?,
+      halaqaId: (halaqa?['id'] as num?)?.toInt(),
+      halaqaName: halaqa?['name'] as String?,
     );
   }
 

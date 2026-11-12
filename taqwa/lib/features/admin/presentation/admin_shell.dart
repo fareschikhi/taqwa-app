@@ -18,6 +18,7 @@ import 'package:taqwa/core/providers/chat_unread_provider.dart';
 import 'package:taqwa/core/widgets/app_text.dart';
 import 'package:taqwa/features/chat/data/chat_push.dart';
 import 'package:taqwa/features/chat/presentation/pages/chat_inbox_page.dart';
+import 'package:taqwa/features/manager/presentation/pages/justification_list_page.dart';
 import 'package:taqwa/features/shared/presentation/pages/profile_page.dart';
 
 /// Drawer positions other admin pages jump to. Chat sits second, so the
@@ -29,6 +30,10 @@ abstract final class AdminTabs {
   static const halaqas = 3;
   static const teachers = 4;
   static const managers = 5;
+  static const parents = 6;
+  static const justifications = 7;
+  static const reports = 8;
+  static const profile = 9;
 }
 
 class AdminShellScope extends InheritedWidget {
@@ -109,6 +114,7 @@ class _AdminShellState extends ConsumerState<AdminShell> {
     TeachersManagementPage(),
     ManagersManagementPage(),
     ParentsManagementPage(),
+    JustificationListPage(allHalaqas: true, leading: AdminMenuButton()),
     ReportsPage(),
     ProfilePage(role: 'admin', leading: AdminMenuButton(onBrand: true)),
   ];
@@ -208,19 +214,25 @@ class _AdminShellState extends ConsumerState<AdminShell> {
         icon: Icons.family_restroom_outlined,
         activeIcon: Icons.family_restroom,
         label: 'أولياء الأمور',
-        index: 6,
+        index: AdminTabs.parents,
+      ),
+      _NavItemData(
+        icon: Icons.rule_outlined,
+        activeIcon: Icons.rule,
+        label: 'تبريرات الغياب',
+        index: AdminTabs.justifications,
       ),
       _NavItemData(
         icon: Icons.bar_chart_outlined,
         activeIcon: Icons.bar_chart,
         label: 'التقارير',
-        index: 7,
+        index: AdminTabs.reports,
       ),
       _NavItemData(
         icon: Icons.person_outline,
         activeIcon: Icons.person,
         label: 'الحساب',
-        index: 8,
+        index: AdminTabs.profile,
       ),
     ];
 

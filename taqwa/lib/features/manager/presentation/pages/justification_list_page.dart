@@ -5,7 +5,9 @@ import '../../../../core/theme/app_colors.dart';
 import '../../../../core/theme/app_text_styles.dart';
 import '../../../../core/constants/app_constants.dart';
 import '../../../../core/providers/auth_provider.dart';
+import '../../../../core/utils/student_grouping.dart';
 import '../../../../core/widgets/avatar_widget.dart';
+import '../../../../core/widgets/halaqa_group_section.dart';
 import '../../../../core/widgets/search_bar_widget.dart';
 import '../../../../features/data/repositories/absence_justification_repository.dart';
 import '../../../../features/data/models/absence_justification_model.dart';
@@ -14,10 +16,23 @@ import '../widgets/justify_absence_sheet.dart';
 import 'package:taqwa/core/widgets/app_text.dart';
 
 class JustificationListPage extends ConsumerStatefulWidget {
-  const JustificationListPage({super.key, this.filter});
+  const JustificationListPage({
+    super.key,
+    this.filter,
+    this.allHalaqas = false,
+    this.leading,
+  });
 
   /// Shared with the dashboard, whose cards pick which list opens here.
   final ValueNotifier<int>? filter;
+
+  /// The admin's read-only view: every halaqa, and each excuse names the
+  /// manager who recorded it. Admins have no manager row, and an excuse
+  /// must belong to one, so pending rows cannot be justified from here.
+  final bool allHalaqas;
+
+  /// Drawn before the title, such as the admin drawer's menu button.
+  final Widget? leading;
 
   @override
   ConsumerState<JustificationListPage> createState() =>
@@ -33,6 +48,9 @@ class _JustificationListPageState extends ConsumerState<JustificationListPage> {
 
   /// 0 = pending (unjustified), 1 = already justified.
   int _filterIndex = 0;
+
+  /// Halaqa ids the manager folded away, kept across reloads and both tabs.
+  final Set<int?> _collapsed = {};
 
   @override
   void initState() {
@@ -64,15 +82,22 @@ class _JustificationListPageState extends ConsumerState<JustificationListPage> {
     try {
       // GET /managers is ADMIN-only, so read the manager row id off the auth
       // user instead of looking it up.
-      final managerId = ref.read(authProvider).user?.managerId;
+      final managerId = widget.allHalaqas
+          ? null
+          : ref.read(authProvider).user?.managerId;
       _managerId = managerId;
 
-      final justifications = await _repo.getAllJustifications(
+      // Both lists go out together; with no manager id they span the school.
+      final justificationsCall = _repo.getAllJustifications(
         managerId: managerId,
       );
-      final unjustified = managerId == null
-          ? <UnjustifiedAttendanceModel>[]
-          : await _repo.getUnjustified(managerId);
+      final unjustifiedCall = widget.allHalaqas
+          ? _repo.getUnjustified()
+          : managerId == null
+          ? Future.value(<UnjustifiedAttendanceModel>[])
+          : _repo.getUnjustified(managerId: managerId);
+      final justifications = await justificationsCall;
+      final unjustified = await unjustifiedCall;
 
       if (mounted) {
         setState(() {
@@ -102,14 +127,25 @@ class _JustificationListPageState extends ConsumerState<JustificationListPage> {
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.end,
                   children: [
-                    AppText(
-                      'تبريرات الغياب',
-                      style: AppTextStyles.headlineLgMobile.copyWith(
-                        color: AppColors.onSurface,
-                      ),
+                    Row(
+                      children: [
+                        if (widget.leading != null) widget.leading!,
+                        SizedBox(width: 12.w),
+                        Expanded(
+                          child: AppText(
+                            'تبريرات الغياب',
+                            textAlign: TextAlign.right,
+                            style: AppTextStyles.headlineLgMobile.copyWith(
+                              color: AppColors.onSurface,
+                            ),
+                          ),
+                        ),
+                      ],
                     ),
                     AppText(
-                      'سجل تبريرات الغياب للطلاب',
+                      widget.allHalaqas
+                          ? 'غيابات الطلاب وتبريراتها في كل الحلقات'
+                          : 'سجل تبريرات الغياب للطلاب',
                       style: AppTextStyles.bodyMd.copyWith(
                         color: AppColors.onSurfaceVariant,
                       ),
@@ -160,17 +196,52 @@ class _JustificationListPageState extends ConsumerState<JustificationListPage> {
       );
     }
 
+    // A manager can cover several halaqas, so rows are split by circle;
+    // inside each one the newest-first order from the API is kept.
+    final groups = showingPending
+        ? groupByHalaqa<UnjustifiedAttendanceModel>(
+            _unjustified,
+            halaqaIdOf: (item) => item.halaqaId,
+            halaqaNameOf: (item) => item.halaqaName,
+          )
+        : groupByHalaqa<AbsenceJustificationModel>(
+            _justifications,
+            halaqaIdOf: (item) => item.halaqaId,
+            halaqaNameOf: (item) => item.halaqaName,
+          );
+
     return ListView.separated(
       physics: const AlwaysScrollableScrollPhysics(),
-      padding: EdgeInsets.symmetric(horizontal: 16.w),
-      itemCount: count,
-      separatorBuilder: (_, _) => SizedBox(height: 12.h),
-      itemBuilder: (_, i) => showingPending
-          ? _UnjustifiedCard(
-              item: _unjustified[i],
-              onTap: () => _justify(_unjustified[i]),
-            )
-          : _JustificationCard(item: _justifications[i]),
+      padding: EdgeInsets.fromLTRB(16.w, 0, 16.w, 16.h),
+      itemCount: groups.length,
+      separatorBuilder: (_, _) => SizedBox(height: 20.h),
+      itemBuilder: (_, i) {
+        final group = groups[i];
+        return HalaqaGroupSection(
+          title: group.name,
+          count: group.items.length,
+          countLabel: caseCountLabel(group.items.length),
+          isUnassigned: group.isUnassigned,
+          isExpanded: !_collapsed.contains(group.halaqaId),
+          onToggle: () => setState(() {
+            if (!_collapsed.remove(group.halaqaId)) {
+              _collapsed.add(group.halaqaId);
+            }
+          }),
+          children: [
+            for (final (j, item) in group.items.indexed) ...[
+              if (j > 0) SizedBox(height: 12.h),
+              if (item is UnjustifiedAttendanceModel)
+                _UnjustifiedCard(
+                  item: item,
+                  onTap: widget.allHalaqas ? null : () => _justify(item),
+                )
+              else if (item is AbsenceJustificationModel)
+                _JustificationCard(item: item, showManager: widget.allHalaqas),
+            ],
+          ],
+        );
+      },
     );
   }
 
@@ -224,7 +295,11 @@ class _JustificationListPageState extends ConsumerState<JustificationListPage> {
           SizedBox(height: 8.h),
           AppText(
             showingPending
-                ? 'كل حالات الغياب والتأخر لدى طلابك مبررة'
+                ? widget.allHalaqas
+                      ? 'كل حالات الغياب والتأخر لدى الطلاب مبررة'
+                      : 'كل حالات الغياب والتأخر لدى طلابك مبررة'
+                : widget.allHalaqas
+                ? 'ستظهر هنا تبريرات الغياب التي يسجلها المديرون'
                 : 'ستظهر هنا تبريرات الغياب التي تضيفها',
             style: AppTextStyles.bodyMd.copyWith(
               color: AppColors.onSurfaceVariant,
@@ -237,11 +312,23 @@ class _JustificationListPageState extends ConsumerState<JustificationListPage> {
   }
 }
 
+/// A section header counts absence cases, not students: one student can be
+/// absent on several days. Arabic reads one, two, 3–10 and 11+ differently.
+@visibleForTesting
+String caseCountLabel(int count) {
+  if (count == 1) return 'حالة واحدة';
+  if (count == 2) return 'حالتان';
+  if (count <= 10) return '$count حالات';
+  return '$count حالة';
+}
+
 /// An absence or lateness still waiting for a justification.
 class _UnjustifiedCard extends StatelessWidget {
-  const _UnjustifiedCard({required this.item, required this.onTap});
+  const _UnjustifiedCard({required this.item, this.onTap});
   final UnjustifiedAttendanceModel item;
-  final VoidCallback onTap;
+
+  /// Null in the admin's read-only view: the card is shown, not actionable.
+  final VoidCallback? onTap;
 
   @override
   Widget build(BuildContext context) {
@@ -277,12 +364,14 @@ class _UnjustifiedCard extends StatelessWidget {
             padding: EdgeInsets.all(16.w),
             child: Row(
               children: [
-                Icon(
-                  Icons.edit_calendar_outlined,
-                  color: AppColors.primary,
-                  size: 20.w,
-                ),
-                SizedBox(width: 8.w),
+                if (onTap != null) ...[
+                  Icon(
+                    Icons.edit_calendar_outlined,
+                    color: AppColors.primary,
+                    size: 20.w,
+                  ),
+                  SizedBox(width: 8.w),
+                ],
                 Container(
                   padding: EdgeInsets.symmetric(
                     horizontal: 10.w,
@@ -337,8 +426,11 @@ class _UnjustifiedCard extends StatelessWidget {
 }
 
 class _JustificationCard extends StatelessWidget {
-  const _JustificationCard({required this.item});
+  const _JustificationCard({required this.item, this.showManager = false});
   final AbsenceJustificationModel item;
+
+  /// Names who recorded the excuse, for a list that spans several managers.
+  final bool showManager;
 
   @override
   Widget build(BuildContext context) {
@@ -446,6 +538,30 @@ class _JustificationCard extends StatelessWidget {
                     ),
                   ],
                 ),
+                if (showManager && item.managerName != null) ...[
+                  SizedBox(height: 6.h),
+                  Row(
+                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                    children: [
+                      Flexible(
+                        child: AppText(
+                          item.managerName!,
+                          overflow: TextOverflow.ellipsis,
+                          style: AppTextStyles.labelMd.copyWith(
+                            color: AppColors.onSurface,
+                            fontWeight: FontWeight.w600,
+                          ),
+                        ),
+                      ),
+                      AppText(
+                        'سجّله',
+                        style: AppTextStyles.labelMd.copyWith(
+                          color: AppColors.onSurfaceVariant,
+                        ),
+                      ),
+                    ],
+                  ),
+                ],
                 if (item.notes != null && item.notes!.isNotEmpty) ...[
                   SizedBox(height: 6.h),
                   AppText(

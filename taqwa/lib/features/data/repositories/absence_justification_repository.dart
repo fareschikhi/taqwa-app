@@ -11,8 +11,9 @@ class AbsenceJustificationRepository {
     int? studentId,
   }) => _ds.getAll(managerId: managerId, studentId: studentId);
 
-  Future<List<UnjustifiedAttendanceModel>> getUnjustified(int managerId) =>
-      _ds.getUnjustified(managerId);
+  /// Without [managerId] it lists every halaqa, which only admins may read.
+  Future<List<UnjustifiedAttendanceModel>> getUnjustified({int? managerId}) =>
+      _ds.getUnjustified(managerId: managerId);
 
   Future<AbsenceJustificationModel> getJustification(int id) => _ds.getOne(id);
 
