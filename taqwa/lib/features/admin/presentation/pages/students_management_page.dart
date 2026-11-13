@@ -1,5 +1,10 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/foundation.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
+import 'package:taqwa/core/providers/halaqa_order_provider.dart';
+import 'package:taqwa/core/utils/halaqa_order.dart';
+import 'package:taqwa/core/widgets/halaqa_order_sheet.dart';
 import '../../../../core/theme/app_colors.dart';
 import '../../../../core/theme/app_text_styles.dart';
 import '../../../../core/constants/app_constants.dart';
@@ -21,14 +26,16 @@ import 'package:taqwa/core/widgets/list_layout.dart';
 import 'package:taqwa/features/data/repositories/user_repository.dart';
 import 'package:taqwa/core/widgets/app_text.dart';
 
-class StudentsManagementPage extends StatefulWidget {
+class StudentsManagementPage extends ConsumerStatefulWidget {
   const StudentsManagementPage({super.key});
 
   @override
-  State<StudentsManagementPage> createState() => _StudentsManagementPageState();
+  ConsumerState<StudentsManagementPage> createState() =>
+      _StudentsManagementPageState();
 }
 
-class _StudentsManagementPageState extends State<StudentsManagementPage> {
+class _StudentsManagementPageState
+    extends ConsumerState<StudentsManagementPage> {
   final _searchController = TextEditingController();
   final _scrollController = ScrollController();
   final _datasource = StudentRemoteDatasource();
@@ -58,6 +65,15 @@ class _StudentsManagementPageState extends State<StudentsManagementPage> {
   /// Bumped by every reset so a page still in flight from an older search or
   /// filter is dropped instead of appended to the new list.
   int _generation = 0;
+
+  /// The halaqa order the pages on screen were asked for. Null until the
+  /// first load has read it, so the saved order arriving at startup does not
+  /// count as a change and load the roster twice.
+  List<int>? _requestedOrder;
+
+  /// Every halaqa, by name, for the order sheet: the roster may not have
+  /// loaded a section yet, but the admin can still move it.
+  List<HalaqaOrderItem> _allHalaqas = [];
 
   /// Halaqa ids the user folded away, kept across reloads and filter changes.
   /// Null stands for the unassigned bucket.
@@ -191,6 +207,7 @@ class _StudentsManagementPageState extends State<StudentsManagementPage> {
       setState(() {
         _halaqaFilters = ['الكل', for (final h in halaqas) h.name];
         _halaqaFilterIds = [null, for (final h in halaqas) h.id];
+        _allHalaqas = [for (final h in halaqas) (id: h.id, name: h.name)];
       });
     } catch (_) {
       // Without the halaqa list the roster still loads; only the chips are
@@ -201,7 +218,12 @@ class _StudentsManagementPageState extends State<StudentsManagementPage> {
   /// Starts over from the first page: on open, refresh, a new search or
   /// filter, and after any edit so the changed row lands in its new place.
   Future<void> _load() async {
-    _generation++;
+    final generation = ++_generation;
+    // The server pages in the admin's halaqa order, so it must be known
+    // before the first page is asked for.
+    await ref.read(halaqaOrderProvider.notifier).ready;
+    if (!mounted || generation != _generation) return;
+    _requestedOrder = ref.read(halaqaOrderProvider);
     _nextPage = 1;
     _hasMore = true;
     _isLoadingMore = false;
@@ -223,6 +245,7 @@ class _StudentsManagementPageState extends State<StudentsManagementPage> {
         halaqaId: _filterIndex < _halaqaFilterIds.length
             ? _halaqaFilterIds[_filterIndex]
             : null,
+        halaqaOrder: _requestedOrder ?? const [],
       );
       if (!mounted || generation != _generation) return;
       final page = (res['data'] as List).cast<Map<String, dynamic>>();
@@ -280,8 +303,29 @@ class _StudentsManagementPageState extends State<StudentsManagementPage> {
       _searchController.text.trim().isNotEmpty ||
       !_collapsed.contains(group.halaqaId);
 
+  /// Every halaqa in the order the admin sees them, for the order sheet;
+  /// falls back to the loaded sections if the halaqa list failed to load.
+  List<HalaqaOrderItem>? _reorderable(List<int> order) {
+    if (_allHalaqas.length < 2) {
+      return reorderableHalaqas<HalaqaGroup>(
+        _groups,
+        idOf: (g) => g.halaqaId,
+        nameOf: (g) => g.name,
+      );
+    }
+    return applyHalaqaOrder(_allHalaqas, order, idOf: (h) => h.id);
+  }
+
   @override
   Widget build(BuildContext context) {
+    // Reordering here or on another screen re-pages the roster, since the
+    // server decides which students each page holds.
+    ref.listen<List<int>>(halaqaOrderProvider, (_, next) {
+      final requested = _requestedOrder;
+      if (requested != null && !listEquals(next, requested)) _load();
+    });
+    final halaqas = _reorderable(ref.watch(halaqaOrderProvider));
+
     return Scaffold(
       backgroundColor: AppColors.background,
       body: SafeArea(
@@ -408,6 +452,9 @@ class _StudentsManagementPageState extends State<StudentsManagementPage> {
                             loaded: group.students.length,
                             isUnassigned: group.isUnassigned,
                             isExpanded: _isExpanded(group),
+                            onReorder: halaqas == null
+                                ? null
+                                : () => reorderHalaqas(context, ref, halaqas),
                             onToggle: () {
                               setState(() {
                                 if (!_collapsed.remove(group.halaqaId)) {

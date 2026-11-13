@@ -22,6 +22,9 @@ import 'package:taqwa/core/widgets/app_text.dart';
 import 'package:taqwa/core/widgets/points_chip.dart';
 import 'package:taqwa/features/data/repositories/points_repository.dart';
 import 'package:taqwa/core/utils/load_per_halaqa.dart';
+import 'package:taqwa/core/providers/halaqa_order_provider.dart';
+import 'package:taqwa/core/utils/halaqa_order.dart';
+import 'package:taqwa/core/widgets/halaqa_order_sheet.dart';
 
 class ManagerStudentsPage extends ConsumerStatefulWidget {
   const ManagerStudentsPage({super.key});
@@ -206,6 +209,16 @@ class _ManagerStudentsPageState extends ConsumerState<ManagerStudentsPage> {
         .where((s) => s['user']?['isActive'] == true)
         .length;
     final inactiveCount = _students.length - activeCount;
+    final groups = applyHalaqaOrder(
+      _groups,
+      ref.watch(halaqaOrderProvider),
+      idOf: (g) => g.halaqaId,
+    );
+    final halaqas = reorderableHalaqas<HalaqaGroup>(
+      groups,
+      idOf: (g) => g.halaqaId,
+      nameOf: (g) => g.name,
+    );
 
     return Scaffold(
       backgroundColor: AppColors.background,
@@ -282,7 +295,7 @@ class _ManagerStudentsPageState extends ConsumerState<ManagerStudentsPage> {
                           color: AppColors.primary,
                         ),
                       )
-                    : _groups.isEmpty
+                    : groups.isEmpty
                     ? SingleChildScrollView(
                         physics: const AlwaysScrollableScrollPhysics(),
                         child: Container(
@@ -299,10 +312,10 @@ class _ManagerStudentsPageState extends ConsumerState<ManagerStudentsPage> {
                     : ListView.separated(
                         physics: const AlwaysScrollableScrollPhysics(),
                         padding: EdgeInsets.symmetric(horizontal: 16.w),
-                        itemCount: _groups.length,
+                        itemCount: groups.length,
                         separatorBuilder: (_, _) => SizedBox(height: 20.h),
                         itemBuilder: (_, i) {
-                          final group = _groups[i];
+                          final group = groups[i];
                           final canManage =
                               ref.watch(authProvider).user?.canManageAccounts ??
                               false;
@@ -314,6 +327,9 @@ class _ManagerStudentsPageState extends ConsumerState<ManagerStudentsPage> {
                             count: group.students.length,
                             isUnassigned: group.isUnassigned,
                             isExpanded: _isExpanded(group),
+                            onReorder: halaqas == null
+                                ? null
+                                : () => reorderHalaqas(context, ref, halaqas),
                             onToggle: () => setState(() {
                               if (!_collapsed.remove(group.halaqaId)) {
                                 _collapsed.add(group.halaqaId);

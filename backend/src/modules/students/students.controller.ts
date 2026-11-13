@@ -78,8 +78,16 @@ export class StudentsController {
     @Query('isActive') isActive?: string,
     @Query('halaqaId') halaqaId?: string,
     @Query('groupByHalaqa') groupByHalaqa?: string,
+    // The viewer's own section order, "9,5,3": comes from their phone, so
+    // anything that isn't a positive id is dropped rather than rejected.
+    @Query('halaqaOrder') halaqaOrder?: string,
   ) {
     return this.studentsService.findAll({
+      halaqaOrder: (halaqaOrder ?? '')
+        .split(',')
+        .map((id) => Number(id))
+        .filter((id) => Number.isInteger(id) && id > 0)
+        .slice(0, 500),
       teacherId: teacherId ? parseInt(teacherId, 10) : undefined,
       search,
       page: page ? parseInt(page, 10) : undefined,

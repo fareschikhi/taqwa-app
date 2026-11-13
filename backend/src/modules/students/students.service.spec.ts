@@ -60,6 +60,7 @@ describe('StudentsService.findAll grouped by halaqa', () => {
           { halaqaId: null, _count: { _all: unassigned } },
         ]),
       },
+      halaqa: { findMany: jest.fn().mockResolvedValue([{ id: 3 }]) },
     };
   };
 
@@ -94,6 +95,110 @@ describe('StudentsService.findAll grouped by halaqa', () => {
       { halaqaId: 3, count: 25 },
       { halaqaId: null, count: 100 },
     ]);
+  });
+});
+
+describe('StudentsService.findAll in the user\'s halaqa order', () => {
+  // Three halaqas whose names sort 3 < 5 < 9, plus an unassigned bucket. A
+  // student row is `<halaqa>-<index>`, `u-<index>` when unassigned.
+  const sizes: Record<string, number> = { 3: 4, 5: 3, 9: 2, null: 2 };
+  const makePrisma = () => {
+    const rows = (key: string) =>
+      Array.from({ length: sizes[key] }, (_, i) => ({
+        id: `${key === 'null' ? 'u' : key}-${i}`,
+      }));
+    const sectionOf = (where: any) => {
+      const c = where.AND.find((c: any) => 'halaqaId' in c);
+      return String(c.halaqaId);
+    };
+    return {
+      student: {
+        findMany: jest.fn(({ where, skip, take }) =>
+          Promise.resolve(rows(sectionOf(where)).slice(skip, skip + take)),
+        ),
+        groupBy: jest.fn().mockResolvedValue([
+          { halaqaId: 9, _count: { _all: sizes[9] } },
+          { halaqaId: null, _count: { _all: sizes.null } },
+          { halaqaId: 3, _count: { _all: sizes[3] } },
+          { halaqaId: 5, _count: { _all: sizes[5] } },
+        ]),
+      },
+      halaqa: {
+        // The database's own name order, which the app must not re-sort.
+        findMany: jest.fn(({ where }) =>
+          Promise.resolve(
+            [3, 5, 9].filter((id) => where.id.in.includes(id)).map((id) => ({ id })),
+          ),
+        ),
+      },
+    };
+  };
+  const ids = (res: any) => res.data.map((s: any) => s.id);
+
+  it('keeps halaqa name order when no order is given', async () => {
+    const service = new StudentsService(makePrisma() as any);
+
+    const res = await service.findAll({ groupByHalaqa: true, page: 1, limit: 20 });
+
+    expect(ids(res)).toEqual([
+      '3-0', '3-1', '3-2', '3-3', '5-0', '5-1', '5-2', '9-0', '9-1', 'u-0', 'u-1',
+    ]);
+    expect(res.total).toBe(11);
+  });
+
+  it('puts the chosen halaqas first, the rest by name, unassigned last', async () => {
+    const service = new StudentsService(makePrisma() as any);
+
+    const res = await service.findAll({
+      groupByHalaqa: true,
+      page: 1,
+      limit: 20,
+      halaqaOrder: [9, 5],
+    });
+
+    expect(ids(res)).toEqual([
+      '9-0', '9-1', '5-0', '5-1', '5-2', '3-0', '3-1', '3-2', '3-3', 'u-0', 'u-1',
+    ]);
+  });
+
+  it('continues across a section boundary without repeating anyone', async () => {
+    const service = new StudentsService(makePrisma() as any);
+    const order = [9, 5];
+
+    const pages = await Promise.all(
+      [1, 2, 3].map((page) =>
+        service.findAll({ groupByHalaqa: true, page, limit: 4, halaqaOrder: order }),
+      ),
+    );
+
+    expect(pages.map(ids)).toEqual([
+      ['9-0', '9-1', '5-0', '5-1'],
+      ['5-2', '3-0', '3-1', '3-2'],
+      ['3-3', 'u-0', 'u-1'],
+    ]);
+  });
+
+  it('ignores a saved halaqa that no longer has students', async () => {
+    const service = new StudentsService(makePrisma() as any);
+
+    const res = await service.findAll({
+      groupByHalaqa: true,
+      page: 1,
+      limit: 3,
+      halaqaOrder: [42, 5],
+    });
+
+    expect(ids(res)).toEqual(['5-0', '5-1', '5-2']);
+  });
+
+  it('reads only the sections the page overlaps', async () => {
+    const prisma = makePrisma();
+    const service = new StudentsService(prisma as any);
+
+    await service.findAll({ groupByHalaqa: true, page: 2, limit: 3 });
+
+    // Rows 3..5 are the last of halaqa 3 and the first two of halaqa 5.
+    expect(prisma.student.findMany).toHaveBeenCalledTimes(2);
   });
 });
 

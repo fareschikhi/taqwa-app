@@ -5,6 +5,9 @@ import '../../../../core/theme/app_colors.dart';
 import '../../../../core/theme/app_text_styles.dart';
 import '../../../../core/constants/app_constants.dart';
 import '../../../../core/providers/auth_provider.dart';
+import '../../../../core/providers/halaqa_order_provider.dart';
+import '../../../../core/utils/halaqa_order.dart';
+import '../../../../core/widgets/halaqa_order_sheet.dart';
 import '../../../../core/utils/student_grouping.dart';
 import '../../../../core/widgets/avatar_widget.dart';
 import '../../../../core/widgets/halaqa_group_section.dart';
@@ -198,7 +201,7 @@ class _JustificationListPageState extends ConsumerState<JustificationListPage> {
 
     // A manager can cover several halaqas, so rows are split by circle;
     // inside each one the newest-first order from the API is kept.
-    final groups = showingPending
+    final List<HalaqaBucket<Object>> buckets = showingPending
         ? groupByHalaqa<UnjustifiedAttendanceModel>(
             _unjustified,
             halaqaIdOf: (item) => item.halaqaId,
@@ -209,6 +212,16 @@ class _JustificationListPageState extends ConsumerState<JustificationListPage> {
             halaqaIdOf: (item) => item.halaqaId,
             halaqaNameOf: (item) => item.halaqaName,
           );
+    final groups = applyHalaqaOrder(
+      buckets,
+      ref.watch(halaqaOrderProvider),
+      idOf: (g) => g.halaqaId,
+    );
+    final halaqas = reorderableHalaqas<HalaqaBucket<Object>>(
+      groups,
+      idOf: (g) => g.halaqaId,
+      nameOf: (g) => g.name,
+    );
 
     return ListView.separated(
       physics: const AlwaysScrollableScrollPhysics(),
@@ -223,6 +236,9 @@ class _JustificationListPageState extends ConsumerState<JustificationListPage> {
           countLabel: caseCountLabel(group.items.length),
           isUnassigned: group.isUnassigned,
           isExpanded: !_collapsed.contains(group.halaqaId),
+          onReorder: halaqas == null
+              ? null
+              : () => reorderHalaqas(context, ref, halaqas),
           onToggle: () => setState(() {
             if (!_collapsed.remove(group.halaqaId)) {
               _collapsed.add(group.halaqaId);

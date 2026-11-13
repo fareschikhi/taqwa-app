@@ -28,6 +28,7 @@ class HalaqaGroupSection extends StatelessWidget {
     this.loaded,
     this.countLabel,
     this.badge = 0,
+    this.onReorder,
   });
 
   final String title;
@@ -52,6 +53,10 @@ class HalaqaGroupSection extends StatelessWidget {
   /// An unread count shown as a pill beside the title; hidden at zero.
   final int badge;
 
+  /// Opens the halaqa order sheet. When set, a long press on the header
+  /// does it too, and a small reorder icon shows the feature exists.
+  final VoidCallback? onReorder;
+
   @override
   Widget build(BuildContext context) {
     final accent = isUnassigned ? AppColors.outline : AppColors.primary;
@@ -62,6 +67,7 @@ class HalaqaGroupSection extends StatelessWidget {
         GestureDetector(
           behavior: HitTestBehavior.opaque,
           onTap: onToggle,
+          onLongPress: onReorder,
           child: Container(
             padding: EdgeInsets.symmetric(horizontal: 12.w, vertical: 10.h),
             decoration: BoxDecoration(
@@ -78,6 +84,22 @@ class HalaqaGroupSection extends StatelessWidget {
                   size: 20.w,
                   color: AppColors.onSurfaceVariant,
                 ),
+                if (onReorder != null)
+                  Tooltip(
+                    message: 'ترتيب الحلقات',
+                    child: InkResponse(
+                      onTap: onReorder,
+                      radius: 18.w,
+                      child: Padding(
+                        padding: EdgeInsets.symmetric(horizontal: 8.w),
+                        child: Icon(
+                          Icons.swap_vert,
+                          size: 20.w,
+                          color: AppColors.onSurfaceVariant,
+                        ),
+                      ),
+                    ),
+                  ),
                 const Spacer(),
                 AppText(
                   countLabel ??

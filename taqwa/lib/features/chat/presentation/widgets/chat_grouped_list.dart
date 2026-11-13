@@ -1,5 +1,9 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
+import '../../../../core/providers/halaqa_order_provider.dart';
+import '../../../../core/utils/halaqa_order.dart';
+import '../../../../core/widgets/halaqa_order_sheet.dart';
 import '../../../../core/constants/app_constants.dart';
 import '../../../../core/widgets/halaqa_group_section.dart';
 import '../../../data/models/chat/chat_inbox_item_model.dart';
@@ -24,7 +28,7 @@ String parentCountLabel(int count) {
 
 /// The staff inbox or picker as foldable halaqa bands. It keeps which bands
 /// the user closed across reloads, so a new message doesn't reopen them.
-class ChatGroupedList extends StatefulWidget {
+class ChatGroupedList extends ConsumerStatefulWidget {
   const ChatGroupedList({
     super.key,
     required this.items,
@@ -41,15 +45,25 @@ class ChatGroupedList extends StatefulWidget {
   final bool byName;
 
   @override
-  State<ChatGroupedList> createState() => _ChatGroupedListState();
+  ConsumerState<ChatGroupedList> createState() => _ChatGroupedListState();
 }
 
-class _ChatGroupedListState extends State<ChatGroupedList> {
+class _ChatGroupedListState extends ConsumerState<ChatGroupedList> {
   final Set<int?> _collapsed = {};
 
   @override
   Widget build(BuildContext context) {
-    final groups = groupChatsByHalaqa(widget.items, byName: widget.byName);
+    // A saved order wins over latest-activity order: the user asked for it.
+    final groups = applyHalaqaOrder(
+      groupChatsByHalaqa(widget.items, byName: widget.byName),
+      ref.watch(halaqaOrderProvider),
+      idOf: (g) => g.halaqaId,
+    );
+    final halaqas = reorderableHalaqas<ChatHalaqaGroup>(
+      groups,
+      idOf: (g) => g.halaqaId,
+      nameOf: (g) => g.name,
+    );
 
     return ListView.separated(
       physics: const AlwaysScrollableScrollPhysics(),
@@ -65,6 +79,9 @@ class _ChatGroupedListState extends State<ChatGroupedList> {
           badge: group.unread,
           isUnassigned: group.isUnassigned,
           isExpanded: !_collapsed.contains(group.halaqaId),
+          onReorder: halaqas == null
+              ? null
+              : () => reorderHalaqas(context, ref, halaqas),
           onToggle: () => setState(() {
             if (!_collapsed.remove(group.halaqaId)) {
               _collapsed.add(group.halaqaId);

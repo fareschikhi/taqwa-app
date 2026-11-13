@@ -38,11 +38,15 @@ class StudentRemoteDatasource {
   /// then the unassigned — for a list that loads more as it scrolls. The raw
   /// response also carries `total` and `halaqaCounts`, each section's full
   /// size, so a header need not wait for every page to know its count.
+  ///
+  /// [halaqaOrder] is the viewer's own section order; the server puts those
+  /// halaqas first so a page never lands in a section above one on screen.
   Future<Map<String, dynamic>> getGroupedPage({
     required int page,
     required int limit,
     String? search,
     int? halaqaId,
+    List<int> halaqaOrder = const [],
   }) async {
     final res = await _dio.get(
       '/students',
@@ -52,6 +56,7 @@ class StudentRemoteDatasource {
         'limit': limit,
         if (search != null && search.isNotEmpty) 'search': search,
         if (halaqaId != null) 'halaqaId': halaqaId,
+        if (halaqaOrder.isNotEmpty) 'halaqaOrder': halaqaOrder.join(','),
       },
     );
     return res.data as Map<String, dynamic>;
