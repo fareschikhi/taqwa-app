@@ -72,21 +72,17 @@ export class MemorizationService {
     }
   }
 
-  // A QURAN row identifies its surah; a HADITH row identifies itself with
-  // free text instead — there is no fixed hadith list to pick a number from.
-  // Each subject rejects the other's identity field, so a row can never
-  // carry both or neither.
+  // A QURAN row may name its surah but does not have to: a teacher can record
+  // "3 pages" without saying which. A HADITH row identifies itself with free
+  // text instead — there is no fixed hadith list to pick a number from — and
+  // that reference is required. Each subject rejects the other's identity
+  // field, so a row never carries both.
   private assertSubjectFields(
     subject: MemorizationSubject,
     surahNumber: number | null | undefined,
     hadithReference: string | null | undefined,
   ) {
     if (subject === MemorizationSubject.QURAN) {
-      if (surahNumber == null) {
-        throw new BadRequestException(
-          'surahNumber is required for a Quran entry',
-        );
-      }
       if (hadithReference) {
         throw new BadRequestException(
           'hadithReference is not valid for a Quran entry',
@@ -250,8 +246,11 @@ export class MemorizationService {
     // leaves alone; a row leaving ayahs drops its range. An edit that only
     // moves the range recounts the amount from it, so "ayahs 1–5 → 1–10"
     // needs no amount alongside.
+    // A range only exists inside a surah, so clearing the surah drops it too.
     const staysAyah =
-      unit === ProgressUnit.AYAH && existing.unit === ProgressUnit.AYAH;
+      unit === ProgressUnit.AYAH &&
+      existing.unit === ProgressUnit.AYAH &&
+      surahNumber != null;
     const ayahFrom = staysAyah
       ? (dto.ayahFrom ?? existing.ayahFrom)
       : dto.ayahFrom;
@@ -281,8 +280,10 @@ export class MemorizationService {
           ...dto,
           unit,
           amountDone,
-          ayahFrom: unit === ProgressUnit.AYAH ? ayahFrom : null,
-          ayahTo: unit === ProgressUnit.AYAH ? ayahTo : null,
+          // `?? null`, not the bare value: Prisma reads undefined as "leave
+          // as is", which would keep a range on a row whose surah was cleared.
+          ayahFrom: unit === ProgressUnit.AYAH ? (ayahFrom ?? null) : null,
+          ayahTo: unit === ProgressUnit.AYAH ? (ayahTo ?? null) : null,
         },
       });
       await reconcileDayPoints(tx, existing.studentId, existing.date);
@@ -368,7 +369,10 @@ export class MemorizationService {
     const totalAyahsDone = newQuran
       .filter((r) => r.unit === ProgressUnit.AYAH)
       .reduce((sum, r) => sum + r.amountDone, 0);
-    const totalSurahs = new Set(quranRecords.map((r) => r.surahNumber)).size;
+    // An entry recorded without a surah touched no particular surah.
+    const totalSurahs = new Set(
+      quranRecords.map((r) => r.surahNumber).filter((n) => n != null),
+    ).size;
 
     // Single hadiths and hadith pages are different units, so each gets its
     // own total rather than being added together.

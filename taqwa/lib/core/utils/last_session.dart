@@ -110,7 +110,8 @@ LastSession? lastSessionOf({
             subject:
                 MemorizationSubjectX.fromApi(record['subject'] as String?) ??
                 MemorizationSubject.quran,
-            surahNumber: (record['surahNumber'] as num?)?.toInt() ?? 0,
+            // Null when the teacher recorded only an amount.
+            surahNumber: (record['surahNumber'] as num?)?.toInt(),
             hadithReference: record['hadithReference'] as String?,
             countsPages: record['unit'] == 'PAGE',
             unit: record['unit'] as String?,

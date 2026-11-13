@@ -30,6 +30,14 @@ enum _AmountUnit { pages, hizb, surah, ayahs }
 /// with the entry: 2 pages and 2 hadiths are different amounts.
 enum _HadithUnit { hadiths, pages }
 
+/// The surah dropdown's first choice: the entry records only its amount.
+const String _kNoSurahChoice = 'بدون تحديد السورة';
+
+/// The dropdown value standing for [_kNoSurahChoice]. Not null: a menu that
+/// returns null reads to [DropdownButton] as dismissed, so picking "no surah"
+/// after a surah would never fire. 0 is outside the mushaf's 1–114.
+const int _kNoSurah = 0;
+
 /// What a saved entry hands back: the row the server created, and whether
 /// the teacher asked to go straight on to the next student.
 typedef MemorizationEntryResult = ({Map<String, dynamic> record, bool next});
@@ -115,12 +123,18 @@ class _MemorizationEntrySheetState extends State<MemorizationEntrySheet> {
 
   bool get _isHadith => _selectedSubject == MemorizationSubject.hadith;
 
-  /// Every Quran entry counts in pages; a hadith entry counts in single
-  /// hadiths unless the teacher switched it to pages.
-  bool get _countsPages => !_isHadith || _hadithUnit == _HadithUnit.pages;
+  /// A Quran entry counts in pages unless it counts ayahs; a hadith entry
+  /// counts in single hadiths unless the teacher switched it to pages.
+  bool get _countsPages =>
+      _isHadith ? _hadithUnit == _HadithUnit.pages : !_countsAyahs;
 
-  /// A Quran entry recorded as «من آية / إلى آية» instead of a counter.
+  /// A Quran entry counted in ayahs rather than pages.
   bool get _countsAyahs => !_isHadith && _unit == _AmountUnit.ayahs;
+
+  /// Ayahs inside a chosen surah are typed as «من آية / إلى آية». With no
+  /// surah there is nothing to number them against, so the counter records
+  /// only how many.
+  bool get _countsAyahRange => _countsAyahs && _selectedSurah != null;
 
   int? get _ayahFrom =>
       parseAmount(_ayahFromController.text, allowHalf: false)?.toInt();
@@ -147,8 +161,16 @@ class _MemorizationEntrySheetState extends State<MemorizationEntrySheet> {
     _ayahError = null;
   }
 
-  String get _amountLabel => _countsPages ? kPageAmountLabel : 'عدد الأحاديث';
-  int get _maxAmount => _countsPages ? kMushafPages : 50;
+  String get _amountLabel => _countsAyahs
+      ? 'عدد الآيات'
+      : _countsPages
+      ? kPageAmountLabel
+      : 'عدد الأحاديث';
+  int get _maxAmount => _countsAyahs
+      ? kMaxAyahsPerEntry
+      : _countsPages
+      ? kMushafPages
+      : 50;
 
   /// Pages are recited by the half; a single hadith is always whole. The
   /// server enforces the same rule.
@@ -270,7 +292,21 @@ class _MemorizationEntrySheetState extends State<MemorizationEntrySheet> {
       });
       return;
     }
-    if (untouchedAmount && amount != null && amount >= _minAmount) {
+    // Ayahs counted without a surah carry on as a count of ayahs.
+    if (record['unit'] == 'AYAH' &&
+        surah == null &&
+        untouchedAmount &&
+        _selectedSurah == null &&
+        amount != null) {
+      setState(() => _unit = _AmountUnit.ayahs);
+      _setAmount(amount);
+      return;
+    }
+    // An ayah count is not a page count, so it never seeds the page counter.
+    if (record['unit'] != 'AYAH' &&
+        untouchedAmount &&
+        amount != null &&
+        amount >= _minAmount) {
       _setAmount(amount);
     }
   }
@@ -386,7 +422,11 @@ class _MemorizationEntrySheetState extends State<MemorizationEntrySheet> {
   ///
   /// An ayah range that no longer fits the new surah is pulled inside it, so
   /// «1–200» typed for آل عمران never stays on screen for الفاتحة.
+  ///
+  /// Clearing the surah while counting ayahs keeps how many were typed: the
+  /// range «1–20» becomes a count of 20.
   void _onSurahChanged(int? number) {
+    final carried = _countsAyahs && number == null ? _validAyahRange : null;
     setState(() {
       _selectedSurah = number;
       _ayahError = null;
@@ -401,6 +441,13 @@ class _MemorizationEntrySheetState extends State<MemorizationEntrySheet> {
       }
     });
     if (_unit == _AmountUnit.surah) _setAmount(_startAmountFor(_unit));
+    if (_countsAyahs && number == null) {
+      _setAmount(
+        carried != null
+            ? ayahCountIn(carried.from, carried.to).toDouble()
+            : _amount,
+      );
+    }
   }
 
   Future<void> _submit({bool next = false}) async {
@@ -408,9 +455,9 @@ class _MemorizationEntrySheetState extends State<MemorizationEntrySheet> {
     if (_amountFocus.hasFocus) _amountFocus.unfocus();
     _commitTypedAmount();
 
-    final missingIdentity = _isHadith
-        ? _selectedHadithBook == null
-        : _selectedSurah == null;
+    // A hadith entry must name its book; a Quran entry may leave the surah
+    // out and record only the amount.
+    final missingIdentity = _isHadith && _selectedHadithBook == null;
 
     if (missingIdentity || _selectedType == null) {
       ScaffoldMessenger.of(context).showSnackBar(
@@ -418,7 +465,7 @@ class _MemorizationEntrySheetState extends State<MemorizationEntrySheet> {
           content: AppText(
             _isHadith
                 ? 'يرجى تحديد الكتاب ونوع المراجعة'
-                : 'يرجى تحديد السورة ونوع المراجعة',
+                : 'يرجى تحديد نوع العرض',
             style: AppTextStyles.labelMd.copyWith(color: AppColors.onPrimary),
             textDirection: TextDirection.rtl,
           ),
@@ -431,8 +478,8 @@ class _MemorizationEntrySheetState extends State<MemorizationEntrySheet> {
 
     // The range is checked here, not as it is typed: «2» on the way to «25»
     // is not a mistake worth flagging.
-    final range = _countsAyahs ? _validAyahRange : null;
-    if (_countsAyahs && range == null) {
+    final range = _countsAyahRange ? _validAyahRange : null;
+    if (_countsAyahRange && range == null) {
       final error = ayahRangeError(
         from: _ayahFrom,
         to: _ayahTo,
@@ -454,7 +501,7 @@ class _MemorizationEntrySheetState extends State<MemorizationEntrySheet> {
         subject: _selectedSubject.apiValue,
         unit: _isHadith
             ? (_hadithUnit == _HadithUnit.pages ? 'PAGE' : 'HADITH')
-            : (range != null ? 'AYAH' : null),
+            : (_countsAyahs ? 'AYAH' : null),
         ayahFrom: range?.from,
         ayahTo: range?.to,
       );
@@ -738,7 +785,7 @@ class _MemorizationEntrySheetState extends State<MemorizationEntrySheet> {
                         ),
                       ] else ...[
                         AppText(
-                          'السورة',
+                          'السورة (اختياري)',
                           style: AppTextStyles.labelMd.copyWith(
                             color: AppColors.onSurfaceVariant,
                           ),
@@ -755,23 +802,29 @@ class _MemorizationEntrySheetState extends State<MemorizationEntrySheet> {
                           padding: EdgeInsets.symmetric(horizontal: 16.w),
                           child: DropdownButtonHideUnderline(
                             child: DropdownButton<int>(
-                              value: _selectedSurah,
+                              value: _selectedSurah ?? _kNoSurah,
                               isExpanded: true,
-                              hint: AppText(
-                                'اختر السورة...',
-                                style: AppTextStyles.labelMd.copyWith(
-                                  color: AppColors.inputPlaceholder,
-                                ),
-                              ),
-                              items: kSurahs
-                                  .map(
-                                    (s) => DropdownMenuItem(
-                                      value: s.number,
-                                      child: AppText(s.name),
+                              // The first choice records only the amount, and
+                              // is how a picked surah is taken back.
+                              items: [
+                                DropdownMenuItem<int>(
+                                  value: _kNoSurah,
+                                  child: AppText(
+                                    _kNoSurahChoice,
+                                    style: AppTextStyles.labelMd.copyWith(
+                                      color: AppColors.onSurfaceVariant,
                                     ),
-                                  )
-                                  .toList(),
-                              onChanged: _onSurahChanged,
+                                  ),
+                                ),
+                                ...kSurahs.map(
+                                  (s) => DropdownMenuItem<int>(
+                                    value: s.number,
+                                    child: AppText(s.name),
+                                  ),
+                                ),
+                              ],
+                              onChanged: (v) =>
+                                  _onSurahChanged(v == _kNoSurah ? null : v),
                             ),
                           ),
                         ),
@@ -855,7 +908,7 @@ class _MemorizationEntrySheetState extends State<MemorizationEntrySheet> {
                         SizedBox(height: 12.h),
                       ],
 
-                      if (_countsAyahs)
+                      if (_countsAyahRange)
                         _buildAyahRange()
                       else ...[
                         AppText(
@@ -958,6 +1011,14 @@ class _MemorizationEntrySheetState extends State<MemorizationEntrySheet> {
                           SizedBox(height: 6.h),
                           AppText(
                             'اضغط على الرقم لكتابته، ويمكن إدخال نصف صفحة (مثل 1.5)',
+                            style: AppTextStyles.labelSm.copyWith(
+                              color: AppColors.onSurfaceVariant,
+                            ),
+                          ),
+                        ] else if (_countsAyahs) ...[
+                          SizedBox(height: 6.h),
+                          AppText(
+                            'لكتابة أرقام الآيات (من آية – إلى آية) اختر السورة',
                             style: AppTextStyles.labelSm.copyWith(
                               color: AppColors.onSurfaceVariant,
                             ),

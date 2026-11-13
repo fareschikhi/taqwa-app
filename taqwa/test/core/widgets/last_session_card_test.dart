@@ -148,6 +148,31 @@ void main() {
     expect(find.text('سورة رقم 0'), findsOneWidget);
   });
 
+  testWidgets('names the Quran when the teacher recorded no surah', (
+    tester,
+  ) async {
+    await tester.pumpWidget(
+      _host(
+        LastSessionCard(
+          session: _session(
+            entries: const [
+              LastSessionEntry(
+                amount: 12,
+                unit: 'AYAH',
+                type: MemorizationType.hifz,
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
+    await tester.pumpAndSettle();
+
+    expect(find.text('القرآن الكريم'), findsOneWidget);
+    expect(find.textContaining('12 آية'), findsOneWidget);
+    expect(find.textContaining('null'), findsNothing);
+  });
+
   testWidgets('says so when nothing was recited that day', (tester) async {
     await tester.pumpWidget(
       _host(LastSessionCard(session: _session(status: 'ABSENT'))),
@@ -164,7 +189,9 @@ void main() {
     expect(find.text('لا يوجد سجل حضور بعد'), findsOneWidget);
   });
 
-  testWidgets('shows the hadith reference and counts in hadiths', (tester) async {
+  testWidgets('shows the hadith reference and counts in hadiths', (
+    tester,
+  ) async {
     await tester.pumpWidget(
       _host(
         LastSessionCard(

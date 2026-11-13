@@ -76,7 +76,11 @@ void main() {
     // A bad row should still read as an entry rather than a blank.
     test('falls back to the number outside the mushaf', () {
       expect(surahLabelOf(0), 'سورة رقم 0');
-      expect(surahLabelOf(null), 'سورة رقم -');
+    });
+
+    // The surah is optional: an entry may record only an amount.
+    test('names an entry without a surah after the Quran', () {
+      expect(surahLabelOf(null), kNoSurahLabel);
     });
   });
 }

@@ -48,10 +48,11 @@ export const MAX_AMOUNT: Record<ProgressUnit, number> = {
 
 /**
  * Checks the ayah fields against the unit and returns the amount the row must
- * store. An AYAH row needs a range inside its surah, and its amount is the
- * number of ayahs in that range — the client's amount must agree, so a
- * mismatch is reported instead of one side silently winning. Any other unit
- * must not carry a range at all.
+ * store. An AYAH row that names a surah needs a range inside it, and its
+ * amount is the number of ayahs in that range — the client's amount must
+ * agree, so a mismatch is reported instead of one side silently winning. An
+ * AYAH row with no surah is a bare count: a range has nothing to sit inside,
+ * so it is refused. Any other unit must not carry a range at all.
  */
 export function ayahRangeAmount(input: {
   unit: ProgressUnit;
@@ -69,12 +70,20 @@ export function ayahRangeAmount(input: {
     }
     return amountDone;
   }
+  if (surahNumber == null) {
+    if (ayahFrom != null || ayahTo != null) {
+      throw new BadRequestException(
+        'ayahFrom and ayahTo need a surahNumber; an ayah entry without a surah records only the count',
+      );
+    }
+    return amountDone;
+  }
   if (ayahFrom == null || ayahTo == null) {
     throw new BadRequestException(
-      'An entry counted in ayahs needs both ayahFrom and ayahTo',
+      'An entry counted in ayahs with a surahNumber needs both ayahFrom and ayahTo',
     );
   }
-  const ayahs = surahNumber == null ? null : ayahCountOf(surahNumber);
+  const ayahs = ayahCountOf(surahNumber);
   if (ayahs == null) {
     throw new BadRequestException(
       'An entry counted in ayahs needs a surahNumber between 1 and 114',

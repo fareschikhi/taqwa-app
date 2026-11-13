@@ -828,6 +828,50 @@ describe('MemorizationService Quran ayah ranges', () => {
     expect(prisma.memorizationProgress.create).not.toHaveBeenCalled();
   });
 
+  // The surah is optional: a teacher can record only how much was recited.
+  it('stores a page entry without a surah', async () => {
+    const prisma = makePrisma();
+    await new MemorizationService(prisma as any).create({
+      studentId: 7,
+      amountDone: 3,
+      memorizationType: Memorization.MEMORIZING,
+    } as any);
+
+    expect(prisma.memorizationProgress.create).toHaveBeenCalledWith({
+      data: expect.objectContaining({ unit: ProgressUnit.PAGE, amountDone: 3 }),
+    });
+  });
+
+  it('stores a bare ayah count when no surah is named', async () => {
+    const prisma = makePrisma();
+    await new MemorizationService(prisma as any).create(
+      ayahs({
+        surahNumber: undefined,
+        ayahFrom: undefined,
+        ayahTo: undefined,
+        amountDone: 12,
+      }) as any,
+    );
+
+    expect(prisma.memorizationProgress.create).toHaveBeenCalledWith({
+      data: expect.objectContaining({ unit: ProgressUnit.AYAH, amountDone: 12 }),
+    });
+  });
+
+  it('refuses an ayah count without a surah above the per-entry cap', async () => {
+    const prisma = makePrisma();
+    await expect(
+      new MemorizationService(prisma as any).create(
+        ayahs({
+          surahNumber: undefined,
+          ayahFrom: undefined,
+          ayahTo: undefined,
+          amountDone: 287,
+        }) as any,
+      ),
+    ).rejects.toBeInstanceOf(BadRequestException);
+  });
+
   it('refuses a range on an entry counted in pages', async () => {
     const prisma = makePrisma();
     await expect(
@@ -893,6 +937,24 @@ describe('MemorizationService Quran ayah ranges', () => {
     });
   });
 
+  it('drops the range when an edit clears the surah', async () => {
+    const prisma = makePrisma(storedAyahRow);
+    await new MemorizationService(prisma as any).update(20, {
+      surahNumber: null,
+    } as any);
+
+    expect(prisma.memorizationProgress.update).toHaveBeenCalledWith({
+      where: { id: 20 },
+      data: expect.objectContaining({
+        surahNumber: null,
+        unit: ProgressUnit.AYAH,
+        amountDone: 5,
+        ayahFrom: null,
+        ayahTo: null,
+      }),
+    });
+  });
+
   it('refuses an edit that moves the surah under a range it cannot hold', async () => {
     const prisma = makePrisma({ ...storedAyahRow, ayahTo: 7, amountDone: 7 });
     await expect(
@@ -916,6 +978,8 @@ describe('MemorizationService Quran ayah ranges', () => {
           row({ unit: ProgressUnit.PAGE, ayahFrom: null, ayahTo: null, amountDone: 2 }),
           row({ amountDone: 5 }),
           row({ surahNumber: 3, amountDone: 12 }),
+          // No surah named: counts its ayahs, touches no surah.
+          row({ surahNumber: null, ayahFrom: null, ayahTo: null, amountDone: 4 }),
           // Revision re-reads what is already memorized.
           row({ memorizationType: Memorization.SMALLREVISION, amountDone: 40 }),
         ]),
@@ -925,7 +989,7 @@ describe('MemorizationService Quran ayah ranges', () => {
     const progress = await new MemorizationService(prisma).getStudentProgress(7);
 
     expect(progress.totalPagesDone).toBe(2);
-    expect(progress.totalAyahsDone).toBe(17);
+    expect(progress.totalAyahsDone).toBe(21);
     expect(progress.totalSurahs).toBe(2);
   });
 });

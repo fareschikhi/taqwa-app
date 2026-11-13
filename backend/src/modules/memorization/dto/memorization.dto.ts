@@ -20,7 +20,8 @@ export class CreateMemorizationDto {
   @IsInt()
   studentId: number;
 
-  // QURAN-only; a HADITH entry omits this.
+  // QURAN-only, and optional even there: a Quran entry may record just an
+  // amount ("3 pages") without naming the surah. A HADITH entry omits this.
   @IsOptional()
   @IsInt()
   @Min(1)

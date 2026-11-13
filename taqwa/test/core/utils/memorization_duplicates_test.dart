@@ -84,7 +84,27 @@ void main() {
     test('survives a record missing its amount and surah', () {
       final summary = memorizationSummary({'memorizationType': 'MEMORIZING'});
 
-      expect(summary, 'سورة رقم - · حفظ جديد · 0 صفحة');
+      expect(summary, 'القرآن الكريم · حفظ جديد · 0 صفحة');
+    });
+
+    // The surah is optional: the amount alone describes the entry.
+    test('names the Quran for an entry recorded without a surah', () {
+      expect(
+        memorizationSummary({
+          'memorizationType': 'MEMORIZING',
+          'amountDone': 3,
+          'unit': 'PAGE',
+        }),
+        'القرآن الكريم · حفظ جديد · 3 صفحة',
+      );
+      expect(
+        memorizationSummary({
+          'memorizationType': 'MEMORIZING',
+          'amountDone': 12,
+          'unit': 'AYAH',
+        }),
+        'القرآن الكريم · حفظ جديد · 12 آية',
+      );
     });
 
     test('names the hadith reference instead of a surah', () {
@@ -98,15 +118,18 @@ void main() {
       expect(summary, 'حديث النية · حفظ جديد · 1 حديث');
     });
 
-    test('falls back to a generic label when a hadith entry has no reference text', () {
-      final summary = memorizationSummary({
-        'subject': 'HADITH',
-        'amountDone': 2,
-        'memorizationType': 'BIGREVISION',
-      });
+    test(
+      'falls back to a generic label when a hadith entry has no reference text',
+      () {
+        final summary = memorizationSummary({
+          'subject': 'HADITH',
+          'amountDone': 2,
+          'memorizationType': 'BIGREVISION',
+        });
 
-      expect(summary, 'حديث · مراجعة وضبط · 2 حديث');
-    });
+        expect(summary, 'حديث · مراجعة وضبط · 2 حديث');
+      },
+    );
 
     test('names pages for a hadith entry counted in pages', () {
       final summary = memorizationSummary({

@@ -89,7 +89,7 @@ void main() {
 
       expect(find.text('القرآن'), findsNothing);
       expect(find.text('الحديث'), findsNothing);
-      expect(find.text('السورة'), findsOneWidget);
+      expect(find.text('السورة (اختياري)'), findsOneWidget);
     },
   );
 
@@ -107,7 +107,7 @@ void main() {
       expect(find.text('القرآن'), findsOneWidget);
       expect(find.text('الحديث'), findsOneWidget);
       // Quran is the default subject, so the surah field is still the one shown.
-      expect(find.text('السورة'), findsOneWidget);
+      expect(find.text('السورة (اختياري)'), findsOneWidget);
     },
   );
 
@@ -125,7 +125,7 @@ void main() {
       await tester.tap(find.text('الحديث'));
       await tester.pumpAndSettle();
 
-      expect(find.text('السورة'), findsNothing);
+      expect(find.text('السورة (اختياري)'), findsNothing);
       expect(find.text('الكتاب'), findsOneWidget);
       expect(find.text('اختر الكتاب...'), findsOneWidget);
 
@@ -417,7 +417,7 @@ void main() {
     // No surah picked yet, so there is nothing to count but one page.
     expect(find.text('1'), findsOneWidget);
 
-    await tester.tap(find.text('اختر السورة...'));
+    await tester.tap(find.text('بدون تحديد السورة'));
     await tester.pumpAndSettle();
     await tester.tap(find.text('آل عمران').last);
     await tester.pumpAndSettle();
@@ -566,7 +566,7 @@ void main() {
       await tester.pumpAndSettle();
       await tester.tap(find.text('آيات'));
       await tester.pumpAndSettle();
-      await tester.tap(find.text('اختر السورة...'));
+      await tester.tap(find.text('بدون تحديد السورة'));
       await tester.pumpAndSettle();
       await tester.tap(find.text(surah).last);
       await tester.pumpAndSettle();
@@ -661,6 +661,122 @@ void main() {
     });
   });
 
+  // The surah is optional: a teacher may record only how much was recited.
+  group('without a surah', () {
+    List<Map<String, dynamic>> captureSent() {
+      final sent = <Map<String, dynamic>>[];
+      DioClient.instance.httpClientAdapter = _StubAdapter(
+        jsonEncode({'id': 5}),
+        onRequest: (options) {
+          if (options.method == 'POST') {
+            sent.add(Map<String, dynamic>.from(options.data as Map));
+          }
+        },
+      );
+      return sent;
+    }
+
+    testWidgets('saves pages with no surah attached', (tester) async {
+      _setPhoneViewport(tester);
+      final sent = captureSent();
+      await tester.pumpWidget(
+        _host(MemorizationEntrySheet(student: _student())),
+      );
+      await tester.pumpAndSettle();
+
+      await tester.tap(find.byIcon(Icons.add));
+      await tester.tap(find.text('حفظ'));
+      await tester.tap(find.text('تسجيل'));
+      await tester.pumpAndSettle();
+
+      expect(sent.single.containsKey('surahNumber'), isFalse);
+      expect(sent.single.containsKey('unit'), isFalse);
+      expect(sent.single['amountDone'], 2);
+    });
+
+    testWidgets('counts ayahs as a whole number, with no range', (
+      tester,
+    ) async {
+      _setPhoneViewport(tester);
+      final sent = captureSent();
+      await tester.pumpWidget(
+        _host(MemorizationEntrySheet(student: _student())),
+      );
+      await tester.pumpAndSettle();
+
+      await tester.tap(find.text('آيات'));
+      await tester.pumpAndSettle();
+      expect(find.text('عدد الآيات'), findsOneWidget);
+      expect(find.text('من آية'), findsNothing);
+
+      await tester.enterText(find.byType(TextField), '12');
+      await tester.tap(find.text('حفظ'));
+      await tester.tap(find.text('تسجيل'));
+      await tester.pumpAndSettle();
+
+      expect(sent.single['unit'], 'AYAH');
+      expect(sent.single['amountDone'], 12);
+      expect(sent.single.containsKey('surahNumber'), isFalse);
+      expect(sent.single.containsKey('ayahFrom'), isFalse);
+      expect(sent.single.containsKey('ayahTo'), isFalse);
+    });
+
+    testWidgets('clearing the surah keeps the typed range as a count', (
+      tester,
+    ) async {
+      _setPhoneViewport(tester);
+      await tester.pumpWidget(
+        _host(MemorizationEntrySheet(student: _student())),
+      );
+      await tester.pumpAndSettle();
+      await tester.tap(find.text('آيات'));
+      await tester.pumpAndSettle();
+      await tester.tap(find.text('بدون تحديد السورة'));
+      await tester.pumpAndSettle();
+      await tester.tap(find.text('البقرة').last);
+      await tester.pumpAndSettle();
+      await tester.enterText(find.byType(TextField).at(1), '1');
+      await tester.enterText(find.byType(TextField).at(0), '20');
+      await tester.pumpAndSettle();
+
+      await tester.tap(find.byType(DropdownButton<int>));
+      await tester.pumpAndSettle();
+      // The menu opens scrolled to the picked surah, so the first choice may
+      // sit above the fold.
+      await tester.ensureVisible(find.text('بدون تحديد السورة').last);
+      await tester.pumpAndSettle();
+      await tester.tap(find.text('بدون تحديد السورة').last);
+      await tester.pumpAndSettle();
+
+      expect(find.text('من آية'), findsNothing);
+      expect(find.text('20'), findsOneWidget);
+    });
+
+    testWidgets("carries on from last session's ayah count", (tester) async {
+      _setPhoneViewport(tester);
+      DioClient.instance.httpClientAdapter = _StubAdapter(
+        jsonEncode([
+          {
+            'subject': 'QURAN',
+            'unit': 'AYAH',
+            'surahNumber': null,
+            'memorizationType': 'MEMORIZING',
+            'amountDone': 15,
+            'date': '2026-10-20',
+          },
+        ]),
+      );
+      await tester.pumpWidget(
+        _host(MemorizationEntrySheet(student: _student())),
+      );
+      await tester.pumpAndSettle();
+
+      expect(find.text('عدد الآيات'), findsOneWidget);
+      expect(find.text('15'), findsOneWidget);
+      expect(find.textContaining('القرآن الكريم'), findsOneWidget);
+    });
+  });
+
   group('prefill from the last Quran entry', () {
     void stubHistory() {
       DioClient.instance.httpClientAdapter = _StubAdapter(
@@ -691,7 +807,7 @@ void main() {
       );
       await tester.pumpAndSettle();
 
-      expect(find.text('اختر السورة...'), findsNothing);
+      expect(find.text('بدون تحديد السورة'), findsNothing);
       expect(find.text('البقرة'), findsOneWidget);
       expect(find.text('2.5'), findsOneWidget);
       // Named above the form, so the choices read as last session's.
@@ -707,7 +823,7 @@ void main() {
       );
       await tester.pumpAndSettle();
 
-      expect(find.text('اختر السورة...'), findsOneWidget);
+      expect(find.text('بدون تحديد السورة'), findsOneWidget);
       expect(find.textContaining('آخر تسجيل'), findsNothing);
     });
   });
@@ -781,7 +897,7 @@ void main() {
 
       expect(find.text('تسجيل حفظ خارج الحصة'), findsOneWidget);
       expect(find.text('اختر الطالب'), findsOneWidget);
-      expect(find.text('اختر السورة...'), findsNothing);
+      expect(find.text('بدون تحديد السورة'), findsNothing);
       expect(find.text('تسجيل'), findsNothing);
     });
 
@@ -799,7 +915,7 @@ void main() {
 
       await tester.tap(find.text('عمر الفاروق'));
       await tester.pumpAndSettle();
-      expect(find.text('اختر السورة...'), findsOneWidget);
+      expect(find.text('بدون تحديد السورة'), findsOneWidget);
     });
 
     testWidgets('saves the entry as outside the session', (tester) async {
@@ -811,7 +927,7 @@ void main() {
       await tester.pumpAndSettle();
       await tester.tap(find.text('عمر الفاروق'));
       await tester.pumpAndSettle();
-      await tester.tap(find.text('اختر السورة...'));
+      await tester.tap(find.text('بدون تحديد السورة'));
       await tester.pumpAndSettle();
       await tester.tap(find.text('الفاتحة').last);
       await tester.pumpAndSettle();

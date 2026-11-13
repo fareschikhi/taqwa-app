@@ -7,6 +7,10 @@ library;
 /// The unit word for ayah entries.
 const String kAyahUnitLabel = 'آية';
 
+/// Most ayahs one entry may record: the longest surah (البقرة) has 286. The
+/// server applies the same cap, which bounds an ayah count with no surah.
+const int kMaxAyahsPerEntry = 286;
+
 /// Why [from]–[to] is not a usable range in a surah of [ayahCount] ayahs, or
 /// null when it is. A missing end reads as not filled in yet.
 String? ayahRangeError({

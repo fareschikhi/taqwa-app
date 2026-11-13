@@ -158,9 +158,16 @@ Surah? surahOf(int? number) {
   return null;
 }
 
-/// How a surah is named on screen: its name when known, its number when the
-/// value falls outside the mushaf, so a bad row still reads as an entry.
+/// What a Quran entry recorded without a surah is called on screen. The
+/// teacher may record only an amount ("3 صفحات"), so the row is named after
+/// the Quran itself and its amount says the rest.
+const String kNoSurahLabel = 'القرآن الكريم';
+
+/// How a surah is named on screen: its name when known, [kNoSurahLabel] when
+/// the entry names no surah, and its number when the value falls outside the
+/// mushaf, so a bad row still reads as an entry.
 String surahLabelOf(int? number) {
+  if (number == null) return kNoSurahLabel;
   final name = surahNameOf(number);
-  return name != null ? 'سورة $name' : 'سورة رقم ${number ?? '-'}';
+  return name != null ? 'سورة $name' : 'سورة رقم $number';
 }

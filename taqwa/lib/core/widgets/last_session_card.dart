@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:taqwa/core/constants/app_constants.dart';
+import 'package:taqwa/core/constants/surahs.dart' show surahLabelOf;
 import 'package:taqwa/core/enums/memorization_subject.dart';
 import 'package:taqwa/core/enums/memorization_type.dart';
 import 'package:taqwa/core/theme/app_colors.dart';
@@ -110,7 +111,7 @@ class LastSessionCard extends StatelessWidget {
 
     final referenceText = isHadith
         ? hadithLabelOrFallback(entry.hadithReference)
-        : 'سورة ${entry.surahName ?? 'رقم ${entry.surahNumber}'}';
+        : surahLabelOf(entry.surahNumber);
 
     return Padding(
       padding: EdgeInsets.only(bottom: 8.h),

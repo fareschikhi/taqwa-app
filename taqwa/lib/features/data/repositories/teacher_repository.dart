@@ -152,8 +152,9 @@ class TeacherRepository {
   // ─── Memorization ─────────────────────────────────────────────────────────────────
 
   /// Returns the row the server created, so the caller can show what is now
-  /// on file without refetching the day. [surahNumber] is required for a
-  /// QURAN subject and omitted for HADITH; [hadithReference] is the reverse.
+  /// on file without refetching the day. [surahNumber] is optional for a
+  /// QURAN subject (an entry may record only an amount) and omitted for
+  /// HADITH; [hadithReference] is required for HADITH and omitted for QURAN.
   Future<Map<String, dynamic>> submitMemorization({
     required int studentId,
     int? surahNumber,
