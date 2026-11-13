@@ -1,4 +1,9 @@
+import { Type } from 'class-transformer';
 import {
+  ArrayMaxSize,
+  ArrayNotEmpty,
+  ArrayUnique,
+  IsArray,
   IsBoolean,
   IsInt,
   IsNumber,
@@ -8,6 +13,7 @@ import {
   MaxLength,
   Min,
   Max,
+  ValidateNested,
 } from 'class-validator';
 import {
   Memorization,
@@ -15,6 +21,10 @@ import {
   ProgressUnit,
 } from '@prisma/client';
 import { MAX_AMOUNT } from '../progress-unit';
+
+/// A halaqa is a few dozen children at most; the cap only stops a runaway
+/// request from holding one transaction open for thousands of rows.
+export const MAX_GROUP_SIZE = 100;
 
 export class CreateMemorizationDto {
   @IsInt()
@@ -77,6 +87,59 @@ export class CreateMemorizationDto {
   @IsOptional()
   @IsBoolean()
   outsideSession?: boolean;
+}
+
+/// The fields one recitation shares across a whole group: everything a single
+/// entry takes except who recited it. Quran only — hadith entries carry a book
+/// assigned per student, so a group cannot share one.
+export class GroupMemorizationEntryDto {
+  @IsOptional()
+  @IsInt()
+  @Min(1)
+  @Max(114)
+  surahNumber?: number;
+
+  @IsNumber({ allowNaN: false, allowInfinity: false })
+  @Min(0.5)
+  @Max(MAX_AMOUNT.PAGE)
+  amountDone: number;
+
+  @IsOptional()
+  @IsEnum(Memorization)
+  memorizationType?: Memorization;
+
+  // PAGE (default) or AYAH; the service refuses a hadith unit.
+  @IsOptional()
+  @IsEnum(ProgressUnit)
+  unit?: ProgressUnit;
+
+  @IsOptional()
+  @IsInt()
+  @Min(1)
+  @Max(MAX_AMOUNT.AYAH)
+  ayahFrom?: number;
+
+  @IsOptional()
+  @IsInt()
+  @Min(1)
+  @Max(MAX_AMOUNT.AYAH)
+  ayahTo?: number;
+}
+
+/// One recitation applied to several students at once — a halaqa of small
+/// children who all memorize the same ayahs. Each student still gets a row of
+/// his own, so progress, points and fines read it like any other entry.
+export class CreateGroupMemorizationDto {
+  @IsArray()
+  @ArrayNotEmpty()
+  @ArrayMaxSize(MAX_GROUP_SIZE)
+  @ArrayUnique()
+  @IsInt({ each: true })
+  studentIds: number[];
+
+  @ValidateNested()
+  @Type(() => GroupMemorizationEntryDto)
+  entry: GroupMemorizationEntryDto;
 }
 
 export class UpdateMemorizationDto {

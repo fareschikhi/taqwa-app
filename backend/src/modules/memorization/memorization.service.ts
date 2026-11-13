@@ -6,6 +6,7 @@ import {
 } from '@nestjs/common';
 import { PrismaService } from '../../prisma/prisma.service';
 import {
+  CreateGroupMemorizationDto,
   CreateMemorizationDto,
   UpdateMemorizationDto,
 } from './dto/memorization.dto';
@@ -165,7 +166,33 @@ export class MemorizationService {
     return attendance?.status ?? null;
   }
 
-  async create(dto: CreateMemorizationDto) {
+  // A teacher may only record for students in a halaqa she teaches; ADMIN is
+  // unrestricted, and a null actor (internal callers) skips the check, the
+  // same rule remove follows. The role guard alone only proves the caller is
+  // *a* teacher, not that these students are hers.
+  private async assertTeacherOwns(
+    studentIds: number[],
+    actor: MemorizationActor | null,
+  ) {
+    if (actor?.role !== 'TEACHER') return;
+    const teacherId = actor.teacher?.id;
+    const owned =
+      teacherId == null
+        ? []
+        : await this.prisma.student.findMany({
+            where: { id: { in: studentIds }, halaqa: { teacherId } },
+            select: { id: true },
+          });
+    if (owned.length !== new Set(studentIds).size) {
+      throw new ForbiddenException('لا يمكنك تسجيل حفظ لطالب من حلقة أخرى');
+    }
+  }
+
+  async create(
+    dto: CreateMemorizationDto,
+    actor: MemorizationActor | null = null,
+  ) {
+    await this.assertTeacherOwns([dto.studentId], actor);
     // The column defaults to QURAN when the client omits the subject, so
     // every existing caller keeps recording Quran progress unchanged.
     const subject = dto.subject ?? MemorizationSubject.QURAN;
@@ -204,6 +231,68 @@ export class MemorizationService {
       await reconcileDayPoints(tx, dto.studentId, date);
       return record;
     });
+  }
+
+  /// Records one recitation for a whole group — small children who all
+  /// memorize the same ayahs — as one ordinary row per student.
+  ///
+  /// A student marked away today is skipped and reported, not refused: one
+  /// absent child must not block the other fifteen. A student outside the
+  /// teacher's halaqa refuses the whole request instead, because that is a
+  /// forged list, not a normal day.
+  async createGroup(
+    dto: CreateGroupMemorizationDto,
+    actor: MemorizationActor | null = null,
+  ) {
+    const { studentIds, entry } = dto;
+    await this.assertTeacherOwns(studentIds, actor);
+
+    // The entry is the same for everyone, so it is checked once.
+    const subject = MemorizationSubject.QURAN;
+    const unit = unitFor(subject, entry.unit);
+    this.assertAmountFitsUnit(unit, entry.amountDone);
+    ayahRangeAmount({ unit, ...entry });
+
+    const date = startOfUtcDay(new Date());
+    const rollCall = await this.prisma.attendance.findMany({
+      where: { studentId: { in: studentIds }, date },
+      select: { studentId: true, status: true },
+    });
+    const statusOf = new Map(rollCall.map((a) => [a.studentId, a.status]));
+    const present = studentIds.filter((id) => !isAway(statusOf.get(id)));
+    const skipped = studentIds
+      .filter((id) => isAway(statusOf.get(id)))
+      .map((studentId) => ({
+        studentId,
+        reason: MEMORIZATION_ERROR.STUDENT_ABSENT,
+      }));
+
+    // All or nothing for the students who are written: a half-saved group
+    // would leave the teacher guessing which children still need the entry.
+    // The timeout leaves room for a full halaqa's reconciliations.
+    const created = await this.prisma.$transaction(
+      async (tx) => {
+        const rows: Awaited<
+          ReturnType<typeof tx.memorizationProgress.create>
+        >[] = [];
+        for (const studentId of present) {
+          rows.push(
+            await tx.memorizationProgress.create({
+              data: { ...entry, studentId, subject, unit, date },
+            }),
+          );
+          const status = statusOf.get(studentId);
+          if (status) {
+            await reconcileDayFines(tx, studentId, date, status, null);
+          }
+          await reconcileDayPoints(tx, studentId, date);
+        }
+        return rows;
+      },
+      { timeout: 20000 },
+    );
+
+    return { created, skipped };
   }
 
   async findByStudent(studentId: number) {

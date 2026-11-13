@@ -247,4 +247,33 @@ class TeacherRemoteDatasource {
     );
     return response.data as Map<String, dynamic>;
   }
+
+  /// One Quran recitation for several students at once. The server writes a
+  /// row per student and answers `{created: [...], skipped: [{studentId,
+  /// reason}]}` — a student marked away today is skipped, not refused.
+  Future<Map<String, dynamic>> submitGroupMemorization({
+    required List<int> studentIds,
+    int? surahNumber,
+    required num amountDone,
+    required String memorizationType,
+    String? unit,
+    int? ayahFrom,
+    int? ayahTo,
+  }) async {
+    final response = await _dio.post(
+      '${ApiEndpoints.memorization}/group',
+      data: {
+        'studentIds': studentIds,
+        'entry': {
+          if (surahNumber != null) 'surahNumber': surahNumber,
+          'amountDone': amountDone,
+          'memorizationType': memorizationType,
+          if (unit != null) 'unit': unit,
+          if (ayahFrom != null) 'ayahFrom': ayahFrom,
+          if (ayahTo != null) 'ayahTo': ayahTo,
+        },
+      },
+    );
+    return response.data as Map<String, dynamic>;
+  }
 }

@@ -6,6 +6,7 @@ import 'package:flutter/services.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:taqwa/core/constants/hadith_books.dart';
+import 'package:taqwa/core/widgets/app_button.dart';
 import 'package:taqwa/features/data/models/teacher_student_model.dart';
 import 'package:taqwa/features/data/network/dio_client.dart';
 import 'package:taqwa/features/teacher/presentation/pages/memorization_entry_sheet.dart';
@@ -964,5 +965,179 @@ void main() {
     await tester.pumpAndSettle();
 
     expect(sent.single.containsKey('outsideSession'), isFalse);
+  });
+
+  group('group entry', () {
+    final students = [
+      TeacherStudentModel(id: 1, fullName: 'محمد بن صالح', isActive: true),
+      TeacherStudentModel(id: 2, fullName: 'عمر الفاروق', isActive: true),
+      // Tracks hadith, yet a group entry is Quran only.
+      TeacherStudentModel(
+        id: 3,
+        fullName: 'يوسف أمين',
+        isActive: true,
+        hadithBooks: kHadithBooks,
+      ),
+    ];
+
+    /// Captures what the sheet posts, answering with the server's group shape:
+    /// student 2 skipped as absent, everyone else written.
+    List<Map<String, dynamic>> captureSent() {
+      final sent = <Map<String, dynamic>>[];
+      DioClient.instance.httpClientAdapter = _StubAdapter(
+        jsonEncode({
+          'created': [
+            {'id': 50, 'studentId': 1, 'amountDone': 3},
+            {'id': 51, 'studentId': 3, 'amountDone': 3},
+          ],
+          'skipped': [
+            {'studentId': 2, 'reason': 'STUDENT_ABSENT'},
+          ],
+        }),
+        onRequest: (options) {
+          if (options.method == 'POST') {
+            sent.add(Map<String, dynamic>.from(options.data as Map));
+          }
+        },
+      );
+      return sent;
+    }
+
+    /// Opens the sheet from a button, as the attendance page does, so the
+    /// result it pops can be checked.
+    Future<GroupMemorizationResult? Function()> open(
+      WidgetTester tester, {
+      Set<int> selected = const {1, 2, 3},
+      Set<int> recordedToday = const {},
+    }) async {
+      GroupMemorizationResult? result;
+      await tester.pumpWidget(
+        ScreenUtilInit(
+          designSize: const Size(390, 844),
+          builder: (_, _) => MaterialApp(
+            home: Builder(
+              builder: (context) => Scaffold(
+                body: TextButton(
+                  onPressed: () async {
+                    result =
+                        await showModalBottomSheet<GroupMemorizationResult>(
+                          context: context,
+                          isScrollControlled: true,
+                          builder: (_) => MemorizationEntrySheet.group(
+                            students: students,
+                            groupSelected: selected,
+                            groupRecordedToday: recordedToday,
+                          ),
+                        );
+                  },
+                  child: const Text('open'),
+                ),
+              ),
+            ),
+          ),
+        ),
+      );
+      await tester.tap(find.text('open'));
+      await tester.pumpAndSettle();
+      return () => result;
+    }
+
+    testWidgets('starts with the given students ticked', (tester) async {
+      _setPhoneViewport(tester);
+      await open(tester, selected: {1, 3}, recordedToday: {2});
+
+      expect(find.text('تسجيل عرض موحّد'), findsOneWidget);
+      expect(find.text('الطلاب المحددون: 2 من 3'), findsOneWidget);
+      expect(find.text('مسجّل اليوم'), findsOneWidget);
+      expect(find.text('تسجيل لـ 2 طالب'), findsOneWidget);
+      final ticks = tester
+          .widgetList<Checkbox>(find.byType(Checkbox))
+          .map((c) => c.value)
+          .toList();
+      expect(ticks, [true, false, true]);
+    });
+
+    testWidgets('offers no hadith switch, even for a hadith student', (
+      tester,
+    ) async {
+      _setPhoneViewport(tester);
+      await open(tester);
+
+      expect(find.text('الحديث'), findsNothing);
+      expect(find.text('السورة (اختياري)'), findsOneWidget);
+    });
+
+    testWidgets('a tap on the row toggles the student', (tester) async {
+      _setPhoneViewport(tester);
+      await open(tester);
+
+      await tester.tap(find.text('عمر الفاروق'));
+      await tester.pumpAndSettle();
+
+      expect(find.text('الطلاب المحددون: 2 من 3'), findsOneWidget);
+    });
+
+    testWidgets('select all ticks everyone, and again clears them', (
+      tester,
+    ) async {
+      _setPhoneViewport(tester);
+      await open(tester, selected: {1});
+
+      await tester.tap(find.text('تحديد الكل'));
+      await tester.pumpAndSettle();
+      expect(find.text('الطلاب المحددون: 3 من 3'), findsOneWidget);
+
+      await tester.tap(find.text('إلغاء تحديد الكل'));
+      await tester.pumpAndSettle();
+      expect(find.text('الطلاب المحددون: 0 من 3'), findsOneWidget);
+    });
+
+    testWidgets('cannot save with nobody ticked', (tester) async {
+      _setPhoneViewport(tester);
+      final sent = captureSent();
+      await open(tester, selected: {});
+
+      final save = find.ancestor(
+        of: find.text('اختر الطلاب أولاً'),
+        matching: find.byType(AppButton),
+      );
+      expect(tester.widget<AppButton>(save).onPressed, isNull);
+      expect(sent, isEmpty);
+    });
+
+    testWidgets('sends one entry for the ticked students and hands back '
+        'who was written and who was skipped', (tester) async {
+      _setPhoneViewport(tester);
+      final sent = captureSent();
+      final result = await open(tester);
+
+      await tester.tap(find.text('آيات'));
+      await tester.pumpAndSettle();
+      await tester.tap(find.text('بدون تحديد السورة'));
+      await tester.pumpAndSettle();
+      await tester.tap(find.text('الفاتحة').last);
+      await tester.pumpAndSettle();
+      // Row order is left to right: «إلى آية» first, «من آية» on the right.
+      await tester.enterText(find.byType(TextField).at(1), '1');
+      await tester.enterText(find.byType(TextField).at(0), '3');
+      await tester.tap(find.text('حفظ'));
+      // The student list makes this sheet taller than the screen.
+      await tester.ensureVisible(find.text('تسجيل لـ 3 طالب'));
+      await tester.pumpAndSettle();
+      await tester.tap(find.text('تسجيل لـ 3 طالب'));
+      await tester.pumpAndSettle();
+
+      expect(sent.single['studentIds'], [1, 2, 3]);
+      expect(sent.single['entry'], {
+        'surahNumber': 1,
+        'amountDone': 3,
+        'memorizationType': 'MEMORIZING',
+        'unit': 'AYAH',
+        'ayahFrom': 1,
+        'ayahTo': 3,
+      });
+      expect(result()!.created.map((r) => r['studentId']), [1, 3]);
+      expect(result()!.skippedAbsent, [2]);
+    });
   });
 }

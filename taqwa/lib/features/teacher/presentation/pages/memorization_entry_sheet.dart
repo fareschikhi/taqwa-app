@@ -42,12 +42,22 @@ const int _kNoSurah = 0;
 /// the teacher asked to go straight on to the next student.
 typedef MemorizationEntryResult = ({Map<String, dynamic> record, bool next});
 
+/// What a saved group entry hands back: one row per student the server wrote,
+/// and the students it skipped because they are marked away today.
+typedef GroupMemorizationResult = ({
+  List<Map<String, dynamic>> created,
+  List<int> skippedAbsent,
+});
+
 class MemorizationEntrySheet extends StatefulWidget {
   const MemorizationEntrySheet({
     super.key,
     required TeacherStudentModel this.student,
     this.nextStudentName,
-  }) : students = null;
+  }) : students = null,
+       groupSelected = const {},
+       groupRecordedToday = const {},
+       isGroup = false;
 
   /// For a student who recited outside the halaqa session: the teacher picks
   /// him from [students] in the sheet, and the entry earns its points without
@@ -57,13 +67,40 @@ class MemorizationEntrySheet extends StatefulWidget {
     super.key,
     required List<TeacherStudentModel> this.students,
   }) : student = null,
-       nextStudentName = null;
+       nextStudentName = null,
+       groupSelected = const {},
+       groupRecordedToday = const {},
+       isGroup = false;
+
+  /// One Quran recitation for several students at once — a halaqa of small
+  /// children who all memorize the same ayahs. The teacher ticks who recited
+  /// from [students]; [groupSelected] starts ticked, and [groupRecordedToday]
+  /// is marked so a second entry for them is a choice, not an accident.
+  /// Pops a [GroupMemorizationResult].
+  const MemorizationEntrySheet.group({
+    super.key,
+    required List<TeacherStudentModel> this.students,
+    required this.groupSelected,
+    this.groupRecordedToday = const {},
+  }) : student = null,
+       nextStudentName = null,
+       isGroup = true;
+
+  /// Whether this is [MemorizationEntrySheet.group].
+  final bool isGroup;
+
+  /// Who starts ticked in [MemorizationEntrySheet.group].
+  final Set<int> groupSelected;
+
+  /// Who already has a recitation today, in [MemorizationEntrySheet.group].
+  final Set<int> groupRecordedToday;
 
   /// The student being recorded, fixed by the caller. Null when the teacher
   /// picks one from [students] instead.
   final TeacherStudentModel? student;
 
-  /// Who the teacher can pick from, set only for an entry outside the session.
+  /// Who the teacher can pick from: one student outside the session, or any
+  /// number in a group entry.
   final List<TeacherStudentModel>? students;
 
   /// Who would be recorded after this student, or null outside the
@@ -80,7 +117,28 @@ class _MemorizationEntrySheetState extends State<MemorizationEntrySheet> {
   /// picked. Null until a pick in [MemorizationEntrySheet.outsideSession].
   TeacherStudentModel? _student;
 
-  bool get _outsideSession => widget.students != null;
+  bool get _isGroup => widget.isGroup;
+  bool get _outsideSession => widget.students != null && !_isGroup;
+
+  /// Who is ticked in a group entry, in the order the list shows them.
+  late final Set<int> _groupSelected = {...widget.groupSelected};
+
+  /// The form shows once it knows who it is for: the fixed or picked student,
+  /// or — in a group — the group itself, even before anyone is ticked.
+  bool get _hasSubject => _student != null || _isGroup;
+
+  /// Whose history fills the form in. A group that memorizes in lockstep
+  /// shares its last entry, so the first ticked child stands for all of them.
+  int? get _historyStudentId {
+    if (_student != null) return _student!.id;
+    if (!_isGroup || _groupSelected.isEmpty) return null;
+    return widget.students!
+        .firstWhere(
+          (s) => _groupSelected.contains(s.id),
+          orElse: () => widget.students!.first,
+        )
+        .id;
+  }
 
   MemorizationSubject _selectedSubject = MemorizationSubject.quran;
   int? _selectedSurah;
@@ -207,11 +265,11 @@ class _MemorizationEntrySheetState extends State<MemorizationEntrySheet> {
       if (!_amountFocus.hasFocus) _commitTypedAmount();
     });
     _student = widget.student;
-    if (_student != null) _loadQuranPrefill();
+    if (_historyStudentId != null) _loadQuranPrefill();
   }
 
   Future<List<Map<String, dynamic>>> _loadHistory() => _history ??= _studentRepo
-      .getMemorizationHistory(_student!.id)
+      .getMemorizationHistory(_historyStudentId!)
       .catchError((_) => <Map<String, dynamic>>[]);
 
   /// Another student means another history, so the form starts over and is
@@ -450,10 +508,29 @@ class _MemorizationEntrySheetState extends State<MemorizationEntrySheet> {
     }
   }
 
+  void _showError(String message) {
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(
+        content: AppText(
+          message,
+          style: AppTextStyles.labelMd.copyWith(color: AppColors.onPrimary),
+          textDirection: TextDirection.rtl,
+        ),
+        backgroundColor: AppColors.error,
+        behavior: SnackBarBehavior.floating,
+      ),
+    );
+  }
+
   Future<void> _submit({bool next = false}) async {
     // Settles a half-typed amount ("3.") before it is sent.
     if (_amountFocus.hasFocus) _amountFocus.unfocus();
     _commitTypedAmount();
+
+    if (_isGroup && _groupSelected.isEmpty) {
+      _showError('اختر طالباً واحداً على الأقل');
+      return;
+    }
 
     // A hadith entry must name its book; a Quran entry may leave the surah
     // out and record only the amount.
@@ -490,6 +567,7 @@ class _MemorizationEntrySheetState extends State<MemorizationEntrySheet> {
     }
 
     setState(() => _isSaving = true);
+    if (_isGroup) return _submitGroup(range);
     try {
       final created = await _repo.submitMemorization(
         studentId: _student!.id,
@@ -529,7 +607,151 @@ class _MemorizationEntrySheetState extends State<MemorizationEntrySheet> {
     }
   }
 
+  /// Sends the one entry for every ticked student. The list goes in the order
+  /// the halaqa shows, so the rows land in the order the teacher sees them.
+  Future<void> _submitGroup(({int from, int to})? range) async {
+    final ids = [
+      for (final s in widget.students!)
+        if (_groupSelected.contains(s.id)) s.id,
+    ];
+    try {
+      final response = await _repo.submitGroupMemorization(
+        studentIds: ids,
+        surahNumber: _selectedSurah,
+        amountDone: range != null ? ayahCountIn(range.from, range.to) : _amount,
+        memorizationType: _selectedType!.apiValue,
+        unit: _countsAyahs ? 'AYAH' : null,
+        ayahFrom: range?.from,
+        ayahTo: range?.to,
+      );
+      if (!mounted) return;
+      final created = [
+        for (final r in (response['created'] as List? ?? const []))
+          Map<String, dynamic>.from(r as Map),
+      ];
+      final skipped = [
+        for (final s in (response['skipped'] as List? ?? const []))
+          ((s as Map)['studentId'] as num).toInt(),
+      ];
+      Navigator.pop<GroupMemorizationResult>(context, (
+        created: created,
+        skippedAbsent: skipped,
+      ));
+    } catch (e) {
+      if (!mounted) return;
+      setState(() => _isSaving = false);
+      _showError(_errorMessage(e));
+    }
+  }
+
   String _errorMessage(Object error) => memorizationErrorMessage(error);
+
+  /// The title, what a group entry does, and who it is for: a tick per
+  /// student with a select-all switch, for [MemorizationEntrySheet.group].
+  List<Widget> _buildGroupPicker() {
+    final students = widget.students!;
+    final allTicked = students.every((s) => _groupSelected.contains(s.id));
+    final labelStyle = AppTextStyles.labelMd.copyWith(
+      color: AppColors.onSurfaceVariant,
+    );
+
+    return [
+      AppText(
+        'تسجيل عرض موحّد',
+        style: AppTextStyles.headlineMd.copyWith(color: AppColors.onSurface),
+      ),
+      SizedBox(height: 4.h),
+      Row(
+        mainAxisAlignment: MainAxisAlignment.end,
+        children: [
+          Flexible(
+            child: AppText(
+              'يُسجَّل نفس العرض لكل طالب محدد، ويمكن تعديل أي طالب بعدها',
+              textAlign: TextAlign.end,
+              style: labelStyle,
+            ),
+          ),
+          SizedBox(width: 6.w),
+          Icon(
+            Icons.info_outline_rounded,
+            size: 16.w,
+            color: AppColors.onSurfaceVariant,
+          ),
+        ],
+      ),
+      SizedBox(height: 12.h),
+      AppCard(
+        padding: EdgeInsets.symmetric(horizontal: 8.w, vertical: 8.h),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.stretch,
+          children: [
+            Row(
+              children: [
+                TextButton(
+                  onPressed: _isSaving
+                      ? null
+                      : () => setState(() {
+                          if (allTicked) {
+                            _groupSelected.clear();
+                          } else {
+                            _groupSelected.addAll(students.map((s) => s.id));
+                          }
+                        }),
+                  child: AppText(
+                    allTicked ? 'إلغاء تحديد الكل' : 'تحديد الكل',
+                    style: AppTextStyles.labelMd.copyWith(
+                      color: AppColors.primary,
+                    ),
+                  ),
+                ),
+                SizedBox(width: 8.w),
+                // Gives way on a narrow phone or large system text rather
+                // than pushing the select-all button off the card.
+                Expanded(
+                  child: Padding(
+                    padding: EdgeInsets.only(right: 8.w),
+                    child: AppText(
+                      'الطلاب المحددون: ${_groupSelected.length} من ${students.length}',
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
+                      textAlign: TextAlign.right,
+                      style: labelStyle,
+                    ),
+                  ),
+                ),
+              ],
+            ),
+            const Divider(height: 1),
+            // Capped so a large halaqa still leaves the form and the save
+            // button within reach; the list scrolls inside the card.
+            ConstrainedBox(
+              constraints: BoxConstraints(maxHeight: 220.h),
+              child: ListView(
+                shrinkWrap: true,
+                padding: EdgeInsets.zero,
+                children: [
+                  for (final s in students)
+                    _GroupStudentRow(
+                      name: s.fullName,
+                      ticked: _groupSelected.contains(s.id),
+                      recordedToday: widget.groupRecordedToday.contains(s.id),
+                      enabled: !_isSaving,
+                      onChanged: (ticked) => setState(() {
+                        if (ticked) {
+                          _groupSelected.add(s.id);
+                        } else {
+                          _groupSelected.remove(s.id);
+                        }
+                      }),
+                    ),
+                ],
+              ),
+            ),
+          ],
+        ),
+      ),
+    ];
+  }
 
   /// The title, what this entry does and does not do, and the searchable
   /// student field, for [MemorizationEntrySheet.outsideSession].
@@ -673,7 +895,9 @@ class _MemorizationEntrySheetState extends State<MemorizationEntrySheet> {
                 ),
               ),
               SizedBox(height: 12.h),
-              if (_outsideSession)
+              if (_isGroup)
+                ..._buildGroupPicker()
+              else if (_outsideSession)
                 ..._buildStudentPicker()
               else
                 AppText(
@@ -683,7 +907,7 @@ class _MemorizationEntrySheetState extends State<MemorizationEntrySheet> {
                   ),
                 ),
               // Nothing to fill in until the teacher has said who recited.
-              if (_student != null) ...[
+              if (_hasSubject) ...[
                 if (_prefilledFrom != null && !_isHadith) ...[
                   SizedBox(height: 4.h),
                   Row(
@@ -716,7 +940,9 @@ class _MemorizationEntrySheetState extends State<MemorizationEntrySheet> {
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.end,
                     children: [
-                      if (_student!.tracksHadith) ...[
+                      // A group shares a Quran entry only: hadith books are
+                      // assigned per student.
+                      if (_student?.tracksHadith ?? false) ...[
                         AppText(
                           'النوع',
                           style: AppTextStyles.labelMd.copyWith(
@@ -1058,7 +1284,17 @@ class _MemorizationEntrySheetState extends State<MemorizationEntrySheet> {
                     icon: Icons.save_outlined,
                     onPressed: _isSaving ? null : _submit,
                   ),
-                ] else
+                ] else if (_isGroup)
+                  AppButton(
+                    label: _groupSelected.isEmpty
+                        ? 'اختر الطلاب أولاً'
+                        : 'تسجيل لـ ${_groupSelected.length} طالب',
+                    variant: AppButtonVariant.gradient,
+                    icon: Icons.groups_rounded,
+                    isLoading: _isSaving,
+                    onPressed: _groupSelected.isEmpty ? null : _submit,
+                  )
+                else
                   AppButton(
                     label: 'تسجيل',
                     variant: AppButtonVariant.gradient,
@@ -1067,6 +1303,79 @@ class _MemorizationEntrySheetState extends State<MemorizationEntrySheet> {
                     onPressed: _submit,
                   ),
               ],
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+}
+
+/// One student in a group entry: a tick at the reading start, the name, and a
+/// quiet «مسجّل اليوم» tag for a child who already recited today. The whole
+/// row is the tap target, so a teacher going down the list is not aiming at a
+/// small box.
+class _GroupStudentRow extends StatelessWidget {
+  const _GroupStudentRow({
+    required this.name,
+    required this.ticked,
+    required this.recordedToday,
+    required this.enabled,
+    required this.onChanged,
+  });
+
+  final String name;
+  final bool ticked;
+  final bool recordedToday;
+  final bool enabled;
+  final ValueChanged<bool> onChanged;
+
+  @override
+  Widget build(BuildContext context) {
+    return Semantics(
+      checked: ticked,
+      label: recordedToday ? '$name، مسجّل اليوم' : name,
+      excludeSemantics: true,
+      child: InkWell(
+        borderRadius: BorderRadius.circular(AppConstants.radiusMd),
+        onTap: enabled ? () => onChanged(!ticked) : null,
+        child: Padding(
+          padding: EdgeInsets.symmetric(vertical: 2.h),
+          child: Row(
+            children: [
+              if (recordedToday)
+                Container(
+                  padding: EdgeInsets.symmetric(horizontal: 8.w, vertical: 2.h),
+                  decoration: BoxDecoration(
+                    color: AppColors.surfaceContainer,
+                    borderRadius: BorderRadius.circular(
+                      AppConstants.radiusFull,
+                    ),
+                  ),
+                  child: AppText(
+                    'مسجّل اليوم',
+                    style: AppTextStyles.labelSm.copyWith(
+                      color: AppColors.onSurfaceVariant,
+                    ),
+                  ),
+                ),
+              SizedBox(width: 8.w),
+              Expanded(
+                child: AppText(
+                  name,
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
+                  textAlign: TextAlign.right,
+                  style: AppTextStyles.bodyMd.copyWith(
+                    color: AppColors.onSurface,
+                  ),
+                ),
+              ),
+              Checkbox(
+                value: ticked,
+                activeColor: AppColors.primary,
+                onChanged: enabled ? (v) => onChanged(v ?? false) : null,
+              ),
             ],
           ),
         ),

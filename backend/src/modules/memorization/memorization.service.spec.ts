@@ -13,7 +13,10 @@ import {
   MemorizationSubject,
   ProgressUnit,
 } from '@prisma/client';
-import { MEMORIZATION_ERROR, MemorizationService } from './memorization.service';
+import {
+  MEMORIZATION_ERROR,
+  MemorizationService,
+} from './memorization.service';
 import { HADITH_BOOKS } from '../students/hadith-books';
 
 describe('MemorizationService.create attendance gate', () => {
@@ -120,7 +123,9 @@ describe('MemorizationService.create clears the missed-memorization fee', () => 
       attendance: {
         findUnique: jest
           .fn()
-          .mockResolvedValue(attendance === null ? null : { id: 1, status: attendance }),
+          .mockResolvedValue(
+            attendance === null ? null : { id: 1, status: attendance },
+          ),
         updateMany: jest.fn().mockResolvedValue({ count: 1 }),
       },
       memorizationProgress: {
@@ -159,7 +164,7 @@ describe('MemorizationService.create clears the missed-memorization fee', () => 
     memorizationType: Memorization.MEMORIZING,
   };
 
-  it('withdraws the day\'s missed-memorization charge', async () => {
+  it("withdraws the day's missed-memorization charge", async () => {
     const prisma = makePrisma(AttendanceStatus.PRESENT);
     await new MemorizationService(prisma).create(dto);
 
@@ -416,7 +421,10 @@ describe('MemorizationService hadith subject', () => {
     } as any);
 
     expect(prisma.memorizationProgress.create).toHaveBeenCalledWith({
-      data: expect.objectContaining({ unit: ProgressUnit.PAGE, amountDone: 1.5 }),
+      data: expect.objectContaining({
+        unit: ProgressUnit.PAGE,
+        amountDone: 1.5,
+      }),
     });
   });
 
@@ -476,7 +484,10 @@ describe('MemorizationService hadith subject', () => {
 
     expect(prisma.memorizationProgress.update).toHaveBeenCalledWith({
       where: { id: 20 },
-      data: expect.objectContaining({ unit: ProgressUnit.PAGE, amountDone: 2.5 }),
+      data: expect.objectContaining({
+        unit: ProgressUnit.PAGE,
+        amountDone: 2.5,
+      }),
     });
   });
 
@@ -498,7 +509,10 @@ describe('MemorizationService hadith subject', () => {
 
     expect(prisma.memorizationProgress.update).toHaveBeenCalledWith({
       where: { id: 20 },
-      data: expect.objectContaining({ unit: ProgressUnit.PAGE, amountDone: 0.5 }),
+      data: expect.objectContaining({
+        unit: ProgressUnit.PAGE,
+        amountDone: 0.5,
+      }),
     });
   });
 
@@ -662,18 +676,24 @@ describe('MemorizationService half-page amounts', () => {
     memorizationType: Memorization.MEMORIZING,
   });
 
-  it.each([0.5, 1.5, 3.5, 10])('records %p pages of new memorization', async (amount) => {
-    const { prisma, service } = makeService();
-    await service.create(pages(amount));
-    expect(prisma.memorizationProgress.create).toHaveBeenCalled();
-  });
+  it.each([0.5, 1.5, 3.5, 10])(
+    'records %p pages of new memorization',
+    async (amount) => {
+      const { prisma, service } = makeService();
+      await service.create(pages(amount));
+      expect(prisma.memorizationProgress.create).toHaveBeenCalled();
+    },
+  );
 
-  it.each([1.3, 1.2, 2.25, 0.3])('refuses %p pages, which is not a half step', async (amount) => {
-    const { service } = makeService();
-    await expect(service.create(pages(amount))).rejects.toBeInstanceOf(
-      BadRequestException,
-    );
-  });
+  it.each([1.3, 1.2, 2.25, 0.3])(
+    'refuses %p pages, which is not a half step',
+    async (amount) => {
+      const { service } = makeService();
+      await expect(service.create(pages(amount))).rejects.toBeInstanceOf(
+        BadRequestException,
+      );
+    },
+  );
 
   // Revision is counted in pages too, so it takes the same half step.
   it.each([Memorization.SMALLREVISION, Memorization.BIGREVISION])(
@@ -704,7 +724,9 @@ describe('MemorizationService keeps daily points in step', () => {
       attendance: {
         findUnique: jest
           .fn()
-          .mockResolvedValue(attendance === null ? null : { id: 1, status: attendance }),
+          .mockResolvedValue(
+            attendance === null ? null : { id: 1, status: attendance },
+          ),
       },
       memorizationProgress: {
         create: jest.fn().mockResolvedValue({ id: 10 }),
@@ -752,7 +774,7 @@ describe('MemorizationService keeps daily points in step', () => {
     expect(points).toHaveBeenCalledWith(prisma, 7, today());
   });
 
-  it('reconciles the recitation\'s own day when it is edited', async () => {
+  it("reconciles the recitation's own day when it is edited", async () => {
     const prisma = makePrisma(null);
     await new MemorizationService(prisma).update(20, { amountDone: 3 } as any);
     expect(prisma.$transaction).toHaveBeenCalled();
@@ -815,7 +837,10 @@ describe('MemorizationService Quran ayah ranges', () => {
   });
 
   it.each([
-    ['past the end of the surah', { surahNumber: 1, ayahFrom: 5, ayahTo: 8, amountDone: 4 }],
+    [
+      'past the end of the surah',
+      { surahNumber: 1, ayahFrom: 5, ayahTo: 8, amountDone: 4 },
+    ],
     ['backwards', { ayahFrom: 10, ayahTo: 5, amountDone: 6 }],
     ['without an end', { ayahTo: undefined }],
     ['without a surah', { surahNumber: undefined }],
@@ -854,7 +879,10 @@ describe('MemorizationService Quran ayah ranges', () => {
     );
 
     expect(prisma.memorizationProgress.create).toHaveBeenCalledWith({
-      data: expect.objectContaining({ unit: ProgressUnit.AYAH, amountDone: 12 }),
+      data: expect.objectContaining({
+        unit: ProgressUnit.AYAH,
+        amountDone: 12,
+      }),
     });
   });
 
@@ -916,7 +944,11 @@ describe('MemorizationService Quran ayah ranges', () => {
 
     expect(prisma.memorizationProgress.update).toHaveBeenCalledWith({
       where: { id: 20 },
-      data: expect.objectContaining({ ayahFrom: 1, ayahTo: 10, amountDone: 10 }),
+      data: expect.objectContaining({
+        ayahFrom: 1,
+        ayahTo: 10,
+        amountDone: 10,
+      }),
     });
   });
 
@@ -975,18 +1007,30 @@ describe('MemorizationService Quran ayah ranges', () => {
     const prisma: any = {
       memorizationProgress: {
         findMany: jest.fn().mockResolvedValue([
-          row({ unit: ProgressUnit.PAGE, ayahFrom: null, ayahTo: null, amountDone: 2 }),
+          row({
+            unit: ProgressUnit.PAGE,
+            ayahFrom: null,
+            ayahTo: null,
+            amountDone: 2,
+          }),
           row({ amountDone: 5 }),
           row({ surahNumber: 3, amountDone: 12 }),
           // No surah named: counts its ayahs, touches no surah.
-          row({ surahNumber: null, ayahFrom: null, ayahTo: null, amountDone: 4 }),
+          row({
+            surahNumber: null,
+            ayahFrom: null,
+            ayahTo: null,
+            amountDone: 4,
+          }),
           // Revision re-reads what is already memorized.
           row({ memorizationType: Memorization.SMALLREVISION, amountDone: 40 }),
         ]),
       },
       student: { findUnique: jest.fn().mockResolvedValue(null) },
     };
-    const progress = await new MemorizationService(prisma).getStudentProgress(7);
+    const progress = await new MemorizationService(prisma).getStudentProgress(
+      7,
+    );
 
     expect(progress.totalPagesDone).toBe(2);
     expect(progress.totalAyahsDone).toBe(21);
@@ -1015,7 +1059,9 @@ describe('MemorizationService.remove', () => {
       attendance: {
         findUnique: jest
           .fn()
-          .mockResolvedValue(attendance === null ? null : { status: attendance }),
+          .mockResolvedValue(
+            attendance === null ? null : { status: attendance },
+          ),
         updateMany: jest.fn().mockResolvedValue({ count: 1 }),
       },
       student: {
@@ -1094,5 +1140,178 @@ describe('MemorizationService.remove', () => {
     await expect(
       new MemorizationService(prisma).remove(10, teacher),
     ).rejects.toBeInstanceOf(NotFoundException);
+  });
+});
+
+describe('MemorizationService.createGroup', () => {
+  const teacher = { id: 1, role: 'TEACHER', teacher: { id: 5 } };
+
+  const makePrisma = (opts: {
+    owned?: number[];
+    rollCall?: { studentId: number; status: AttendanceStatus }[];
+  }) => {
+    let nextId = 100;
+    const prisma: any = {
+      student: {
+        findMany: jest
+          .fn()
+          .mockResolvedValue((opts.owned ?? []).map((id) => ({ id }))),
+        // A child student: fine reconciliation is a no-op for him.
+        findUnique: jest.fn().mockResolvedValue(null),
+      },
+      attendance: {
+        findMany: jest.fn().mockResolvedValue(opts.rollCall ?? []),
+      },
+      memorizationProgress: {
+        create: jest.fn(({ data }: any) =>
+          Promise.resolve({ id: nextId++, ...data }),
+        ),
+      },
+    };
+    prisma.$transaction = jest.fn((cb: any) => cb(prisma));
+    return prisma;
+  };
+
+  const entry = {
+    surahNumber: 1,
+    unit: ProgressUnit.AYAH,
+    ayahFrom: 1,
+    ayahTo: 3,
+    amountDone: 3,
+    memorizationType: Memorization.MEMORIZING,
+  };
+
+  beforeEach(() => (reconcileDayPoints as jest.Mock).mockClear());
+
+  it('writes one ordinary Quran row per student', async () => {
+    const prisma = makePrisma({ owned: [7, 8, 9] });
+    const service = new MemorizationService(prisma as any);
+
+    const result = await service.createGroup(
+      { studentIds: [7, 8, 9], entry },
+      teacher,
+    );
+
+    expect(result.created).toHaveLength(3);
+    expect(result.skipped).toEqual([]);
+    const written = prisma.memorizationProgress.create.mock.calls.map(
+      ([arg]: any) => arg.data,
+    );
+    expect(written.map((d: any) => d.studentId)).toEqual([7, 8, 9]);
+    for (const d of written) {
+      expect(d).toMatchObject({
+        subject: MemorizationSubject.QURAN,
+        unit: ProgressUnit.AYAH,
+        ayahFrom: 1,
+        ayahTo: 3,
+        amountDone: 3,
+      });
+    }
+    expect(reconcileDayPoints).toHaveBeenCalledTimes(3);
+  });
+
+  it('skips students marked away and still writes the rest', async () => {
+    const prisma = makePrisma({
+      owned: [7, 8, 9],
+      rollCall: [
+        { studentId: 7, status: AttendanceStatus.PRESENT },
+        { studentId: 8, status: AttendanceStatus.ABSENT },
+        { studentId: 9, status: AttendanceStatus.EXCUSED },
+      ],
+    });
+    const service = new MemorizationService(prisma as any);
+
+    const result = await service.createGroup(
+      { studentIds: [7, 8, 9], entry },
+      teacher,
+    );
+
+    expect(result.created.map((r: any) => r.studentId)).toEqual([7]);
+    expect(result.skipped).toEqual([
+      { studentId: 8, reason: MEMORIZATION_ERROR.STUDENT_ABSENT },
+      { studentId: 9, reason: MEMORIZATION_ERROR.STUDENT_ABSENT },
+    ]);
+  });
+
+  it("refuses the whole request when a student is not the teacher's", async () => {
+    // Student 9 is in another halaqa, so only two of three come back.
+    const prisma = makePrisma({ owned: [7, 8] });
+    const service = new MemorizationService(prisma as any);
+
+    await expect(
+      service.createGroup({ studentIds: [7, 8, 9], entry }, teacher),
+    ).rejects.toBeInstanceOf(ForbiddenException);
+    expect(prisma.memorizationProgress.create).not.toHaveBeenCalled();
+  });
+
+  it('refuses a teacher with no teacher profile', async () => {
+    const prisma = makePrisma({ owned: [7] });
+    const service = new MemorizationService(prisma as any);
+
+    await expect(
+      service.createGroup(
+        { studentIds: [7], entry },
+        { id: 1, role: 'TEACHER', teacher: null },
+      ),
+    ).rejects.toBeInstanceOf(ForbiddenException);
+  });
+
+  it('lets an admin record for any students', async () => {
+    const prisma = makePrisma({});
+    const service = new MemorizationService(prisma as any);
+
+    const result = await service.createGroup(
+      { studentIds: [7, 8], entry },
+      { id: 1, role: 'ADMIN' },
+    );
+
+    expect(result.created).toHaveLength(2);
+    expect(prisma.student.findMany).not.toHaveBeenCalled();
+  });
+
+  it('checks the shared entry once and writes nothing when it is invalid', async () => {
+    const prisma = makePrisma({ owned: [7, 8] });
+    const service = new MemorizationService(prisma as any);
+
+    await expect(
+      service.createGroup(
+        { studentIds: [7, 8], entry: { ...entry, amountDone: 4 } },
+        teacher,
+      ),
+    ).rejects.toBeInstanceOf(BadRequestException);
+    expect(prisma.memorizationProgress.create).not.toHaveBeenCalled();
+  });
+
+  it('refuses a hadith unit, since a group shares no hadith book', async () => {
+    const prisma = makePrisma({ owned: [7] });
+    const service = new MemorizationService(prisma as any);
+
+    await expect(
+      service.createGroup(
+        {
+          studentIds: [7],
+          entry: { amountDone: 1, unit: ProgressUnit.HADITH },
+        },
+        teacher,
+      ),
+    ).rejects.toBeInstanceOf(BadRequestException);
+  });
+});
+
+describe('MemorizationService.create ownership', () => {
+  it("refuses a teacher recording for another halaqa's student", async () => {
+    const prisma: any = {
+      student: { findMany: jest.fn().mockResolvedValue([]) },
+      memorizationProgress: { create: jest.fn() },
+    };
+    const service = new MemorizationService(prisma as any);
+
+    await expect(
+      service.create(
+        { studentId: 7, amountDone: 1 },
+        { id: 1, role: 'TEACHER', teacher: { id: 5 } },
+      ),
+    ).rejects.toBeInstanceOf(ForbiddenException);
+    expect(prisma.memorizationProgress.create).not.toHaveBeenCalled();
   });
 });

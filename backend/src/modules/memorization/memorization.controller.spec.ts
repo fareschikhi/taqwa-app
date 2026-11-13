@@ -34,6 +34,13 @@ describe('MemorizationController role wiring', () => {
     ]);
   });
 
+  it('keeps group recording to admins and teachers', () => {
+    expect(rolesFor(MemorizationController.prototype.createGroup)).toEqual([
+      Role.ADMIN,
+      Role.TEACHER,
+    ]);
+  });
+
   // Deleting a mistaken recitation corrects the register, so it stays with
   // the two roles that write it; a manager only reads.
   it('keeps deleting a recitation to admins and teachers', () => {

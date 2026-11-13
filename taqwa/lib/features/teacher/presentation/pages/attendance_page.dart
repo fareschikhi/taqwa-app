@@ -415,10 +415,62 @@ class _AttendancePageState extends ConsumerState<AttendancePage>
     if (result.next && next != null) _openMemorizationSheet(next);
   }
 
+  /// One recitation for everyone here today — small children who all memorize
+  /// the same ayahs. Children with nothing on file yet start ticked; those who
+  /// already recited start unticked, so a second entry is the teacher's choice
+  /// rather than fifteen duplicate dialogs.
+  Future<void> _openGroupMemorizationSheet() async {
+    // The same reason the single sheet writes its student first: the server
+    // judges absence against rows it holds. Offline, the save queues the
+    // marks and says so, and the group waits for the connection.
+    if (_pendingIds.isNotEmpty) {
+      await _saveAttendance();
+      if (!mounted || _pendingIds.isNotEmpty) return;
+    }
+
+    final here = _students
+        .where((s) => _attendance[s.id]?.isAway != true)
+        .toList();
+    if (here.isEmpty) return;
+
+    final result = await showModalBottomSheet<GroupMemorizationResult>(
+      context: context,
+      isScrollControlled: true,
+      backgroundColor: Colors.transparent,
+      builder: (_) => MemorizationEntrySheet.group(
+        students: here,
+        groupSelected: {
+          for (final s in here)
+            if (!_memorizedStudentIds.contains(s.id)) s.id,
+        },
+        groupRecordedToday: {
+          for (final s in here)
+            if (_memorizedStudentIds.contains(s.id)) s.id,
+        },
+      ),
+    );
+    if (result == null || !mounted) return;
+
+    setState(() {
+      for (final record in result.created) {
+        final id = (record['studentId'] as num).toInt();
+        _memorizedStudentIds.add(id);
+        _todayMemorization.putIfAbsent(id, () => []).add(record);
+      }
+    });
+    final count = result.created.length;
+    final skipped = result.skippedAbsent.length;
+    _showSnack(
+      skipped == 0
+          ? 'تم تسجيل العرض لـ $count طالب'
+          : 'تم تسجيل العرض لـ $count طالب، ولم يُسجَّل $skipped لأنهم غائبون',
+      isError: skipped > 0,
+    );
+  }
+
   /// Students still waiting to recite: here today, with nothing on file yet.
   bool _awaitsRecitation(TeacherStudentModel s) =>
-      _attendance[s.id]?.isAway != true &&
-      !_memorizedStudentIds.contains(s.id);
+      _attendance[s.id]?.isAway != true && !_memorizedStudentIds.contains(s.id);
 
   /// The first student after [after] — or from the top, without it — still
   /// waiting to recite, in the order the list shows them. Null at the end.
@@ -879,6 +931,18 @@ class _AttendancePageState extends ConsumerState<AttendancePage>
                 ],
               ),
             ),
+          // A halaqa that memorizes in lockstep records one entry for all of
+          // them instead of the same sheet once per child. Kept quiet and
+          // second, since most halaqas recite one by one.
+          if (here > 1) ...[
+            SizedBox(height: 8.h),
+            AppButton(
+              label: 'تسجيل عرض موحّد للجميع',
+              variant: AppButtonVariant.secondary,
+              icon: Icons.groups_rounded,
+              onPressed: _openGroupMemorizationSheet,
+            ),
+          ],
           SizedBox(height: 12.h),
           Row(
             children: [

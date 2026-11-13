@@ -180,4 +180,26 @@ class TeacherRepository {
       ayahTo: ayahTo,
     );
   }
+
+  /// One Quran recitation applied to a whole group of students; see
+  /// [TeacherRemoteDatasource.submitGroupMemorization] for the answer's shape.
+  Future<Map<String, dynamic>> submitGroupMemorization({
+    required List<int> studentIds,
+    int? surahNumber,
+    required num amountDone,
+    required String memorizationType,
+    String? unit,
+    int? ayahFrom,
+    int? ayahTo,
+  }) async {
+    return _ds.submitGroupMemorization(
+      studentIds: studentIds,
+      surahNumber: surahNumber,
+      amountDone: amountDone,
+      memorizationType: memorizationType,
+      unit: unit,
+      ayahFrom: ayahFrom,
+      ayahTo: ayahTo,
+    );
+  }
 }

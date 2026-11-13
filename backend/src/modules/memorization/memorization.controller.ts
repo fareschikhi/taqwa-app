@@ -18,6 +18,7 @@ import { Roles } from '../../common/decorators/roles.decorator';
 import { CurrentUser } from '../../common/decorators/current-user.decorator';
 import { MemorizationService } from './memorization.service';
 import {
+  CreateGroupMemorizationDto,
   CreateMemorizationDto,
   UpdateMemorizationDto,
 } from './dto/memorization.dto';
@@ -29,8 +30,19 @@ export class MemorizationController {
 
   @Post()
   @Roles(Role.ADMIN, Role.TEACHER)
-  create(@Body() dto: CreateMemorizationDto) {
-    return this.memorizationService.create(dto);
+  create(@Body() dto: CreateMemorizationDto, @CurrentUser() user: any) {
+    return this.memorizationService.create(dto, user ?? null);
+  }
+
+  /// One recitation for a whole group of students. Teachers only reach their
+  /// own halaqa's students; the service enforces it.
+  @Post('group')
+  @Roles(Role.ADMIN, Role.TEACHER)
+  createGroup(
+    @Body() dto: CreateGroupMemorizationDto,
+    @CurrentUser() user: any,
+  ) {
+    return this.memorizationService.createGroup(dto, user ?? null);
   }
 
   @Get('student/:id')
