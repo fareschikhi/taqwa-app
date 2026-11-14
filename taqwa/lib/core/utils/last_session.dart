@@ -6,6 +6,7 @@ import '../enums/memorization_type.dart';
 class LastSessionEntry {
   const LastSessionEntry({
     this.surahNumber,
+    this.surahNumbers = const [],
     required this.amount,
     required this.type,
     this.subject = MemorizationSubject.quran,
@@ -14,7 +15,11 @@ class LastSessionEntry {
     this.unit,
     this.ayahFrom,
     this.ayahTo,
+    this.isRepeat = false,
   });
+
+  /// A repeat (إعادة) of a portion already recited.
+  final bool isRepeat;
 
   /// The raw API unit (PAGE, HADITH or AYAH), or null on older rows.
   final String? unit;
@@ -23,7 +28,17 @@ class LastSessionEntry {
   final int? ayahFrom;
   final int? ayahTo;
 
-  /// QURAN-only; null for a HADITH entry.
+  /// Every surah of an entry that recited several in one go, in mushaf
+  /// order; empty for a single-surah entry, which uses [surahNumber].
+  final List<int> surahNumbers;
+
+  /// Every surah this entry names, for labelling it.
+  List<int> get surahs => surahNumbers.length > 1
+      ? surahNumbers
+      : [if (surahNumber != null) surahNumber!];
+
+  /// QURAN-only; null for a HADITH entry. The first surah when there are
+  /// several.
   final int? surahNumber;
 
   /// Pages for any Quran entry; hadiths for a hadith entry unless
@@ -112,12 +127,14 @@ LastSession? lastSessionOf({
                 MemorizationSubject.quran,
             // Null when the teacher recorded only an amount.
             surahNumber: (record['surahNumber'] as num?)?.toInt(),
+            surahNumbers: surahNumbersOfRecord(record),
             hadithReference: record['hadithReference'] as String?,
             countsPages: record['unit'] == 'PAGE',
             unit: record['unit'] as String?,
             ayahFrom: (record['ayahFrom'] as num?)?.toInt(),
             ayahTo: (record['ayahTo'] as num?)?.toInt(),
             amount: (record['amountDone'] as num?) ?? 0,
+            isRepeat: record['isRepeat'] == true,
             type: MemorizationTypeX.fromApi(
               record['memorizationType'] as String?,
             ),

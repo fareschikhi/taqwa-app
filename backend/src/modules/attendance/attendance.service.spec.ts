@@ -2,6 +2,11 @@ jest.mock('../points/day-points', () => ({
   reconcileDayPoints: jest.fn().mockResolvedValue(undefined),
 }));
 import { reconcileDayPoints } from '../points/day-points';
+// Tested on its own in repeat-fine.spec.ts; here only the call matters.
+jest.mock('./repeat-fine', () => ({
+  reconcileRepeatFine: jest.fn().mockResolvedValue(undefined),
+}));
+import { reconcileRepeatFine } from './repeat-fine';
 import { ForbiddenException, NotFoundException } from '@nestjs/common';
 import { AttendanceStatus } from '@prisma/client';
 import { AttendanceService } from './attendance.service';
@@ -62,6 +67,18 @@ describe('AttendanceService memorization cleanup', () => {
     expect(prisma.tx.memorizationProgress.deleteMany).toHaveBeenCalledWith({
       where: { studentId: 7, date: new Date('2026-08-26') },
     });
+  });
+
+  it("withdraws the deleted repeats' charge", async () => {
+    const prisma = makePrisma();
+    await svc(prisma as any).create(dto(AttendanceStatus.ABSENT));
+
+    expect(reconcileRepeatFine).toHaveBeenCalledWith(
+      prisma.tx,
+      7,
+      new Date('2026-08-26'),
+      null,
+    );
   });
 
   it('deletes in the same transaction as the attendance write', async () => {
@@ -885,6 +902,23 @@ describe('AttendanceService fine reconciliation', () => {
     status,
   });
 
+  // Its stale-row sweep would otherwise delete the day's repeat charge on
+  // every re-saved sheet.
+  it('leaves the repeat charge out of the roll-call sweep', async () => {
+    const prisma = makePrisma();
+    await svcWith(prisma).create(dto(AttendanceStatus.PRESENT));
+
+    expect(prisma.tx.fineEntry.findMany).toHaveBeenCalledWith(
+      expect.objectContaining({
+        where: {
+          studentId: 7,
+          date: expect.any(Date),
+          source: { notIn: ['MANUAL', 'REPEAT'] },
+        },
+      }),
+    );
+  });
+
   it('charges an absent adult student the halaqa absence fee', async () => {
     const prisma = makePrisma();
     await svcWith(prisma).create(dto(AttendanceStatus.ABSENT));
@@ -1343,8 +1377,13 @@ describe('AttendanceService.remove', () => {
     });
     // A manual charge is the teacher's own decision, not the roll call's, so
     // it survives; only the charges the roll call produced go with the row.
+    // A repeat charge follows the recitations, which stay, so it survives too.
     expect(prisma.tx.fineEntry.deleteMany).toHaveBeenCalledWith({
-      where: { studentId: 7, date: day, source: { not: 'MANUAL' } },
+      where: {
+        studentId: 7,
+        date: day,
+        source: { notIn: ['MANUAL', 'REPEAT'] },
+      },
     });
     expect(reconcileDayPoints).toHaveBeenCalledWith(prisma.tx, 7, day);
   });

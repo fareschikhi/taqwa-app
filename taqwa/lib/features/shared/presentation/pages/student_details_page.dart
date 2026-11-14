@@ -4,9 +4,9 @@ import '../../../../core/theme/app_colors.dart';
 import '../../../../core/theme/app_text_styles.dart';
 import '../../../../core/constants/app_constants.dart';
 import '../../../../core/constants/surahs.dart';
-import '../../../../core/enums/memorization_type.dart';
 import '../../../../core/utils/extra_phones.dart';
 import '../../../../core/utils/fine_balance.dart';
+import '../../../../core/utils/record_type_label.dart';
 import '../../../../core/utils/hadith_label.dart'
     show recordAmountText, hadithLabelOrFallback;
 import '../../../../core/widgets/app_button.dart';
@@ -432,14 +432,14 @@ class _StudentDetailsPageState extends State<StudentDetailsPage> {
                         SizedBox(height: 16.h),
                         _buildFinesSection(),
                       ],
-                      SizedBox(height: 16.h),
-                      _buildRegistrationCard(),
                       SizedBox(height: 20.h),
                       _buildProgressSection(),
                       SizedBox(height: 20.h),
                       _buildLastSessionCard(),
                       SizedBox(height: 16.h),
                       _buildHistoryCard(),
+                      SizedBox(height: 16.h),
+                      _buildRegistrationCard(),
                       SizedBox(height: 32.h),
                     ]),
                   ),
@@ -789,15 +789,12 @@ class _StudentDetailsPageState extends State<StudentDetailsPage> {
     if (records.isEmpty) return const SizedBox.shrink();
 
     final entry = records.first;
-    final type =
-        MemorizationTypeX.fromApi(entry['memorizationType'] as String?) ??
-        MemorizationType.hifz;
     final amount = recordAmountText(entry);
-    final typeLabel = type == MemorizationType.hifz ? 'حفظ جديد' : type.label;
+    final typeLabel = recordTypeLabel(entry);
     final isHadith = entry['subject'] == 'HADITH';
     final referenceLabel = isHadith
         ? hadithLabelOrFallback(entry['hadithReference'] as String?)
-        : surahLabelOf((entry['surahNumber'] as num?)?.toInt());
+        : recordSurahLabel(entry);
 
     return AppCard(
       padding: EdgeInsets.all(16.w),
@@ -1124,23 +1121,23 @@ class _RecordItem extends StatelessWidget {
     required this.surah,
     required this.type,
     required this.amount,
+    this.mistakes,
   });
   final String date, surah, type, amount;
 
-  /// An unrecognised type falls back to new memorization, matching the
-  /// column default on the server.
+  /// A تسميع's الأخطاء, or null on any other entry and on a clean one.
+  final String? mistakes;
+
   factory _RecordItem.fromEntry(Map<String, dynamic> entry) {
-    final type =
-        MemorizationTypeX.fromApi(entry['memorizationType'] as String?) ??
-        MemorizationType.hifz;
     final isHadith = entry['subject'] == 'HADITH';
     return _RecordItem(
       date: _formatDate(entry['date'] ?? entry['recordedAt']),
       surah: isHadith
           ? hadithLabelOrFallback(entry['hadithReference'] as String?)
-          : surahLabelOf((entry['surahNumber'] as num?)?.toInt()),
-      type: type == MemorizationType.hifz ? 'حفظ جديد' : type.label,
+          : recordSurahLabel(entry),
+      type: recordTypeLabel(entry),
       amount: recordAmountText(entry),
+      mistakes: recordMistakes(entry),
     );
   }
 
@@ -1162,47 +1159,69 @@ class _RecordItem extends StatelessWidget {
               style: AppTextStyles.labelSm.copyWith(color: AppColors.primary),
             ),
           ),
-          const Spacer(),
-          Column(
-            crossAxisAlignment: CrossAxisAlignment.end,
-            children: [
-              AppText(
-                surah,
-                style: AppTextStyles.labelMdBold.copyWith(
-                  color: AppColors.onSurface,
-                ),
-              ),
-              SizedBox(height: 2.h),
-              Row(
-                children: [
-                  AppText(
-                    date,
-                    style: AppTextStyles.caption.copyWith(
-                      color: AppColors.outline,
-                    ),
+          SizedBox(width: 12.w),
+          // Expanded rather than after a Spacer: an entry naming several
+          // surahs has a long label, which must wrap instead of overflowing.
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.end,
+              children: [
+                AppText(
+                  surah,
+                  textAlign: TextAlign.right,
+                  style: AppTextStyles.labelMdBold.copyWith(
+                    color: AppColors.onSurface,
                   ),
-                  SizedBox(width: 6.w),
-                  Container(
-                    padding: EdgeInsets.symmetric(
-                      horizontal: 6.w,
-                      vertical: 2.h,
-                    ),
-                    decoration: BoxDecoration(
-                      color: AppColors.surfaceContainerHigh,
-                      borderRadius: BorderRadius.circular(
-                        AppConstants.radiusFull,
-                      ),
-                    ),
-                    child: AppText(
-                      type,
+                ),
+                SizedBox(height: 2.h),
+                Row(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    AppText(
+                      date,
                       style: AppTextStyles.caption.copyWith(
-                        color: AppColors.onSurfaceVariant,
+                        color: AppColors.outline,
                       ),
+                    ),
+                    SizedBox(width: 6.w),
+                    // Flexible so a long «تسميع · مراجعة وضبط (اعادة)»
+                    // ends in an ellipsis on a narrow phone.
+                    Flexible(
+                      child: Container(
+                        padding: EdgeInsets.symmetric(
+                          horizontal: 6.w,
+                          vertical: 2.h,
+                        ),
+                        decoration: BoxDecoration(
+                          color: AppColors.surfaceContainerHigh,
+                          borderRadius: BorderRadius.circular(
+                            AppConstants.radiusFull,
+                          ),
+                        ),
+                        child: AppText(
+                          type,
+                          maxLines: 1,
+                          overflow: TextOverflow.ellipsis,
+                          style: AppTextStyles.caption.copyWith(
+                            color: AppColors.onSurfaceVariant,
+                          ),
+                        ),
+                      ),
+                    ),
+                  ],
+                ),
+                if (mistakes != null) ...[
+                  SizedBox(height: 4.h),
+                  AppText(
+                    'الأخطاء: $mistakes',
+                    textAlign: TextAlign.right,
+                    style: AppTextStyles.labelSm.copyWith(
+                      color: AppColors.onSurface,
                     ),
                   ),
                 ],
-              ),
-            ],
+              ],
+            ),
           ),
           SizedBox(width: 12.w),
           Container(

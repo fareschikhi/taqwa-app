@@ -110,12 +110,14 @@ void main() {
         absenceFee: 50,
         lateFee: 20,
         missedMemorizationFee: 30,
+        repeatFee: 40,
       );
 
       expect(data['isAdult'], true);
       expect(data['absenceFee'], 50);
       expect(data['lateFee'], 20);
       expect(data['missedMemorizationFee'], 30);
+      expect(data['repeatFee'], 40);
     });
 
     // A rate of 0 is a real setting — a halaqa that fines absence but not
@@ -153,6 +155,7 @@ void main() {
       expect(data.containsKey('absenceFee'), isFalse);
       expect(data.containsKey('lateFee'), isFalse);
       expect(data.containsKey('missedMemorizationFee'), isFalse);
+      expect(data.containsKey('repeatFee'), isFalse);
     });
   });
 }

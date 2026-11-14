@@ -27,6 +27,9 @@ class StudentPayloadDto {
   // but an admin, an empty list included, so a manager's form leaves it out
   // entirely.
   final List<String>? hadithBooks;
+  // برنامج التسميع on or off. Null for the same reason as [hadithBooks]:
+  // only an admin may send it, `false` included.
+  final bool? tracksTasmee;
 
   /// Registration-form details (استمارة التسجيل) keyed as the backend names
   /// them — `schoolLevel`, `healthStatus`, `email`, `isMarried`… The form
@@ -46,6 +49,7 @@ class StudentPayloadDto {
     this.isAdult = false,
     this.password,
     this.hadithBooks,
+    this.tracksTasmee,
     this.registration = const {},
   });
 
@@ -63,6 +67,7 @@ class StudentPayloadDto {
     if (avatar != null && avatar!.isNotEmpty) 'avatar': avatar,
     'isAdult': isAdult,
     'hadithBooks': ?hadithBooks,
+    'tracksTasmee': ?tracksTasmee,
     ...registration,
     // A child never logs in, so a password on his record would be exactly
     // the kind of lie the old hardcoded 'role' key used to tell; an adult

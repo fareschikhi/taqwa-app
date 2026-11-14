@@ -26,6 +26,9 @@ class StudentModel {
   final List<String> hadithBooks;
   bool get tracksHadith => hadithBooks.isNotEmpty;
 
+  // Admin-set opt-in to برنامج التسميع (the تسميع subject on the sheet).
+  final bool tracksTasmee;
+
   // Registration-form details (استمارة التسجيل), all optional. [schoolLevel]
   // is a child's school grade or an adult's education level; the parents'
   // jobs belong to the children's form, [occupation], [email] and
@@ -54,6 +57,7 @@ class StudentModel {
     this.isActive,
     this.isAdult = false,
     this.hadithBooks = const [],
+    this.tracksTasmee = false,
     this.email,
     this.schoolLevel,
     this.healthStatus,
@@ -113,6 +117,10 @@ class StudentModel {
             (studentMap?['tracksHadith'] as bool?) ??
             false,
       ),
+      tracksTasmee:
+          (json['tracksTasmee'] as bool?) ??
+          (studentMap?['tracksTasmee'] as bool?) ??
+          false,
       email: (json['email'] as String?) ?? (userMap?['email'] as String?),
       schoolLevel: text('schoolLevel'),
       healthStatus: text('healthStatus'),

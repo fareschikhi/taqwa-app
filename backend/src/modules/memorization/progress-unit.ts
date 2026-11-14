@@ -18,10 +18,11 @@ export function unitFor(
   subject: MemorizationSubject,
   requested?: ProgressUnit | null,
 ): ProgressUnit {
-  if (subject === MemorizationSubject.QURAN) {
+  // A tasmee is a Quran recitation, so it counts the way a Quran entry does.
+  if (subject !== MemorizationSubject.HADITH) {
     if (requested === ProgressUnit.HADITH) {
       throw new BadRequestException(
-        'A Quran entry is counted in pages or ayahs, so unit must be PAGE or AYAH',
+        'A Quran or tasmee entry is counted in pages or ayahs, so unit must be PAGE or AYAH',
       );
     }
     return requested ?? ProgressUnit.PAGE;

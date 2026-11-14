@@ -9,6 +9,7 @@ import '../../../../core/constants/surahs.dart';
 import '../../../../core/enums/memorization_type.dart';
 import '../../../../core/providers/selected_student_provider.dart';
 import '../../../../core/utils/memorization_history.dart';
+import '../../../../core/utils/record_type_label.dart';
 import '../../../../core/utils/hadith_label.dart';
 import '../../../data/repositories/student_repository.dart';
 import 'package:taqwa/core/widgets/app_text.dart';
@@ -341,11 +342,11 @@ class _ChildProgressPageState extends ConsumerState<ChildProgressPage> {
     final type =
         MemorizationTypeX.fromApi(entry['memorizationType'] as String?) ??
         MemorizationType.hifz;
-    final typeLabel = type == MemorizationType.hifz ? 'حفظ جديد' : type.label;
+    final typeLabel = recordTypeLabel(entry);
     final isHadith = entry['subject'] == 'HADITH';
     final referenceLabel = isHadith
         ? hadithLabelOrFallback(entry['hadithReference'] as String?)
-        : surahLabelOf((entry['surahNumber'] as num?)?.toInt());
+        : recordSurahLabel(entry);
     String dateStr = '';
     try {
       final dt = DateTime.parse(
@@ -358,6 +359,7 @@ class _ChildProgressPageState extends ConsumerState<ChildProgressPage> {
     }
     final id = (entry['id'] as num?)?.toInt();
     final description = '$referenceLabel ($typeLabel) بتاريخ $dateStr';
+    final mistakes = recordMistakes(entry);
 
     final (typeColor, typeTint) = _typeColors(type);
 
@@ -366,18 +368,22 @@ class _ChildProgressPageState extends ConsumerState<ChildProgressPage> {
       child: Row(
         children: [
           // One line always: a wrapped "حفظ جديد" was the Stitch export's
-          // one visible flaw.
-          Container(
-            padding: EdgeInsets.symmetric(horizontal: 12.w, vertical: 5.h),
-            decoration: BoxDecoration(
-              color: typeTint,
-              borderRadius: BorderRadius.circular(AppConstants.radiusFull),
-            ),
-            child: AppText(
-              typeLabel,
-              maxLines: 1,
-              softWrap: false,
-              style: AppTextStyles.labelMdBold.copyWith(color: typeColor),
+          // one visible flaw. Flexible so a long «تسميع · مراجعة وضبط
+          // (اعادة)» ends in an ellipsis instead of overflowing the row.
+          Flexible(
+            child: Container(
+              padding: EdgeInsets.symmetric(horizontal: 12.w, vertical: 5.h),
+              decoration: BoxDecoration(
+                color: typeTint,
+                borderRadius: BorderRadius.circular(AppConstants.radiusFull),
+              ),
+              child: AppText(
+                typeLabel,
+                maxLines: 1,
+                softWrap: false,
+                overflow: TextOverflow.ellipsis,
+                style: AppTextStyles.labelMdBold.copyWith(color: typeColor),
+              ),
             ),
           ),
           SizedBox(width: 12.w),
@@ -427,6 +433,16 @@ class _ChildProgressPageState extends ConsumerState<ChildProgressPage> {
                     color: AppColors.onSurfaceVariant,
                   ),
                 ),
+                if (mistakes != null) ...[
+                  SizedBox(height: 4.h),
+                  AppText(
+                    'الأخطاء: $mistakes',
+                    textAlign: TextAlign.end,
+                    style: AppTextStyles.labelSm.copyWith(
+                      color: AppColors.onSurface,
+                    ),
+                  ),
+                ],
               ],
             ),
           ),

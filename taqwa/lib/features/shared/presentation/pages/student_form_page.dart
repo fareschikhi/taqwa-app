@@ -109,6 +109,11 @@ class _StudentFormPageState extends State<StudentFormPage> {
   /// means Quran only.
   final Set<String> _hadithBooks = {};
 
+  /// برنامج التسميع: when on, the teacher's recitation sheet offers تسميع
+  /// for this student. Admin-only and editable on create and edit, like
+  /// [_hadithBooks].
+  bool _tracksTasmee = false;
+
   bool get _isEditing => widget.student != null;
 
   /// Which registration form applies: the switch while creating, the
@@ -127,6 +132,7 @@ class _StudentFormPageState extends State<StudentFormPage> {
       _selectedHalaqaId = student.halaqaId;
       _selectedParentId = student.parentId;
       _hadithBooks.addAll(student.hadithBooks);
+      _tracksTasmee = student.tracksTasmee;
       _schoolLevelController.text = student.schoolLevel ?? '';
       _healthController.text = student.healthStatus ?? '';
       _familyStatusController.text = student.familyStatus ?? '';
@@ -256,7 +262,10 @@ class _StudentFormPageState extends State<StudentFormPage> {
           'halaqaId': ?_selectedHalaqaId,
           if (!_isAdultForm) 'parentId': ?_selectedParentId,
           'avatar': ?avatarUrl,
-          if (widget.canSetHadithBooks) 'hadithBooks': _orderedHadithBooks,
+          if (widget.canSetHadithBooks) ...{
+            'hadithBooks': _orderedHadithBooks,
+            'tracksTasmee': _tracksTasmee,
+          },
           ..._registration(),
         });
       } else {
@@ -273,6 +282,7 @@ class _StudentFormPageState extends State<StudentFormPage> {
             isAdult: _isAdult,
             password: _isAdult ? _passwordController.text : null,
             hadithBooks: widget.canSetHadithBooks ? _orderedHadithBooks : null,
+            tracksTasmee: widget.canSetHadithBooks ? _tracksTasmee : null,
             registration: _registration(),
           ),
         );
@@ -509,6 +519,8 @@ class _StudentFormPageState extends State<StudentFormPage> {
           if (widget.canSetHadithBooks) ...[
             SizedBox(height: 16.h),
             _buildHadithBooks(),
+            SizedBox(height: 8.h),
+            _buildTasmeeSwitch(),
           ],
         ],
       ),
@@ -679,6 +691,30 @@ class _StudentFormPageState extends State<StudentFormPage> {
             ),
           ),
       ],
+    );
+  }
+
+  /// برنامج التسميع, laid out like [_buildAdultSwitch]. The subtitle says
+  /// what the switch changes, so the admin knows before turning it on.
+  Widget _buildTasmeeSwitch() {
+    return SwitchListTile(
+      contentPadding: EdgeInsets.zero,
+      controlAffinity: ListTileControlAffinity.leading,
+      activeThumbColor: AppColors.primary,
+      value: _tracksTasmee,
+      onChanged: (v) => setState(() => _tracksTasmee = v),
+      title: AppText(
+        'برنامج التسميع',
+        style: AppTextStyles.labelMd.copyWith(color: AppColors.onSurface),
+        textAlign: TextAlign.end,
+      ),
+      subtitle: AppText(
+        'يظهر للمعلم خيار «تسميع» لهذا الطالب',
+        style: AppTextStyles.labelSm.copyWith(
+          color: AppColors.onSurfaceVariant,
+        ),
+        textAlign: TextAlign.end,
+      ),
     );
   }
 

@@ -12,6 +12,10 @@ const String kHadithNotEnabledCode = 'HADITH_NOT_ENABLED';
 /// to the student. Mirrors `MEMORIZATION_ERROR.HADITH_BOOK_NOT_ASSIGNED`.
 const String kHadithBookNotAssignedCode = 'HADITH_BOOK_NOT_ASSIGNED';
 
+/// Reason code the API attaches when the student is not in برنامج التسميع.
+/// Mirrors `MEMORIZATION_ERROR.TASMEE_NOT_ENABLED`.
+const String kTasmeeNotEnabledCode = 'TASMEE_NOT_ENABLED';
+
 const String _genericFailure = 'فشل حفظ التسميع';
 
 /// The message the teacher sees when saving a recitation fails.
@@ -34,6 +38,9 @@ String memorizationErrorMessage(Object error) {
     }
     if (data['code'] == kHadithBookNotAssignedCode) {
       return 'هذا الكتاب غير مسند لهذا الطالب';
+    }
+    if (data['code'] == kTasmeeNotEnabledCode) {
+      return 'لم يتم تفعيل برنامج التسميع لهذا الطالب';
     }
   }
 

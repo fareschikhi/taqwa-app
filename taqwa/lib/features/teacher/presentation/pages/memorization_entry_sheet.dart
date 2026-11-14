@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:taqwa/features/teacher/presentation/pages/segmented_selector.dart';
 import '../../../../core/theme/app_colors.dart';
@@ -14,6 +15,8 @@ import '../../../../core/utils/memorization_duplicates.dart';
 import '../../../../core/utils/memorization_history.dart';
 import '../../../../core/widgets/app_card.dart';
 import '../../../../core/widgets/app_button.dart';
+import '../../../../core/widgets/app_text_field.dart';
+import '../../../../core/widgets/surah_multi_select_field.dart';
 import '../../../../core/widgets/user_selector_field.dart';
 import '../../../data/models/teacher_student_model.dart';
 import '../../../data/repositories/student_repository.dart';
@@ -29,14 +32,6 @@ enum _AmountUnit { pages, hizb, surah, ayahs }
 /// How the teacher counts a hadith entry. Unlike [_AmountUnit] this is stored
 /// with the entry: 2 pages and 2 hadiths are different amounts.
 enum _HadithUnit { hadiths, pages }
-
-/// The surah dropdown's first choice: the entry records only its amount.
-const String _kNoSurahChoice = 'بدون تحديد السورة';
-
-/// The dropdown value standing for [_kNoSurahChoice]. Not null: a menu that
-/// returns null reads to [DropdownButton] as dismissed, so picking "no surah"
-/// after a surah would never fire. 0 is outside the mushaf's 1–114.
-const int _kNoSurah = 0;
 
 /// What a saved entry hands back: the row the server created, and whether
 /// the teacher asked to go straight on to the next student.
@@ -141,7 +136,15 @@ class _MemorizationEntrySheetState extends State<MemorizationEntrySheet> {
   }
 
   MemorizationSubject _selectedSubject = MemorizationSubject.quran;
-  int? _selectedSurah;
+
+  /// The surahs recited, in mushaf order. Empty records only the amount;
+  /// several (e.g. the last three of the mushaf) are one entry.
+  List<int> _selectedSurahs = const [];
+
+  /// The surah when exactly one is picked. An ayah range is numbered inside a
+  /// single surah, so everything about ayahs keys off this.
+  int? get _selectedSurah =>
+      _selectedSurahs.length == 1 ? _selectedSurahs.single : null;
   String? _selectedHadithBook;
   bool _hadithPrefillLoaded = false;
   double _amount = 1;
@@ -152,6 +155,11 @@ class _MemorizationEntrySheetState extends State<MemorizationEntrySheet> {
   /// overrides their choice.
   bool _hadithUnitTouched = false;
   MemorizationType? _selectedType;
+
+  /// A repeat (إعادة) of a portion already recited. Starts off on every open,
+  /// never carried over from history: a repeat is the exception, and a
+  /// remembered switch would quietly halve the next student's points.
+  bool _isRepeat = false;
   bool _isSaving = false;
 
   /// The student's history, fetched once and shared by the Quran and the
@@ -176,10 +184,27 @@ class _MemorizationEntrySheetState extends State<MemorizationEntrySheet> {
   /// soon as they type again.
   String? _ayahError;
 
+  /// الأخطاء: what the student got wrong in a تسميع, as free text. Optional,
+  /// and never prefilled — last session's mistakes are not today's.
+  final _mistakesController = TextEditingController();
+
   final _repo = TeacherRepository();
   final _studentRepo = StudentRepository();
 
   bool get _isHadith => _selectedSubject == MemorizationSubject.hadith;
+
+  /// برنامج التسميع: the Quran form again, plus the mistakes box. Everything
+  /// below that keys off `!_isHadith` serves both.
+  bool get _isTasmee => _selectedSubject == MemorizationSubject.tasmee;
+
+  /// The subjects this student may be recorded in, Quran first. Only an
+  /// admin opt-in adds Hadith or تسميع, and with neither there is nothing to
+  /// choose, so the selector is not shown at all.
+  List<MemorizationSubject> get _subjects => [
+    MemorizationSubject.quran,
+    if (_student?.tracksHadith ?? false) MemorizationSubject.hadith,
+    if (_student?.tracksTasmee ?? false) MemorizationSubject.tasmee,
+  ];
 
   /// A Quran entry counts in pages unless it counts ayahs; a hadith entry
   /// counts in single hadiths unless the teacher switched it to pages.
@@ -239,15 +264,15 @@ class _MemorizationEntrySheetState extends State<MemorizationEntrySheet> {
   /// both adjust by a single page.
   int get _step => !_isHadith && _unit == _AmountUnit.hizb ? kPagesPerHizb : 1;
 
+  /// The pages the picked surahs cover together, a shared page counted once,
+  /// or null with none picked.
   int? get _selectedSurahPages {
-    for (final surah in kSurahs) {
-      if (surah.number == _selectedSurah) return surah.pageCount;
-    }
-    return null;
+    final pages = pagesCoveredBy(_selectedSurahs);
+    return pages == 0 ? null : pages;
   }
 
-  /// Where the counter starts for [unit]: one page, one hizb, or the whole of
-  /// the selected surah (one page until a surah is picked).
+  /// Where the counter starts for [unit]: one page, one hizb, or every page
+  /// of the selected surahs (one page until a surah is picked).
   double _startAmountFor(_AmountUnit unit) => switch (unit) {
     _AmountUnit.pages => 1,
     _AmountUnit.hizb => kPagesPerHizb.toDouble(),
@@ -283,7 +308,7 @@ class _MemorizationEntrySheetState extends State<MemorizationEntrySheet> {
       _prefilledFrom = null;
       _hadithPrefillLoaded = false;
       _selectedSubject = MemorizationSubject.quran;
-      _selectedSurah = null;
+      _selectedSurahs = const [];
       _selectedHadithBook = null;
       _selectedType = null;
       _unit = _AmountUnit.pages;
@@ -293,26 +318,46 @@ class _MemorizationEntrySheetState extends State<MemorizationEntrySheet> {
       _setAyahRange(1, 1);
     });
     _amountController.text = '1';
+    _mistakesController.clear();
     _loadQuranPrefill();
   }
 
   /// Most sessions carry on from the last one, so the form opens on the
-  /// student's latest Quran entry — same surah, type and pages — and the
+  /// student's latest entry in the current subject — Quran or تسميع, each
+  /// from its own history — with the same surah, type and pages, and the
   /// common case is a single tap on تسجيل. Anything the teacher has already
   /// touched by the time the history arrives is left as they set it.
   Future<void> _loadQuranPrefill() async {
     final student = _student;
+    final subject = _selectedSubject;
     final history = await _loadHistory();
-    final quran = history.where((r) => r['subject'] != 'HADITH').toList();
-    final latest = recentMemorization(quran, limit: 1);
-    // A history that arrives after the teacher picked someone else belongs
-    // to the previous student.
-    if (!mounted || student != _student || latest.isEmpty || _isHadith) {
+    // Rows from before subjects existed carry none, and they are Quran.
+    final same = history
+        .where(
+          (r) =>
+              (MemorizationSubjectX.fromApi(r['subject'] as String?) ??
+                  MemorizationSubject.quran) ==
+              subject,
+        )
+        .toList();
+    final latest = recentMemorization(same, limit: 1);
+    // A history that arrives after the teacher picked someone else, or
+    // switched subject, belongs to that earlier choice.
+    if (!mounted ||
+        student != _student ||
+        subject != _selectedSubject ||
+        latest.isEmpty ||
+        _isHadith) {
       return;
     }
     final record = latest.first;
 
-    final surah = (record['surahNumber'] as num?)?.toInt();
+    final surahs = [
+      for (final n in surahNumbersOfRecord(record))
+        if (surahOf(n) != null) n,
+    ];
+    // Only a single-surah entry carries an ayah range on to the next one.
+    final surah = surahs.length == 1 ? surahs.single : null;
     final type = MemorizationTypeX.fromApi(
       record['memorizationType'] as String?,
     );
@@ -321,9 +366,7 @@ class _MemorizationEntrySheetState extends State<MemorizationEntrySheet> {
         _amount == 1 && _unit == _AmountUnit.pages && !_amountFocus.hasFocus;
 
     setState(() {
-      if (_selectedSurah == null && kSurahs.any((s) => s.number == surah)) {
-        _selectedSurah = surah;
-      }
+      if (_selectedSurahs.isEmpty) _selectedSurahs = surahs;
       _selectedType ??= type;
       _prefilledFrom = record;
     });
@@ -354,7 +397,7 @@ class _MemorizationEntrySheetState extends State<MemorizationEntrySheet> {
     if (record['unit'] == 'AYAH' &&
         surah == null &&
         untouchedAmount &&
-        _selectedSurah == null &&
+        _selectedSurahs.isEmpty &&
         amount != null) {
       setState(() => _unit = _AmountUnit.ayahs);
       _setAmount(amount);
@@ -375,6 +418,7 @@ class _MemorizationEntrySheetState extends State<MemorizationEntrySheet> {
     _amountFocus.dispose();
     _ayahFromController.dispose();
     _ayahToController.dispose();
+    _mistakesController.dispose();
     super.dispose();
   }
 
@@ -403,6 +447,8 @@ class _MemorizationEntrySheetState extends State<MemorizationEntrySheet> {
   }
 
   void _onSubjectChanged(MemorizationSubject subject) {
+    if (subject == _selectedSubject) return;
+    final quranForm = subject != MemorizationSubject.hadith;
     setState(() {
       _selectedSubject = subject;
       // Pages and hadiths are not interchangeable quantities; carrying the
@@ -410,11 +456,20 @@ class _MemorizationEntrySheetState extends State<MemorizationEntrySheet> {
       // means.
       _unit = _AmountUnit.pages;
       _amount = 1;
+      // Quran and تسميع share the form but not the history: each opens on
+      // its own last entry, so what the other one filled in is cleared.
+      if (quranForm) {
+        _selectedSurahs = const [];
+        _selectedType = null;
+        _prefilledFrom = null;
+        _setAyahRange(1, 1);
+      }
     });
     _amountController.text = '1';
     if (subject == MemorizationSubject.hadith && !_hadithPrefillLoaded) {
       _loadHadithPrefill();
     }
+    if (quranForm) _loadQuranPrefill();
   }
 
   /// Preselects the book of the student's most recent hadith entry, so
@@ -458,6 +513,12 @@ class _MemorizationEntrySheetState extends State<MemorizationEntrySheet> {
   }
 
   void _onUnitChanged(_AmountUnit unit) {
+    // An ayah range is numbered inside one surah; the server refuses ayahs
+    // on an entry naming several, so the switch is refused here first.
+    if (unit == _AmountUnit.ayahs && _selectedSurahs.length > 1) {
+      _showError('تُعدّ الآيات داخل سورة واحدة، فاختر سورة واحدة للعد بالآيات');
+      return;
+    }
     setState(() {
       _unit = unit;
       _ayahError = null;
@@ -475,20 +536,24 @@ class _MemorizationEntrySheetState extends State<MemorizationEntrySheet> {
     _setAmount(1);
   }
 
-  /// While counting by surah, picking another surah means reciting that one,
-  /// so the counter follows it to its page count.
+  /// While counting by surah, the counter follows the picked surahs to the
+  /// pages they cover together. Picking a second surah switches to counting
+  /// by surah, so the pages fill in from the surahs rather than staying at
+  /// whatever was counted for one; the teacher can still adjust the number.
   ///
   /// An ayah range that no longer fits the new surah is pulled inside it, so
   /// «1–200» typed for آل عمران never stays on screen for الفاتحة.
   ///
-  /// Clearing the surah while counting ayahs keeps how many were typed: the
+  /// Clearing the surahs while counting ayahs keeps how many were typed: the
   /// range «1–20» becomes a count of 20.
-  void _onSurahChanged(int? number) {
-    final carried = _countsAyahs && number == null ? _validAyahRange : null;
+  void _onSurahsChanged(List<int> numbers) {
+    final cleared = numbers.isEmpty;
+    final carried = _countsAyahs && cleared ? _validAyahRange : null;
     setState(() {
-      _selectedSurah = number;
+      _selectedSurahs = numbers;
       _ayahError = null;
-      final ayahs = surahOf(number)?.ayahCount;
+      if (numbers.length > 1) _unit = _AmountUnit.surah;
+      final ayahs = surahOf(_selectedSurah)?.ayahCount;
       if (ayahs == null) return;
       final from = _ayahFrom;
       final to = _ayahTo;
@@ -499,7 +564,7 @@ class _MemorizationEntrySheetState extends State<MemorizationEntrySheet> {
       }
     });
     if (_unit == _AmountUnit.surah) _setAmount(_startAmountFor(_unit));
-    if (_countsAyahs && number == null) {
+    if (_countsAyahs && cleared) {
       _setAmount(
         carried != null
             ? ayahCountIn(carried.from, carried.to).toDouble()
@@ -572,7 +637,9 @@ class _MemorizationEntrySheetState extends State<MemorizationEntrySheet> {
       final created = await _repo.submitMemorization(
         studentId: _student!.id,
         outsideSession: _outsideSession,
-        surahNumber: _isHadith ? null : _selectedSurah,
+        isRepeat: _isRepeat,
+        surahNumber: _isHadith ? null : _selectedSurahs.firstOrNull,
+        surahNumbers: _isHadith ? null : _selectedSurahs,
         hadithReference: _isHadith ? _selectedHadithBook : null,
         amountDone: range != null ? ayahCountIn(range.from, range.to) : _amount,
         memorizationType: _selectedType!.apiValue,
@@ -582,6 +649,7 @@ class _MemorizationEntrySheetState extends State<MemorizationEntrySheet> {
             : (_countsAyahs ? 'AYAH' : null),
         ayahFrom: range?.from,
         ayahTo: range?.to,
+        mistakes: _isTasmee ? _mistakesController.text.trim() : null,
       );
       if (mounted) {
         Navigator.pop<MemorizationEntryResult>(context, (
@@ -617,12 +685,14 @@ class _MemorizationEntrySheetState extends State<MemorizationEntrySheet> {
     try {
       final response = await _repo.submitGroupMemorization(
         studentIds: ids,
-        surahNumber: _selectedSurah,
+        surahNumber: _selectedSurahs.firstOrNull,
+        surahNumbers: _selectedSurahs,
         amountDone: range != null ? ayahCountIn(range.from, range.to) : _amount,
         memorizationType: _selectedType!.apiValue,
         unit: _countsAyahs ? 'AYAH' : null,
         ayahFrom: range?.from,
         ayahTo: range?.to,
+        isRepeat: _isRepeat,
       );
       if (!mounted) return;
       final created = [
@@ -645,6 +715,32 @@ class _MemorizationEntrySheetState extends State<MemorizationEntrySheet> {
   }
 
   String _errorMessage(Object error) => memorizationErrorMessage(error);
+
+  /// Laid out like the admin forms' toggles: the switch on the left, the label
+  /// filling the rest of the row. The subtitle states the cost up front, so
+  /// the teacher knows what the switch does before turning it on.
+  Widget _buildRepeatSwitch() {
+    return SwitchListTile(
+      contentPadding: EdgeInsets.zero,
+      dense: true,
+      controlAffinity: ListTileControlAffinity.leading,
+      activeThumbColor: AppColors.primary,
+      value: _isRepeat,
+      onChanged: (v) => setState(() => _isRepeat = v),
+      title: AppText(
+        'إعادة',
+        style: AppTextStyles.labelMd.copyWith(color: AppColors.onSurface),
+        textAlign: TextAlign.end,
+      ),
+      subtitle: AppText(
+        'تُحتسب بنصف النقاط',
+        style: AppTextStyles.labelSm.copyWith(
+          color: AppColors.onSurfaceVariant,
+        ),
+        textAlign: TextAlign.end,
+      ),
+    );
+  }
 
   /// The title, what a group entry does, and who it is for: a tick per
   /// student with a select-all switch, for [MemorizationEntrySheet.group].
@@ -940,9 +1036,10 @@ class _MemorizationEntrySheetState extends State<MemorizationEntrySheet> {
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.end,
                     children: [
-                      // A group shares a Quran entry only: hadith books are
-                      // assigned per student.
-                      if (_student?.tracksHadith ?? false) ...[
+                      // A group shares a Quran entry only: hadith books and
+                      // the tasmee program are set per student, so a group
+                      // (no single _student) never gets a subject choice.
+                      if (_subjects.length > 1) ...[
                         AppText(
                           'النوع',
                           style: AppTextStyles.labelMd.copyWith(
@@ -951,15 +1048,11 @@ class _MemorizationEntrySheetState extends State<MemorizationEntrySheet> {
                         ),
                         SizedBox(height: 6.h),
                         SegmentedSelector<MemorizationSubject>(
-                          options: const [
-                            SegmentOption(
-                              value: MemorizationSubject.quran,
-                              label: 'القرآن',
-                            ),
-                            SegmentOption(
-                              value: MemorizationSubject.hadith,
-                              label: 'الحديث',
-                            ),
+                          // Same order as before تسميع existed, so the
+                          // Quran / Hadith segments do not move.
+                          options: [
+                            for (final s in _subjects)
+                              SegmentOption(value: s, label: s.label),
                           ],
                           selected: _selectedSubject,
                           onChanged: _onSubjectChanged,
@@ -1017,43 +1110,24 @@ class _MemorizationEntrySheetState extends State<MemorizationEntrySheet> {
                           ),
                         ),
                         SizedBox(height: 6.h),
-                        Container(
-                          decoration: BoxDecoration(
-                            color: AppColors.surfaceContainerLow,
-                            borderRadius: BorderRadius.circular(
-                              AppConstants.radiusMd,
-                            ),
-                            border: Border.all(color: AppColors.inputBorder),
-                          ),
-                          padding: EdgeInsets.symmetric(horizontal: 16.w),
-                          child: DropdownButtonHideUnderline(
-                            child: DropdownButton<int>(
-                              value: _selectedSurah ?? _kNoSurah,
-                              isExpanded: true,
-                              // The first choice records only the amount, and
-                              // is how a picked surah is taken back.
-                              items: [
-                                DropdownMenuItem<int>(
-                                  value: _kNoSurah,
-                                  child: AppText(
-                                    _kNoSurahChoice,
-                                    style: AppTextStyles.labelMd.copyWith(
-                                      color: AppColors.onSurfaceVariant,
-                                    ),
-                                  ),
-                                ),
-                                ...kSurahs.map(
-                                  (s) => DropdownMenuItem<int>(
-                                    value: s.number,
-                                    child: AppText(s.name),
-                                  ),
-                                ),
-                              ],
-                              onChanged: (v) =>
-                                  _onSurahChanged(v == _kNoSurah ? null : v),
-                            ),
-                          ),
+                        SurahMultiSelectField(
+                          selected: _selectedSurahs,
+                          enabled: !_isSaving,
+                          onChanged: _onSurahsChanged,
                         ),
+                        // Says where the counter's number came from, so a
+                        // filled-in total is never a surprise.
+                        if (_selectedSurahs.length > 1) ...[
+                          SizedBox(height: 6.h),
+                          AppText(
+                            '${_selectedSurahs.length} سور تغطي '
+                            '${_selectedSurahPages ?? 0} $kPageUnitLabel',
+                            textAlign: TextAlign.right,
+                            style: AppTextStyles.labelMd.copyWith(
+                              color: AppColors.onSurfaceVariant,
+                            ),
+                          ),
+                        ],
                       ],
                       SizedBox(height: 12.h),
 
@@ -1083,7 +1157,9 @@ class _MemorizationEntrySheetState extends State<MemorizationEntrySheet> {
                         onChanged: (type) =>
                             setState(() => _selectedType = type),
                       ),
-                      SizedBox(height: 12.h),
+                      SizedBox(height: 4.h),
+                      _buildRepeatSwitch(),
+                      SizedBox(height: 8.h),
 
                       AppText(
                         'طريقة العد',
@@ -1250,6 +1326,26 @@ class _MemorizationEntrySheetState extends State<MemorizationEntrySheet> {
                             ),
                           ),
                         ],
+                      ],
+
+                      // Last in the card: the teacher notes mistakes after
+                      // the recitation, once the portion is set.
+                      if (_isTasmee) ...[
+                        SizedBox(height: 12.h),
+                        AppTextField(
+                          label: 'الأخطاء (اختياري)',
+                          hint: 'مثال: تردد في الآية 5، خطأ في المد',
+                          controller: _mistakesController,
+                          enabled: !_isSaving,
+                          minLines: 2,
+                          maxLines: 4,
+                          keyboardType: TextInputType.multiline,
+                          textInputAction: TextInputAction.newline,
+                          // The server's column holds 1000 characters.
+                          inputFormatters: [
+                            LengthLimitingTextInputFormatter(1000),
+                          ],
+                        ),
                       ],
                     ],
                   ),

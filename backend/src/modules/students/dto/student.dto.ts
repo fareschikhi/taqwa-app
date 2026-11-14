@@ -51,6 +51,9 @@ export class CreateStudentDto extends StudentRegistrationDto {
   @ArrayUnique()
   @IsIn(HADITH_BOOKS, { each: true })
   hadithBooks?: string[];
+  // Admin-only opt-in to برنامج التسميع: gates the TASMEE subject on the
+  // recitation sheet and the server-side TASMEE write path.
+  @IsOptional() @IsBoolean() tracksTasmee?: boolean;
   // Only meaningful with isAdult; the service rejects the pairing that makes
   // an account nobody can sign into.
   @IsOptional() @IsPassword() password?: string;
@@ -72,6 +75,7 @@ export class UpdateStudentDto extends StudentRegistrationDto {
   @ArrayUnique()
   @IsIn(HADITH_BOOKS, { each: true })
   hadithBooks?: string[];
+  @IsOptional() @IsBoolean() tracksTasmee?: boolean;
   // Resets an adult student's password. A child's record has no login, so
   // the service ignores it there.
   @IsOptional() @IsPassword() password?: string;

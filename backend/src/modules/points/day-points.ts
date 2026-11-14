@@ -37,6 +37,7 @@ export async function reconcileDayPoints(
       amountDone: true,
       unit: true,
       outsideSession: true,
+      isRepeat: true,
     },
   });
 

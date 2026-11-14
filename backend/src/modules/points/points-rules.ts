@@ -19,6 +19,9 @@ export interface DayRecitation {
   /// Recorded outside the halaqa session: paid like any recitation, but it
   /// does not count as the session's recitation.
   outsideSession?: boolean;
+  /// A repeat (إعادة) of a portion already recited: paid at half the rate,
+  /// and still the session's recitation.
+  isRepeat?: boolean;
 }
 
 /// `milli` is thousandths of a point, so every rate and every half page stays
@@ -52,6 +55,9 @@ const RECITATION_RATE: Record<ProgressUnit, Record<Memorization, number>> = {
     BIGREVISION: 20, // مراجعة وضبط: 2 points per 100 ayahs
   },
 };
+// A repeat earns half of what the same row would earn. Applied per row before
+// rounding, so a repeat never earns more than half its plain value.
+const REPEAT_SHARE = 0.5;
 const PRESENT = 500;
 const ABSENCE = -1000;
 const MISSED_MEMORIZATION = -1000;
@@ -78,7 +84,11 @@ export function desiredPoints(input: {
   const recited = recitations.reduce(
     (sum, r) =>
       sum +
-      Math.round(r.amountDone * RECITATION_RATE[r.unit][r.memorizationType]),
+      Math.round(
+        r.amountDone *
+          RECITATION_RATE[r.unit][r.memorizationType] *
+          (r.isRepeat ? REPEAT_SHARE : 1),
+      ),
     0,
   );
   wanted.push({ source: 'MEMORIZATION', milli: recited });

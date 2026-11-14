@@ -171,3 +171,52 @@ String surahLabelOf(int? number) {
   final name = surahNameOf(number);
   return name != null ? 'سورة $name' : 'سورة رقم $number';
 }
+
+/// How many mushaf pages the surahs numbered [numbers] cover together.
+///
+/// Pages are counted as a set, so short surahs sharing a page count it once:
+/// الإخلاص + الفلق + الناس are three surahs on one page, not three pages.
+/// Numbers outside the mushaf are skipped.
+int pagesCoveredBy(Iterable<int> numbers) {
+  final pages = <int>{};
+  for (final number in numbers) {
+    final surah = surahOf(number);
+    if (surah == null) continue;
+    for (var page = surah.startPage; page <= surah.endPage; page++) {
+      pages.add(page);
+    }
+  }
+  return pages.length;
+}
+
+/// Every surah a stored entry names: its `surahNumbers` list when it recited
+/// several in one go, else its single `surahNumber`, else none.
+///
+/// Read off untyped JSON, so anything that is not a whole number is skipped
+/// rather than thrown on.
+List<int> surahNumbersOfRecord(Map<String, dynamic> record) {
+  final list = record['surahNumbers'];
+  if (list is List) {
+    final numbers = [
+      for (final n in list)
+        if (n is num) n.toInt(),
+    ];
+    if (numbers.length > 1) return numbers;
+  }
+  final single = (record['surahNumber'] as num?)?.toInt();
+  return single == null ? const [] : [single];
+}
+
+/// How a set of surahs is named on screen: one surah as [surahLabelOf] names
+/// it, several as «سور الإخلاص، الفلق، الناس», none as [kNoSurahLabel].
+String surahsLabelOf(List<int> numbers) {
+  if (numbers.length < 2) {
+    return surahLabelOf(numbers.isEmpty ? null : numbers.single);
+  }
+  final names = numbers.map((n) => surahNameOf(n) ?? '$n').join('، ');
+  return 'سور $names';
+}
+
+/// The surah label of a stored entry, naming every surah it recited.
+String recordSurahLabel(Map<String, dynamic> record) =>
+    surahsLabelOf(surahNumbersOfRecord(record));

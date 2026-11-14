@@ -71,6 +71,20 @@ void main() {
       expect(session.status, 'LATE');
     });
 
+    test('reads every surah of an entry that recited several', () {
+      final session = lastSessionOf(
+        attendance: [attendance('2026-08-27', 'PRESENT')],
+        memorization: [
+          {
+            ...memorization('2026-08-27', surahNumber: 113),
+            'surahNumbers': [113, 114],
+          },
+        ],
+      );
+
+      expect(session!.entries.single.surahs, [113, 114]);
+    });
+
     test('keeps only the memorization recorded on that same day', () {
       final session = lastSessionOf(
         attendance: [attendance('2026-08-27', 'PRESENT')],

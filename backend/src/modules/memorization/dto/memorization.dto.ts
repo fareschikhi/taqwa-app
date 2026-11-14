@@ -38,6 +38,17 @@ export class CreateMemorizationDto {
   @Max(114)
   surahNumber?: number;
 
+  // Several surahs recited as one entry, e.g. the last three of the mushaf.
+  // The service sorts them, keeps the first in surahNumber, and refuses more
+  // than one on an entry counted in ayahs. Empty means no surah.
+  @IsOptional()
+  @IsArray()
+  @ArrayMaxSize(114)
+  @IsInt({ each: true })
+  @Min(1, { each: true })
+  @Max(114, { each: true })
+  surahNumbers?: number[];
+
   // Pages for any Quran entry, hadiths for any hadith entry. This is only the
   // coarse ceiling; the service applies the tighter per-unit bound once it
   // knows the subject, including which units may take a half (only pages do).
@@ -87,6 +98,19 @@ export class CreateMemorizationDto {
   @IsOptional()
   @IsBoolean()
   outsideSession?: boolean;
+
+  // A repeat (إعادة): half points, and the halaqa's repeat fee for an adult.
+  // Set on creation only.
+  @IsOptional()
+  @IsBoolean()
+  isRepeat?: boolean;
+
+  // TASMEE-only free text: the mistakes the teacher noted (الأخطاء). The
+  // service trims it, stores blank as none, and refuses it on other subjects.
+  @IsOptional()
+  @IsString()
+  @MaxLength(1000)
+  mistakes?: string;
 }
 
 /// The fields one recitation shares across a whole group: everything a single
@@ -98,6 +122,14 @@ export class GroupMemorizationEntryDto {
   @Min(1)
   @Max(114)
   surahNumber?: number;
+
+  @IsOptional()
+  @IsArray()
+  @ArrayMaxSize(114)
+  @IsInt({ each: true })
+  @Min(1, { each: true })
+  @Max(114, { each: true })
+  surahNumbers?: number[];
 
   @IsNumber({ allowNaN: false, allowInfinity: false })
   @Min(0.5)
@@ -112,6 +144,10 @@ export class GroupMemorizationEntryDto {
   @IsOptional()
   @IsEnum(ProgressUnit)
   unit?: ProgressUnit;
+
+  @IsOptional()
+  @IsBoolean()
+  isRepeat?: boolean;
 
   @IsOptional()
   @IsInt()
@@ -148,6 +184,16 @@ export class UpdateMemorizationDto {
   @Min(1)
   @Max(114)
   surahNumber?: number;
+
+  // Replaces the row's surahs. A surahNumber sent alone also drops any list,
+  // so an older client editing one surah never leaves a stale list behind.
+  @IsOptional()
+  @IsArray()
+  @ArrayMaxSize(114)
+  @IsInt({ each: true })
+  @Min(1, { each: true })
+  @Max(114, { each: true })
+  surahNumbers?: number[];
 
   @IsOptional()
   @IsNumber({ allowNaN: false, allowInfinity: false })
@@ -187,4 +233,10 @@ export class UpdateMemorizationDto {
   @Min(1)
   @Max(MAX_AMOUNT.AYAH)
   ayahTo?: number;
+
+  // Replaces a tasmee entry's mistakes; blank clears them.
+  @IsOptional()
+  @IsString()
+  @MaxLength(1000)
+  mistakes?: string;
 }

@@ -1,9 +1,10 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:taqwa/core/constants/app_constants.dart';
-import 'package:taqwa/core/constants/surahs.dart' show surahLabelOf;
+import 'package:taqwa/core/constants/surahs.dart' show surahsLabelOf;
 import 'package:taqwa/core/enums/memorization_subject.dart';
 import 'package:taqwa/core/enums/memorization_type.dart';
+import 'package:taqwa/core/utils/record_type_label.dart' show kRepeatSuffix;
 import 'package:taqwa/core/theme/app_colors.dart';
 import 'package:taqwa/core/theme/app_text_styles.dart';
 import 'package:taqwa/core/utils/last_session.dart';
@@ -105,13 +106,14 @@ class LastSessionCard extends StatelessWidget {
 
     // A type this build does not know about still happened, so the amount is
     // reported without claiming a unit for it.
+    final repeat = entry.isRepeat ? ' $kRepeatSuffix' : '';
     final amountText = type == null
-        ? 'تسميع · ${formatAmount(entry.amount)}'
-        : '${type.label} · $amount';
+        ? 'تسميع$repeat · ${formatAmount(entry.amount)}'
+        : '${type.label}$repeat · $amount';
 
     final referenceText = isHadith
         ? hadithLabelOrFallback(entry.hadithReference)
-        : surahLabelOf(entry.surahNumber);
+        : surahsLabelOf(entry.surahs);
 
     return Padding(
       padding: EdgeInsets.only(bottom: 8.h),

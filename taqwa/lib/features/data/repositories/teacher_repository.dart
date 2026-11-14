@@ -158,6 +158,7 @@ class TeacherRepository {
   Future<Map<String, dynamic>> submitMemorization({
     required int studentId,
     int? surahNumber,
+    List<int>? surahNumbers,
     required num amountDone,
     required String memorizationType,
     String subject = 'QURAN',
@@ -166,11 +167,16 @@ class TeacherRepository {
     int? ayahFrom,
     int? ayahTo,
     bool outsideSession = false,
+    bool isRepeat = false,
+    String? mistakes,
   }) async {
     return _ds.submitMemorization(
+      mistakes: mistakes,
       studentId: studentId,
       outsideSession: outsideSession,
+      isRepeat: isRepeat,
       surahNumber: surahNumber,
+      surahNumbers: surahNumbers,
       amountDone: amountDone,
       memorizationType: memorizationType,
       subject: subject,
@@ -186,20 +192,24 @@ class TeacherRepository {
   Future<Map<String, dynamic>> submitGroupMemorization({
     required List<int> studentIds,
     int? surahNumber,
+    List<int>? surahNumbers,
     required num amountDone,
     required String memorizationType,
     String? unit,
     int? ayahFrom,
     int? ayahTo,
+    bool isRepeat = false,
   }) async {
     return _ds.submitGroupMemorization(
       studentIds: studentIds,
       surahNumber: surahNumber,
+      surahNumbers: surahNumbers,
       amountDone: amountDone,
       memorizationType: memorizationType,
       unit: unit,
       ayahFrom: ayahFrom,
       ayahTo: ayahTo,
+      isRepeat: isRepeat,
     );
   }
 }

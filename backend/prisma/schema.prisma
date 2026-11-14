@@ -30,9 +30,15 @@ enum Memorization {
   BIGREVISION
 }
 
+// TASMEE (برنامج التسميع) is a Quran recitation recorded under its own
+// program: it takes the same surah/ayah/page fields as QURAN, plus optional
+// free-text mistakes, and stays out of the Quran memorized totals. It still
+// counts as the day's recitation on purpose: it earns points by its unit and
+// clears the missed-recitation fine, like any other entry.
 enum MemorizationSubject {
   QURAN
   HADITH
+  TASMEE
 }
 
 // What a memorization row's amountDone counts. A Quran row is PAGE, or AYAH
@@ -69,6 +75,8 @@ enum FineSource {
   ABSENCE
   LATE
   MISSED_MEMORIZATION
+  // One row per day: repeatFee × that day's repeat recitations.
+  REPEAT
   MANUAL
 }
 
@@ -199,6 +207,10 @@ model Student {
   // string array in list order. The teacher picks only from these, and a
   // HADITH write naming any other book is refused.
   hadithBooks    Json?
+  // Admin-set opt-in to برنامج التسميع, the same kind of gate as tracksHadith:
+  // it decides whether the teacher's sheet offers a TASMEE subject for this
+  // student and whether the server accepts a TASMEE write for him.
+  tracksTasmee   Boolean   @default(false)
 
   // Registration-form details (استمارة التسجيل). All optional: students
   // enrolled before the form existed carry none of them. schoolLevel is the
@@ -246,6 +258,8 @@ model Halaqa {
   absenceFee            Int     @default(0)
   lateFee               Int     @default(0)
   missedMemorizationFee Int     @default(0)
+  // Charged per repeat (إعادة) recitation, in or outside the session.
+  repeatFee             Int     @default(0)
 
   teacher         Teacher              @relation(fields: [teacherId], references: [id], onDelete: Cascade)
   students        Student[]
@@ -294,6 +308,11 @@ model MemorizationProgress {
   studentId        Int
   // QURAN-only: which surah. Nullable because a HADITH row has none.
   surahNumber      Int?
+  // Several surahs recited as one entry (e.g. الإخلاص + الفلق + الناس): the
+  // full list in mushaf order, set only when there are two or more. The
+  // first one is also in surahNumber, so readers that know one surah still
+  // work; a single-surah row leaves this null.
+  surahNumbers     Json?
   // Float so page entries can record half pages (1.5); the service keeps
   // every page value on a 0.5 step, and single hadiths whole.
   amountDone       Float
@@ -313,6 +332,13 @@ model MemorizationProgress {
   // day the student was absent, and never clears that day's missed-recitation
   // fine or point.
   outsideSession   Boolean             @default(false)
+  // A repeat (إعادة) of a portion already recited. Earns half points, adds
+  // nothing to the memorized totals, and in an adults' halaqa costs the
+  // halaqa's repeatFee. Still counts as the day's recitation.
+  isRepeat         Boolean             @default(false)
+  // TASMEE-only: the mistakes the teacher noted during the recitation, as
+  // free text (الأخطاء). Optional — a clean recitation has none.
+  mistakes         String?             @db.VarChar(1000)
   recordedAt       DateTime            @default(now())
   date             DateTime            @db.Date
   updatedAt        DateTime            @updatedAt

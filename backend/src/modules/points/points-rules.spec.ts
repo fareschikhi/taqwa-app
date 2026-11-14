@@ -181,6 +181,35 @@ describe('desiredPoints', () => {
     ]);
   });
 
+  // A repeat (إعادة) re-recites a portion, so it earns half, at every rate.
+  it('pays a repeat at half the rate', () => {
+    const repeat = (m: Memorization, n: number, u?: ProgressUnit) => ({
+      ...r(m, n, u),
+      isRepeat: true,
+    });
+    expect(day(null, [repeat(Memorization.MEMORIZING, 2)])).toEqual([
+      { source: 'MEMORIZATION', milli: 1000 },
+    ]);
+    expect(
+      day(null, [r(Memorization.MEMORIZING, 1), repeat(Memorization.MEMORIZING, 1)]),
+    ).toEqual([{ source: 'MEMORIZATION', milli: 1500 }]);
+    expect(
+      day(null, [repeat(Memorization.BIGREVISION, 1, ProgressUnit.AYAH)]),
+    ).toEqual([{ source: 'MEMORIZATION', milli: 10 }]);
+  });
+
+  // A repeat is still the session's recitation: the student did recite.
+  it("counts a repeat as the day's recitation", () => {
+    expect(
+      day(AttendanceStatus.PRESENT, [
+        { ...r(Memorization.MEMORIZING, 1), isRepeat: true },
+      ]),
+    ).toEqual([
+      { source: 'MEMORIZATION', milli: 500 },
+      { source: 'PRESENT', milli: 500 },
+    ]);
+  });
+
   it('counts recitations recorded before roll call', () => {
     expect(day(null, [r(Memorization.MEMORIZING, 1)])).toEqual([
       { source: 'MEMORIZATION', milli: 1000 },

@@ -217,6 +217,7 @@ class TeacherRemoteDatasource {
   Future<Map<String, dynamic>> submitMemorization({
     required int studentId,
     int? surahNumber,
+    List<int>? surahNumbers,
     required num amountDone,
     required String memorizationType,
     String subject = 'QURAN',
@@ -225,12 +226,18 @@ class TeacherRemoteDatasource {
     int? ayahFrom,
     int? ayahTo,
     bool outsideSession = false,
+    bool isRepeat = false,
+    String? mistakes,
   }) async {
     final response = await _dio.post(
       ApiEndpoints.memorization,
       data: {
         'studentId': studentId,
         if (surahNumber != null) 'surahNumber': surahNumber,
+        // Several surahs in one entry; surahNumber still carries the first, so
+        // an older server that drops this field keeps at least that one.
+        if (surahNumbers != null && surahNumbers.length > 1)
+          'surahNumbers': surahNumbers,
         'amountDone': amountDone,
         'memorizationType': memorizationType,
         'subject': subject,
@@ -243,6 +250,10 @@ class TeacherRemoteDatasource {
         // Sent only when set, so an older server that does not know the
         // field never refuses a normal halaqa entry over it.
         if (outsideSession) 'outsideSession': true,
+        if (isRepeat) 'isRepeat': true,
+        // TASMEE-only notes; sent only when there are some, so a blank box
+        // and a Quran entry send nothing.
+        if (mistakes != null && mistakes.isNotEmpty) 'mistakes': mistakes,
       },
     );
     return response.data as Map<String, dynamic>;
@@ -254,11 +265,13 @@ class TeacherRemoteDatasource {
   Future<Map<String, dynamic>> submitGroupMemorization({
     required List<int> studentIds,
     int? surahNumber,
+    List<int>? surahNumbers,
     required num amountDone,
     required String memorizationType,
     String? unit,
     int? ayahFrom,
     int? ayahTo,
+    bool isRepeat = false,
   }) async {
     final response = await _dio.post(
       '${ApiEndpoints.memorization}/group',
@@ -266,11 +279,14 @@ class TeacherRemoteDatasource {
         'studentIds': studentIds,
         'entry': {
           if (surahNumber != null) 'surahNumber': surahNumber,
+          if (surahNumbers != null && surahNumbers.length > 1)
+            'surahNumbers': surahNumbers,
           'amountDone': amountDone,
           'memorizationType': memorizationType,
           if (unit != null) 'unit': unit,
           if (ayahFrom != null) 'ayahFrom': ayahFrom,
           if (ayahTo != null) 'ayahTo': ayahTo,
+          if (isRepeat) 'isRepeat': true,
         },
       },
     );

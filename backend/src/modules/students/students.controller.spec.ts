@@ -111,6 +111,36 @@ describe('StudentsController hadithBooks gate', () => {
     expect(service.update).not.toHaveBeenCalled();
   });
 
+  // برنامج التسميع is the same kind of admin opt-in as the hadith books.
+  it('lets an admin turn tracksTasmee on, on create and on update', async () => {
+    const { controller, service } = makeController();
+    await controller.create({ ...payload, tracksTasmee: true }, {
+      role: 'ADMIN',
+    });
+    await controller.update(7, { tracksTasmee: false }, { role: 'ADMIN' });
+    expect(service.create).toHaveBeenCalledWith({
+      ...payload,
+      tracksTasmee: true,
+    });
+    expect(service.update).toHaveBeenCalledWith(7, { tracksTasmee: false });
+  });
+
+  it('rejects a manager or teacher setting tracksTasmee, even false', () => {
+    const { controller, service } = makeController();
+    expect(() =>
+      controller.create({ ...payload, tracksTasmee: false }, {
+        role: 'MANAGER',
+      }),
+    ).toThrow(ForbiddenException);
+    for (const role of ['MANAGER', 'TEACHER']) {
+      expect(() =>
+        controller.update(7, { tracksTasmee: true }, { role }),
+      ).toThrow(ForbiddenException);
+    }
+    expect(service.create).not.toHaveBeenCalled();
+    expect(service.update).not.toHaveBeenCalled();
+  });
+
   it('lets a manager update other fields', async () => {
     const { controller, service } = makeController();
     await controller.update(7, { address: 'Oran' }, { role: 'MANAGER' });

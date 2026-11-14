@@ -77,6 +77,28 @@ void main() {
     expect(find.text('سورة البقرة'), findsOneWidget);
   });
 
+  testWidgets('marks a repeat in brackets', (tester) async {
+    await tester.pumpWidget(
+      _host(
+        LastSessionCard(
+          session: _session(
+            entries: const [
+              LastSessionEntry(
+                surahNumber: 2,
+                amount: 3,
+                type: MemorizationType.hifz,
+                isRepeat: true,
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
+    await tester.pumpAndSettle();
+
+    expect(find.text('حفظ (اعادة) · 3 صفحة'), findsOneWidget);
+  });
+
   testWidgets('counts revision in pages', (tester) async {
     await tester.pumpWidget(
       _host(
@@ -237,5 +259,29 @@ void main() {
     await tester.pumpAndSettle();
 
     expect(find.text('حفظ · 1.5 صفحة'), findsOneWidget);
+  });
+
+  testWidgets('names every surah of an entry that recited several', (
+    tester,
+  ) async {
+    await tester.pumpWidget(
+      _host(
+        LastSessionCard(
+          session: _session(
+            entries: const [
+              LastSessionEntry(
+                surahNumber: 112,
+                surahNumbers: [112, 113, 114],
+                amount: 1,
+                type: MemorizationType.hifz,
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
+    await tester.pumpAndSettle();
+
+    expect(find.text('سور الإخلاص، الفلق، الناس'), findsOneWidget);
   });
 }

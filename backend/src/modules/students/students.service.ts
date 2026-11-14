@@ -287,6 +287,7 @@ export class StudentsService {
             parentId: dto.isAdult ? undefined : (dto.parentId ?? undefined),
             halaqaId: dto.halaqaId ?? undefined,
             ...this.hadithFields(dto.hadithBooks ?? []),
+            tracksTasmee: dto.tracksTasmee,
             ...this.registrationFields(dto),
           },
         },
@@ -357,6 +358,8 @@ export class StudentsService {
       studentUpdate.currentRating = dto.currentRating;
     if (dto.hadithBooks !== undefined)
       Object.assign(studentUpdate, this.hadithFields(dto.hadithBooks));
+    if (dto.tracksTasmee !== undefined)
+      studentUpdate.tracksTasmee = dto.tracksTasmee;
 
     if (Object.keys(userUpdate).length > 0) {
       await this.prisma.user.update({

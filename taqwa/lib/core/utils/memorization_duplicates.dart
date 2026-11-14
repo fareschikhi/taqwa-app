@@ -1,6 +1,6 @@
 import '../constants/surahs.dart';
-import '../enums/memorization_type.dart';
 import 'hadith_label.dart' show hadithLabelOrFallback, recordAmountText;
+import 'record_type_label.dart';
 
 /// Helpers for spotting a student who already has recitation recorded today.
 ///
@@ -31,12 +31,7 @@ Map<int, List<Map<String, dynamic>>> memorizationByStudent(
 /// Used to show the teacher exactly what is already on file, so the warning
 /// names the work rather than just asserting that some exists.
 String memorizationSummary(Map<String, dynamic> record) {
-  // An unrecognised type falls back to new memorization, matching the column
-  // default on the server.
-  final type =
-      MemorizationTypeX.fromApi(record['memorizationType'] as String?) ??
-      MemorizationType.hifz;
-  final typeLabel = type == MemorizationType.hifz ? 'حفظ جديد' : type.label;
+  final typeLabel = recordTypeLabel(record);
   final amount = recordAmountText(record);
 
   if (record['subject'] == 'HADITH') {
@@ -45,6 +40,6 @@ String memorizationSummary(Map<String, dynamic> record) {
     return '$label · $typeLabel · $amount';
   }
 
-  final surah = surahLabelOf((record['surahNumber'] as num?)?.toInt());
+  final surah = recordSurahLabel(record);
   return '$surah · $typeLabel · $amount';
 }

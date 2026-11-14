@@ -80,8 +80,11 @@ export async function reconcileDayFines(
 
   const wanted = desiredCharges({ status, missedMemorization, rates });
 
+  // REPEAT follows the day's recitations, not roll call, and has a reconciler
+  // of its own (repeat-fine.ts). Left in here, the stale-row sweep below
+  // would delete it on every re-saved sheet.
   const existing = await tx.fineEntry.findMany({
-    where: { studentId, date, source: { not: 'MANUAL' } },
+    where: { studentId, date, source: { notIn: ['MANUAL', 'REPEAT'] } },
     select: { id: true, source: true, amount: true },
   });
 

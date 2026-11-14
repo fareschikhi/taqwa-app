@@ -32,6 +32,8 @@ export class CreateHalaqaDto {
   @IsOptional() @IsInt() @Min(0) absenceFee?: number;
   @IsOptional() @IsInt() @Min(0) lateFee?: number;
   @IsOptional() @IsInt() @Min(0) missedMemorizationFee?: number;
+  // Charged per repeat (إعادة) recitation.
+  @IsOptional() @IsInt() @Min(0) repeatFee?: number;
 }
 
 export class UpdateHalaqaDto {
@@ -49,4 +51,5 @@ export class UpdateHalaqaDto {
   @IsOptional() @IsInt() @Min(0) absenceFee?: number;
   @IsOptional() @IsInt() @Min(0) lateFee?: number;
   @IsOptional() @IsInt() @Min(0) missedMemorizationFee?: number;
+  @IsOptional() @IsInt() @Min(0) repeatFee?: number;
 }

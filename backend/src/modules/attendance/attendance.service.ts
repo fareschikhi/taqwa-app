@@ -12,6 +12,7 @@ import {
 import { AttendanceStatus, Prisma } from '@prisma/client';
 import { NotificationsService } from '../notifications/notifications.service';
 import { reconcileDayFines } from './day-fines';
+import { reconcileRepeatFine } from './repeat-fine';
 import { reconcileDayPoints } from '../points/day-points';
 import { isAway } from './attendance-status';
 
@@ -47,6 +48,8 @@ export class AttendanceService {
     // excused) discards work.
     if (!isAway(status)) return;
     await tx.memorizationProgress.deleteMany({ where: { studentId, date } });
+    // The repeats went with the rest, so their charge goes too.
+    await reconcileRepeatFine(tx, studentId, date, null);
   }
 
   /// What a single write changed, so the notifier can tell a real transition
@@ -389,8 +392,9 @@ export class AttendanceService {
     await this.prisma.$transaction(async (tx) => {
       // The justification row cascades with it.
       await tx.attendance.delete({ where: { id } });
+      // A repeat charge follows the recitations, which stay, so it stays too.
       await tx.fineEntry.deleteMany({
-        where: { studentId, date, source: { not: 'MANUAL' } },
+        where: { studentId, date, source: { notIn: ['MANUAL', 'REPEAT'] } },
       });
       await reconcileDayPoints(tx, studentId, date);
     });

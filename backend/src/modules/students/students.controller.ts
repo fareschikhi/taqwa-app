@@ -25,16 +25,19 @@ import {
 import { StudentsService } from './students.service';
 import { CreateStudentDto, UpdateStudentDto } from './dto/student.dto';
 
-/// Which hadith books a student memorizes is the admin's call alone. A
-/// manager (and, on PATCH, a teacher) reaches the same routes for everything
-/// else on the student, so the list is refused by role here rather than
-/// trusted to the app hiding its checkboxes. Any presence counts, an empty
-/// list included — clearing the books is as much a decision as setting them.
-function assertMaySetHadithBooks(
-  dto: { hadithBooks?: string[] },
+/// Which programs a student follows — the hadith books, and برنامج التسميع —
+/// is the admin's call alone. A manager (and, on PATCH, a teacher) reaches
+/// the same routes for everything else on the student, so these are refused
+/// by role here rather than trusted to the app hiding its controls. Any
+/// presence counts, an empty list or `false` included — turning a program
+/// off is as much a decision as turning it on.
+function assertMaySetPrograms(
+  dto: { hadithBooks?: string[]; tracksTasmee?: boolean },
   user: { role?: string },
 ) {
-  if (dto.hadithBooks !== undefined && user?.role !== Role.ADMIN) {
+  const touches =
+    dto.hadithBooks !== undefined || dto.tracksTasmee !== undefined;
+  if (touches && user?.role !== Role.ADMIN) {
     throw new ForbiddenException('غير مصرح لك بهذا الإجراء');
   }
 }
@@ -116,7 +119,7 @@ export class StudentsController {
   @Roles(Role.ADMIN, Role.MANAGER)
   @RequirePermission(ManagerPermission.MANAGE_ACCOUNTS)
   create(@Body() dto: CreateStudentDto, @CurrentUser() user: any) {
-    assertMaySetHadithBooks(dto, user);
+    assertMaySetPrograms(dto, user);
     return this.studentsService.create(dto);
   }
 
@@ -128,7 +131,7 @@ export class StudentsController {
     @Body() dto: UpdateStudentDto,
     @CurrentUser() user: any,
   ) {
-    assertMaySetHadithBooks(dto, user);
+    assertMaySetPrograms(dto, user);
     assertMaySetPassword(dto, user);
     assertMaySetRating(dto, user);
     return this.studentsService.update(id, dto);

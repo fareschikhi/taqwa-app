@@ -19,6 +19,10 @@ class TeacherStudentModel {
   final List<String> hadithBooks;
   bool get tracksHadith => hadithBooks.isNotEmpty;
 
+  // Admin-set opt-in to برنامج التسميع: the recitation sheet offers a
+  // تسميع subject for this student only when it is on.
+  final bool tracksTasmee;
+
   const TeacherStudentModel({
     required this.id,
     required this.fullName,
@@ -27,6 +31,7 @@ class TeacherStudentModel {
     this.teacherId,
     this.halaqaId,
     this.hadithBooks = const [],
+    this.tracksTasmee = false,
   });
 
   factory TeacherStudentModel.fromJson(Map<String, dynamic> json) {
@@ -47,6 +52,7 @@ class TeacherStudentModel {
         json['hadithBooks'],
         tracksHadith: (json['tracksHadith'] as bool?) ?? false,
       ),
+      tracksTasmee: (json['tracksTasmee'] as bool?) ?? false,
     );
   }
 
@@ -60,6 +66,7 @@ class TeacherStudentModel {
     'teacherId': teacherId,
     'halaqaId': halaqaId,
     'hadithBooks': hadithBooks,
+    'tracksTasmee': tracksTasmee,
   };
 }
 

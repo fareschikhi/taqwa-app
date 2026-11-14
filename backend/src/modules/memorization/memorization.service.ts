@@ -21,7 +21,14 @@ import {
   ayahRangeAmount,
   unitFor,
 } from './progress-unit';
+import {
+  resolveSurahs,
+  storedSurahList,
+  surahColumns,
+  surahsOfRow,
+} from './surah-list';
 import { reconcileDayFines } from '../attendance/day-fines';
+import { reconcileRepeatFine } from '../attendance/repeat-fine';
 import { isAway } from '../attendance/attendance-status';
 import { reconcileDayPoints } from '../points/day-points';
 
@@ -48,7 +55,14 @@ export const MEMORIZATION_ERROR = {
   STUDENT_ABSENT: 'STUDENT_ABSENT',
   HADITH_NOT_ENABLED: 'HADITH_NOT_ENABLED',
   HADITH_BOOK_NOT_ASSIGNED: 'HADITH_BOOK_NOT_ASSIGNED',
+  TASMEE_NOT_ENABLED: 'TASMEE_NOT_ENABLED',
 } as const;
+
+/// The teacher's notes as stored: trimmed, and blank meaning none.
+function cleanMistakes(text: string | null | undefined): string | null {
+  const trimmed = text?.trim();
+  return trimmed ? trimmed : null;
+}
 
 @Injectable()
 export class MemorizationService {
@@ -77,16 +91,23 @@ export class MemorizationService {
   // "3 pages" without saying which. A HADITH row identifies itself with free
   // text instead — there is no fixed hadith list to pick a number from — and
   // that reference is required. Each subject rejects the other's identity
-  // field, so a row never carries both.
+  // field, so a row never carries both. A TASMEE row takes the Quran fields,
+  // and only it may carry mistakes: on any other row no screen shows them.
   private assertSubjectFields(
     subject: MemorizationSubject,
     surahNumber: number | null | undefined,
     hadithReference: string | null | undefined,
+    mistakes?: string | null,
   ) {
-    if (subject === MemorizationSubject.QURAN) {
+    if (subject !== MemorizationSubject.TASMEE && cleanMistakes(mistakes)) {
+      throw new BadRequestException(
+        'mistakes are only recorded on a tasmee entry (subject TASMEE)',
+      );
+    }
+    if (subject !== MemorizationSubject.HADITH) {
       if (hadithReference) {
         throw new BadRequestException(
-          'hadithReference is not valid for a Quran entry',
+          'hadithReference is not valid for a Quran or tasmee entry',
         );
       }
     } else {
@@ -132,6 +153,24 @@ export class MemorizationService {
         error: 'Bad Request',
         code: MEMORIZATION_ERROR.HADITH_BOOK_NOT_ASSIGNED,
         message: 'This hadith book is not assigned to this student',
+      });
+    }
+  }
+
+  // برنامج التسميع is opt-in per student, set by the admin, and checked at
+  // write time for the same reason as hadith: the app hiding the option is
+  // not a guarantee.
+  private async assertTasmeeEnabled(studentId: number) {
+    const student = await this.prisma.student.findUnique({
+      where: { id: studentId },
+      select: { tracksTasmee: true },
+    });
+    if (!student?.tracksTasmee) {
+      throw new BadRequestException({
+        statusCode: 400,
+        error: 'Bad Request',
+        code: MEMORIZATION_ERROR.TASMEE_NOT_ENABLED,
+        message: 'This student is not in the tasmee program',
       });
     }
   }
@@ -197,12 +236,21 @@ export class MemorizationService {
     // every existing caller keeps recording Quran progress unchanged.
     const subject = dto.subject ?? MemorizationSubject.QURAN;
 
-    this.assertSubjectFields(subject, dto.surahNumber, dto.hadithReference);
     const unit = unitFor(subject, dto.unit);
+    const surahs = resolveSurahs({ unit, ...dto });
+    this.assertSubjectFields(
+      subject,
+      surahs.surahNumber,
+      dto.hadithReference,
+      dto.mistakes,
+    );
     this.assertAmountFitsUnit(unit, dto.amountDone);
-    ayahRangeAmount({ unit, ...dto });
+    ayahRangeAmount({ unit, ...dto, surahNumber: surahs.surahNumber });
     if (subject === MemorizationSubject.HADITH) {
       await this.assertHadithEnabled(dto.studentId, dto.hadithReference);
+    }
+    if (subject === MemorizationSubject.TASMEE) {
+      await this.assertTasmeeEnabled(dto.studentId);
     }
 
     // Attendance.date is a bare DATE, so the timestamp has to be floored to
@@ -218,13 +266,26 @@ export class MemorizationService {
 
     return this.prisma.$transaction(async (tx) => {
       const record = await tx.memorizationProgress.create({
-        data: { ...dto, subject, unit, date, outsideSession },
+        data: {
+          ...dto,
+          ...surahColumns(surahs),
+          subject,
+          unit,
+          date,
+          outsideSession,
+          mistakes: cleanMistakes(dto.mistakes),
+        },
       });
       // A recitation is what clears the day's "did not memorize" charge, so
       // the day is reconciled in the same write. With no attendance yet there
       // is nothing to reconcile: the charge only exists once roll is taken.
       if (attendance) {
         await reconcileDayFines(tx, dto.studentId, date, attendance, null);
+      }
+      // A repeat costs an adult its fee with or without roll call, and in or
+      // outside the session: the repeat happened either way.
+      if (dto.isRepeat) {
+        await reconcileRepeatFine(tx, dto.studentId, date, actor?.id ?? null);
       }
       // Unlike fines, points follow a recitation with or without roll call:
       // the pages were recited either way.
@@ -250,8 +311,9 @@ export class MemorizationService {
     // The entry is the same for everyone, so it is checked once.
     const subject = MemorizationSubject.QURAN;
     const unit = unitFor(subject, entry.unit);
+    const surahs = resolveSurahs({ unit, ...entry });
     this.assertAmountFitsUnit(unit, entry.amountDone);
-    ayahRangeAmount({ unit, ...entry });
+    ayahRangeAmount({ unit, ...entry, surahNumber: surahs.surahNumber });
 
     const date = startOfUtcDay(new Date());
     const rollCall = await this.prisma.attendance.findMany({
@@ -278,12 +340,22 @@ export class MemorizationService {
         for (const studentId of present) {
           rows.push(
             await tx.memorizationProgress.create({
-              data: { ...entry, studentId, subject, unit, date },
+              data: {
+                ...entry,
+                ...surahColumns(surahs),
+                studentId,
+                subject,
+                unit,
+                date,
+              },
             }),
           );
           const status = statusOf.get(studentId);
           if (status) {
             await reconcileDayFines(tx, studentId, date, status, null);
+          }
+          if (entry.isRepeat) {
+            await reconcileRepeatFine(tx, studentId, date, actor?.id ?? null);
           }
           await reconcileDayPoints(tx, studentId, date);
         }
@@ -319,18 +391,49 @@ export class MemorizationService {
     // Any field of the subject/surah/hadith/type/amount group can arrive
     // alone, so validate the combination the row will actually end up with.
     const subject = dto.subject ?? existing.subject;
-    const surahNumber =
-      dto.surahNumber !== undefined ? dto.surahNumber : existing.surahNumber;
+    // An edit that moves the row to the other subject starts from that
+    // subject's default unit; otherwise the row keeps the unit it has.
+    const keptUnit = subject === existing.subject ? existing.unit : undefined;
+    const unit = unitFor(subject, dto.unit ?? keptUnit);
+
+    // Sending either surah field replaces the row's surahs as a whole: a
+    // surahNumber sent alone (an older client) drops any list, so the row
+    // never names a list its surahNumber disagrees with.
+    const surahsTouched =
+      dto.surahNumber !== undefined || dto.surahNumbers !== undefined;
+    const resolved = resolveSurahs({ unit, ...dto });
+    const surahNumber = surahsTouched
+      ? resolved.surahNumber
+      : existing.surahNumber;
+    const surahList = surahsTouched
+      ? (resolved.surahNumbers ?? null)
+      : storedSurahList(existing.surahNumbers);
+    // Checked again here because an edit may move a several-surah row to
+    // ayahs without touching its surahs.
+    if (surahList && unit === ProgressUnit.AYAH) {
+      throw new BadRequestException(
+        'An ayah range lies inside one surah, so an entry counted in ayahs takes a single surah',
+      );
+    }
     const hadithReference =
       dto.hadithReference !== undefined
         ? dto.hadithReference
         : existing.hadithReference;
 
-    this.assertSubjectFields(subject, surahNumber, hadithReference);
-    // An edit that moves the row to the other subject starts from that
-    // subject's default unit; otherwise the row keeps the unit it has.
-    const keptUnit = subject === existing.subject ? existing.unit : undefined;
-    const unit = unitFor(subject, dto.unit ?? keptUnit);
+    // A row leaving tasmee leaves its mistakes behind; one staying keeps them
+    // unless the edit sends new ones.
+    const mistakes =
+      subject !== MemorizationSubject.TASMEE
+        ? null
+        : dto.mistakes !== undefined
+          ? cleanMistakes(dto.mistakes)
+          : existing.mistakes;
+    this.assertSubjectFields(
+      subject,
+      surahNumber,
+      hadithReference,
+      dto.mistakes,
+    );
     // A row that stays in ayahs keeps whichever end of its range the edit
     // leaves alone; a row leaving ayahs drops its range. An edit that only
     // moves the range recounts the amount from it, so "ayahs 1–5 → 1–10"
@@ -358,6 +461,14 @@ export class MemorizationService {
     if (subject === MemorizationSubject.HADITH) {
       await this.assertHadithEnabled(existing.studentId, dto.hadithReference);
     }
+    // Only a move into tasmee needs the opt-in: an entry already there can
+    // still be corrected after the admin turns the program off.
+    if (
+      subject === MemorizationSubject.TASMEE &&
+      existing.subject !== MemorizationSubject.TASMEE
+    ) {
+      await this.assertTasmeeEnabled(existing.studentId);
+    }
 
     // A changed amount or type changes what the day is worth, so the day's
     // points are reconciled in the same write. The date and student cannot be
@@ -367,8 +478,12 @@ export class MemorizationService {
         where: { id },
         data: {
           ...dto,
+          ...(surahsTouched
+            ? surahColumns({ surahNumber, surahNumbers: surahList })
+            : { surahNumbers: undefined }),
           unit,
           amountDone,
+          mistakes,
           // `?? null`, not the bare value: Prisma reads undefined as "leave
           // as is", which would keep a range on a row whose surah was cleared.
           ayahFrom: unit === ProgressUnit.AYAH ? (ayahFrom ?? null) : null,
@@ -394,6 +509,7 @@ export class MemorizationService {
         id: true,
         studentId: true,
         date: true,
+        isRepeat: true,
         student: { select: { halaqa: { select: { teacherId: true } } } },
       },
     });
@@ -428,6 +544,10 @@ export class MemorizationService {
           actor?.id ?? null,
         );
       }
+      // One repeat fewer lowers the day's repeat charge, or removes it.
+      if (existing.isRepeat) {
+        await reconcileRepeatFine(tx, studentId, date, actor?.id ?? null);
+      }
       await reconcileDayPoints(tx, studentId, date);
     });
     return { deleted: true };
@@ -449,8 +569,10 @@ export class MemorizationService {
     // meaning for them.
     // Pages and ayahs are different units, so an ayah entry adds to its own
     // total and never to the page count.
+    // A repeat re-recites pages already counted the first time, so it adds
+    // nothing to any total either.
     const newQuran = quranRecords.filter(
-      (r) => r.memorizationType === Memorization.MEMORIZING,
+      (r) => r.memorizationType === Memorization.MEMORIZING && !r.isRepeat,
     );
     const totalPagesDone = newQuran
       .filter((r) => r.unit !== ProgressUnit.AYAH)
@@ -458,17 +580,18 @@ export class MemorizationService {
     const totalAyahsDone = newQuran
       .filter((r) => r.unit === ProgressUnit.AYAH)
       .reduce((sum, r) => sum + r.amountDone, 0);
-    // An entry recorded without a surah touched no particular surah.
-    const totalSurahs = new Set(
-      quranRecords.map((r) => r.surahNumber).filter((n) => n != null),
-    ).size;
+    // An entry recorded without a surah touched no particular surah; one
+    // naming several touched each of them.
+    const totalSurahs = new Set(quranRecords.flatMap((r) => surahsOfRow(r)))
+      .size;
 
     // Single hadiths and hadith pages are different units, so each gets its
     // own total rather than being added together.
     const newHadith = records.filter(
       (r) =>
         r.subject === MemorizationSubject.HADITH &&
-        r.memorizationType === Memorization.MEMORIZING,
+        r.memorizationType === Memorization.MEMORIZING &&
+        !r.isRepeat,
     );
     const sumIn = (unit: ProgressUnit) =>
       newHadith
@@ -494,10 +617,11 @@ export class MemorizationService {
     );
 
     // Lets the app show the hadith counters for a student who tracks hadith
-    // but has no hadith entry yet.
+    // but has no hadith entry yet, and the tasmee program likewise. Tasmee
+    // rows recite what is already memorized, so they add to no total above.
     const student = await this.prisma.student.findUnique({
       where: { id: studentId },
-      select: { tracksHadith: true },
+      select: { tracksHadith: true, tracksTasmee: true },
     });
 
     return {
@@ -510,6 +634,7 @@ export class MemorizationService {
       typeCounts,
       hadithTypeCounts,
       tracksHadith: student?.tracksHadith ?? false,
+      tracksTasmee: student?.tracksTasmee ?? false,
     };
   }
 }

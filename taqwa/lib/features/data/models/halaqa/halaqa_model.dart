@@ -36,12 +36,15 @@ class HalaqaModel {
 
   /// An adults' halaqa charges fines for absence, lateness and a missed
   /// recitation; a child's halaqa never does. Older payloads that predate
-  /// this feature omit the four fields below, so they default to "no fines"
+  /// this feature omit the fee fields below, so they default to "no fines"
   /// rather than leaving the app to guess.
   final bool isAdult;
   final int absenceFee;
   final int lateFee;
   final int missedMemorizationFee;
+
+  /// Charged per repeat (إعادة) recitation.
+  final int repeatFee;
 
   /// The teachers the admin named معلم مشرف for this halaqa's [level]. Empty
   /// for a halaqa with no level, an old free-text one, or a payload that
@@ -69,6 +72,7 @@ class HalaqaModel {
     this.absenceFee = 0,
     this.lateFee = 0,
     this.missedMemorizationFee = 0,
+    this.repeatFee = 0,
     this.supervisors = const [],
   });
 
@@ -104,6 +108,7 @@ class HalaqaModel {
       lateFee: (json['lateFee'] as num?)?.toInt() ?? 0,
       missedMemorizationFee:
           (json['missedMemorizationFee'] as num?)?.toInt() ?? 0,
+      repeatFee: (json['repeatFee'] as num?)?.toInt() ?? 0,
       supervisors: (json['supervisors'] as List<dynamic>? ?? const [])
           .whereType<Map<String, dynamic>>()
           .map(HalaqaSupervisor.fromJson)
@@ -128,6 +133,7 @@ class HalaqaModel {
     'absenceFee': absenceFee,
     'lateFee': lateFee,
     'missedMemorizationFee': missedMemorizationFee,
+    'repeatFee': repeatFee,
     'supervisors': supervisors.map((s) => s.toJson()).toList(),
   };
 

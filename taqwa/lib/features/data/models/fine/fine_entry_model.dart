@@ -13,7 +13,7 @@ class FineEntryModel {
   /// [source] already says why it exists.
   final String? reason;
 
-  /// `ABSENCE`, `LATE`, `MISSED_MEMORIZATION`, or `MANUAL`.
+  /// `ABSENCE`, `LATE`, `MISSED_MEMORIZATION`, `REPEAT`, or `MANUAL`.
   final String source;
 
   final DateTime createdAt;
@@ -40,6 +40,7 @@ class FineEntryModel {
     'ABSENCE' => 'غياب',
     'LATE' => 'تأخر',
     'MISSED_MEMORIZATION' => 'لم يحفظ',
+    'REPEAT' => 'إعادة',
     _ => reason ?? 'تعديل',
   };
 

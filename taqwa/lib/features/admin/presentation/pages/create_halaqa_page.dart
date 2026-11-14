@@ -44,6 +44,7 @@ Map<String, dynamic> buildHalaqaPayload({
   int? absenceFee,
   int? lateFee,
   int? missedMemorizationFee,
+  int? repeatFee,
 }) {
   return <String, dynamic>{
     'name': name,
@@ -57,6 +58,7 @@ Map<String, dynamic> buildHalaqaPayload({
     if (isAdult && lateFee != null) 'lateFee': lateFee,
     if (isAdult && missedMemorizationFee != null)
       'missedMemorizationFee': missedMemorizationFee,
+    if (isAdult && repeatFee != null) 'repeatFee': repeatFee,
   };
 }
 
@@ -109,6 +111,7 @@ class _CreateHalaqaPageState extends State<CreateHalaqaPage> {
   final _absenceFeeController = TextEditingController();
   final _lateFeeController = TextEditingController();
   final _missedMemorizationFeeController = TextEditingController();
+  final _repeatFeeController = TextEditingController();
 
   List<TeacherModel> _teachers = [];
 
@@ -155,6 +158,7 @@ class _CreateHalaqaPageState extends State<CreateHalaqaPage> {
       _lateFeeController.text = h.lateFee.toString();
       _missedMemorizationFeeController.text = h.missedMemorizationFee
           .toString();
+      _repeatFeeController.text = h.repeatFee.toString();
     }
     _loadTeachers();
     _loadHalaqas();
@@ -331,6 +335,7 @@ class _CreateHalaqaPageState extends State<CreateHalaqaPage> {
         missedMemorizationFee: _isAdultHalaqa
             ? _parseRate(_missedMemorizationFeeController)
             : null,
+        repeatFee: _isAdultHalaqa ? _parseRate(_repeatFeeController) : null,
       );
 
       if (_isEditing) {
@@ -366,6 +371,7 @@ class _CreateHalaqaPageState extends State<CreateHalaqaPage> {
     _absenceFeeController.dispose();
     _lateFeeController.dispose();
     _missedMemorizationFeeController.dispose();
+    _repeatFeeController.dispose();
     super.dispose();
   }
 
@@ -497,6 +503,19 @@ class _CreateHalaqaPageState extends State<CreateHalaqaPage> {
                                   validator: _validateRate,
                                   prefixIcon: const Icon(
                                     Icons.menu_book_outlined,
+                                    color: AppColors.onSurfaceVariant,
+                                  ),
+                                ),
+                                SizedBox(height: 16.h),
+                                _FieldLabel(label: 'رسوم الإعادة *'),
+                                SizedBox(height: 6.h),
+                                AppTextField(
+                                  hint: '0',
+                                  controller: _repeatFeeController,
+                                  keyboardType: TextInputType.number,
+                                  validator: _validateRate,
+                                  prefixIcon: const Icon(
+                                    Icons.replay_outlined,
                                     color: AppColors.onSurfaceVariant,
                                   ),
                                 ),
@@ -667,12 +686,7 @@ class _CreateHalaqaPageState extends State<CreateHalaqaPage> {
                                       ),
                                       boxShadow: const [
                                         BoxShadow(
-                                          color: Color.fromRGBO(
-                                            0,
-                                            40,
-                                            0,
-                                            0.06,
-                                          ),
+                                          color: Color.fromRGBO(0, 40, 0, 0.06),
                                           blurRadius: 10,
                                           offset: Offset(0, 4),
                                         ),

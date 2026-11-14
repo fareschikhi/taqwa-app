@@ -31,6 +31,16 @@ void main() {
       expect(memorizationErrorMessage(error), contains('تتبع الحديث'));
     });
 
+    test('tells the teacher the student is not in the tasmee program', () {
+      final error = withBody({
+        'statusCode': 400,
+        'code': 'TASMEE_NOT_ENABLED',
+        'message': 'This student is not in the tasmee program',
+      });
+
+      expect(memorizationErrorMessage(error), contains('برنامج التسميع'));
+    });
+
     // The bug this guards: any 400 used to read as "student is absent", so a
     // rejected amount sent the teacher to the attendance chips, where nothing
     // was wrong and nothing they did could help.

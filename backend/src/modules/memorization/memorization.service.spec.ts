@@ -2,6 +2,10 @@ jest.mock('../points/day-points', () => ({
   reconcileDayPoints: jest.fn().mockResolvedValue(undefined),
 }));
 import { reconcileDayPoints } from '../points/day-points';
+jest.mock('../attendance/repeat-fine', () => ({
+  reconcileRepeatFine: jest.fn().mockResolvedValue(undefined),
+}));
+import { reconcileRepeatFine } from '../attendance/repeat-fine';
 import {
   BadRequestException,
   ForbiddenException,
@@ -11,6 +15,7 @@ import {
   AttendanceStatus,
   Memorization,
   MemorizationSubject,
+  Prisma,
   ProgressUnit,
 } from '@prisma/client';
 import {
@@ -248,6 +253,94 @@ describe('MemorizationService.create outside the session', () => {
       prisma,
       7,
       expect.any(Date),
+    );
+  });
+});
+
+describe('MemorizationService repeat (إعادة) charge', () => {
+  const makePrisma = () => {
+    const prisma: any = {
+      attendance: {
+        findUnique: jest.fn().mockResolvedValue(null),
+        findMany: jest.fn().mockResolvedValue([]),
+      },
+      memorizationProgress: {
+        create: jest.fn().mockResolvedValue({ id: 10 }),
+        findUnique: jest.fn().mockResolvedValue({
+          id: 10,
+          studentId: 7,
+          date: new Date('2026-11-13'),
+          isRepeat: true,
+          student: { halaqa: { teacherId: 1 } },
+        }),
+        delete: jest.fn(),
+      },
+    };
+    prisma.$transaction = jest.fn((cb: any) => cb(prisma));
+    return prisma;
+  };
+  const dto = {
+    studentId: 7,
+    amountDone: 1,
+    memorizationType: Memorization.MEMORIZING,
+    isRepeat: true,
+  };
+
+  beforeEach(() => (reconcileRepeatFine as jest.Mock).mockClear());
+
+  it('stores the flag and charges the repeat, even outside the session', async () => {
+    const prisma = makePrisma();
+    await new MemorizationService(prisma).create({
+      ...dto,
+      outsideSession: true,
+    });
+
+    expect(prisma.memorizationProgress.create).toHaveBeenCalledWith({
+      data: expect.objectContaining({ isRepeat: true }),
+    });
+    expect(reconcileRepeatFine).toHaveBeenCalledWith(
+      prisma,
+      7,
+      expect.any(Date),
+      null,
+    );
+  });
+
+  it('leaves the charge alone for a plain recitation', async () => {
+    const prisma = makePrisma();
+    await new MemorizationService(prisma).create({ ...dto, isRepeat: false });
+
+    expect(reconcileRepeatFine).not.toHaveBeenCalled();
+  });
+
+  it('charges every student of a group repeat', async () => {
+    const prisma = makePrisma();
+    await new MemorizationService(prisma).createGroup({
+      studentIds: [7, 8],
+      entry: { amountDone: 1, isRepeat: true },
+    });
+
+    expect(reconcileRepeatFine).toHaveBeenCalledTimes(2);
+    expect(reconcileRepeatFine).toHaveBeenCalledWith(
+      prisma,
+      8,
+      expect.any(Date),
+      null,
+    );
+  });
+
+  it('withdraws the charge when a repeat is deleted', async () => {
+    const prisma = makePrisma();
+    await new MemorizationService(prisma).remove(10, {
+      id: 3,
+      role: 'ADMIN',
+    });
+
+    expect(reconcileRepeatFine).toHaveBeenCalledWith(
+      prisma,
+      7,
+      new Date('2026-11-13'),
+      3,
     );
   });
 });
@@ -652,6 +745,31 @@ describe('MemorizationService.getStudentProgress subject scoping', () => {
       BIGREVISION: 1,
     });
     expect(progress.tracksHadith).toBe(true);
+  });
+
+  // A repeat re-recites pages already counted the first time.
+  it('keeps repeat rows out of the memorized totals', async () => {
+    const prisma = {
+      memorizationProgress: {
+        findMany: jest.fn().mockResolvedValue([
+          record({ amountDone: 3 }),
+          record({ amountDone: 2, isRepeat: true }),
+          record({
+            amountDone: 4,
+            subject: MemorizationSubject.HADITH,
+            unit: ProgressUnit.HADITH,
+            isRepeat: true,
+          }),
+        ]),
+      },
+      student: { findUnique: jest.fn().mockResolvedValue(null) },
+    };
+    const progress = await new MemorizationService(
+      prisma as any,
+    ).getStudentProgress(7);
+
+    expect(progress.totalPagesDone).toBe(3);
+    expect(progress.totalHadithsDone).toBe(0);
   });
 });
 
@@ -1313,5 +1431,378 @@ describe('MemorizationService.create ownership', () => {
       ),
     ).rejects.toBeInstanceOf(ForbiddenException);
     expect(prisma.memorizationProgress.create).not.toHaveBeenCalled();
+  });
+});
+
+describe('MemorizationService several surahs in one entry', () => {
+  const makePrisma = (existing?: Record<string, unknown>) => {
+    const prisma: any = {
+      attendance: {
+        findUnique: jest
+          .fn()
+          .mockResolvedValue({ id: 1, status: AttendanceStatus.PRESENT }),
+        findMany: jest.fn().mockResolvedValue([]),
+      },
+      memorizationProgress: {
+        create: jest.fn(({ data }: any) => Promise.resolve({ id: 10, ...data })),
+        update: jest.fn().mockResolvedValue({ id: 20 }),
+        findUnique: jest.fn().mockResolvedValue(existing ?? null),
+        findMany: jest.fn().mockResolvedValue([]),
+      },
+      student: {
+        findUnique: jest.fn().mockResolvedValue(null),
+        findMany: jest.fn().mockResolvedValue([{ id: 7 }, { id: 8 }]),
+      },
+    };
+    prisma.$transaction = jest.fn((cb: any) => cb(prisma));
+    return prisma;
+  };
+  const pages = {
+    studentId: 7,
+    surahNumbers: [114, 112, 113],
+    amountDone: 1,
+    memorizationType: Memorization.MEMORIZING,
+  };
+
+  it('stores the list in mushaf order and its first surah in surahNumber', async () => {
+    const prisma = makePrisma();
+    await new MemorizationService(prisma as any).create(pages as any);
+
+    expect(prisma.memorizationProgress.create).toHaveBeenCalledWith({
+      data: expect.objectContaining({
+        surahNumber: 112,
+        surahNumbers: [112, 113, 114],
+        unit: ProgressUnit.PAGE,
+      }),
+    });
+  });
+
+  it('refuses several surahs on an entry counted in ayahs', async () => {
+    const prisma = makePrisma();
+    await expect(
+      new MemorizationService(prisma as any).create({
+        ...pages,
+        unit: ProgressUnit.AYAH,
+        amountDone: 3,
+      } as any),
+    ).rejects.toBeInstanceOf(BadRequestException);
+    expect(prisma.memorizationProgress.create).not.toHaveBeenCalled();
+  });
+
+  it('refuses surahs on a hadith entry', async () => {
+    const prisma = makePrisma();
+    await expect(
+      new MemorizationService(prisma as any).create({
+        ...pages,
+        subject: MemorizationSubject.HADITH,
+        hadithReference: HADITH_BOOKS[0],
+      } as any),
+    ).rejects.toBeInstanceOf(BadRequestException);
+  });
+
+  it('writes the same list for every student of a group', async () => {
+    const prisma = makePrisma();
+    await new MemorizationService(prisma as any).createGroup(
+      {
+        studentIds: [7, 8],
+        entry: {
+          surahNumbers: [113, 114],
+          amountDone: 1,
+          memorizationType: Memorization.MEMORIZING,
+        },
+      },
+      null,
+    );
+
+    const written = prisma.memorizationProgress.create.mock.calls.map(
+      ([arg]: any) => arg.data,
+    );
+    expect(written).toHaveLength(2);
+    for (const d of written) {
+      expect(d).toMatchObject({ surahNumber: 113, surahNumbers: [113, 114] });
+    }
+  });
+
+  const listRow = {
+    id: 20,
+    studentId: 7,
+    date: new Date('2026-11-13'),
+    subject: MemorizationSubject.QURAN,
+    unit: ProgressUnit.PAGE,
+    surahNumber: 113,
+    surahNumbers: [113, 114],
+    hadithReference: null,
+    amountDone: 1,
+    ayahFrom: null,
+    ayahTo: null,
+  };
+
+  // An older client knows one surah only; its edit must not leave the old
+  // list naming surahs the row no longer records.
+  it('drops the list when an edit sends only a surahNumber', async () => {
+    const prisma = makePrisma(listRow);
+    await new MemorizationService(prisma as any).update(20, {
+      surahNumber: 2,
+    });
+
+    expect(prisma.memorizationProgress.update).toHaveBeenCalledWith({
+      where: { id: 20 },
+      data: expect.objectContaining({
+        surahNumber: 2,
+        surahNumbers: Prisma.DbNull,
+      }),
+    });
+  });
+
+  it('leaves the list alone when an edit only changes the amount', async () => {
+    const prisma = makePrisma(listRow);
+    await new MemorizationService(prisma as any).update(20, {
+      amountDone: 2,
+    });
+
+    const { data } = prisma.memorizationProgress.update.mock.calls[0][0];
+    expect(data.surahNumbers).toBeUndefined();
+    expect(data.surahNumber).toBeUndefined();
+  });
+
+  it('refuses an edit that moves a several-surah row to ayahs', async () => {
+    const prisma = makePrisma(listRow);
+    await expect(
+      new MemorizationService(prisma as any).update(20, {
+        unit: ProgressUnit.AYAH,
+        ayahFrom: 1,
+        ayahTo: 5,
+      }),
+    ).rejects.toBeInstanceOf(BadRequestException);
+  });
+
+  it('counts every surah of a list in totalSurahs', async () => {
+    const prisma = makePrisma();
+    prisma.memorizationProgress.findMany.mockResolvedValue([
+      {
+        ...listRow,
+        memorizationType: Memorization.MEMORIZING,
+        isRepeat: false,
+        recordedAt: new Date(),
+        surahNumber: 112,
+        surahNumbers: [112, 113, 114],
+      },
+      {
+        ...listRow,
+        memorizationType: Memorization.MEMORIZING,
+        isRepeat: false,
+        recordedAt: new Date(),
+        surahNumber: 114,
+        surahNumbers: null,
+      },
+    ]);
+
+    const progress = await new MemorizationService(
+      prisma as any,
+    ).getStudentProgress(7);
+    expect(progress.totalSurahs).toBe(3);
+  });
+});
+
+/// برنامج التسميع: a Quran-shaped recitation under its own subject, open only
+/// to students the admin opted in, with the teacher's free-text mistakes.
+describe('MemorizationService tasmee subject', () => {
+  const makePrisma = (
+    opts: {
+      tracksTasmee?: boolean;
+      existing?: Record<string, unknown>;
+    } = {},
+  ) => ({
+    attendance: {
+      findUnique: jest
+        .fn()
+        .mockResolvedValue({ id: 1, status: AttendanceStatus.PRESENT }),
+    },
+    student: {
+      findUnique: jest.fn().mockResolvedValue({
+        tracksHadith: false,
+        hadithBooks: [],
+        tracksTasmee: opts.tracksTasmee ?? true,
+      }),
+    },
+    memorizationProgress: {
+      create: jest.fn().mockResolvedValue({ id: 30 }),
+      findUnique: jest.fn().mockResolvedValue({
+        id: 30,
+        studentId: 7,
+        subject: MemorizationSubject.TASMEE,
+        unit: ProgressUnit.PAGE,
+        surahNumber: 18,
+        surahNumbers: null,
+        hadithReference: null,
+        memorizationType: Memorization.MEMORIZING,
+        amountDone: 2,
+        ayahFrom: null,
+        ayahTo: null,
+        mistakes: 'خطأ في الآية 5',
+        date: new Date('2026-11-13'),
+        ...opts.existing,
+      }),
+      update: jest.fn().mockResolvedValue({ id: 30 }),
+    },
+    $transaction: jest.fn(function (this: any, cb: any) {
+      return cb(this);
+    }),
+  });
+
+  const tasmeeDto = {
+    studentId: 7,
+    surahNumber: 18,
+    amountDone: 2,
+    memorizationType: Memorization.MEMORIZING,
+    subject: MemorizationSubject.TASMEE,
+  };
+
+  it('records a tasmee entry with its trimmed mistakes, counted in pages', async () => {
+    const prisma = makePrisma();
+    await new MemorizationService(prisma as any).create({
+      ...tasmeeDto,
+      mistakes: '  تردد في الآية 3 ',
+    } as any);
+
+    const data = prisma.memorizationProgress.create.mock.calls[0][0].data;
+    expect(data.subject).toBe(MemorizationSubject.TASMEE);
+    expect(data.unit).toBe(ProgressUnit.PAGE);
+    expect(data.surahNumber).toBe(18);
+    expect(data.mistakes).toBe('تردد في الآية 3');
+  });
+
+  it('stores blank mistakes as none', async () => {
+    const prisma = makePrisma();
+    await new MemorizationService(prisma as any).create({
+      ...tasmeeDto,
+      mistakes: '   ',
+    } as any);
+
+    const data = prisma.memorizationProgress.create.mock.calls[0][0].data;
+    expect(data.mistakes).toBeNull();
+  });
+
+  it('takes an ayah range like a Quran entry', async () => {
+    const prisma = makePrisma();
+    await new MemorizationService(prisma as any).create({
+      ...tasmeeDto,
+      surahNumber: 1,
+      unit: ProgressUnit.AYAH,
+      ayahFrom: 1,
+      ayahTo: 7,
+      amountDone: 7,
+    } as any);
+
+    const data = prisma.memorizationProgress.create.mock.calls[0][0].data;
+    expect(data.unit).toBe(ProgressUnit.AYAH);
+    expect([data.ayahFrom, data.ayahTo]).toEqual([1, 7]);
+  });
+
+  it('refuses a tasmee entry for a student not in the program', async () => {
+    const prisma = makePrisma({ tracksTasmee: false });
+    await expect(
+      new MemorizationService(prisma as any).create(tasmeeDto as any),
+    ).rejects.toMatchObject({
+      response: { code: MEMORIZATION_ERROR.TASMEE_NOT_ENABLED },
+    });
+    expect(prisma.memorizationProgress.create).not.toHaveBeenCalled();
+  });
+
+  it('refuses a hadith unit or a hadithReference on a tasmee entry', async () => {
+    const service = new MemorizationService(makePrisma() as any);
+    await expect(
+      service.create({ ...tasmeeDto, unit: ProgressUnit.HADITH } as any),
+    ).rejects.toBeInstanceOf(BadRequestException);
+    await expect(
+      service.create({ ...tasmeeDto, hadithReference: 'x' } as any),
+    ).rejects.toBeInstanceOf(BadRequestException);
+  });
+
+  // Mistakes belong to the tasmee program; on any other entry they would be
+  // stored where no screen shows them.
+  it('refuses mistakes on a Quran entry', async () => {
+    const prisma = makePrisma();
+    await expect(
+      new MemorizationService(prisma as any).create({
+        ...tasmeeDto,
+        subject: MemorizationSubject.QURAN,
+        mistakes: 'خطأ',
+      } as any),
+    ).rejects.toBeInstanceOf(BadRequestException);
+  });
+
+  it('edits the mistakes of a tasmee entry, blank clearing them', async () => {
+    const prisma = makePrisma();
+    await new MemorizationService(prisma as any).update(30, {
+      mistakes: ' ',
+    } as any);
+
+    const data = prisma.memorizationProgress.update.mock.calls[0][0].data;
+    expect(data.mistakes).toBeNull();
+  });
+
+  it('drops the mistakes when an edit moves the entry to Quran', async () => {
+    const prisma = makePrisma();
+    await new MemorizationService(prisma as any).update(30, {
+      subject: MemorizationSubject.QURAN,
+    } as any);
+
+    const data = prisma.memorizationProgress.update.mock.calls[0][0].data;
+    expect(data.subject).toBe(MemorizationSubject.QURAN);
+    expect(data.mistakes).toBeNull();
+  });
+
+  it('refuses an edit that moves an entry into tasmee for a student not in it', async () => {
+    const prisma = makePrisma({
+      tracksTasmee: false,
+      existing: { subject: MemorizationSubject.QURAN, mistakes: null },
+    });
+    await expect(
+      new MemorizationService(prisma as any).update(30, {
+        subject: MemorizationSubject.TASMEE,
+      } as any),
+    ).rejects.toMatchObject({
+      response: { code: MEMORIZATION_ERROR.TASMEE_NOT_ENABLED },
+    });
+  });
+
+  // A tasmee recites what is already memorized, so it adds to no Quran
+  // total; the flag lets the app show the program before its first entry.
+  it('keeps tasmee rows out of the Quran totals and reports the flag', async () => {
+    const row = (over: Record<string, unknown>) => ({
+      id: 1,
+      studentId: 7,
+      surahNumber: 2,
+      surahNumbers: null,
+      amountDone: 3,
+      memorizationType: Memorization.MEMORIZING,
+      subject: MemorizationSubject.QURAN,
+      unit: ProgressUnit.PAGE,
+      isRepeat: false,
+      ...over,
+    });
+    const prisma = {
+      memorizationProgress: {
+        findMany: jest
+          .fn()
+          .mockResolvedValue([
+            row({}),
+            row({ subject: MemorizationSubject.TASMEE, amountDone: 5 }),
+          ]),
+      },
+      student: {
+        findUnique: jest
+          .fn()
+          .mockResolvedValue({ tracksHadith: false, tracksTasmee: true }),
+      },
+    };
+    const progress = await new MemorizationService(
+      prisma as any,
+    ).getStudentProgress(7);
+
+    expect(progress.totalPagesDone).toBe(3);
+    expect(progress.typeCounts.MEMORIZING).toBe(1);
+    expect(progress.tracksTasmee).toBe(true);
   });
 });

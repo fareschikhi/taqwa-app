@@ -319,6 +319,26 @@ describe('StudentsService.create', () => {
     expect(data.student.create.hadithBooks).toEqual([]);
     expect(data.student.create.tracksHadith).toBe(false);
   });
+
+  it('stores tracksTasmee when the admin turns it on', async () => {
+    const prisma = makePrisma();
+    const service = new StudentsService(prisma as any);
+
+    await service.create({ ...payload, tracksTasmee: true } as any);
+
+    const data = prisma.user.create.mock.calls[0][0].data;
+    expect(data.student.create.tracksTasmee).toBe(true);
+  });
+
+  it('leaves tracksTasmee to the column default when omitted', async () => {
+    const prisma = makePrisma();
+    const service = new StudentsService(prisma as any);
+
+    await service.create(payload as any);
+
+    const data = prisma.user.create.mock.calls[0][0].data;
+    expect(data.student.create.tracksTasmee).toBeUndefined();
+  });
 });
 
 describe('StudentsService.update', () => {
@@ -331,6 +351,16 @@ describe('StudentsService.update', () => {
     },
     user: { update: jest.fn(), findFirst: jest.fn() },
     halaqa: { findUnique: jest.fn() },
+  });
+
+  it('turns tracksTasmee off when the admin sends false', async () => {
+    const prisma = makePrisma();
+    const service = new StudentsService(prisma as any);
+
+    await service.update(7, { tracksTasmee: false } as any);
+
+    const data = prisma.student.update.mock.calls[0][0].data;
+    expect(data.tracksTasmee).toBe(false);
   });
 
   it('ignores a password sent for a child student', async () => {

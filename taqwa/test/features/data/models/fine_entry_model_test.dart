@@ -36,4 +36,18 @@ void main() {
     expect(entry.date, isNull);
     expect(entry.displayDate, DateTime.parse('2026-08-30T10:00:00.000Z'));
   });
+
+  test('names a repeat charge', () {
+    final entry = FineEntryModel.fromJson({
+      'id': 3,
+      'kind': 'CHARGE',
+      'amount': 400,
+      'reason': null,
+      'source': 'REPEAT',
+      'createdAt': '2026-11-13T10:00:00.000Z',
+      'date': '2026-11-13T00:00:00.000Z',
+    });
+
+    expect(entry.label, 'إعادة');
+  });
 }

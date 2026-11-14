@@ -83,4 +83,90 @@ void main() {
       expect(surahLabelOf(null), kNoSurahLabel);
     });
   });
+
+  group('pagesCoveredBy', () {
+    // الإخلاص، الفلق and الناس all sit on page 604: three surahs, one page.
+    test('counts a page shared by several surahs once', () {
+      expect(pagesCoveredBy([112, 113, 114]), 1);
+    });
+
+    test('adds the pages of surahs that do not touch', () {
+      // الفاتحة (1) + البقرة (2–49).
+      expect(pagesCoveredBy([1, 2]), 49);
+    });
+
+    test('counts the overlap of neighbours once', () {
+      // النساء 77–106 and المائدة 106–127 share page 106.
+      expect(pagesCoveredBy([4, 5]), 51);
+    });
+
+    test('ignores numbers outside the mushaf and reads none as zero', () {
+      expect(pagesCoveredBy([0, 115]), 0);
+      expect(pagesCoveredBy(const []), 0);
+    });
+  });
+
+  group('surahNumbersOfRecord', () {
+    test('reads the list of a several-surah entry', () {
+      expect(
+        surahNumbersOfRecord({
+          'surahNumber': 112,
+          'surahNumbers': [112, 113, 114],
+        }),
+        [112, 113, 114],
+      );
+    });
+
+    // Every entry recorded before the list existed has only surahNumber.
+    test('falls back to the single surahNumber', () {
+      expect(surahNumbersOfRecord({'surahNumber': 2}), [2]);
+      expect(surahNumbersOfRecord({'surahNumber': 2, 'surahNumbers': null}), [
+        2,
+      ]);
+    });
+
+    test('reads an entry without a surah as none', () {
+      expect(surahNumbersOfRecord({'surahNumber': null}), isEmpty);
+    });
+
+    test('skips values that are not surah numbers', () {
+      expect(
+        surahNumbersOfRecord({
+          'surahNumber': 113,
+          'surahNumbers': [113, 'x', 114],
+        }),
+        [113, 114],
+      );
+    });
+  });
+
+  group('surahsLabelOf', () {
+    test('names one surah the way surahLabelOf does', () {
+      expect(surahsLabelOf([2]), 'سورة البقرة');
+    });
+
+    test('names every surah of a several-surah entry', () {
+      expect(surahsLabelOf([112, 113, 114]), 'سور الإخلاص، الفلق، الناس');
+    });
+
+    test('names an entry without a surah after the Quran', () {
+      expect(surahsLabelOf(const []), kNoSurahLabel);
+    });
+  });
+
+  group('recordSurahLabel', () {
+    test('names all the surahs of a stored entry', () {
+      expect(
+        recordSurahLabel({
+          'surahNumber': 113,
+          'surahNumbers': [113, 114],
+        }),
+        'سور الفلق، الناس',
+      );
+    });
+
+    test('keeps naming a single-surah entry as before', () {
+      expect(recordSurahLabel({'surahNumber': 18}), 'سورة الكهف');
+    });
+  });
 }
